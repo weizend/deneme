@@ -189,10 +189,9 @@
                 <option value="boxRights">Kutu Hakkı</option>
                 <option value="tempMultiplier">Geçici Çarpan</option>
                 <option value="iflasShield">İflas Kalkanı</option>
-                 <option value="points">Puan</option>
                 <option value="special">Özel Ürün</option>
               </select>
-              <input type="number" id="newItemValue" placeholder="Değer (Kutu Hakkı Adedi / Çarpan Değeri / Kalkan Sayısı / Puan Miktarı)" class="w-full p-2 mb-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500 transition duration-300">
+              <input type="number" id="newItemValue" placeholder="Değer (Kutu Hakkı Adedi / Çarpan Değeri / Kalkan Kullanım Sayısı)" class="w-full p-2 mb-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500 transition duration-300">
               <input type="number" id="newItemMultiplierDuration" placeholder="Çarpan Süresi (Kutu Sayısı)" min="1" class="w-full p-2 mb-2 bg-gray-700 border border-gray-600 rounded-lg text-white hidden focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500 transition duration-300">
               <label for="newItemCountdownDuration" class="text-gray-300 text-sm block mt-2 mb-1 text-left">Geri Sayım Süresi (Dakika, Boş Bırakılırsa Süresiz):</label>
               <input type="number" id="newItemCountdownDuration" placeholder="Dakika" min="1" class="w-full p-2 mb-4 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500 transition duration-300">
@@ -1178,14 +1177,9 @@
             btn.classList.add('bg-gray-700', 'hover:bg-gray-600');
         });
         
-        let activeContent;
-        if (sectionId === 'store') {
-            activeContent = document.getElementById('storeSection');
-        } else {
-            activeContent = document.getElementById(`${sectionId}Content`);
-        }
-
+        // İstenen bölümü ve ilgili butonu aktif et
         const activeBtn = document.getElementById(`${sectionId}TabBtn`);
+        const activeContent = document.getElementById(`${sectionId}Content`);
 
         if(activeContent) activeContent.classList.remove('hidden');
         if(activeBtn) {
@@ -1195,12 +1189,11 @@
 
         // Mağaza sekmesine özel işlemler
         if (sectionId === 'store') {
+            document.getElementById('storeSection').classList.remove('hidden'); // Mağaza ana div'ini göster
             loadStoreItems();
             if (isAdmin) {
                 document.getElementById('adminStoreControls').classList.remove('hidden');
             }
-        } else if (sectionId === 'announcements') {
-            loadAnnouncements();
         }
         
         currentActiveSection = sectionId;
@@ -1246,6 +1239,7 @@
     });
   }
 
+  // DÜZELTME 4: Yeni rozet fonksiyonu
   function getUserBadgesHtml(u, leaders) {
       let crownHtml = '';
       let otherBadgesHtml = '';
@@ -1305,6 +1299,7 @@
       for (const u in usersData) {
         const userData = usersData[u];
         if (userData.approved) {
+          // GÜNCELLEME: Liderlik için sıfırdan büyük olma şartı eklendi
           if ((userData.balance || 0) > leaders.highestCurrentBalance && userData.balance > 0) { leaders.highestCurrentBalance = userData.balance; leaders.currentBalanceUser = u; }
           if ((userData.highestBalanceEver || 0) > leaders.highestEverBalance && userData.highestBalanceEver > 0) { leaders.highestEverBalance = userData.highestBalanceEver; leaders.highEverBalanceUser = u; }
           if ((userData.surpriseBoxesOpened || 0) > leaders.maxSurpriseBoxes && userData.surpriseBoxesOpened > 0) { leaders.maxSurpriseBoxes = userData.surpriseBoxesOpened; leaders.surpriseBoxUser = u; }
@@ -1395,6 +1390,7 @@
       for (const u in usersData) {
         const userData = usersData[u];
         if (userData.approved) {
+          // GÜNCELLEME: Liderlik için sıfırdan büyük olma şartı eklendi
           if ((userData.balance || 0) > leaders.highestCurrentBalance && userData.balance > 0) { leaders.highestCurrentBalance = userData.balance; leaders.currentBalanceUser = u; }
           if ((userData.highestBalanceEver || 0) > leaders.highestEverBalance && userData.highestBalanceEver > 0) { leaders.highestEverBalance = userData.highestBalanceEver; leaders.highEverBalanceUser = u; }
           if ((userData.surpriseBoxesOpened || 0) > leaders.maxSurpriseBoxes && userData.surpriseBoxesOpened > 0) { leaders.maxSurpriseBoxes = userData.surpriseBoxesOpened; leaders.surpriseBoxUser = u; }
@@ -1995,7 +1991,7 @@
       const sortedItems = Object.entries(items).sort(([, a], [, b]) => (b.purchaseCount || 0) - (a.purchaseCount || 0));
 
       sortedItems.forEach(([itemId, item]) => { 
-          const outOfStock = item.stock !== undefined && item.stock !== null && item.stock <= 0;
+          const outOfStock = item.stock !== undefined && item.stock <= 0;
           let isExpired = false;
           let countdownHtml = '';
 
@@ -2066,7 +2062,7 @@
         displayMessage("Yetersiz Puan!");
         return;
     }
-    if (item.stock !== undefined && item.stock !== null && item.stock <= 0) {
+    if (item.stock !== undefined && item.stock <= 0) {
         displayMessage("Bu ürünün stoğu tükenmiştir.");
         return;
     }
@@ -2090,8 +2086,6 @@
             updates.activeStoreMultiplierItemId = itemId; 
         } else if (item.type === 'iflasShield') {
             updates.iflasShieldUses = (user.iflasShieldUses || 0) + item.value;
-        } else if (item.type === 'points') {
-            updates.balance += item.value; // Puanı maliyet düşüldükten sonra ekle
         } else if (item.type === 'special') {
             purchaseStatus = 'pending';
             recordToPending = true;
@@ -2162,21 +2156,15 @@
     const countdown = parseInt(document.getElementById('newItemCountdownDuration').value);
     const imageUrl = document.getElementById('newItemImageUrl').value.trim();
 
-    if (!name || !description || isNaN(cost) || !type) {
-        displayMessage("Lütfen tüm zorunlu alanları doldurun (Ürün Adı, Açıklama, Maliyet, Tip). 'Değer' alanı puansız ürünler için zorunludur.");
-        return;
+    if (!name || !description || isNaN(cost) || !type || isNaN(value)) {
+      displayMessage("Lütfen tüm zorunlu alanları doldurun (Ürün Adı, Açıklama, Maliyet, Tip, Değer).");
+      return;
     }
-     if (type !== 'special' && type !== 'points' && (isNaN(value) || value <= 0)) {
-        displayMessage("'Değer' alanı bu ürün tipi için zorunlu ve 0'dan büyük olmalıdır.");
-        return;
-    }
-
 
     stock = (stock === '' || stock === null) ? null : parseInt(stock);
 
     const itemData = {
-      name, description, cost, stock, type, 
-      value: (isNaN(value) ? 0 : value),
+      name, description, cost, stock, type, value,
       imageUrl: imageUrl || 'https://via.placeholder.com/150',
     };
     
@@ -2366,6 +2354,8 @@
   function openBadgeInfoModal() { badgeInfoModal.style.display = 'flex'; }
   function closeBadgeInfoModal() { badgeInfoModal.style.display = 'none'; }
 
+
+  // KULLANICI PROFİLİ
   async function openPublicUserDetailModal(username) {
       if (activeBlockedUserTimers[username]) {
           clearInterval(activeBlockedUserTimers[username]);
@@ -2872,8 +2862,8 @@
             updates.kutuHakki = (user.kutuHakki || 0) + item.value;
         } else if (item.type === 'iflasShield') {
             updates.iflasShieldUses = (user.iflasShieldUses || 0) + item.value;
-        } else if (item.type === 'points') {
-            updates.balance = (user.balance || 0) + item.value;
+        } else { // Puan gibi maliyeti olan ürünler için
+            updates.balance = (user.balance || 0) + item.cost;
         }
         
         updates.lastDailyRewardClaim = firebase.database.ServerValue.TIMESTAMP;
@@ -2892,10 +2882,7 @@
         if (items) {
             for (const itemId in items) {
                 const item = items[itemId];
-                // Sadece puan maliyeti olmayan ve özel olmayan ürünleri listele
-                if(item.cost === 0 && item.type !== 'special') {
-                    selectEl.innerHTML += `<option value="${itemId}">${item.name}</option>`;
-                }
+                selectEl.innerHTML += `<option value="${itemId}">${item.name}</option>`;
             }
         }
     }
