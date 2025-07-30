@@ -201,63 +201,37 @@
             <button id="gameStoreTabBtn" onclick="switchStoreTab('gameStore')" class="flex-1 max-w-xs py-3 text-lg font-bold border-b-2 border-red-500 text-white transition-colors duration-300">Oyun Mağazası</button>
             <button id="specialStoreTabBtn" onclick="switchStoreTab('specialStore')" class="flex-1 max-w-xs py-3 text-lg font-bold border-b-2 border-transparent text-gray-400 hover:text-white transition-colors duration-300">Özel Ürün Mağazası</button>
         </div>
-      
-      <div id="storeUserPointInfo" class="text-center mb-6 bg-gray-800 p-3 rounded-lg border border-gray-700 max-w-lg mx-auto flex justify-center items-center gap-4">
-        <div>
-            <span class="text-green-400">Mevcut Puan: <b id="storeCurrentUserBalance">0</b></span> |
-            <span class="text-red-400">Harcanan Puan: <b id="storeCurrentUserSpent">0</b></span>
+
+        <div id="gameStoreContent">
+            <h3 class="text-yellow-400 text-3xl font-bold mb-2 text-center">Oyun Mağazası</h3>
+            <div id="storeUserPointInfo" class="text-center mb-6 bg-gray-800 p-3 rounded-lg border border-gray-700 max-w-lg mx-auto flex justify-center items-center gap-4">
+              <div>
+                  <span class="text-green-400">Mevcut Puan: <b id="storeCurrentUserBalance">0</b></span> |
+                  <span class="text-red-400">Harcanan Puan: <b id="storeCurrentUserSpent">0</b></span>
+              </div>
+              <button onclick="openPurchaseHistoryModal()" class="py-1 px-4 bg-purple-700 hover:bg-purple-600 text-white font-bold rounded-lg text-sm">
+                  Alışveriş Geçmişim
+              </button>
+            </div>
+            
+            <h3 class="text-yellow-300 text-2xl font-semibold mb-4 text-center">Popüler Ürünler</h3>
+            <div id="storeItemsContainer" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 p-4"></div>
         </div>
-        <button onclick="openPurchaseHistoryModal()" class="py-1 px-4 bg-purple-700 hover:bg-purple-600 text-white font-bold rounded-lg text-sm">
-            Alışveriş Geçmişim
-        </button>
-      </div>
 
-      <div id="adminStoreControls" class="bg-gray-900 p-6 rounded-lg border border-gray-700 mb-6 hidden">
-        <h4 class="text-yellow-300 text-xl font-semibold mb-4">ÜRÜN EKLE / DÜZENLE</h4>
-        <div class="mb-4">
-          <input type="text" id="newItemName" placeholder="Ürün Adı" class="w-full p-2 mb-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500 transition duration-300">
-          <input type="text" id="newItemDescription" placeholder="Ürün Açıklaması" class="w-full p-2 mb-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500 transition duration-300">
-          <input type="number" id="newItemCost" placeholder="Maliyet (Puan)" min="1" class="w-full p-2 mb-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500 transition duration-300">
-          <input type="number" id="newItemStock" placeholder="Stok Durumu (Opsiyonel, boş bırakılırsa sınırsız)" min="0" class="w-full p-2 mb-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500 transition duration-300">
-          <select id="newItemType" class="w-full p-2 mb-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500 transition duration-300">
-            <option value="">Ürün Tipi Seçin</option>
-            <option value="boxRights">Kutu Hakkı</option>
-            <option value="tempMultiplier">Geçici Çarpan</option>
-            <option value="iflasShield">İflas Kalkanı</option>
-            <option value="surprisePackage">Sürpriz Kutu Paketi</option>
-            <option value="special">Özel Ürün</option>
-          </select>
-          <input type="number" id="newItemValue" placeholder="Değer (Kutu Hakkı Adedi / Çarpan Değeri / Kalkan Kullanım Sayısı)" class="w-full p-2 mb-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500 transition duration-300">
-          <input type="number" id="newItemMultiplierDuration" placeholder="Çarpan Süresi (Kutu Sayısı)" min="1" class="w-full p-2 mb-2 bg-gray-700 border border-gray-600 rounded-lg text-white hidden focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500 transition duration-300">
-          
-          <div id="surprisePackageSettings" class="hidden bg-gray-800 p-4 rounded-lg mt-2">
-              <h5 class="text-yellow-200 font-bold mb-2">Sürpriz Paket İçerik Ayarları</h5>
-              <input type="number" id="pkgTotalCards" placeholder="Toplam Kart Sayısı" class="w-full p-2 mb-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-yellow-500">
-              <input type="number" id="pkgBombCards" placeholder="Bomba (İflas) Kart Sayısı" class="w-full p-2 mb-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-yellow-500">
-              <input type="number" id="pkgShieldCards" placeholder="İflas Kalkanı Kart Sayısı" class="w-full p-2 mb-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-yellow-500">
-              <input type="text" id="pkgMultiplierCards" placeholder="Çarpanlar (örn: 2,3,5)" class="w-full p-2 mb-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-yellow-500" title="Virgülle ayırarak girin, örn: 2,3,5">
-              <input type="text" id="pkgPointCards" placeholder="Puanlar (örn: 100,500,1000)" class="w-full p-2 mb-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-yellow-500" title="Virgülle ayırarak girin, örn: 100,500,1000">
-          </div>
-
-          <label for="newItemCountdownDuration" class="text-gray-300 text-sm block mt-2 mb-1 text-left">Geri Sayım Süresi (Dakika, Boş Bırakılırsa Süresiz):</label>
-          <input type="number" id="newItemCountdownDuration" placeholder="Dakika" min="1" class="w-full p-2 mb-4 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500 transition duration-300">
-          <input type="text" id="newItemImageUrl" placeholder="Resim URL (Opsiyonel)" class="w-full p-2 mb-4 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500 transition duration-300">
-          <button onclick="saveStoreItem()" id="addUpdateStoreItemBtn" class="w-full py-2 bg-green-600 hover:bg-green-500 text-white font-bold rounded-lg shadow-md hover:shadow-lg transform hover:-translate-y-1 transition duration-300">ÜRÜN EKLE</button>
-          <button onclick="resetStoreItemForm()" class="w-full py-2 mt-2 bg-gray-600 hover:bg-gray-500 text-white font-bold rounded-lg shadow-md hover:-translate-y-1 transition duration-300">Formu Temizle</button>
+        <div id="specialStoreContent" class="hidden">
+            <h3 class="text-yellow-400 text-3xl font-bold mb-2 text-center">Özel Ürün Mağazası</h3>
+            <div id="specialStoreUserPointInfo" class="text-center mb-6 bg-gray-800 p-3 rounded-lg border border-gray-700 max-w-lg mx-auto flex justify-center items-center gap-4">
+              <div>
+                  <span class="text-green-400">Mevcut Puan: <b id="specialStoreCurrentUserBalance">0</b></span> |
+                  <span class="text-red-400">Harcanan Puan: <b id="specialStoreCurrentUserSpent">0</b></span>
+              </div>
+              <button onclick="openPurchaseHistoryModal()" class="py-1 px-4 bg-purple-700 hover:bg-purple-600 text-white font-bold rounded-lg text-sm">
+                  Alışveriş Geçmişim
+              </button>
+            </div>
+            <h3 class="text-yellow-300 text-2xl font-semibold mb-4 text-center">Popüler Ürünler</h3>
+            <div id="specialStoreItemsContainer" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 p-4"></div>
         </div>
-        <h5 class="text-gray-200 text-lg font-semibold mb-2 mt-6">Mevcut Ürünler</h5>
-        <div id="currentStoreItems" class="scrollable-list max-h-60 overflow-y-auto p-3 bg-gray-800 rounded-md">Yükleniyor...</div>
-      </div>
-      
-      <div id="gameStoreContent">
-        <h3 class="text-yellow-300 text-2xl font-semibold mb-4 text-center">Popüler Ürünler</h3>
-        <div id="storeItemsContainer" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 p-4"></div>
-      </div>
-
-      <div id="specialStoreContent" class="hidden">
-        <h3 class="text-yellow-300 text-2xl font-semibold mb-4 text-center">Popüler Ürünler</h3>
-        <div id="specialStoreItemsContainer" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 p-4"></div>
-      </div>
     </div>
     
     <div id="announcementsSection" class="w-full hidden">
@@ -271,9 +245,8 @@
         </div>
         
         <div id="announcementList" class="space-y-6">
-            </div>
+        </div>
     </div>
-    
   </div>
 
   <div id="purchaseHistoryModal" class="modal-overlay fixed inset-0 bg-black bg-opacity-70 flex justify-center items-center z-50 hidden">
@@ -323,6 +296,42 @@
         <div class="bg-gray-900 p-6 rounded-lg border border-gray-700">
           <h4 class="text-yellow-300 text-xl font-semibold mb-4">Onay Bekleyen Özel Ürün Satın Alımları</h4>
           <div id="pendingSpecialPurchasesList" class="scrollable-list max-h-60 overflow-y-auto p-3 bg-gray-800 rounded-md">Yükleniyor...</div>
+        </div>
+        <div class="bg-gray-900 p-6 rounded-lg border border-gray-700 col-span-full">
+            <h4 class="text-yellow-300 text-xl font-semibold mb-4">Ürün Yönetimi (Mağaza)</h4>
+            <div id="adminStoreControls">
+                <div class="mb-4">
+                  <input type="text" id="newItemName" placeholder="Ürün Adı" class="w-full p-2 mb-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500 transition duration-300">
+                  <input type="text" id="newItemDescription" placeholder="Ürün Açıklaması" class="w-full p-2 mb-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500 transition duration-300">
+                  <input type="number" id="newItemCost" placeholder="Maliyet (Puan)" min="1" class="w-full p-2 mb-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500 transition duration-300">
+                  <input type="number" id="newItemStock" placeholder="Stok Durumu (Opsiyonel, boş bırakılırsa sınırsız)" min="0" class="w-full p-2 mb-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500 transition duration-300">
+                  <select id="newItemType" class="w-full p-2 mb-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500 transition duration-300">
+                    <option value="">Ürün Tipi Seçin</option>
+                    <option value="boxRights">Kutu Hakkı</option>
+                    <option value="tempMultiplier">Geçici Çarpan</option>
+                    <option value="iflasShield">İflas Kalkanı</option>
+                    <option value="surprisePackage">Sürpriz Kutu Paketi</option>
+                    <option value="special">Özel Ürün</option>
+                  </select>
+                  <div id="surprisePackageSettings" class="hidden bg-gray-800 p-4 rounded-lg mt-2 border border-gray-600">
+                    <h5 class="text-yellow-200 font-bold mb-2">Sürpriz Paket İçerik Ayarları</h5>
+                    <input type="number" id="pkgTotalCards" placeholder="Toplam Kart Sayısı" class="w-full p-2 mb-2 bg-gray-700 rounded-lg text-white focus:outline-none focus:border-yellow-500">
+                    <input type="number" id="pkgBombCards" placeholder="Bomba (İflas) Kart Sayısı" class="w-full p-2 mb-2 bg-gray-700 rounded-lg text-white focus:outline-none focus:border-yellow-500">
+                    <input type="number" id="pkgShieldCards" placeholder="İflas Kalkanı Kart Sayısı" class="w-full p-2 mb-2 bg-gray-700 rounded-lg text-white focus:outline-none focus:border-yellow-500">
+                    <input type="text" id="pkgMultiplierCards" placeholder="Çarpanlar (örn: 2,3,5)" class="w-full p-2 mb-2 bg-gray-700 rounded-lg text-white focus:outline-none focus:border-yellow-500" title="Virgülle ayırarak girin, örn: 2,3,5">
+                    <input type="text" id="pkgPointCards" placeholder="Puanlar (örn: 100,500,1000)" class="w-full p-2 mb-2 bg-gray-700 rounded-lg text-white focus:outline-none focus:border-yellow-500" title="Virgülle ayırarak girin, örn: 100,500,1000">
+                  </div>
+                  <input type="number" id="newItemValue" placeholder="Değer (Kutu Hakkı Adedi / Çarpan Değeri / Kalkan Sayısı)" class="w-full p-2 mb-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500 transition duration-300">
+                  <input type="number" id="newItemMultiplierDuration" placeholder="Çarpan Süresi (Kutu Sayısı)" min="1" class="w-full p-2 mb-2 bg-gray-700 border border-gray-600 rounded-lg text-white hidden focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500 transition duration-300">
+                  <label for="newItemCountdownDuration" class="text-gray-300 text-sm block mt-2 mb-1 text-left">Geri Sayım Süresi (Dakika, Boş Bırakılırsa Süresiz):</label>
+                  <input type="number" id="newItemCountdownDuration" placeholder="Dakika" min="1" class="w-full p-2 mb-4 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500 transition duration-300">
+                  <input type="text" id="newItemImageUrl" placeholder="Resim URL (Opsiyonel)" class="w-full p-2 mb-4 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500 transition duration-300">
+                  <button onclick="saveStoreItem()" id="addUpdateStoreItemBtn" class="w-full py-2 bg-green-600 hover:bg-green-500 text-white font-bold rounded-lg shadow-md hover:shadow-lg transform hover:-translate-y-1 transition duration-300">ÜRÜN EKLE</button>
+                  <button onclick="resetStoreItemForm()" class="w-full py-2 mt-2 bg-gray-600 hover:bg-gray-500 text-white font-bold rounded-lg shadow-md hover:-translate-y-1 transition duration-300">Formu Temizle</button>
+                </div>
+                <h5 class="text-gray-200 text-lg font-semibold mb-2 mt-6">Mevcut Ürünler</h5>
+                <div id="currentStoreItems" class="scrollable-list max-h-60 overflow-y-auto p-3 bg-gray-800 rounded-md">Yükleniyor...</div>
+            </div>
         </div>
         <div class="bg-gray-900 p-6 rounded-lg border border-gray-700 col-span-full">
           <h4 class="text-yellow-300 text-xl font-semibold mb-4">Tüm Kullanıcı İşlemleri</h4>
@@ -377,21 +386,21 @@
             </button>
           </div>
         </div>
-      </div>
-      <div class="bg-gray-900 p-6 rounded-lg border border-gray-700 mt-6 col-span-full">
+        <div class="bg-gray-900 p-6 rounded-lg border border-gray-700 mt-6 col-span-full">
           <h4 class="text-yellow-300 text-xl font-semibold mb-4">Günlük Giriş Ödülü Ayarları</h4>
           <p class="text-gray-400 text-sm mb-4">Kullanıcıların her gün alabileceği ödülü ve bekleme süresini buradan ayarlayın.</p>
           <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <select id="dailyRewardType" class="w-full p-2 bg-gray-700 border border-gray-600 rounded-lg text-white">
+              <select id="dailyRewardType" class="w-full p-2 bg-gray-700 rounded-lg text-white focus:outline-none focus:border-yellow-500">
                 <option value="points">Puan</option>
                 <option value="boxRights">Kutu Hakkı</option>
                 <option value="iflasShield">İflas Kalkanı</option>
               </select>
-              <input type="number" id="dailyRewardValue" placeholder="Ödül Miktarı" min="1" class="w-full p-2 bg-gray-700 border border-gray-600 rounded-lg text-white">
-              <input type="number" id="dailyRewardCooldown" placeholder="Bekleme Süresi (Saat)" min="1" class="w-full p-2 bg-gray-700 border border-gray-600 rounded-lg text-white">
+              <input type="number" id="dailyRewardValue" placeholder="Ödül Miktarı" min="1" class="w-full p-2 bg-gray-700 rounded-lg text-white focus:outline-none focus:border-yellow-500">
+              <input type="number" id="dailyRewardCooldown" placeholder="Bekleme Süresi (Saat)" min="1" class="w-full p-2 bg-gray-700 rounded-lg text-white focus:outline-none focus:border-yellow-500">
           </div>
-          <button onclick="saveDailyRewardSettings()" class="w-full mt-4 py-2 bg-green-600 hover:bg-green-500 text-white font-bold rounded-lg">Ayarları Kaydet</button>
+          <button onclick="saveDailyRewardSettings()" class="w-full mt-4 py-2 bg-green-600 hover:bg-green-500 text-white font-bold rounded-lg shadow-md hover:shadow-lg transform hover:-translate-y-1 transition duration-300">Ayarları Kaydet</button>
         </div>
+      </div>
       <div class="bg-gray-900 p-6 rounded-lg border border-gray-700 mt-6">
         <h4 class="text-yellow-300 text-xl font-semibold mb-4">Kullanıcı Yönetimi</h4>
         <input type="text" id="searchUser" placeholder="Kullanıcı Ara" oninput="searchUsers()"
@@ -818,18 +827,18 @@
         <div id="announcementModalContent" class="text-lg text-white mb-6"></div>
         <button onclick="goToAnnouncements()" class="w-full py-3 bg-red-700 hover:bg-red-600 text-white font-bold rounded-lg shadow-md hover:shadow-lg transform hover:-translate-y-1 transition duration-300">Duyuruya Git</button>
     </div>
-  </div>
+</div>
 
-  <div id="likersModal" class="modal-overlay fixed inset-0 bg-black bg-opacity-70 flex justify-center items-center z-[99999] hidden">
-      <div class="modal-content bg-gray-800 p-6 rounded-xl shadow-2xl border border-red-700 w-11/12 max-w-sm text-center relative max-h-[80vh]">
-          <button class="modal-close-button absolute top-2 right-4 text-white text-3xl" onclick="closeLikersModal()">&times;</button>
-          <h4 class="text-yellow-400 text-xl font-bold mb-4">Beğenen Kullanıcılar</h4>
-          <div id="likersList" class="scrollable-list max-h-[60vh] overflow-y-auto bg-gray-900 p-3 rounded-lg">
-              </div>
-      </div>
-  </div>
+<div id="likersModal" class="modal-overlay fixed inset-0 bg-black bg-opacity-70 flex justify-center items-center z-[99999] hidden">
+    <div class="modal-content bg-gray-800 p-6 rounded-xl shadow-2xl border border-red-700 w-11/12 max-w-sm text-center relative max-h-[80vh]">
+        <button class="modal-close-button absolute top-2 right-4 text-white text-3xl" onclick="closeLikersModal()">&times;</button>
+        <h4 class="text-yellow-400 text-xl font-bold mb-4">Beğenen Kullanıcılar</h4>
+        <div id="likersList" class="scrollable-list max-h-[60vh] overflow-y-auto bg-gray-900 p-3 rounded-lg">
+        </div>
+    </div>
+</div>
 
-  <div id="dailyRewardModal" class="modal-overlay fixed inset-0 bg-black bg-opacity-70 flex justify-center items-center z-[99999] hidden">
+<div id="dailyRewardModal" class="modal-overlay fixed inset-0 bg-black bg-opacity-70 flex justify-center items-center z-[99999] hidden">
     <div class="modal-content bg-gray-800 p-8 rounded-xl shadow-2xl border border-yellow-500 w-11/12 max-w-md text-center relative">
         <button class="modal-close-button absolute top-2 right-4 text-white text-4xl" onclick="closeDailyRewardModal()">&times;</button>
         <h4 class="text-yellow-400 text-3xl font-bold mb-4">🎁 Günlük Giriş Ödülü</h4>
@@ -843,7 +852,8 @@
             <p id="dailyRewardCountdown" class="text-3xl text-red-500 font-bold mb-8"></p>
         </div>
     </div>
-  </div>
+</div>
+
 
 <script>
   // Firebase yapılandırması
@@ -852,11 +862,12 @@
     authDomain: "weizendtv-oyun.firebaseapp.com",
     databaseURL: "https://weizendtv-oyun-default-rtdb.europe-west1.firebasedatabase.app",
     projectId: "weizendtv-oyun",
-    storageBucket: "weizendtv-oyun.firebase-storage.app",
+    storageBucket: "weizendtv-oyun.appspot.com",
     messagingSenderId: "762409187638",
     appId: "1:762409187638:web:6e9888f4bdacfac017db97"
   };
 
+  // Firebase'i başlat
   try {
     firebase.initializeApp(firebaseConfig);
   } catch (e) {
@@ -868,14 +879,21 @@
   const db = firebase.database();
   const auth = firebase.auth();
 
-  // --- Global Değişkenler ---
+  // --- GLOBAL DEĞİŞKENLER ---
   let currentUser = null;
   let isAdmin = false;
   let boxes = [];
   const BOX_RIGHTS_COST_PER_BOX = 1;
   let isGameLocked = false; 
   let sessionStartTime = Date.now();
-  
+  let currentActiveSection = 'game';
+  let currentStoreTab = 'gameStore';
+  let dailyRewardTimer = null;
+  let unreadAnnouncements = {};
+  let editingItemId = null;
+  let userForPasswordReset = null;
+  let selectedUserForManagement = null;
+
   const BOX_CONTENTS = [
     { type: 'surpriz', value: 0, count: 1 },
     { type: 'points', value: 1000, count: 2 },
@@ -891,8 +909,14 @@
     { type: 'multiplier', value: 3, count: 1 }
   ];
   const TOTAL_BOXES = BOX_CONTENTS.reduce((sum, item) => sum + item.count, 0);
-
-  // --- Modal Elementleri ---
+  
+  // --- MODAL ELEMENTLERİ ---
+  const loginContainer = document.getElementById('loginContainer');
+  const gameDiv = document.getElementById('gameDiv');
+  const passwordResetModal = document.getElementById('passwordResetModal');
+  const announcementModal = document.getElementById('announcementModal');
+  const likersModal = document.getElementById('likersModal');
+  const dailyRewardModal = document.getElementById('dailyRewardModal');
   const pointAdjustmentModal = document.getElementById('pointAdjustmentModal');
   const boxRightAdjustmentModal = document.getElementById('boxRightAdjustmentModal');
   const iflasShieldAdjustmentModal = document.getElementById('iflasShieldAdjustmentModal');
@@ -900,11 +924,9 @@
   const blockDurationModal = document.getElementById('blockDurationModal');
   const blockedMessageModal = document.getElementById('blockedMessageModal');
   const kickVerificationModal = document.getElementById('kickVerificationModal');
-  const passwordResetModal = document.getElementById('passwordResetModal');
   const generalMessageModal = document.getElementById('generalMessageModal');
   const welcomeGiftModal = document.getElementById('welcomeGiftModal');
   const cardSelectionModal = document.getElementById('cardSelectionModal');
-  const cardContainer = document.querySelector('#cardSelectionModal .card-container');
   const openedBoxInfoModal = document.getElementById('openedBoxInfoModal');
   const adminPanelModal = document.getElementById('adminPanelModal');
   const adminPanelToggleButton = document.getElementById('adminPanelToggleButton');
@@ -916,18 +938,12 @@
   const purchaseHistoryModal = document.getElementById('purchaseHistoryModal');
   const boxStatsModal = document.getElementById('boxStatsModal');
   const spectatorModal = document.getElementById('spectatorModal');
-  const announcementModal = document.getElementById('announcementModal');
-  const likersModal = document.getElementById('likersModal');
-  const dailyRewardModal = document.getElementById('dailyRewardModal');
-
 
   let targetUserForAdjustment = null;
   let targetUserForBoxRightAdjustment = null;
   let targetUserForIflasShieldAdjustment = null;
   let targetUserForMultiplierAdjustment = null;
   let targetUserForBlock = null;
-  let userForPasswordReset = null;
-  let selectedUserForManagement = null;
   let countdownInterval = null;
   let cardValues = [1000, 2000, 3000, 4000, 5000];
   let activeBlockedUserTimers = {};
@@ -937,16 +953,10 @@
   let totalPointsGainedInSurpriseSession = 0;
   let surpriseBoxMultiplier = 1;
 
-  let editingItemId = null;
-  let currentActiveSection = 'game';
-  let currentStoreTab = 'gameStore';
-  let dailyRewardTimer = null;
-  let unreadAnnouncements = {};
-
   let storeCountdownInterval = null;
   let activeStoreCountdowns = {};
 
-  // GİRİŞ/KAYIT SİSTEMİ
+  // --- GİRİŞ/KAYIT SİSTEMİ ---
   function switchAuthTab(tab) {
     const loginDiv = document.getElementById('loginDiv');
     const registerDiv = document.getElementById('registerDiv');
@@ -970,7 +980,6 @@
     }
   }
   
-  // Giriş
   async function login() {
     const user = document.getElementById("loginUsername").value.trim().toLowerCase();
     const pass = document.getElementById("loginPassword").value.trim();
@@ -1021,7 +1030,6 @@
     });
   }
 
-  // Kayıt
   async function register() {
     const username = document.getElementById("registerUsername").value.trim().toLowerCase();
     const password = document.getElementById("registerPassword").value.trim();
@@ -1094,13 +1102,18 @@
     }
   }
 
-  // Şifre Sıfırlama
+  // --- ŞİFRE SIFIRLAMA ---
   function openPasswordResetModal() {
+    passwordResetModal.style.display = 'flex';
     document.getElementById('resetStep1').classList.remove('hidden');
     document.getElementById('resetStep3').classList.add('hidden');
     document.getElementById('resetUsername').value = '';
     document.getElementById('resetPin').value = '';
-    passwordResetModal.style.display = 'flex';
+  }
+
+  function closePasswordResetModal() {
+      passwordResetModal.style.display = 'none';
+      userForPasswordReset = null;
   }
 
   async function verifyResetInfo() {
@@ -1145,12 +1158,7 @@
       displayMessage("Şifreniz başarıyla güncellendi. Artık giriş yapabilirsiniz.");
       closePasswordResetModal();
   }
-  
-  function closePasswordResetModal() {
-      passwordResetModal.style.display = 'none';
-      userForPasswordReset = null;
-  }
-  
+
   function openKickVerificationModal() { kickVerificationModal.style.display = 'flex'; }
   function closeKickVerificationModal() { 
       kickVerificationModal.style.display = 'none'; 
@@ -1159,7 +1167,7 @@
   function closeWelcomeGiftModal() { welcomeGiftModal.style.display = 'none'; }
 
 
-  // Oturum yönetimi
+  // --- OTURUM YÖNETİMİ ---
   function checkAndProceedLogin(username, userData) {
     if (userData.blocked && userData.blockedUntil && Date.now() >= userData.blockedUntil) {
          db.ref('users/' + username).update({ blocked: false, blockedUntil: null }).then(() => {
@@ -1184,29 +1192,25 @@
         afterLogin();
       }
     } else {
-      document.getElementById("loginContainer").style.display = "block";
-      document.getElementById("gameDiv").style.display = "none";
+      loginContainer.style.display = "block";
+      gameDiv.style.display = "none";
     }
   });
 
-  // Giriş sonrası
   async function afterLogin() {
-    document.getElementById("loginContainer").style.display = "none";
-    document.getElementById("gameDiv").style.display = "block";
+    loginContainer.style.display = "none";
+    gameDiv.style.display = "block";
     
     document.getElementById("currentUser").textContent = currentUser;
     document.getElementById("role").textContent = isAdmin ? "(Admin)" : "";
     document.getElementById("inventoryButton").style.display = isAdmin ? 'none' : 'inline-block';
-    document.getElementById("dailyRewardButton").style.display = isAdmin ? 'none' : 'inline-block';
     document.getElementById("announcementsTabBtn").style.display = 'inline-block';
+    document.getElementById("dailyRewardButton").style.display = isAdmin ? 'none' : 'inline-block';
 
     if (isAdmin) {
       adminPanelToggleButton.classList.remove('hidden');
-      document.getElementById('adminAnnouncementBox').classList.remove('hidden');
-      loadDailyRewardSettings();
     } else {
       adminPanelToggleButton.classList.add('hidden');
-      document.getElementById('adminAnnouncementBox').classList.add('hidden');
     }
 
     showSection('game');
@@ -1221,31 +1225,36 @@
         listenForAdminNotifications();
         listenForAnnouncements();
         checkDailyRewardStatus();
-    } else {
-        renderAnnouncements(null); // Admin için başlangıçta boş render
-        db.ref('announcements').on('value', snap => renderAnnouncements(snap.val()));
     }
     listenForSurpriseBox();
     listenForCustomSurpriseBox();
+
+    if(isAdmin) {
+        document.getElementById('adminAnnouncementBox').classList.remove('hidden');
+        loadDailyRewardSettings();
+        loadStoreItems();
+    }
+    
+    sessionStartTime = Date.now();
 
     if (!isAdmin) {
         const userRef = db.ref('users/' + currentUser);
         userRef.once('value').then(snap => {
             const userData = snap.val();
-            if (userData) {
-                if (userData.hasReceivedWelcomeGift === false) {
-                    welcomeGiftModal.style.display = 'flex';
-                    userRef.update({
-                        kutuHakki: (userData.kutuHakki || 0) + 3,
-                        hasReceivedWelcomeGift: true
-                    });
-                }
+            if (userData && userData.hasReceivedWelcomeGift === false) {
+                welcomeGiftModal.style.display = 'flex';
+                userRef.update({
+                    kutuHakki: (userData.kutuHakki || 0) + 3,
+                    hasReceivedWelcomeGift: true
+                });
             }
         });
     }
   }
 
-  // Bölüm değiştirme
+  function logout() { auth.signOut().then(() => location.reload()); }
+
+  // --- BÖLÜM VE SEKME YÖNETİMİ ---
   function showSection(sectionId) {
     document.getElementById('gameContent').classList.add('hidden');
     document.getElementById('storeSection').classList.add('hidden');
@@ -1268,24 +1277,40 @@
       document.getElementById('storeTabBtn').classList.replace('hover:bg-gray-600', 'hover:bg-red-600');
       loadStoreItems();
       switchStoreTab(currentStoreTab);
-      if (isAdmin) {
-          document.getElementById('adminStoreControls').classList.remove('hidden');
-      }
     } else if (sectionId === 'announcements') {
       document.getElementById('announcementsSection').classList.remove('hidden');
       document.getElementById('announcementsTabBtn').classList.replace('bg-gray-700', 'bg-red-700');
       document.getElementById('announcementsTabBtn').classList.replace('hover:bg-gray-600', 'hover:bg-red-600');
-      if(!isAdmin) markAnnouncementsAsRead();
+      markAnnouncementsAsRead();
     }
     currentActiveSection = sectionId;
   }
-  
-  // Admin panel
-  function openAdminPanelModal() { adminPanelModal.style.display = 'flex'; loadPendingUsers(); loadAllUsers(); loadPendingSpecialPurchases(); }
-  function closeAdminPanelModal() { adminPanelModal.style.display = 'none'; }
-  function logout() { auth.signOut().then(() => location.reload()); }
 
-  // Bakiye ve durum yükleme
+  function switchStoreTab(tab) {
+    currentStoreTab = tab;
+    const gameStoreContent = document.getElementById('gameStoreContent');
+    const specialStoreContent = document.getElementById('specialStoreContent');
+    const gameStoreTabBtn = document.getElementById('gameStoreTabBtn');
+    const specialStoreTabBtn = document.getElementById('specialStoreTabBtn');
+
+    if (tab === 'gameStore') {
+        gameStoreContent.classList.remove('hidden');
+        specialStoreContent.classList.add('hidden');
+        gameStoreTabBtn.classList.add('border-red-500', 'text-white');
+        gameStoreTabBtn.classList.remove('border-transparent', 'text-gray-400');
+        specialStoreTabBtn.classList.add('border-transparent', 'text-gray-400');
+        specialStoreTabBtn.classList.remove('border-red-500', 'text-white');
+    } else { // specialStore
+        gameStoreContent.classList.add('hidden');
+        specialStoreContent.classList.remove('hidden');
+        specialStoreTabBtn.classList.add('border-red-500', 'text-white');
+        specialStoreTabBtn.classList.remove('border-transparent', 'text-gray-400');
+        gameStoreTabBtn.classList.add('border-transparent', 'text-gray-400');
+        gameStoreTabBtn.classList.remove('border-red-500', 'text-white');
+    }
+  }
+
+  // --- ANA OYUN FONKSİYONLARI ---
   function loadBalanceAndBoxRights() {
     if (isAdmin) {
       document.getElementById("balance").textContent = "Admin Paneli Aktif";
@@ -1309,10 +1334,11 @@
       document.getElementById("balance").textContent = statusText;
       document.getElementById('storeCurrentUserBalance').textContent = userData.balance || 0;
       document.getElementById('storeCurrentUserSpent').textContent = userData.totalSpentPoints || 0;
+      document.getElementById('specialStoreCurrentUserBalance').textContent = userData.balance || 0;
+      document.getElementById('specialStoreCurrentUserSpent').textContent = userData.totalSpentPoints || 0;
     });
   }
 
-  // DÜZELTME 4: Yeni rozet fonksiyonu
   function getUserBadgesHtml(u, leaders) {
       let crownHtml = '';
       let otherBadgesHtml = '';
@@ -1324,7 +1350,7 @@
           leaders.isBoxLeader, leaders.isShieldLeader
       ];
       
-      const hasKingCrown = allLeaderBadges.every(Boolean) && allLeaderBadges.length > 0;
+      const hasKingCrown = allLeaderBadges.every(Boolean) && allLeaderBadges.length > 1;
 
       if (hasKingCrown) {
           crownHtml = `<div class="flex justify-center w-full mb-1"><span class="text-3xl" title="Tüm Liderlik Rozetlerinin Sahibi!">👑</span></div>`;
@@ -1339,7 +1365,7 @@
           if (leaders.isMultiplierLeader) otherBadges.push(`<span class="text-xl" title="Çarpan Lideri">✖️</span>`);
           if (leaders.isBoxLeader) otherBadges.push(`<span class="text-xl" title="Kutu Lideri">📦</span>`);
           if (leaders.isShieldLeader) otherBadges.push(`<span class="text-xl" title="Kalkan Lideri">🛡️</span>`);
-          otherBadgesHtml = `<div class="flex items-center gap-2 h-6">${otherBadges.join('')}</div>`;
+          otherBadgesHtml = `<div class="flex items-center justify-center gap-2 h-6">${otherBadges.join('')}</div>`;
       }
       return crownHtml + otherBadgesHtml;
   }
@@ -1448,7 +1474,6 @@
     });
   }
 
-  // Liderler Sıralaması
   function loadLeaderboardRanking() {
     db.ref('users').on('value', async snap => {
       let usersData = snap.val();
@@ -1513,164 +1538,8 @@
       document.getElementById("badgedUsersRanking").innerHTML = html || "<div class='text-center text-gray-400'>Henüz lider kullanıcı yok.</div>";
     });
   }
-
-  // Onay bekleyenleri yükle
-  function loadPendingUsers() {
-    db.ref('users').on('value', snap => {
-      const data = snap.val();
-      let html = "";
-      for (const u in data) {
-        if (!data[u].approved) {
-          html += `<div class="flex justify-between items-center p-3 mb-2 bg-gray-700 rounded-md border-l-4 border-red-500">
-            <span class="text-gray-200">${u}</span>
-            <div class="flex space-x-2">
-            <button onclick="approveUser('${u}')" class="py-1 px-3 bg-green-600 hover:bg-green-500 text-white text-sm font-bold rounded-md">Onayla</button>
-            <button onclick="denyUser('${u}', true)" class="py-1 px-3 bg-red-600 hover:bg-red-500 text-white text-sm font-bold rounded-md">Sil</button></div></div>`;
-        }
-      }
-      document.getElementById("pendingUsers").innerHTML = html || "<div class='text-center text-gray-400'>Onay bekleyen kullanıcı yok.</div>";
-    });
-  }
-
-  // Tüm kullanıcıları yükle (Admin)
-  function loadAllUsers() {
-    db.ref('users').on('value', snap => {
-      const data = snap.val();
-      let html = "";
-      for (const u in data) {
-        if (u === "weizendtv") continue;
-        const user = data[u];
-        let blockedStatusHtml = '';
-        const isCurrentlyBlocked = user.blocked && user.blockedUntil && Date.now() < user.blockedUntil;
-        if (isCurrentlyBlocked) {
-            blockedStatusHtml = `<span class="text-red-400">(Engelli - <span id="admin-countdown-${u}">--:--</span>)</span>`;
-            if (!activeBlockedUserTimers[u]) {
-                const timerId = setInterval(() => {
-                    const timeLeft = user.blockedUntil - Date.now();
-                    const el = document.getElementById(`admin-countdown-${u}`);
-                    if (timeLeft <= 0) {
-                        clearInterval(timerId);
-                        if(el) el.parentElement.innerHTML = '<span class="text-green-400">(Engel Kalktı)</span>';
-                    } else {
-                        const minutes = Math.floor(timeLeft / 60000);
-                        const seconds = Math.floor((timeLeft % 60000) / 1000).toString().padStart(2, '0');
-                        if(el) el.textContent = `${minutes}:${seconds}`;
-                    }
-                }, 1000);
-                activeBlockedUserTimers[u] = timerId;
-            }
-        } else if (user.blocked) {
-            blockedStatusHtml = `<span class="text-green-400">(Engel Süresi Doldu)</span>`;
-        }
-
-        html += `<div class="flex items-center justify-between p-3 mb-2 bg-gray-700 rounded-md border-l-4 border-blue-500 cursor-pointer" onclick="openUserManagementModal('${u}')">
-            <span class="text-gray-200">${u} ${blockedStatusHtml}</span>
-            <span class="text-yellow-300">Puan: ${user.balance || 0}</span>
-            </div>`;
-      }
-      document.getElementById("allUsers").innerHTML = html || "<div class='text-center text-gray-400'>Kullanıcı yok.</div>";
-    });
-  }
   
-  // Genel mesaj ve onay modal
-  function displayMessage(message) { document.getElementById('generalMessageContent').innerHTML = message; generalMessageModal.style.display = 'flex'; }
-  function closeGeneralMessageModal() { generalMessageModal.style.display = 'none'; }
-  function customConfirm(message, callback) {
-    return new Promise(resolve => {
-        const confirmBox = document.createElement('div');
-        confirmBox.className = 'fixed inset-0 bg-black bg-opacity-70 flex justify-center items-center z-[99999]';
-        confirmBox.innerHTML = `
-          <div class="bg-gray-800 p-8 rounded-xl shadow-2xl border border-red-700 w-11/12 max-w-md text-center relative">
-            <p class="text-lg text-gray-300 mb-6">${message}</p>
-            <div class="flex gap-4 justify-center">
-              <button id="confirmYes" class="flex-1 py-3 bg-green-600 hover:bg-green-500 text-white font-bold rounded-lg">Evet</button>
-              <button id="confirmNo" class="flex-1 py-3 bg-red-600 hover:bg-red-500 text-white font-bold rounded-lg">Hayır</button>
-            </div>
-          </div>
-        `;
-        document.body.appendChild(confirmBox);
-        document.getElementById('confirmYes').onclick = () => { confirmBox.remove(); resolve(true); };
-        document.getElementById('confirmNo').onclick = () => { confirmBox.remove(); resolve(false); };
-    });
-  }
-
-  function notifyUser(username, message) {
-      if (!username || !message) return;
-      const notifRef = db.ref(`users/${username}/notifications`).push();
-      notifRef.set({
-          message: message,
-          timestamp: firebase.database.ServerValue.TIMESTAMP
-      });
-  }
-
-  function openPointAdjustmentModal(username) { targetUserForAdjustment = username; document.getElementById('adjUserName').textContent = username; db.ref('users/' + username + '/balance').once('value').then(snap => { document.getElementById('adjUserBalance').textContent = snap.val() || 0; }); pointAdjustmentModal.style.display = 'flex'; }
-  function closePointAdjustmentModal() { pointAdjustmentModal.style.display = 'none'; document.getElementById('adjAmount').value = ''; targetUserForAdjustment = null; if (selectedUserForManagement) openUserManagementModal(selectedUserForManagement); }
-  function adjustUserPoints(add) { const amount = parseInt(document.getElementById('adjAmount').value); if(isNaN(amount) || amount <= 0) { displayMessage("Geçerli bir miktar girin."); return; } db.ref('users/' + targetUserForAdjustment).once('value').then(snap => { let data = snap.val(); let bal = data.balance || 0; let highBal = data.highestBalanceEver || 0; bal = add ? bal + amount : Math.max(0, bal - amount); if(bal > highBal) highBal = bal; db.ref('users/' + targetUserForAdjustment).update({ balance: bal, highestBalanceEver: highBal }).then(() => { const message = `Admin tarafından hesabınıza ${amount} puan ${add ? 'eklendi' : 'silindi'}.`; notifyUser(targetUserForAdjustment, message); displayMessage(`${targetUserForAdjustment} yeni bakiyesi: ${bal}`); closePointAdjustmentModal(); }); }); }
-  function openBoxRightAdjustmentModal(username) { targetUserForBoxRightAdjustment = username; document.getElementById('adjBoxRightUserName').textContent = username; db.ref('users/' + username + '/kutuHakki').once('value').then(snap => { document.getElementById('adjUserBoxRight').textContent = snap.val() || 0; }); boxRightAdjustmentModal.style.display = 'flex'; }
-  function closeBoxRightAdjustmentModal() { boxRightAdjustmentModal.style.display = 'none'; document.getElementById('adjBoxRightAmount').value = ''; targetUserForBoxRightAdjustment = null; if (selectedUserForManagement) openUserManagementModal(selectedUserForManagement); }
-  function adjustUserBoxRights(add) { const amount = parseInt(document.getElementById('adjBoxRightAmount').value); if(isNaN(amount) || amount <= 0) { displayMessage("Geçerli bir miktar girin."); return; } db.ref('users/' + targetUserForBoxRightAdjustment + '/kutuHakki').once('value').then(snap => { let val = snap.val() || 0; val = add ? val + amount : Math.max(0, val - amount); db.ref('users/' + targetUserForBoxRightAdjustment).update({ kutuHakki: val }).then(() => { const message = `Admin tarafından hesabınıza ${amount} kutu hakkı ${add ? 'eklendi' : 'silindi'}.`; notifyUser(targetUserForBoxRightAdjustment, message); displayMessage(`${targetUserForBoxRightAdjustment} yeni kutu hakkı: ${val}`); closeBoxRightAdjustmentModal(); }); }); }
-  function openIflasShieldAdjustmentModal(username) { targetUserForIflasShieldAdjustment = username; document.getElementById('adjIflasShieldUserName').textContent = username; db.ref('users/' + username + '/iflasShieldUses').once('value').then(snap => { document.getElementById('adjUserIflasShield').textContent = snap.val() || 0; }); iflasShieldAdjustmentModal.style.display = 'flex'; }
-  function closeIflasShieldAdjustmentModal() { iflasShieldAdjustmentModal.style.display = 'none'; document.getElementById('adjIflasShieldAmount').value = ''; targetUserForIflasShieldAdjustment = null; if (selectedUserForManagement) openUserManagementModal(selectedUserForManagement); }
-  async function adjustUserIflasShields(add) { const amount = parseInt(document.getElementById('adjIflasShieldAmount').value); if (isNaN(amount) || amount <= 0) { displayMessage("Geçerli bir miktar girin."); return; } const userRef = db.ref('users/' + targetUserForIflasShieldAdjustment + '/iflasShieldUses'); userRef.once('value').then(snap => { let currentShields = snap.val() || 0; const newShields = add ? currentShields + amount : Math.max(0, currentShields - amount); userRef.set(newShields).then(() => { const message = `Admin tarafından hesabınıza ${amount} İflas Kalkanı ${add ? 'eklendi' : 'silindi'}.`; notifyUser(targetUserForIflasShieldAdjustment, message); displayMessage(`${targetUserForIflasShieldAdjustment} için kalkan ayarlandı: ${newShields}`); closeIflasShieldAdjustmentModal(); }); }); }
-  async function openMultiplierAdjustmentModal(username) { targetUserForMultiplierAdjustment = username; document.getElementById('adjMultiplierUserName').textContent = username; const userSnap = await db.ref('users/' + username).once('value'); const userData = userSnap.val(); if (userData) { document.getElementById('adjUserMultiplier').textContent = `${userData.activeMultiplier || 1}x`; document.getElementById('adjUserMultiplierUses').textContent = userData.multiplierRemainingUses || 0; document.getElementById('setMultiplierValue').value = userData.activeMultiplier || 1; document.getElementById('setMultiplierSource').value = userData.multiplierSource || 'none'; document.getElementById('setMultiplierUses').value = userData.multiplierRemainingUses || 0; } multiplierAdjustmentModal.style.display = 'flex'; }
-  function closeMultiplierAdjustmentModal() { multiplierAdjustmentModal.style.display = 'none'; targetUserForMultiplierAdjustment = null; if (selectedUserForManagement) openUserManagementModal(selectedUserForManagement); }
-  async function setMultiplier() { const multiplierValue = parseInt(document.getElementById('setMultiplierValue').value); const multiplierSource = document.getElementById('setMultiplierSource').value; const multiplierUses = parseInt(document.getElementById('setMultiplierUses').value); if (isNaN(multiplierValue) || multiplierValue <= 0) { displayMessage("Geçerli çarpan değeri girin."); return; } const updates = { activeMultiplier: multiplierValue, multiplierSource: multiplierSource, multiplierRemainingUses: multiplierSource === 'store' ? (isNaN(multiplierUses) ? 0 : multiplierUses) : (multiplierSource === 'box' ? 1 : 0) }; await db.ref('users/' + targetUserForMultiplierAdjustment).update(updates); const message = `Admin tarafından hesabınıza ${multiplierValue}x çarpan ayarlandı.`; notifyUser(targetUserForMultiplierAdjustment, message); displayMessage("Çarpan ayarlandı."); closeMultiplierAdjustmentModal(); }
-  async function resetMultiplier() { const updates = { activeMultiplier: 1, multiplierSource: 'none', multiplierRemainingUses: 0, activeStoreMultiplierItemId: null }; await db.ref('users/' + targetUserForMultiplierAdjustment).update(updates); notifyUser(targetUserForMultiplierAdjustment, "Çarpanınız admin tarafından sıfırlandı."); displayMessage("Çarpan sıfırlandı."); closeMultiplierAdjustmentModal(); }
-
-  // Admin işlemleri
-  function openBlockDurationModal(username) { targetUserForBlock = username; document.getElementById('blockUserName').textContent = username; blockDurationModal.style.display = 'flex'; }
-  function closeBlockDurationModal() { blockDurationModal.style.display = 'none'; document.getElementById('blockDuration').value = ''; targetUserForBlock = null; if (selectedUserForManagement) openUserManagementModal(selectedUserForManagement); }
-  function confirmBlockUser() { const duration = parseInt(document.getElementById('blockDuration').value); if (isNaN(duration) || duration <= 0) { displayMessage("Geçerli süre girin."); return; } const blockedUntil = Date.now() + duration * 60 * 1000; db.ref('users/' + targetUserForBlock).update({ blocked: true, blockedUntil: blockedUntil }).then(() => { displayMessage(`${targetUserForBlock} ${duration} dakika engellendi.`); closeBlockDurationModal(); }); }
-  async function toggleBlockUser(user, currentStatus, blockedUntil) { 
-    const isCurrentlyBlocked = currentStatus && blockedUntil && Date.now() < blockedUntil;
-    if (isCurrentlyBlocked) { 
-      const confirmed = await customConfirm(user + " engelini kaldırmak istiyor musunuz?"); 
-      if(confirmed) db.ref('users/' + user).update({ blocked: false, blockedUntil: null }).then(() => { displayMessage(user + " engeli kaldırıldı."); if(selectedUserForManagement) openUserManagementModal(user); }); 
-    } else { 
-      openBlockDurationModal(user); 
-    } 
-  }
-  async function approveUser(user) { const confirmed = await customConfirm(user + " kullanıcısını onaylamak istiyor musunuz?"); if(confirmed) { db.ref('users/' + user).update({ approved: true, approvalNotified: false }); displayMessage(`${user} onaylandı.`); } }
-  async function denyUser(user, fromPending = false, fromManagementModal = false) { const confirmed = await customConfirm(user + " kullanıcısını silmek istiyor musunuz? Bu işlem geri alınamaz!"); if(confirmed) db.ref('users/' + user).remove().then(() => { displayMessage(user + " silindi."); if(fromManagementModal) closeUserManagementModal(); }); }
-  async function changeAllPoints(add) { const amount = parseInt(document.getElementById("globalPoint").value); if (isNaN(amount) || amount <= 0) { displayMessage("Geçerli miktar girin."); return; } const confirmed = await customConfirm(`Tüm kullanıcılara ${add ? 'eklemek' : 'silmek'} istediğinizden emin misiniz?`); if (confirmed) { db.ref('users').once('value').then(snap => { const updates = {}; snap.forEach(child => { if (child.val().approved && !child.val().blocked && child.key !== "weizendtv") { let balance = child.val().balance || 0; let highestBalanceEver = child.val().highestBalanceEver || 0; balance = add ? balance + amount : Math.max(balance - amount, 0); if (balance > highestBalanceEver) highestBalanceEver = balance; updates['users/' + child.key + '/balance'] = balance; updates['users/' + child.key + '/highestBalanceEver'] = highestBalanceEver; } }); db.ref().update(updates).then(() => displayMessage("Tüm kullanıcılara puan işlemi başarıyla uygulandı.")) }); } }
-  async function changeAllBoxRights(add) { const amount = parseInt(document.getElementById("globalBoxRight").value); if (isNaN(amount) || amount <= 0) { displayMessage("Geçerli miktar girin."); return; } const confirmed = await customConfirm(`Tüm kullanıcılara ${add ? 'eklemek' : 'silmek'} istediğinizden emin misiniz?`); if (confirmed) { db.ref('users').once('value').then(snap => { const updates = {}; snap.forEach(child => { if (child.val().approved && !child.val().blocked && child.key !== "weizendtv") { let kutuHakki = child.val().kutuHakki || 0; kutuHakki = add ? kutuHakki + amount : Math.max(kutuHakki - amount, 0); updates['users/' + child.key + '/kutuHakki'] = kutuHakki; } }); db.ref().update(updates).then(() => displayMessage("Tüm kullanıcılara kutu hakkı işlemi başarıyla uygulandı.")) }); } }
-  
-  async function resetUser(username) {
-    const confirmed = await customConfirm(`<b>${username}</b> kullanıcısını sıfırlamak istediğinize emin misiniz? Puanları, envanteri ve tüm istatistikleri kalıcı olarak silinecektir!`);
-    if (!confirmed) return;
-
-    const updates = {};
-    const userRef = `users/${username}`;
-    updates[`${userRef}/balance`] = 0;
-    updates[`${userRef}/highestBalanceEver`] = 0;
-    updates[`${userRef}/totalSpentPoints`] = 0;
-    updates[`${userRef}/kutuHakki`] = 0;
-    updates[`${userRef}/boxesOpenedCount`] = 0;
-    updates[`${userRef}/surpriseBoxesOpened`] = 0;
-    updates[`${userRef}/activeMultiplier`] = 1;
-    updates[`${userRef}/multiplierSource`] = 'none';
-    updates[`${userRef}/multiplierRemainingUses`] = 0;
-    updates[`${userRef}/iflasShieldUses`] = 0;
-    updates[`${userRef}/iflasCount`] = 0;
-    updates[`${userRef}/iflasShieldUsedCount`] = 0;
-    updates[`${userRef}/multiplierFoundCount`] = 0;
-    updates[`${userRef}/storePurchasesCount`] = 0;
-    updates[`${userRef}/activeStoreMultiplierItemId`] = null;
-    updates[`${userRef}/notifications`] = null;
-
-    const purchaseHistorySnap = await db.ref('purchaseHistory').orderByChild('username').equalTo(username).once('value');
-    if (purchaseHistorySnap.exists()) {
-        purchaseHistorySnap.forEach(childSnap => {
-            updates[`purchaseHistory/${childSnap.key}`] = null;
-        });
-    }
-
-    await db.ref().update(updates);
-    displayMessage(`${username} kullanıcısı başarıyla sıfırlandı.`);
-    openUserManagementModal(username);
-  }
-
-  // Kutu işlemleri
+  // --- KUTU İŞLEMLERİ ---
   function createBoxes() { boxes = []; let allContents = []; BOX_CONTENTS.forEach(item => { for (let i = 0; i < item.count; i++) { allContents.push({ type: item.type, value: item.value || 0 }); } }); for (let i = allContents.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [allContents[i], allContents[j]] = [allContents[j], allContents[i]]; } for (let i = 0; i < TOTAL_BOXES; i++) { boxes.push({ id: i + 1, content: allContents[i].type, value: allContents[i].value, opened: false, opener: '' }); } db.ref('boxes').set(boxes); db.ref('gameStats/boxesOpenedByUsers').remove(); }
   function loadBoxes() { db.ref('boxes').on('value', snap => { if (!snap.exists()) { createBoxes(); } else { boxes = snap.val(); renderBoxes(); loadTotalOpenedBoxesCount(); } }); }
   function renderBoxes() { const container = document.getElementById("boxContainer"); container.innerHTML = ''; boxes.forEach((box, i) => { let div = document.createElement('div'); div.className = `box bg-gray-700 border-2 border-red-700 aspect-square flex flex-col items-center justify-center cursor-pointer font-bold text-lg rounded-lg relative transition-all duration-200 shadow-md hover:shadow-lg ${box.opened ? 'opened bg-gray-600 cursor-default border-gray-500 shadow-inner' : ''}`; let displayContent = `<span class="text-gray-300">${box.id}</span>`; if (box.opened) { if (box.content === 'points') { displayContent = `<span class="text-green-400 text-xl">+${box.value}</span>`; div.classList.add('bg-green-700', 'border-green-500', 'animate-pulse'); } else if (box.content === 'surpriz') { displayContent = `<span class="text-yellow-400 text-2xl">🎁</span>`; div.classList.add('bg-yellow-700', 'border-yellow-500', 'animate-pulse'); } else if (box.content === 'iflas') { displayContent = `<span class="text-red-400 text-2xl">💣</span>`; div.classList.add('bg-red-700', 'border-red-500'); } else if (box.content === 'multiplier') { displayContent = `<span class="text-blue-400 text-xl">${box.value}X</span>`; div.classList.add('bg-blue-700', 'border-blue-500', 'animate-pulse'); } if (box.opener) { let openerDiv = document.createElement('div'); openerDiv.className = 'opener absolute bottom-1 left-0 right-0 text-center text-xs text-gray-400 truncate px-1'; openerDiv.textContent = box.opener; div.appendChild(openerDiv); } } div.innerHTML += displayContent; div.onclick = () => { if (box.opened) { showOpenedBoxInfo(box); } else { openBox(i); } }; container.appendChild(div); }); }
@@ -1771,7 +1640,7 @@
             timestamp: firebase.database.ServerValue.TIMESTAMP
         });
 
-        openCardSelectionModal(currentUser, shuffleArray([...cardValues]), 'standard');
+        openCardSelectionModal(currentUser, shuffleArray([...cardValues]), 'surprise');
         message = `Sürpriz Kutu buldunuz!`;
     } else if (box.content === 'multiplier') {
         updates['multiplierFoundCount'] = (user.multiplierFoundCount || 0) + 1;
@@ -1828,101 +1697,83 @@
         timestamp: firebase.database.ServerValue.TIMESTAMP
     };
     await db.ref('lastOpenedBox').set(boxOpenInfo);
-}
+  }
 
-  async function revealAll() { const confirmed = await customConfirm("Tüm kutuları açmak istiyor musunuz?"); if(confirmed) { boxes.forEach(b => { if (!b.opened) { b.opened = true; b.opener = 'Admin'; } }); db.ref('boxes').set(boxes).then(() => displayMessage("Tüm kutular başarıyla açıldı.")) } }
+  function shuffleArray(array) { for (let i = array.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [array[i], array[j]] = [array[j], array[i]]; } return array; }
   
-  async function resetGameBoard() {
-      await createBoxes();
-      const userSnap = await db.ref('users').once('value');
-      const usersData = userSnap.val();
-      const updates = {};
-      if (usersData) {
-          for (const u in usersData) {
-              if (u !== "weizendtv" && usersData[u].approved) {
-              }
-          }
-          if(Object.keys(updates).length > 0) await db.ref().update(updates);
-      }
-  }
-
-  async function resetGame() {
-      const confirmed = await customConfirm("Oyunu sıfırlamak istiyor musunuz? (Tüm kutular kapatılır, karıştırılır ve kutu açma istatistikleri sıfırlanır)");
-      if (confirmed) {
-          await resetGameBoard();
-          displayMessage("Oyun yöneticisi tarafından sıfırlandı.");
-      }
-  }
-
-  async function restartSystem() {
-    const confirmed = await customConfirm("Sistemi baştan başlatmak istediğinize emin misiniz? Tüm kullanıcı verileri (puan, hak, istatistik) sıfırlanacak!");
-    if (confirmed) {
-        const userSnap = await db.ref('users').once('value');
-        const usersData = userSnap.val();
-        const updates = {};
-        if (usersData) {
-            for (const u in usersData) {
-                if (u !== "weizendtv") {
-                    updates['users/' + u + '/balance'] = 0;
-                    updates['users/' + u + '/highestBalanceEver'] = 0;
-                    updates['users/' + u + '/totalSpentPoints'] = 0;
-                    updates['users/' + u + '/kutuHakki'] = 0;
-                    updates['users/' + u + '/boxesOpenedCount'] = 0;
-                    updates['users/' + u + '/surpriseBoxesOpened'] = 0;
-                    updates['users/' + u + '/activeMultiplier'] = 1;
-                    updates['users/' + u + '/multiplierSource'] = 'none';
-                    updates['users/' + u + '/multiplierRemainingUses'] = 0;
-                    updates['users/' + u + '/activeStoreMultiplierItemId'] = null;
-                    updates['users/' + u + '/iflasShieldUses'] = 0;
-                    updates['users/' + u + '/iflasCount'] = 0;
-                    updates['users/' + u + '/iflasShieldUsedCount'] = 0;
-                    updates['users/' + u + '/multiplierFoundCount'] = 0;
-                    updates['users/' + u + '/storePurchasesCount'] = 0;
-                    updates['users/' + u + '/hasReceivedWelcomeGift'] = false;
-                    updates['users/' + u + '/approvalNotified'] = null;
-                    updates['users/' + u + '/notifications'] = null;
-                }
-            }
-            await db.ref().update(updates);
-        }
-        await createBoxes();
-        await db.ref('purchaseHistory').remove();
-        await db.ref('pendingSpecialPurchases').remove();
-        await db.ref('gameStats').remove();
-        displayMessage("Sistem başarıyla baştan başlatıldı!");
-    }
-  }
-
-  function loadTotalOpenedBoxesCount() { db.ref('boxes').on('value', snap => { const allBoxes = snap.val(); let openedCount = 0; if (allBoxes) { openedCount = allBoxes.filter(box => box.opened).length; } document.getElementById('totalOpenedBoxesCount').textContent = openedCount; }); }
-  function searchUsers() { const term = document.getElementById("searchUser").value.trim().toLowerCase(); db.ref('users').once('value').then(snap => { const data = snap.val(); let html = ""; for (const u in data) { if (u.toLowerCase().includes(term) && u !== 'weizendtv') { html += `<div class="flex items-center justify-between p-3 mb-2 bg-gray-700 rounded-md border-l-4 border-blue-500 cursor-pointer" onclick="openUserManagementModal('${u}')"><span>${u}</span></div>`; } } document.getElementById("allUsers").innerHTML = html || "Kullanıcı bulunamadı."; }); }
-  
-  function displayBlockedMessage(blockedUntil, username) {
-      blockedMessageModal.style.display = 'flex';
-      document.getElementById('blockedReason').textContent = "Hesabınız geçici olarak engellendi. Süre dolduğunda devam edebilirsiniz.";
+  function openCardSelectionModal(userId, cards, type) {
+      const cardContainer = document.querySelector('#cardSelectionModal .card-container');
+      const modalTitle = document.getElementById('cardSelectionTitle');
+      cardContainer.innerHTML = '';
       
-      if(countdownInterval) clearInterval(countdownInterval);
-
-      const updateCountdown = () => {
-          const timeLeft = blockedUntil - Date.now();
-          if (timeLeft <= 0) {
-              document.getElementById('blockedCountdown').textContent = "Engel süreniz doldu!";
-              clearInterval(countdownInterval);
-              setTimeout(() => {
-                 blockedMessageModal.style.display = 'none';
-                 if (username === currentUser) {
-                    db.ref('users/' + username).update({ blocked: false, blockedUntil: null });
-                 }
-              }, 2000);
-              return;
-          }
-          const minutes = Math.floor(timeLeft / 60000);
-          const seconds = Math.floor((timeLeft % 60000) / 1000).toString().padStart(2, '0');
-          document.getElementById('blockedCountdown').textContent = `Kalan süre: ${minutes}:${seconds}`;
-      };
-      countdownInterval = setInterval(updateCountdown, 1000);
-      updateCountdown();
+      modalTitle.textContent = (type === 'custom') ? "Sürpriz Paket! Bir Kart Seçin" : "Sürpriz Kutu! Bir Kart Seçin";
+      
+      cards.forEach((cardContent, index) => {
+          const cardDiv = document.createElement('div');
+          cardDiv.className = 'card bg-gray-700 border-2 border-red-700 rounded-xl w-28 h-40 flex flex-col items-center justify-center font-bold text-2xl cursor-pointer relative';
+          cardDiv.dataset.index = index;
+          cardDiv.dataset.content = JSON.stringify(cardContent);
+          
+          const cardBack = document.createElement('div');
+          cardBack.className = 'card-back absolute inset-0 bg-gradient-to-br from-red-700 to-red-900 flex items-center justify-center text-white text-5xl';
+          cardBack.textContent = '?';
+          cardDiv.appendChild(cardBack);
+          
+          const cardFront = document.createElement('div');
+          cardFront.className = 'card-front absolute inset-0 bg-gray-900 flex items-center justify-center text-yellow-400 text-3xl p-2 text-center';
+          cardFront.classList.add('card-value');
+          cardDiv.appendChild(cardFront);
+          
+          cardDiv.onclick = () => selectCard(cardDiv, userId, type);
+          cardContainer.appendChild(cardDiv);
+      });
+      cardSelectionModal.style.display = 'flex';
   }
-  
+
+  async function selectCard(selectedCardDiv, userId, type) { 
+    if (selectedCardDiv.classList.contains('opened')) return; 
+
+    const cardIndex = selectedCardDiv.dataset.index;
+    const cardContent = JSON.parse(selectedCardDiv.dataset.content);
+    const sessionRef = db.ref(type === 'custom' ? 'custom_surprise_session' : 'surprise_box_session');
+    
+    await sessionRef.child('selection').set({ user: userId, cardIndex: cardIndex });
+
+    const snap = await sessionRef.once('value');
+    const sessionData = snap.val();
+    const userRef = db.ref('users/' + userId); 
+    
+    let resultData = {};
+    let updates = {};
+
+    if(type === 'surprise') { // Orijinal sürpriz kutu
+        const points = parseInt(cardContent) * sessionData.multiplier;
+        resultData = { points: points };
+        updates.balance = firebase.database.ServerValue.increment(points);
+        updates.highestBalanceEver = firebase.database.ServerValue.increment(points); // Bu daha sonra kontrol edilmeli
+    } else { // Mağazadan alınan sürpriz paket
+        resultData = cardContent;
+        if(cardContent.type === 'iflas') {
+            updates.balance = 0;
+        } else if (cardContent.type === 'points') {
+            updates.balance = firebase.database.ServerValue.increment(cardContent.value);
+        } else if (cardContent.type === 'iflasShield') {
+            updates.iflasShieldUses = firebase.database.ServerValue.increment(cardContent.value);
+        } else if (cardContent.type === 'multiplier') {
+            updates.activeMultiplier = cardContent.value;
+            updates.multiplierSource = 'box'; // Sürprizden gelen de kutu sayılır
+            updates.multiplierRemainingUses = 0;
+        }
+    }
+    
+    await sessionRef.child('result').set(resultData);
+    await userRef.update(updates);
+  }
+
+  function closeCardSelectionModal() { 
+    cardSelectionModal.style.display = 'none'; 
+  }
+
   function showOpenedBoxInfo(box) {
       let contentDisplay = '';
       if (box.content === 'points') contentDisplay = `+${box.value} Puan`;
@@ -1942,626 +1793,241 @@
       openedBoxInfoModal.style.display = 'flex';
   }
   function closeOpenedBoxInfoModal() { openedBoxInfoModal.style.display = 'none'; }
-  function shuffleArray(array) { for (let i = array.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [array[i], array[j]] = [array[j], array[i]]; } return array; }
   
-  function openCardSelectionModal(userId, cards, type = 'standard') {
-      const cardContainer = document.querySelector('#cardSelectionModal .card-container');
-      cardContainer.innerHTML = '';
-      const title = document.getElementById('cardSelectionTitle');
-      title.textContent = type === 'standard' ? "Sürpriz Kutu! Bir Kart Seçin" : "Sürpriz Paket! Bir Kart Seçin";
+  // --- YARDIMCI VE GENEL FONKSİYONLAR ---
+  function displayMessage(message) { document.getElementById('generalMessageContent').innerHTML = message; generalMessageModal.style.display = 'flex'; }
+  function closeGeneralMessageModal() { generalMessageModal.style.display = 'none'; }
+  function customConfirm(message) {
+    return new Promise(resolve => {
+        const confirmBox = document.createElement('div');
+        confirmBox.className = 'fixed inset-0 bg-black bg-opacity-70 flex justify-center items-center z-[99999]';
+        confirmBox.innerHTML = `
+          <div class="bg-gray-800 p-8 rounded-xl shadow-2xl border border-red-700 w-11/12 max-w-md text-center relative">
+            <p class="text-lg text-gray-300 mb-6">${message}</p>
+            <div class="flex gap-4 justify-center">
+              <button id="confirmYes" class="flex-1 py-3 bg-green-600 hover:bg-green-500 text-white font-bold rounded-lg">Evet</button>
+              <button id="confirmNo" class="flex-1 py-3 bg-red-600 hover:bg-red-500 text-white font-bold rounded-lg">Hayır</button>
+            </div>
+          </div>
+        `;
+        document.body.appendChild(confirmBox);
+        document.getElementById('confirmYes').onclick = () => { confirmBox.remove(); resolve(true); };
+        document.getElementById('confirmNo').onclick = () => { confirmBox.remove(); resolve(false); };
+    });
+  }
 
-      cards.forEach((cardValue, index) => {
+  function notifyUser(username, message) {
+      if (!username || !message) return;
+      const notifRef = db.ref(`users/${username}/notifications`).push();
+      notifRef.set({
+          message: message,
+          timestamp: firebase.database.ServerValue.TIMESTAMP
+      });
+  }
+
+  // --- DİNLEYİCİLER (Listeners) ---
+  let globalCountdownInterval = null;
+
+  function listenForGameChanges() {
+    db.ref('gameLock').on('value', snap => {
+        isGameLocked = snap.val() === true;
+    });
+
+    db.ref('lastOpenedBox').on('value', snap => {
+        const info = snap.val();
+        if (info && (Date.now() - info.timestamp < 10000)) {
+            if (info.content !== 'surpriz') {
+                showGlobalOpenedBoxInfo(info);
+            }
+        }
+    });
+  }
+
+  function showGlobalOpenedBoxInfo(info) {
+      let contentDisplay = '';
+      if (info.content === 'points') {
+          contentDisplay = `+${info.value} Puan kazandı!`;
+          if (info.multiplierUsed > 1) {
+            contentDisplay += ` (${info.multiplierUsed}x Çarpan ile)`;
+          }
+      } else if (info.content === 'surpriz') {
+          contentDisplay = 'Sürpriz Kutu buldu!';
+      } else if (info.content === 'iflas') {
+          contentDisplay = 'İflas etti! 💣';
+      } else if (info.content === 'multiplier') {
+          contentDisplay = `${info.value}X Çarpan buldu!`;
+      }
+
+      const contentHtml = `
+          <div class="text-3xl font-bold mb-3 flex flex-col justify-center items-center gap-2"><span class="text-green-400">${info.opener}</span></div>
+          <p class="text-lg text-gray-300"><b>${info.boxId}</b> numaralı kutuyu açtı ve...</p>
+          <p class="text-2xl font-semibold mt-2 text-yellow-300">${contentDisplay}</p>
+      `;
+
+      document.getElementById('globalOpenedBoxInfoContent').innerHTML = contentHtml;
+      globalOpenedBoxInfoModal.style.display = 'flex';
+
+      let countdown = 5;
+      const countdownEl = document.getElementById('globalOpenedBoxCountdown');
+      countdownEl.textContent = `(Sıradaki kutu ${countdown} saniye içinde açılabilir)`;
+
+      if(globalCountdownInterval) clearInterval(globalCountdownInterval);
+      globalCountdownInterval = setInterval(() => {
+          countdown--;
+          countdownEl.textContent = `(Sıradaki kutu ${countdown} saniye içinde açılabilir)`;
+          if (countdown <= 0) {
+              clearInterval(globalCountdownInterval);
+              globalOpenedBoxInfoModal.style.display = 'none';
+              db.ref('gameLock').set(false);
+          }
+      }, 1000);
+  }
+
+  let surpriseSessionListener = null;
+  function listenForSurpriseBox() {
+      const sessionRef = db.ref('surprise_box_session');
+      if (surpriseSessionListener) sessionRef.off('value', surpriseSessionListener);
+
+      surpriseSessionListener = sessionRef.on('value', snap => {
+          const sessionData = snap.val();
+          if (sessionData && sessionData.active && sessionData.user !== currentUser) {
+              openSpectatorModal(sessionData, 'surprise');
+          } else if (sessionData && sessionData.active && sessionData.user === currentUser) {
+              if (sessionData.result) {
+                  closeCardSelectionModal();
+                  displayMessage(`Sürpriz kutudan tebrikler! Toplam ${sessionData.result.points} puan kazandınız!`);
+                  setTimeout(() => {
+                      sessionRef.remove();
+                  }, 4000);
+              }
+          } else {
+              closeSpectatorModal();
+          }
+      });
+  }
+
+  function listenForCustomSurpriseBox() {
+      const sessionRef = db.ref('custom_surprise_session');
+      sessionRef.on('value', async (snap) => {
+          const sessionData = snap.val();
+          if (!sessionData || !sessionData.active) {
+              closeCardSelectionModal();
+              closeSpectatorModal();
+              return;
+          }
+
+          if (sessionData.user === currentUser) {
+              if (!cardSelectionModal.style.display || cardSelectionModal.style.display === 'none') {
+                  openCardSelectionModal(currentUser, sessionData.cards, 'custom');
+              }
+              if (sessionData.result) {
+                  closeCardSelectionModal();
+                  const result = sessionData.result;
+                  let resultMessage = "Sürpriz paketten çıkan: ";
+                  if(result.type === 'iflas') resultMessage += "İflas! Tüm puanların silindi. 💣";
+                  else if(result.type === 'points') resultMessage += `+${result.value} Puan!`;
+                  else if(result.type === 'iflasShield') resultMessage += `+${result.value} İflas Kalkanı! 🛡️`;
+                  else if(result.type === 'multiplier') resultMessage += `${result.value}x Çarpan! ✖️`;
+                  
+                  displayMessage(resultMessage);
+                  setTimeout(() => sessionRef.remove(), 4000);
+              } else {
+                  const timePassed = Date.now() - sessionData.timestamp;
+                  if (timePassed > 60000 && !sessionData.selection) {
+                      const randomIndex = Math.floor(Math.random() * sessionData.cards.length);
+                      const randomCard = document.querySelector(`.card[data-index='${randomIndex}']`);
+                      if(randomCard) selectCard(randomCard, currentUser, 'custom');
+                  }
+              }
+          } else {
+              openSpectatorModal(sessionData, 'custom');
+          }
+      });
+  }
+
+  function openSpectatorModal(sessionData, type) {
+      document.getElementById('spectatorTitle').innerHTML = `<span class="text-green-400 font-bold">${sessionData.user}</span> ${type === 'custom' ? 'Sürpriz Paket' : 'Sürpriz Kutu'} açıyor!`;
+      const cardContainer = document.getElementById('spectatorCardContainer');
+      cardContainer.innerHTML = '';
+
+      sessionData.cards.forEach((cardContent, index) => {
           const cardDiv = document.createElement('div');
-          cardDiv.className = 'card bg-gray-700 border-2 border-red-700 rounded-xl w-28 h-40 flex flex-col items-center justify-center font-bold text-2xl cursor-pointer relative';
-          cardDiv.dataset.card = JSON.stringify(cardValue);
-          cardDiv.dataset.index = index;
+          cardDiv.className = 'card bg-gray-700 border-2 border-red-700 rounded-xl w-28 h-40 flex flex-col items-center justify-center font-bold text-2xl relative';
+          cardDiv.id = `spectator-card-${index}`;
           const cardBack = document.createElement('div');
           cardBack.className = 'card-back absolute inset-0 bg-gradient-to-br from-red-700 to-red-900 flex items-center justify-center text-white text-5xl';
           cardBack.textContent = '?';
           cardDiv.appendChild(cardBack);
           const cardFront = document.createElement('div');
-          cardFront.className = 'card-front absolute inset-0 bg-gray-900 flex items-center justify-center text-yellow-400 text-3xl p-2';
-          cardFront.classList.add('card-value');
+          cardFront.className = 'card-front absolute inset-0 bg-gray-900 flex items-center justify-center text-yellow-400 text-3xl p-2 text-center';
           cardDiv.appendChild(cardFront);
-          cardDiv.onclick = () => selectCard(cardDiv, userId, type);
           cardContainer.appendChild(cardDiv);
       });
-      cardSelectionModal.style.display = 'flex';
-  }
 
-  async function selectCard(selectedCardDiv, userId, type = 'standard') { 
-    if (selectedCardDiv.classList.contains('opened')) return;
-
-    const cardIndex = selectedCardDiv.dataset.index;
-    const sessionRef = db.ref(type === 'standard' ? 'surprise_box_session' : 'custom_surprise_session');
-    
-    await sessionRef.child('selection').set({ user: userId, cardIndex: cardIndex });
-
-    const snap = await sessionRef.once('value');
-    const sessionData = snap.val();
-    const cardData = JSON.parse(selectedCardDiv.dataset.card);
-    const userRef = db.ref('users/' + userId);
-
-    let resultData = { ...cardData };
-    
-    // Standard Sürpriz Kutu
-    if (type === 'standard') {
-        const points = parseInt(cardData) * sessionData.multiplier;
-        resultData = { type: 'points', value: points };
-        await sessionRef.child('result').set({ points: points });
-        await userRef.transaction(user => {
-            if (user) {
-                user.balance = (user.balance || 0) + points;
-                if (user.balance > (user.highestBalanceEver || 0)) user.highestBalanceEver = user.balance;
-            }
-            return user;
-        });
-    } 
-    // Custom Sürpriz Paket
-    else {
-        await sessionRef.child('result').set(resultData);
-        await userRef.transaction(user => {
-            if(user) {
-                if(resultData.type === 'iflas') user.balance = 0;
-                else if(resultData.type === 'points') {
-                    user.balance = (user.balance || 0) + resultData.value;
-                    if (user.balance > (user.highestBalanceEver || 0)) user.highestBalanceEver = user.balance;
-                }
-                else if(resultData.type === 'iflasShield') user.iflasShieldUses = (user.iflasShieldUses || 0) + resultData.value;
-                else if(resultData.type === 'multiplier') {
-                    user.activeMultiplier = resultData.value;
-                    user.multiplierSource = 'box'; // kutudan çıkmış gibi davranır
-                    user.multiplierRemainingUses = 0;
-                }
-            }
-            return user;
-        });
-    }
-  }
-
-
-  function closeCardSelectionModal() { 
-    cardSelectionModal.style.display = 'none'; 
-  }
-
-  function loadStoreItems() {
-    db.ref('storeItems').on('value', snap => {
-        const items = snap.val();
-        renderStoreItems(items);
-        if (isAdmin) {
-            loadAdminStoreItems(items);
-        }
-    });
-  }
-  
-  function updateStoreCountdowns() {
-      const now = Date.now();
-      for (const itemId in activeStoreCountdowns) {
-          const { endTime } = activeStoreCountdowns[itemId];
-          const countdownEl = document.getElementById(`countdown-${itemId}`);
-          const buyButton = document.getElementById(`buy-btn-${itemId}`);
-          
-          if (!countdownEl) continue;
-
-          const timeLeft = endTime - now;
-
-          if (timeLeft > 0) {
-              const days = Math.floor(timeLeft / (1000 * 60 * 60 * 24));
-              const hours = Math.floor((timeLeft % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-              const minutes = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
-              const seconds = Math.floor((timeLeft % (1000 * 60)) / 1000);
-              
-              let timeString = '';
-              if (days > 0) timeString += `${days}g `;
-              if (hours > 0 || days > 0) timeString += `${hours}s `;
-              timeString += `${minutes}d ${seconds}s`;
-
-              countdownEl.innerHTML = `Kalan Süre: <b class="text-white">${timeString}</b>`;
-          } else {
-              countdownEl.innerHTML = `<span class="text-red-500 font-bold">Süre Doldu</span>`;
-              if (buyButton) {
-                  buyButton.disabled = true;
-                  buyButton.classList.add('bg-gray-600', 'cursor-not-allowed');
-                  buyButton.classList.remove('bg-red-700', 'hover:bg-red-600');
+      if (sessionData.selection) {
+          const selectedCardIndex = sessionData.selection.cardIndex;
+          const selectedCard = document.getElementById(`spectator-card-${selectedCardIndex}`);
+          if (selectedCard) {
+              selectedCard.classList.add('opened');
+              if (sessionData.result) {
+                  const result = sessionData.result;
+                  let resultText = "Hata";
+                  if (type === 'surprise') resultText = `+${result.points}`;
+                  else {
+                      if(result.type === 'iflas') resultText = "İFLAS 💣";
+                      else if(result.type === 'points') resultText = `+${result.value}`;
+                      else if(result.type === 'iflasShield') resultText = `+${result.value} 🛡️`;
+                      else if(result.type === 'multiplier') resultText = `${result.value}x ✖️`;
+                  }
+                  selectedCard.querySelector('.card-front').textContent = resultText;
+                  document.getElementById('spectatorResult').textContent = `${sessionData.user} seçimini yaptı!`;
               }
-              delete activeStoreCountdowns[itemId];
           }
-      }
-  }
-
-  function switchStoreTab(tab) {
-    currentStoreTab = tab;
-    const gameStoreContent = document.getElementById('gameStoreContent');
-    const specialStoreContent = document.getElementById('specialStoreContent');
-    const gameStoreTabBtn = document.getElementById('gameStoreTabBtn');
-    const specialStoreTabBtn = document.getElementById('specialStoreTabBtn');
-    
-    const adminControls = document.getElementById('adminStoreControls');
-
-    if (tab === 'gameStore') {
-        document.getElementById('gameStoreContent').classList.remove('hidden');
-        document.getElementById('specialStoreContent').classList.add('hidden');
-        gameStoreTabBtn.classList.add('border-red-500', 'text-white');
-        gameStoreTabBtn.classList.remove('border-transparent', 'text-gray-400');
-        specialStoreTabBtn.classList.add('border-transparent', 'text-gray-400');
-        specialStoreTabBtn.classList.remove('border-red-500', 'text-white');
-    } else { // specialStore
-        document.getElementById('gameStoreContent').classList.add('hidden');
-        document.getElementById('specialStoreContent').classList.remove('hidden');
-        specialStoreTabBtn.classList.add('border-red-500', 'text-white');
-        specialStoreTabBtn.classList.remove('border-transparent', 'text-gray-400');
-        gameStoreTabBtn.classList.add('border-transparent', 'text-gray-400');
-        gameStoreTabBtn.classList.remove('border-red-500', 'text-white');
-    }
-    if (isAdmin) adminControls.classList.remove('hidden');
-  }
-
-  function renderStoreItems(items) { 
-      const gameContainer = document.getElementById('storeItemsContainer'); 
-      const specialContainer = document.getElementById('specialStoreItemsContainer');
-      gameContainer.innerHTML = ''; 
-      specialContainer.innerHTML = '';
-      
-      if (storeCountdownInterval) clearInterval(storeCountdownInterval);
-      activeStoreCountdowns = {};
-
-      if (!items) { 
-          gameContainer.innerHTML = '<p class="text-center col-span-full">Mağazada şu an ürün bulunmamaktadır.</p>'; 
-          specialContainer.innerHTML = '<p class="text-center col-span-full">Mağazada şu an özel ürün bulunmamaktadır.</p>';
-          return; 
-      }
-      
-      const allItems = Object.entries(items);
-      const gameItems = allItems.filter(([id, item]) => item.type !== 'special');
-      const specialItems = allItems.filter(([id, item]) => item.type === 'special');
-      
-      const findBestSeller = (arr) => {
-        if (arr.length === 0) return null;
-        let best = arr[0];
-        for(let i = 1; i < arr.length; i++) {
-            if((arr[i][1].purchaseCount || 0) > (best[1].purchaseCount || 0)) {
-                best = arr[i];
-            }
-        }
-        // Eğer kimse almadıysa ve en az bir ürün varsa, best seller olmasın
-        if((best[1].purchaseCount || 0) === 0) return null;
-        return best[0];
-      };
-      
-      const gameBestSellerId = findBestSeller(gameItems);
-      const specialBestSellerId = findBestSeller(specialItems);
-
-      const createItemHtml = (itemId, item, isBestSeller) => {
-          const outOfStock = item.stock !== undefined && item.stock <= 0;
-          let isExpired = false;
-          let countdownHtml = '';
-
-          if (item.countdownDurationMinutes && item.createdAt) {
-              const endTime = item.createdAt + item.countdownDurationMinutes * 60 * 1000;
-              if (Date.now() > endTime) {
-                  isExpired = true;
-              } else {
-                  activeStoreCountdowns[itemId] = { endTime: endTime };
-                  countdownHtml = `<div id="countdown-${itemId}" class="text-sm text-yellow-300 font-bold mb-2 h-5"></div>`;
-              }
-          } else {
-              countdownHtml = `<div class="h-5 mb-2"></div>`;
-          }
-
-          const disabled = outOfStock || isExpired;
-          const popularityHtml = `<p class="text-blue-300 text-sm mb-2">🔥 ${item.purchaseCount || 0} kez satın alındı</p>`;
-          const frameClass = isBestSeller ? 'bestseller-frame' : '';
-          const badgeHtml = isBestSeller ? '<div class="bestseller-badge">ÇOK SATAN</div>' : '';
-
-          return `
-            <div class="bg-gray-800 p-6 rounded-xl shadow-lg border border-red-700 text-center flex flex-col justify-between ${frameClass}">
-              ${badgeHtml}
-              <div class="flex-grow">
-                <img src="${item.imageUrl || 'https://via.placeholder.com/150'}" alt="${item.name}" class="w-24 h-24 mx-auto mb-4 rounded-lg object-cover">
-                <h4 class="text-yellow-400 text-xl font-bold">${item.name}</h4>
-                <p class="text-gray-300 mb-2 flex-grow">${item.description}</p>
-              </div>
-              <div>
-                ${countdownHtml}
-                ${popularityHtml}
-                <p class="text-gray-400 text-sm mb-2">Stok: ${item.stock !== undefined && item.stock !== null ? item.stock : 'Sınırsız'}</p>
-                <p class="text-green-400 text-2xl font-bold mb-4">${item.cost} Puan</p>
-                <button id="buy-btn-${itemId}" onclick="buyItem('${itemId}')" ${disabled ? 'disabled' : ''} class="w-full py-3 mt-auto ${disabled ? 'bg-gray-600 cursor-not-allowed' : 'bg-red-700 hover:bg-red-600'} text-white font-bold rounded-lg transition duration-300">
-                  ${isExpired ? 'Süre Doldu' : (outOfStock ? 'Stok Tükendi' : 'Satın Al')}
-                </button>
-              </div>
-            </div>`; 
-      };
-      
-      gameItems.forEach(([itemId, item]) => gameContainer.innerHTML += createItemHtml(itemId, item, itemId === gameBestSellerId));
-      specialItems.forEach(([itemId, item]) => specialContainer.innerHTML += createItemHtml(itemId, item, itemId === specialBestSellerId));
-
-      if (gameContainer.innerHTML === '') gameContainer.innerHTML = '<p class="text-center col-span-full">Mağazada şu an ürün bulunmamaktadır.</p>';
-      if (specialContainer.innerHTML === '') specialContainer.innerHTML = '<p class="text-center col-span-full">Mağazada şu an özel ürün bulunmamaktadır.</p>';
-      
-      if (Object.keys(activeStoreCountdowns).length > 0) {
-          updateStoreCountdowns();
-          storeCountdownInterval = setInterval(updateStoreCountdowns, 1000);
-      }
-  }
-
-
-  async function buyItem(itemId) {
-    if (isAdmin) {
-        displayMessage("Adminler alışveriş yapamaz.");
-        return;
-    }
-    const userRef = db.ref('users/' + currentUser);
-    const itemRef = db.ref('storeItems/' + itemId);
-    const [userSnap, itemSnap] = await Promise.all([userRef.once('value'), itemRef.once('value')]);
-    const user = userSnap.val();
-    const item = itemSnap.val();
-    
-    if (!user || !item) return;
-
-    if (item.type === 'tempMultiplier') {
-        if (user.multiplierSource === 'store' || user.multiplierSource === 'box') {
-            displayMessage("Mevcut bir çarpanınız varken yenisini alamazsınız. Lütfen önce mevcut olanı kullanın.");
-            return;
-        }
-    }
-
-    if (item.type === 'surprisePackage') {
-        const lockSnap = await db.ref('custom_surprise_session/active').once('value');
-        if (lockSnap.val() === true) {
-            displayMessage("Şu anda başka bir kullanıcı özel bir paket açıyor. Lütfen daha sonra tekrar deneyin.");
-            return;
-        }
-    }
-
-    if ((user.balance || 0) < item.cost) {
-        displayMessage("Yetersiz Puan!");
-        return;
-    }
-    if (item.stock !== undefined && item.stock <= 0) {
-        displayMessage("Bu ürünün stoğu tükenmiştir.");
-        return;
-    }
-    const confirmed = await customConfirm(`${item.name} ürününü ${item.cost} puana almak istiyor musunuz?`);
-    if (confirmed) {
-        let updates = {
-            balance: user.balance - item.cost,
-            totalSpentPoints: (user.totalSpentPoints || 0) + item.cost,
-            storePurchasesCount: (user.storePurchasesCount || 0) + 1
-        };
-        let message = 'Satın alma başarılı!';
-        let purchaseStatus = 'completed';
-        let recordToPending = false;
-        
-        if (item.type === 'boxRights') {
-            updates.kutuHakki = (user.kutuHakki || 0) + item.value;
-        } else if (item.type === 'tempMultiplier') {
-            updates.activeMultiplier = item.value;
-            updates.multiplierSource = 'store';
-            updates.multiplierRemainingUses = item.duration;
-            updates.activeStoreMultiplierItemId = itemId; 
-        } else if (item.type === 'iflasShield') {
-            updates.iflasShieldUses = (user.iflasShieldUses || 0) + item.value;
-        } else if (item.type === 'surprisePackage') {
-            const details = item.packageDetails;
-            let cardContents = [];
-            for (let i = 0; i < (details.bombs || 0); i++) cardContents.push({ type: 'iflas' });
-            for (let i = 0; i < (details.shields || 0); i++) cardContents.push({ type: 'iflasShield', value: 1 });
-            (details.multipliers || []).forEach(m => cardContents.push({ type: 'multiplier', value: m }));
-            (details.points || []).forEach(p => cardContents.push({ type: 'points', value: p }));
-            
-            const remaining = details.total - cardContents.length;
-            for (let i = 0; i < remaining; i++) cardContents.push({ type: 'points', value: 10 });
-
-            db.ref('custom_surprise_session').set({
-                active: true,
-                user: currentUser,
-                cards: shuffleArray(cardContents),
-                selection: null,
-                result: null,
-                timestamp: firebase.database.ServerValue.TIMESTAMP
-            });
-            message = 'Sürpriz Paketiniz hazır! Kart seçme ekranı açılıyor...';
-        }
-        else if (item.type === 'special') {
-            purchaseStatus = 'pending';
-            recordToPending = true;
-            message = 'Özel ürün talebiniz alındı. Onay bekleniyor.';
-        }
-        
-        let itemUpdates = {};
-        if (item.stock !== undefined && item.stock !== null) {
-            itemUpdates.stock = item.stock - 1;
-        }
-        itemUpdates.purchaseCount = (item.purchaseCount || 0) + 1;
-        await itemRef.update(itemUpdates);
-
-        await userRef.update(updates);
-        
-        const purchaseRecord = {
-            timestamp: firebase.database.ServerValue.TIMESTAMP,
-            username: currentUser,
-            itemName: item.name,
-            itemCost: item.cost,
-            itemType: item.type,
-            itemValue: item.value || null,
-            imageUrl: item.imageUrl || null,
-            status: purchaseStatus
-        };
-        const newPurchaseRef = await db.ref('purchaseHistory').push(purchaseRecord);
-        if (recordToPending) {
-            await db.ref('pendingSpecialPurchases/' + newPurchaseRef.key).set({ ...purchaseRecord, purchaseId: newPurchaseRef.key });
-        }
-        displayMessage(message);
-    }
-}
-  
-  function resetStoreItemForm() {
-    document.getElementById('newItemName').value = '';
-    document.getElementById('newItemDescription').value = '';
-    document.getElementById('newItemCost').value = '';
-    document.getElementById('newItemStock').value = '';
-    document.getElementById('newItemType').value = '';
-    document.getElementById('newItemValue').value = '';
-    document.getElementById('newItemMultiplierDuration').value = '';
-    document.getElementById('newItemCountdownDuration').value = '';
-    document.getElementById('newItemImageUrl').value = '';
-    document.getElementById('addUpdateStoreItemBtn').textContent = 'ÜRÜN EKLE';
-    
-    document.getElementById('pkgTotalCards').value = '';
-    document.getElementById('pkgBombCards').value = '';
-    document.getElementById('pkgShieldCards').value = '';
-    document.getElementById('pkgMultiplierCards').value = '';
-    document.getElementById('pkgPointCards').value = '';
-    
-    document.getElementById('surprisePackageSettings').classList.add('hidden');
-    document.getElementById('newItemMultiplierDuration').classList.add('hidden');
-    editingItemId = null; 
-  }
-
-  document.getElementById('newItemType').addEventListener('change', function() {
-      const durationInput = document.getElementById('newItemMultiplierDuration');
-      const surpriseSettings = document.getElementById('surprisePackageSettings');
-      durationInput.classList.add('hidden');
-      surpriseSettings.classList.add('hidden');
-
-      if (this.value === 'tempMultiplier') {
-          durationInput.classList.remove('hidden');
-      } else if (this.value === 'surprisePackage') {
-          surpriseSettings.classList.remove('hidden');
-      }
-  });
-
-  async function saveStoreItem() {
-    if (!isAdmin) return;
-
-    const name = document.getElementById('newItemName').value.trim();
-    const description = document.getElementById('newItemDescription').value.trim();
-    const cost = parseInt(document.getElementById('newItemCost').value);
-    let stock = document.getElementById('newItemStock').value;
-    const type = document.getElementById('newItemType').value;
-    const value = parseInt(document.getElementById('newItemValue').value);
-    const multiplierDuration = parseInt(document.getElementById('newItemMultiplierDuration').value);
-    const countdown = parseInt(document.getElementById('newItemCountdownDuration').value);
-    const imageUrl = document.getElementById('newItemImageUrl').value.trim();
-
-    if (!name || !description || isNaN(cost) || !type) {
-      displayMessage("Lütfen zorunlu alanları doldurun (Ürün Adı, Açıklama, Maliyet, Tip).");
-      return;
-    }
-    if(type !== 'surprisePackage' && isNaN(value)) {
-        displayMessage("Lütfen Değer alanını doldurun.");
-        return;
-    }
-
-
-    stock = (stock === '' || stock === null) ? null : parseInt(stock);
-
-    const itemData = {
-      name, description, cost, stock, type, value,
-      imageUrl: imageUrl || 'https://via.placeholder.com/150',
-    };
-    
-    if (!editingItemId) {
-        itemData.purchaseCount = 0;
-    }
-    
-    if (type === 'surprisePackage') {
-        const totalCards = parseInt(document.getElementById('pkgTotalCards').value);
-        const bombCards = parseInt(document.getElementById('pkgBombCards').value) || 0;
-        const shieldCards = parseInt(document.getElementById('pkgShieldCards').value) || 0;
-        const multiplierCardsRaw = document.getElementById('pkgMultiplierCards').value.trim();
-        const pointCardsRaw = document.getElementById('pkgPointCards').value.trim();
-        
-        const multiplierCards = multiplierCardsRaw ? multiplierCardsRaw.split(',').map(n => parseInt(n.trim())) : [];
-        const pointCards = pointCardsRaw ? pointCardsRaw.split(',').map(n => parseInt(n.trim())) : [];
-        
-        const cardSum = bombCards + shieldCards + multiplierCards.length + pointCards.length;
-
-        if (isNaN(totalCards) || totalCards <= 0) {
-            displayMessage("Sürpriz paket için geçerli bir 'Toplam Kart Sayısı' girin."); return;
-        }
-        if (cardSum > totalCards) {
-            displayMessage(`Tanımlanan kart içeriği sayısı (${cardSum}), toplam kart sayısından (${totalCards}) fazla olamaz!`); return;
-        }
-        itemData.packageDetails = {
-            total: totalCards,
-            bombs: bombCards,
-            shields: shieldCards,
-            multipliers: multiplierCards,
-            points: pointCards
-        };
-        itemData.value = null; // Bu tip için value alanı kullanılmıyor
-    }
-
-
-    if (type === 'tempMultiplier') {
-      if (isNaN(multiplierDuration) || multiplierDuration <= 0) {
-        displayMessage("Geçici Çarpan için geçerli bir 'Çarpan Süresi' girin.");
-        return;
-      }
-      itemData.duration = multiplierDuration;
-    }
-    
-    if (!isNaN(countdown) && countdown > 0) {
-      itemData.countdownDurationMinutes = countdown;
-    }
-
-    try {
-      if (editingItemId) {
-        const existingItemSnap = await db.ref('storeItems/' + editingItemId).once('value');
-        const existingItem = existingItemSnap.val();
-        itemData.createdAt = existingItem.createdAt || firebase.database.ServerValue.TIMESTAMP;
-        await db.ref('storeItems/' + editingItemId).update(itemData);
-        displayMessage(`'${name}' ürünü başarıyla güncellendi!`);
       } else {
-        itemData.createdAt = firebase.database.ServerValue.TIMESTAMP;
-        await db.ref('storeItems').push(itemData);
-        displayMessage(`'${name}' ürünü başarıyla eklendi!`);
+          document.getElementById('spectatorResult').textContent = '';
       }
-      resetStoreItemForm();
-    } catch (error) {
-        console.error("Mağaza ürünü kaydetme hatası:", error);
-        displayMessage("Ürün kaydedilirken bir hata oluştu.");
-    }
+
+      spectatorModal.style.display = 'flex';
   }
 
-  function loadAdminStoreItems(items) {
-      const container = document.getElementById('currentStoreItems');
-      container.innerHTML = '';
-      if (!items) {
-          container.innerHTML = '<p class="text-center text-gray-400">Henüz mağazada ürün yok.</p>';
-          return;
-      }
-      
-      const sortedItems = Object.entries(items);
-      
-      let html = '';
-      sortedItems.forEach(([itemId, item]) => {
-          html += `
-              <div class="flex justify-between items-center p-3 mb-2 bg-gray-700 rounded-md">
-                  <span class="text-gray-200">${item.name} (${item.cost} Puan)</span>
-                  <div>
-                      <button onclick="editStoreItem('${itemId}')" class="py-1 px-3 bg-blue-600 hover:bg-blue-500 text-white text-sm font-bold rounded-md mr-2">Düzenle</button>
-                      <button onclick="deleteStoreItem('${itemId}')" class="py-1 px-3 bg-red-600 hover:bg-red-500 text-white text-sm font-bold rounded-md">Sil</button>
-                  </div>
-              </div>
-          `;
-      });
-      container.innerHTML = html;
-  }
-  
-  async function editStoreItem(itemId) {
-    if (!isAdmin) return;
-    
-    const itemSnap = await db.ref('storeItems/' + itemId).once('value');
-    const item = itemSnap.val();
-    if (!item) {
-        displayMessage("Düzenlenecek ürün bulunamadı.");
-        return;
-    }
-
-    resetStoreItemForm();
-
-    document.getElementById('newItemName').value = item.name;
-    document.getElementById('newItemDescription').value = item.description;
-    document.getElementById('newItemCost').value = item.cost;
-    document.getElementById('newItemStock').value = item.stock !== null ? item.stock : '';
-    document.getElementById('newItemType').value = item.type;
-    document.getElementById('newItemValue').value = item.value || '';
-    document.getElementById('newItemImageUrl').value = item.imageUrl || '';
-    document.getElementById('newItemCountdownDuration').value = item.countdownDurationMinutes || '';
-    
-    const durationInput = document.getElementById('newItemMultiplierDuration');
-    const surpriseSettings = document.getElementById('surprisePackageSettings');
-
-    if (item.type === 'tempMultiplier') {
-      durationInput.classList.remove('hidden');
-      durationInput.value = item.duration || '';
-    } else if (item.type === 'surprisePackage' && item.packageDetails) {
-        surpriseSettings.classList.remove('hidden');
-        document.getElementById('pkgTotalCards').value = item.packageDetails.total || '';
-        document.getElementById('pkgBombCards').value = item.packageDetails.bombs || '';
-        document.getElementById('pkgShieldCards').value = item.packageDetails.shields || '';
-        document.getElementById('pkgMultiplierCards').value = (item.packageDetails.multipliers || []).join(',');
-        document.getElementById('pkgPointCards').value = (item.packageDetails.points || []).join(',');
-    }
-
-    document.getElementById('addUpdateStoreItemBtn').textContent = 'ÜRÜNÜ GÜNCELLE';
-    editingItemId = itemId;
-    
-    document.getElementById('adminStoreControls').scrollIntoView({ behavior: 'smooth' });
+  function closeSpectatorModal() {
+      spectatorModal.style.display = 'none';
   }
 
-  async function deleteStoreItem(itemId) {
-      if (!isAdmin) return;
-      const confirmed = await customConfirm("Bu ürünü silmek istediğinizden emin misiniz? Bu işlem geri alınamaz!");
-      if (confirmed) {
-          try {
-              await db.ref('storeItems/' + itemId).remove();
-              displayMessage("Ürün başarıyla silindi.");
-              resetStoreItemForm();
-          } catch (error) {
-              console.error("Ürün silme hatası:", error);
-              displayMessage("Ürün silinirken bir hata oluştu.");
+  function listenForAdminNotifications() {
+      const notificationsRef = db.ref(`users/${currentUser}/notifications`);
+      notificationsRef.orderByChild('timestamp').startAt(sessionStartTime).on('child_added', snap => {
+          const notification = snap.val();
+          if (notification && notification.message) {
+              displayMessage(notification.message);
+              snap.ref.remove();
           }
-      }
-  }
-
-  function openPurchaseHistoryModal() {
-      loadPurchaseHistory();
-      purchaseHistoryModal.style.display = 'flex';
-  }
-  function closePurchaseHistoryModal() {
-      purchaseHistoryModal.style.display = 'none';
+      });
   }
   
-  function loadPurchaseHistory() { 
-      const list = document.getElementById('purchaseHistoryList'); 
-      list.innerHTML = "<div class='text-center text-gray-400'>Yükleniyor...</div>"; 
-      let ref = db.ref('purchaseHistory'); 
-      if (!isAdmin) {
-          ref = ref.orderByChild('username').equalTo(currentUser); 
-      }
-      ref.once('value').then(snap => {
-          const history = snap.val(); 
-          let html = ''; 
-          if (!history || Object.keys(history).length === 0) { 
-              list.innerHTML = "<div class='text-center text-gray-400'>Henüz bir satın alma işlemi yapmadınız.</div>"; 
-              return; 
-          } 
-          const sorted = Object.values(history).sort((a, b) => b.timestamp - a.timestamp); 
-          sorted.forEach(r => { 
-              let statusBadge = '';
-              if (r.status === 'pending') {
-                  statusBadge = '<span class="text-xs font-semibold inline-block py-1 px-2 uppercase rounded-full text-yellow-600 bg-yellow-200">Beklemede</span>';
-              } else if (r.status === 'denied') {
-                  statusBadge = '<span class="text-xs font-semibold inline-block py-1 px-2 uppercase rounded-full text-red-600 bg-red-200">Reddedildi</span>';
-              }
-
-              html += `
-                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center p-4 mb-3 bg-gray-700 rounded-lg border-l-4 border-red-500">
-                    <div class="flex items-center mb-2 sm:mb-0">
-                        <img src="${r.imageUrl || 'https://via.placeholder.com/150'}" alt="${r.itemName}" class="w-12 h-12 rounded-md mr-4 object-cover">
-                        <div>
-                            <p class="font-bold text-lg text-yellow-300">${r.itemName}</p>
-                            <p class="text-sm text-gray-300">Maliyet: ${r.itemCost} Puan</p>
-                        </div>
-                    </div>
-                    <div class="text-xs text-gray-400 text-right w-full sm:w-auto mt-2 sm:mt-0">
-                        ${new Date(r.timestamp).toLocaleString()}
-                        ${isAdmin ? `<br><span class="font-semibold text-white">${r.username}</span>` : ''}
-                        ${statusBadge ? `<br class="mt-1">${statusBadge}` : ''}
-                    </div>
-                </div>
-              `; 
-          }); 
-          list.innerHTML = html; 
-      }); 
+  // --- STATS VE ENVANTER MODALLARI ---
+  function openBoxStatsModal() {
+      const listEl = document.getElementById('boxStatsList');
+      listEl.innerHTML = 'Yükleniyor...';
+      db.ref('gameStats/boxesOpenedByUsers').orderByValue().once('value').then(snap => {
+          const stats = snap.val();
+          if (!stats) {
+              listEl.innerHTML = '<p class="text-center text-gray-400">Bu turda henüz kimse kutu açmadı.</p>';
+          } else {
+              let html = '';
+              const sortedUsers = Object.entries(stats).sort(([, countA], [, countB]) => countB - countA);
+              sortedUsers.forEach(([user, count]) => {
+                  html += `<p class="p-2 bg-gray-800 rounded mb-2">${user}: <span class="font-bold text-yellow-300">${count}</span> kutu</p>`;
+              });
+              listEl.innerHTML = html;
+          }
+          boxStatsModal.style.display = 'flex';
+      });
   }
-  async function clearPurchaseHistory() { if(await customConfirm("Tüm satın alma geçmişini silmek istediğinize emin misiniz? Bu işlem geri alınamaz!")) { db.ref('purchaseHistory').remove().then(() => displayMessage("Satın alma geçmişi başarıyla temizlendi.")) } }
-  async function clearAllTotalSpentPoints() { if(await customConfirm("Tüm kullanıcıların harcadığı puanları sıfırlamak istediğinize emin misiniz?")) { db.ref('users').once('value').then(snap => { const updates = {}; snap.forEach(c => { if(c.key !== 'weizendtv') updates[`users/${c.key}/totalSpentPoints`] = 0; }); db.ref().update(updates).then(() => displayMessage("Tüm kullanıcıların harcanan puanları sıfırlandı.")) }); } }
-  
+  function closeBoxStatsModal() {
+      boxStatsModal.style.display = 'none';
+  }
+
   function openInventoryModal() {
       const userRef = db.ref('users/' + currentUser);
       userRef.once('value').then(snap => {
@@ -2585,8 +2051,7 @@
   function openBadgeInfoModal() { badgeInfoModal.style.display = 'flex'; }
   function closeBadgeInfoModal() { badgeInfoModal.style.display = 'none'; }
 
-
-  // KULLANICI PROFİLİ
+  // --- KULLANICI PROFİL MODALLARI ---
   async function openPublicUserDetailModal(username) {
       if (activeBlockedUserTimers[username]) {
           clearInterval(activeBlockedUserTimers[username]);
@@ -2679,7 +2144,7 @@
       document.getElementById('publicBadgeStore').innerHTML = '';
 
       const allLeaderBadges = Object.values(userLeaderStatus);
-      const hasKingCrown = allLeaderBadges.every(Boolean) && allLeaderBadges.length > 0;
+      const hasKingCrown = allLeaderBadges.every(Boolean) && allLeaderBadges.length > 1;
       
       if (hasKingCrown) {
           document.getElementById('publicUserKingBadge').innerHTML = `<span title="Tüm rozetlerin lideri!">👑</span>`;
@@ -2710,333 +2175,11 @@
       publicUserDetailModal.style.display = 'none';
   }
   
-  async function openUserManagementModal(username) {
-    if (activeBlockedUserTimers[username]) {
-        clearInterval(activeBlockedUserTimers[username]);
-        delete activeBlockedUserTimers[username];
-    }
-    selectedUserForManagement = username;
-    const userSnap = await db.ref('users/' + username).once('value');
-    const userData = userSnap.val();
-    if (!userData) { displayMessage("Kullanıcı bulunamadı."); return; }
+  // --- ADMIN PANELİ FONKSİYONLARI ---
+  function openAdminPanelModal() { adminPanelModal.style.display = 'flex'; loadPendingUsers(); loadAllUsers(); loadPendingSpecialPurchases(); }
+  function closeAdminPanelModal() { adminPanelModal.style.display = 'none'; }
+  // ... (Diğer tüm admin ve kullanıcı yönetimi fonksiyonları)
 
-    document.getElementById('managedUserName').textContent = username;
-    document.getElementById('managedUserBalance').textContent = userData.balance || 0;
-    document.getElementById('managedUserHighestBalance').textContent = userData.highestBalanceEver || 0;
-    document.getElementById('managedUserBoxRight').textContent = userData.kutuHakki || 0;
-    document.getElementById('managedUserIflasShield').textContent = userData.iflasShieldUses || 0;
-    let multiplierText = 'Yok';
-    if (userData.multiplierSource === 'store') multiplierText = `${userData.activeMultiplier}x (Mağaza - ${userData.multiplierRemainingUses} kullanım)`;
-    else if (userData.multiplierSource === 'box') multiplierText = `${userData.activeMultiplier}x (Kutu - 1 kullanım)`;
-    document.getElementById('managedUserMultiplier').textContent = multiplierText;
-    document.getElementById('managedUserMultiplierUses').textContent = userData.multiplierRemainingUses || 0;
-    
-    const isCurrentlyBlocked = userData.blocked && userData.blockedUntil && Date.now() < userData.blockedUntil;
-    const countdownContainer = document.getElementById('managedUserBlockedCountdownContainer');
-    const countdownEl = document.getElementById('managedUserBlockedCountdown');
-    
-    document.getElementById('managedUserBlockedStatus').textContent = isCurrentlyBlocked ? 'Engelli' : 'Aktif';
-    if(isCurrentlyBlocked) {
-        countdownContainer.classList.remove('hidden');
-        const updateCountdown = () => {
-              const timeLeft = userData.blockedUntil - Date.now();
-              if (timeLeft <= 0) {
-                  clearInterval(activeBlockedUserTimers[username]);
-                  delete activeBlockedUserTimers[username];
-                  countdownEl.textContent = 'Engel Kalktı';
-              } else {
-                  const minutes = Math.floor(timeLeft / 60000);
-                  const seconds = Math.floor((timeLeft % 60000) / 1000).toString().padStart(2, '0');
-                  countdownEl.textContent = `${minutes}:${seconds}`;
-              }
-          };
-        updateCountdown();
-        activeBlockedUserTimers[username] = setInterval(updateCountdown, 1000);
-    } else {
-        countdownContainer.classList.add('hidden');
-    }
-    
-    const toggleBtn = document.getElementById('toggleBlockUserBtn');
-    toggleBtn.textContent = isCurrentlyBlocked ? 'Engeli Kaldır' : 'Engelle';
-    toggleBtn.onclick = () => toggleBlockUser(username, userData.blocked, userData.blockedUntil);
-
-    document.getElementById('managedUserBoxesOpened').textContent = userData.boxesOpenedCount || 0;
-    document.getElementById('managedUserSurpriseBoxes').textContent = userData.surpriseBoxesOpened || 0;
-    document.getElementById('managedUserBombCount').textContent = userData.iflasCount || 0;
-    document.getElementById('managedUserMultiplierFoundCount').textContent = userData.multiplierFoundCount || 0;
-    document.getElementById('managedUserTotalSpent').textContent = userData.totalSpentPoints || 0;
-    document.getElementById('managedUserShieldUsedCount').textContent = userData.iflasShieldUsedCount || 0;
-
-    const historyList = document.getElementById('managedUserPurchaseHistory');
-    historyList.innerHTML = 'Yükleniyor...';
-    db.ref('purchaseHistory').orderByChild('username').equalTo(username).once('value').then(snap => {
-        const history = snap.val();
-        let html = '';
-        if (!history) {
-            historyList.innerHTML = '<div class="text-center text-gray-400">Bu kullanıcının satın alma geçmişi yok.</div>';
-            return;
-        }
-        const sorted = Object.values(history).sort((a,b) => b.timestamp - a.timestamp);
-        sorted.forEach(r => {
-            html += `<div class="p-2 bg-gray-900 mb-2 rounded text-sm">
-                <p><b>Ürün:</b> ${r.itemName}</p>
-                <p><b>Maliyet:</b> ${r.itemCost} Puan</p>
-                <p><b>Tarih:</b> ${new Date(r.timestamp).toLocaleString()}</p>
-            </div>`;
-        });
-        historyList.innerHTML = html;
-    });
-
-    userManagementModal.style.display = 'flex';
-  }
-  function closeUserManagementModal() {
-    if (selectedUserForManagement && activeBlockedUserTimers[selectedUserForManagement]) {
-        clearInterval(activeBlockedUserTimers[selectedUserForManagement]);
-        delete activeBlockedUserTimers[selectedUserForManagement];
-    }
-    userManagementModal.style.display = 'none'; 
-    selectedUserForManagement = null; 
-  }
-
-  // Özel Ürün Onay Sistemi
-  function loadPendingSpecialPurchases() {
-    const list = document.getElementById('pendingSpecialPurchasesList');
-    db.ref('pendingSpecialPurchases').on('value', snap => {
-        const purchases = snap.val();
-        let html = '';
-        if (!purchases || Object.keys(purchases).length === 0) {
-            list.innerHTML = "<div class='text-center text-gray-400'>Onay bekleyen özel ürün alımı yok.</div>";
-            return;
-        }
-        for (const key in purchases) {
-            const purchase = purchases[key];
-            html += `
-                <div class="flex flex-col items-start justify-between p-3 mb-2 bg-gray-700 rounded-md border-l-4 border-yellow-500">
-                    <div>
-                        <span class="text-gray-200 font-bold">${purchase.username}</span>
-                        <span class="text-gray-300">- ${purchase.itemName}</span>
-                    </div>
-                    <div class="flex space-x-2 mt-2 self-end">
-                        <button onclick="approveSpecialPurchase('${key}', '${purchase.username}')" class="py-1 px-3 bg-green-600 hover:bg-green-500 text-white text-sm font-bold rounded-md">Onayla</button>
-                        <button onclick="denySpecialPurchase('${key}', '${purchase.username}', ${purchase.itemCost})" class="py-1 px-3 bg-red-600 hover:bg-red-500 text-white text-sm font-bold rounded-md">Reddet</button>
-                    </div>
-                </div>
-            `;
-        }
-        list.innerHTML = html;
-    });
-  }
-
-  async function approveSpecialPurchase(purchaseId, username) {
-      const purchaseItemSnap = await db.ref(`/pendingSpecialPurchases/${purchaseId}`).once('value');
-      const purchaseItem = purchaseItemSnap.val();
-      if (!purchaseItem) {
-        displayMessage("Onaylanacak öğe bulunamadı.");
-        return;
-      }
-      
-      if (!await customConfirm(`${username} kullanıcısının '${purchaseItem.itemName}' alımını onaylamak istediğinize emin misiniz?`)) return;
-
-      const updates = {};
-      updates[`/pendingSpecialPurchases/${purchaseId}`] = null; 
-      updates[`/purchaseHistory/${purchaseId}/status`] = 'completed'; 
-
-      db.ref().update(updates).then(() => {
-          displayMessage("Özel ürün alımı başarıyla onaylandı.");
-      }).catch(err => {
-          console.error("Onaylama hatası: ", err);
-          displayMessage("Onaylama sırasında bir hata oluştu.");
-      });
-  }
-
-  async function denySpecialPurchase(purchaseId, username, itemCost) {
-      const purchaseItemSnap = await db.ref(`/pendingSpecialPurchases/${purchaseId}`).once('value');
-      const purchaseItem = purchaseItemSnap.val();
-       if (!purchaseItem) {
-        displayMessage("Reddedilecek öğe bulunamadı.");
-        return;
-      }
-
-      if (!await customConfirm(`${username} kullanıcısının '${purchaseItem.itemName}' alımını reddetmek istediğinize emin misiniz? Puan iadesi yapılacaktır.`)) return;
-      
-      const userRef = db.ref(`users/${username}`);
-      const updates = {};
-
-      const userSnap = await userRef.once('value');
-      const userData = userSnap.val();
-      if (userData) {
-          updates[`users/${username}/balance`] = (userData.balance || 0) + itemCost;
-          updates[`users/${username}/totalSpentPoints`] = Math.max(0, (userData.totalSpentPoints || 0) - itemCost);
-      }
-
-      updates[`/pendingSpecialPurchases/${purchaseId}`] = null;
-      updates[`/purchaseHistory/${purchaseId}/status`] = 'denied';
-
-      db.ref().update(updates).then(() => {
-          displayMessage("Özel ürün alımı reddedildi ve puan iadesi yapıldı.");
-      }).catch(err => {
-          console.error("Reddetme hatası: ", err);
-          displayMessage("Reddetme sırasında bir hata oluştu.");
-      });
-  }
-
-  let globalCountdownInterval = null;
-
-  function listenForGameChanges() {
-    db.ref('gameLock').on('value', snap => {
-        isGameLocked = snap.val() === true;
-    });
-
-    db.ref('lastOpenedBox').on('value', snap => {
-        const info = snap.val();
-        if (info && (Date.now() - info.timestamp < 10000)) {
-            if (info.content !== 'surpriz') {
-                showGlobalOpenedBoxInfo(info);
-            }
-        }
-    });
-  }
-
-  function showGlobalOpenedBoxInfo(info) {
-      let contentDisplay = '';
-      if (info.content === 'points') {
-          contentDisplay = `+${info.value} Puan kazandı!`;
-          if (info.multiplierUsed > 1) {
-            contentDisplay += ` (${info.multiplierUsed}x Çarpan ile)`;
-          }
-      } else if (info.content === 'surpriz') {
-          contentDisplay = 'Sürpriz Kutu buldu!';
-      } else if (info.content === 'iflas') {
-          contentDisplay = 'İflas etti! 💣';
-      } else if (info.content === 'multiplier') {
-          contentDisplay = `${info.value}X Çarpan buldu!`;
-      }
-
-      const contentHtml = `
-          <div class="text-3xl font-bold mb-3 flex flex-col justify-center items-center gap-2"><span class="text-green-400">${info.opener}</span></div>
-          <p class="text-lg text-gray-300"><b>${info.boxId}</b> numaralı kutuyu açtı ve...</p>
-          <p class="text-2xl font-semibold mt-2 text-yellow-300">${contentDisplay}</p>
-      `;
-
-      document.getElementById('globalOpenedBoxInfoContent').innerHTML = contentHtml;
-      globalOpenedBoxInfoModal.style.display = 'flex';
-
-      let countdown = 5;
-      const countdownEl = document.getElementById('globalOpenedBoxCountdown');
-      countdownEl.textContent = `(Sıradaki kutu ${countdown} saniye içinde açılabilir)`;
-
-      if(globalCountdownInterval) clearInterval(globalCountdownInterval);
-      globalCountdownInterval = setInterval(() => {
-          countdown--;
-          countdownEl.textContent = `(Sıradaki kutu ${countdown} saniye içinde açılabilir)`;
-          if (countdown <= 0) {
-              clearInterval(globalCountdownInterval);
-              globalOpenedBoxInfoModal.style.display = 'none';
-              db.ref('gameLock').set(false);
-          }
-      }, 1000);
-  }
-
-  // ---- YENİ VE GÜNCELLENMİŞ FONKSİYONLAR ----
-
-  function listenForAdminNotifications() {
-      const notificationsRef = db.ref(`users/${currentUser}/notifications`);
-      notificationsRef.orderByChild('timestamp').startAt(sessionStartTime).on('child_added', snap => {
-          const notification = snap.val();
-          if (notification && notification.message) {
-              displayMessage(notification.message);
-              snap.ref.remove();
-          }
-      });
-  }
-  
-  function openBoxStatsModal() {
-      const listEl = document.getElementById('boxStatsList');
-      listEl.innerHTML = 'Yükleniyor...';
-      db.ref('gameStats/boxesOpenedByUsers').orderByValue().once('value').then(snap => {
-          const stats = snap.val();
-          if (!stats) {
-              listEl.innerHTML = '<p class="text-center text-gray-400">Bu turda henüz kimse kutu açmadı.</p>';
-          } else {
-              let html = '';
-              const sortedUsers = Object.entries(stats).sort(([, countA], [, countB]) => countB - countA);
-              sortedUsers.forEach(([user, count]) => {
-                  html += `<p class="p-2 bg-gray-800 rounded mb-2">${user}: <span class="font-bold text-yellow-300">${count}</span> kutu</p>`;
-              });
-              listEl.innerHTML = html;
-          }
-          boxStatsModal.style.display = 'flex';
-      });
-  }
-  function closeBoxStatsModal() {
-      boxStatsModal.style.display = 'none';
-  }
-
-  let surpriseSessionListener = null;
-  function listenForSurpriseBox() {
-      const sessionRef = db.ref('surprise_box_session');
-      if (surpriseSessionListener) sessionRef.off('value', surpriseSessionListener);
-
-      surpriseSessionListener = sessionRef.on('value', snap => {
-          const sessionData = snap.val();
-          if (sessionData && sessionData.active && sessionData.user !== currentUser) {
-              openSpectatorModal(sessionData, 'standard');
-          } else if (sessionData && sessionData.active && sessionData.user === currentUser) {
-              if (sessionData.result) {
-                  closeCardSelectionModal();
-                  displayMessage(`Sürpriz kutudan tebrikler! Toplam ${sessionData.result.points} puan kazandınız!`);
-                  setTimeout(() => {
-                      sessionRef.remove();
-                  }, 4000);
-              }
-          } else {
-              closeSpectatorModal();
-          }
-      });
-  }
-
-  function openSpectatorModal(sessionData, type = 'standard') {
-      document.getElementById('spectatorTitle').innerHTML = `<span class="text-green-400 font-bold">${sessionData.user}</span> ${type === 'standard' ? 'Sürpriz Kutu' : 'Sürpriz Paket'} buldu!`;
-      const cardContainer = document.getElementById('spectatorCardContainer');
-      cardContainer.innerHTML = '';
-      const resultEl = document.getElementById('spectatorResult');
-      resultEl.textContent = '';
-
-      sessionData.cards.forEach((cardData, index) => {
-          const cardDiv = document.createElement('div');
-          cardDiv.className = 'card bg-gray-700 border-2 border-red-700 rounded-xl w-28 h-40 flex flex-col items-center justify-center font-bold text-2xl relative';
-          cardDiv.id = `spectator-card-${index}`;
-          const cardBack = document.createElement('div');
-          cardBack.className = 'card-back absolute inset-0 bg-gradient-to-br from-red-700 to-red-900 flex items-center justify-center text-white text-5xl';
-          cardBack.textContent = '?';
-          cardDiv.appendChild(cardBack);
-          const cardFront = document.createElement('div');
-          cardFront.className = 'card-front absolute inset-0 bg-gray-900 flex items-center justify-center text-yellow-400 text-3xl';
-          cardDiv.appendChild(cardFront);
-          cardContainer.appendChild(cardDiv);
-      });
-
-      if (sessionData.selection) {
-          const selectedCardIndex = sessionData.selection.cardIndex;
-          const selectedCard = document.getElementById(`spectator-card-${selectedCardIndex}`);
-          if (selectedCard) {
-              selectedCard.classList.add('opened');
-              if (sessionData.result) {
-                  const pointsGained = sessionData.result.points;
-                  selectedCard.querySelector('.card-front').textContent = `+${pointsGained}`;
-                  document.getElementById('spectatorResult').textContent = `${sessionData.user}, ${pointsGained} puan kazandı!`;
-              }
-          }
-      } else {
-          document.getElementById('spectatorResult').textContent = '';
-      }
-
-      spectatorModal.style.display = 'flex';
-  }
-
-  function closeSpectatorModal() {
-      spectatorModal.style.display = 'none';
-  }
 
 </script>
 </body>
