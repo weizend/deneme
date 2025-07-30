@@ -45,54 +45,9 @@
   .card-front {
     transform: rotateY(-180deg);
   }
-  /* DÜZELTME 5: Kick yayın penceresi stilleri */
-  #kick-embed-container {
-    position: fixed;
-    top: 80px; /* Butonun altına alındı */
-    right: 10px;
-    z-index: 9999;
-    width: 350px;
-    display: none; /* Başlangıçta gizli */
-    flex-direction: column;
-    gap: 5px;
-  }
-  #kick-embed-container.active {
-    display: flex; /* JS ile bu class eklendiğinde görünür olacak */
-  }
-  #kick-embed-container iframe {
-    border: 2px solid #b71c1c;
-    border-radius: 10px;
-  }
-  #kick-toggle-button {
-      position: fixed;
-      top: 15px; /* Konumu ayarlandı */
-      right: 15px;
-      z-index: 10000;
-      background-color: #b71c1c;
-      color: white;
-      border: 2px solid white;
-      border-radius: 10px;
-      width: 80px;
-      height: 50px;
-      cursor: pointer;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      font-weight: bold;
-      font-size: 1.1rem;
-      transition: background-color 0.3s;
-  }
-  #kick-toggle-button:hover {
-    background-color: #ff4444;
-  }
 </style>
 </head>
 <body class="bg-gray-900 text-white min-h-screen flex flex-col items-center py-8 px-4">
-  <button id="kick-toggle-button">YAYIN</button>
-  <div id="kick-embed-container">
-      <iframe id="kick-stream-iframe" height="200" src="https://player.kick.com/weizendtv?autoplay=true&muted=true" allowfullscreen></iframe>
-      <iframe id="kick-chat-iframe" height="300" src="https://kick.com/weizendtv/chat"></iframe>
-  </div>
 
   <header class="w-full max-w-4xl bg-gradient-to-r from-red-700 to-black text-white text-3xl font-extrabold tracking-wider py-4 rounded-xl shadow-xl mb-8 text-center">
     WEIZENDTV KUTU OYUNU
@@ -124,27 +79,17 @@
         <div id="kickWarning" class="bg-yellow-900/50 border border-yellow-400 text-yellow-300 px-4 py-3 rounded-lg relative mb-4 text-center">
             <strong class="font-bold">Kick Kullanıcı Adı Zorunludur!</strong>
             <span class="block sm:inline">Lütfen Kick platformundaki kullanıcı adınız ile kayıt olunuz.</span>
+            <br>
+            <span class="block sm:inline font-bold text-red-400 mt-2">ÖNEMLİ: Lütfen Kick şifrenizi değil, bu siteye özel yeni bir şifre oluşturun!</span>
         </div>
         <input type="text" id="registerUsername" placeholder="Kick Kullanıcı Adı" autocomplete="username"
                class="w-full p-3 mb-4 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500 transition duration-300" />
-        <input type="email" id="registerEmail" placeholder="E-posta Adresi" autocomplete="email"
-               class="w-full p-3 mb-4 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500 transition duration-300" />
-        <input type="password" id="registerPassword" placeholder="Şifre" autocomplete="new-password"
+        <input type="password" id="registerPassword" placeholder="Şifre (Yeni Bir Şifre Oluşturun)" autocomplete="new-password"
                class="w-full p-3 mb-4 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500 transition duration-300" />
         <input type="password" id="registerPasswordConfirm" placeholder="Şifre Tekrar" autocomplete="new-password"
+               class="w-full p-3 mb-4 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500 transition duration-300" />
+        <input type="text" id="registerPin" placeholder="6 Haneli Unutulmaz Rakam (PIN)" maxlength="6"
                class="w-full p-3 mb-6 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500 transition duration-300" />
-        
-        <h3 class="text-yellow-400 font-semibold mb-3 text-center">Güvenlik Sorusu (Şifre Sıfırlama İçin)</h3>
-        <select id="securityQuestion1" class="w-full p-3 mb-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500">
-            <option value="">Güvenlik Sorusu Seçin</option>
-            <option value="pet">İlk evcil hayvanınızın adı nedir?</option>
-            <option value="city">Doğduğunuz şehir hangisidir?</option>
-            <option value="mother">Annenizin kızlık soyadı nedir?</option>
-            <option value="school">İlk okulunuzun adı nedir?</option>
-            <option value="food">En sevdiğiniz yemek nedir?</option>
-            <option value="dream">Çocukluk hayalinizdeki meslek neydi?</option>
-        </select>
-        <input type="text" id="securityAnswer1" placeholder="Cevap" class="w-full p-3 mb-6 bg-gray-700 border border-gray-600 rounded-lg text-white">
 
         <button onclick="register()"
                 class="w-full py-3 bg-red-700 hover:bg-red-600 text-white font-bold rounded-lg shadow-md hover:shadow-lg transform hover:-translate-y-1 transition duration-300">
@@ -509,19 +454,13 @@
     <div class="modal-content bg-gray-800 p-8 rounded-xl shadow-2xl border border-red-700 w-11/12 max-w-md text-center relative">
         <button class="modal-close-button absolute top-2 right-4 text-white text-4xl" onclick="closePasswordResetModal()">&times;</button>
         <div id="resetStep1">
-            <h4 class="text-yellow-400 text-2xl font-bold mb-6">Şifre Sıfırlama (Adım 1/3)</h4>
+            <h4 class="text-yellow-400 text-2xl font-bold mb-6">Şifre Sıfırlama (Adım 1/2)</h4>
             <input type="text" id="resetUsername" placeholder="Kick Kullanıcı Adı" class="w-full p-3 mb-4 bg-gray-700 rounded-lg">
-            <input type="email" id="resetEmail" placeholder="E-posta Adresi" class="w-full p-3 mb-4 bg-gray-700 rounded-lg">
+            <input type="text" id="resetPin" placeholder="6 Haneli PIN" maxlength="6" class="w-full p-3 mb-4 bg-gray-700 rounded-lg">
             <button onclick="verifyResetInfo()" class="w-full py-3 mt-4 bg-red-700 hover:bg-red-600 rounded-lg font-bold">Bilgileri Doğrula</button>
         </div>
-        <div id="resetStep2" class="hidden">
-            <h4 class="text-yellow-400 text-2xl font-bold mb-6">Şifre Sıfırlama (Adım 2/3)</h4>
-            <div id="resetQuestionsContainer" class="text-left">
-            </div>
-            <button onclick="verifySecurityAnswer()" class="w-full py-3 mt-4 bg-red-700 hover:bg-red-600 rounded-lg font-bold">Cevabı Kontrol Et</button>
-        </div>
         <div id="resetStep3" class="hidden">
-            <h4 class="text-yellow-400 text-2xl font-bold mb-6">Yeni Şifre Belirle (Adım 3/3)</h4>
+            <h4 class="text-yellow-400 text-2xl font-bold mb-6">Yeni Şifre Belirle (Adım 2/2)</h4>
             <input type="password" id="newPassword" placeholder="Yeni Şifre" class="w-full p-3 mb-4 bg-gray-700 rounded-lg">
             <input type="password" id="newPasswordConfirm" placeholder="Yeni Şifre Tekrar" class="w-full p-3 mb-4 bg-gray-700 rounded-lg">
             <button onclick="updatePassword()" class="w-full py-3 mt-4 bg-red-700 hover:bg-red-600 rounded-lg font-bold">Şifreyi Güncelle</button>
@@ -958,13 +897,11 @@
   // Kayıt
   async function register() {
     const username = document.getElementById("registerUsername").value.trim().toLowerCase();
-    const email = document.getElementById("registerEmail").value.trim().toLowerCase();
     const password = document.getElementById("registerPassword").value.trim();
     const passwordConfirm = document.getElementById("registerPasswordConfirm").value.trim();
-    const q1 = document.getElementById("securityQuestion1").value;
-    const a1 = document.getElementById("securityAnswer1").value.trim().toLowerCase();
+    const pin = document.getElementById("registerPin").value.trim();
 
-    if (!username || !email || !password || !passwordConfirm || !q1 || !a1) {
+    if (!username || !password || !passwordConfirm || !pin) {
         displayMessage("Lütfen tüm alanları eksiksiz doldurun.");
         return;
     }
@@ -980,12 +917,11 @@
         displayMessage("Şifreler uyuşmuyor!");
         return;
     }
-
-    const existingUserSnap = await db.ref('users').orderByChild('email').equalTo(email).once('value');
-    if (existingUserSnap.exists()) {
-        displayMessage("Bu e-posta adresi zaten kayıtlı.");
+    if (!/^\d{6}$/.test(pin)) {
+        displayMessage("PIN, 6 haneli bir rakam olmalıdır!");
         return;
     }
+
     const existingUsernameSnap = await db.ref('users/' + username).once('value');
     if (existingUsernameSnap.exists()) {
         displayMessage("Bu Kick kullanıcı adı zaten alınmış.");
@@ -996,9 +932,7 @@
     if (confirmed) {
         const newUser = {
             password: password,
-            email: email,
-            securityQuestion1: q1,
-            securityAnswer1: a1,
+            pin: pin,
             balance: 0,
             highestBalanceEver: 0,
             totalSpentPoints: 0,
@@ -1032,74 +966,38 @@
   }
 
   // Şifre Sıfırlama
-  function getSecurityQuestionText(key) {
-      const questions = {
-          'pet': 'İlk evcil hayvanınızın adı nedir?',
-          'city': 'Doğduğunuz şehir hangisidir?',
-          'mother': 'Annenizin kızlık soyadı nedir?',
-          'school': 'İlk okulunuzun adı nedir?',
-          'food': 'En sevdiğiniz yemek nedir?',
-          'dream': 'Çocukluk hayalinizdeki meslek neydi?'
-      };
-      return questions[key] || "Bilinmeyen Soru";
-  }
-
   function openPasswordResetModal() {
     document.getElementById('resetStep1').classList.remove('hidden');
-    document.getElementById('resetStep2').classList.add('hidden');
     document.getElementById('resetStep3').classList.add('hidden');
     document.getElementById('resetUsername').value = '';
-    document.getElementById('resetEmail').value = '';
-    document.getElementById('resetQuestionsContainer').innerHTML = '';
+    document.getElementById('resetPin').value = '';
     passwordResetModal.style.display = 'flex';
   }
 
   async function verifyResetInfo() {
       const username = document.getElementById('resetUsername').value.trim().toLowerCase();
-      const email = document.getElementById('resetEmail').value.trim().toLowerCase();
-      if (!username || !email) {
-          displayMessage("Kullanıcı adı ve e-posta gereklidir.");
+      const pin = document.getElementById('resetPin').value.trim();
+      
+      if (!username || !pin) {
+          displayMessage("Kullanıcı adı ve PIN gereklidir.");
           return;
       }
+
       const userSnap = await db.ref('users/' + username).once('value');
       if (!userSnap.exists()) {
           displayMessage("Kullanıcı bulunamadı.");
           return;
       }
+
       const userData = userSnap.val();
-      if (userData.email !== email) {
-          displayMessage("Girilen e-posta adresi kullanıcı ile eşleşmiyor.");
+      if (userData.pin !== pin) {
+          displayMessage("Girilen PIN, kullanıcı ile eşleşmiyor.");
           return;
       }
       
       userForPasswordReset = username;
-      const qContainer = document.getElementById('resetQuestionsContainer');
-      qContainer.innerHTML = `
-          <p class="text-left mb-2 text-gray-300 font-semibold">${getSecurityQuestionText(userData.securityQuestion1)}</p>
-          <input type="text" id="resetAnswer1" placeholder="Güvenlik Sorusunun Cevabı" class="w-full p-3 bg-gray-700 rounded-lg">
-      `;
-      
       document.getElementById('resetStep1').classList.add('hidden');
-      document.getElementById('resetStep2').classList.remove('hidden');
-  }
-
-  async function verifySecurityAnswer() {
-      if (!userForPasswordReset) return;
-      const answer = document.getElementById('resetAnswer1').value.trim().toLowerCase();
-      if (!answer) {
-          displayMessage("Lütfen güvenlik sorusunu cevaplayın.");
-          return;
-      }
-      
-      const userSnap = await db.ref('users/' + userForPasswordReset).once('value');
-      const userData = userSnap.val();
-      
-      if (userData && userData.securityAnswer1 === answer) {
-          document.getElementById('resetStep2').classList.add('hidden');
-          document.getElementById('resetStep3').classList.remove('hidden');
-      } else {
-          displayMessage("Güvenlik sorusunun cevabı yanlış.");
-      }
+      document.getElementById('resetStep3').classList.remove('hidden');
   }
 
   async function updatePassword() {
@@ -2849,20 +2747,6 @@
   function closeSpectatorModal() {
       spectatorModal.style.display = 'none';
   }
-  
-  // DÜZELTME 5: Kick embed butonu için güncellenmiş listener
-  document.getElementById('kick-toggle-button').addEventListener('click', () => {
-      const container = document.getElementById('kick-embed-container');
-      const button = document.getElementById('kick-toggle-button');
-      
-      container.classList.toggle('active');
-
-      if (container.classList.contains('active')) {
-          button.textContent = 'GİZLE';
-      } else {
-          button.textContent = 'YAYIN';
-      }
-  });
 
 </script>
 </body>
