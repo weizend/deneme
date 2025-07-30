@@ -45,6 +45,36 @@
   .card-front {
     transform: rotateY(-180deg);
   }
+  .notification-dot {
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    width: 12px;
+    height: 12px;
+    background-color: #ff4444;
+    border-radius: 50%;
+    border: 2px solid #1f2937; /* bg-gray-800 */
+    display: none; /* Default hidden */
+  }
+  .bestseller-badge {
+    position: absolute;
+    top: -10px;
+    left: -10px;
+    background: linear-gradient(45deg, #f59e0b, #ef4444);
+    color: white;
+    padding: 4px 12px;
+    font-size: 12px;
+    font-weight: bold;
+    transform: rotate(-20deg);
+    border-radius: 4px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.5);
+    z-index: 10;
+  }
+  .bestseller-frame {
+      border: 3px solid #f59e0b;
+      box-shadow: 0 0 15px #f59e0b;
+      position: relative;
+  }
 </style>
 </head>
 <body class="bg-gray-900 text-white min-h-screen flex flex-col items-center py-8 px-4">
@@ -112,6 +142,11 @@
                 class="py-2 px-6 bg-purple-700 hover:bg-purple-600 text-white font-bold rounded-lg shadow-md hover:shadow-lg transform hover:-translate-y-1 transition duration-300">
           Envanter
         </button>
+        <button id="dailyRewardButton" onclick="openDailyRewardModal()"
+                class="py-2 px-6 bg-yellow-500 hover:bg-yellow-400 text-black font-bold rounded-lg shadow-md hover:shadow-lg transform hover:-translate-y-1 transition duration-300 relative">
+          Günlük Ödül
+          <span id="dailyRewardNotification" class="notification-dot" style="display: none;"></span>
+        </button>
         <button id="adminPanelToggleButton" onclick="openAdminPanelModal()"
                 class="py-2 px-6 bg-blue-700 hover:bg-blue-600 text-white font-bold rounded-lg shadow-md hover:shadow-lg transform hover:-translate-y-1 transition duration-300 hidden">
           Admin Paneli
@@ -126,7 +161,12 @@
       </button>
       <button id="storeTabBtn" onclick="showSection('store')"
               class="py-3 px-8 bg-gray-700 hover:bg-gray-600 text-white font-bold rounded-lg shadow-md hover:shadow-lg transform hover:-translate-y-1 transition duration-300">
-        Mağaza
+        Puan Alışverişi
+      </button>
+      <button id="announcementsTabBtn" onclick="showSection('announcements')"
+              class="py-3 px-8 bg-gray-700 hover:bg-gray-600 text-white font-bold rounded-lg shadow-md hover:shadow-lg transform hover:-translate-y-1 transition duration-300 relative">
+        Duyurular
+        <span id="announcementNotification" class="notification-dot"></span>
       </button>
     </div>
 
@@ -157,17 +197,20 @@
     </div>
 
     <div id="storeSection" class="w-full hidden">
-      <h3 class="text-yellow-400 text-3xl font-bold mb-2 text-center">Mağaza</h3>
+        <div class="flex border-b border-gray-600 mb-6 justify-center">
+            <button id="gameStoreTabBtn" onclick="switchStoreTab('gameStore')" class="flex-1 max-w-xs py-3 text-lg font-bold border-b-2 border-red-500 text-white transition-colors duration-300">Oyun Mağazası</button>
+            <button id="specialStoreTabBtn" onclick="switchStoreTab('specialStore')" class="flex-1 max-w-xs py-3 text-lg font-bold border-b-2 border-transparent text-gray-400 hover:text-white transition-colors duration-300">Özel Ürün Mağazası</button>
+        </div>
+      
       <div id="storeUserPointInfo" class="text-center mb-6 bg-gray-800 p-3 rounded-lg border border-gray-700 max-w-lg mx-auto flex justify-center items-center gap-4">
         <div>
             <span class="text-green-400">Mevcut Puan: <b id="storeCurrentUserBalance">0</b></span> |
-            <span class="text-red-400">Toplam Harcanan: <b id="storeCurrentUserSpent">0</b></span>
+            <span class="text-red-400">Harcanan Puan: <b id="storeCurrentUserSpent">0</b></span>
         </div>
         <button onclick="openPurchaseHistoryModal()" class="py-1 px-4 bg-purple-700 hover:bg-purple-600 text-white font-bold rounded-lg text-sm">
-            Geçmişim
+            Alışveriş Geçmişim
         </button>
       </div>
-
 
       <div id="adminStoreControls" class="bg-gray-900 p-6 rounded-lg border border-gray-700 mb-6 hidden">
         <h4 class="text-yellow-300 text-xl font-semibold mb-4">ÜRÜN EKLE / DÜZENLE</h4>
@@ -181,10 +224,21 @@
             <option value="boxRights">Kutu Hakkı</option>
             <option value="tempMultiplier">Geçici Çarpan</option>
             <option value="iflasShield">İflas Kalkanı</option>
+            <option value="surprisePackage">Sürpriz Kutu Paketi</option>
             <option value="special">Özel Ürün</option>
           </select>
           <input type="number" id="newItemValue" placeholder="Değer (Kutu Hakkı Adedi / Çarpan Değeri / Kalkan Kullanım Sayısı)" class="w-full p-2 mb-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500 transition duration-300">
           <input type="number" id="newItemMultiplierDuration" placeholder="Çarpan Süresi (Kutu Sayısı)" min="1" class="w-full p-2 mb-2 bg-gray-700 border border-gray-600 rounded-lg text-white hidden focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500 transition duration-300">
+          
+          <div id="surprisePackageSettings" class="hidden bg-gray-800 p-4 rounded-lg mt-2">
+              <h5 class="text-yellow-200 font-bold mb-2">Sürpriz Paket İçerik Ayarları</h5>
+              <input type="number" id="pkgTotalCards" placeholder="Toplam Kart Sayısı" class="w-full p-2 mb-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-yellow-500">
+              <input type="number" id="pkgBombCards" placeholder="Bomba (İflas) Kart Sayısı" class="w-full p-2 mb-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-yellow-500">
+              <input type="number" id="pkgShieldCards" placeholder="İflas Kalkanı Kart Sayısı" class="w-full p-2 mb-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-yellow-500">
+              <input type="text" id="pkgMultiplierCards" placeholder="Çarpanlar (örn: 2,3,5)" class="w-full p-2 mb-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-yellow-500" title="Virgülle ayırarak girin, örn: 2,3,5">
+              <input type="text" id="pkgPointCards" placeholder="Puanlar (örn: 100,500,1000)" class="w-full p-2 mb-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-yellow-500" title="Virgülle ayırarak girin, örn: 100,500,1000">
+          </div>
+
           <label for="newItemCountdownDuration" class="text-gray-300 text-sm block mt-2 mb-1 text-left">Geri Sayım Süresi (Dakika, Boş Bırakılırsa Süresiz):</label>
           <input type="number" id="newItemCountdownDuration" placeholder="Dakika" min="1" class="w-full p-2 mb-4 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500 transition duration-300">
           <input type="text" id="newItemImageUrl" placeholder="Resim URL (Opsiyonel)" class="w-full p-2 mb-4 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500 transition duration-300">
@@ -195,9 +249,29 @@
         <div id="currentStoreItems" class="scrollable-list max-h-60 overflow-y-auto p-3 bg-gray-800 rounded-md">Yükleniyor...</div>
       </div>
       
-      <h3 class="text-yellow-300 text-2xl font-semibold mb-4 text-center">Popüler Ürünler</h3>
-      <div id="storeItemsContainer" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 p-4">
+      <div id="gameStoreContent">
+        <h3 class="text-yellow-300 text-2xl font-semibold mb-4 text-center">Popüler Ürünler</h3>
+        <div id="storeItemsContainer" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 p-4"></div>
+      </div>
+
+      <div id="specialStoreContent" class="hidden">
+        <h3 class="text-yellow-300 text-2xl font-semibold mb-4 text-center">Popüler Ürünler</h3>
+        <div id="specialStoreItemsContainer" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 p-4"></div>
+      </div>
+    </div>
+    
+    <div id="announcementsSection" class="w-full hidden">
+        <h3 class="text-yellow-400 text-3xl font-bold mb-6 text-center">Duyurular</h3>
+        
+        <div id="adminAnnouncementBox" class="bg-gray-800 p-6 rounded-xl shadow-lg border border-red-700 mb-8 hidden">
+            <h4 class="text-yellow-300 text-xl font-semibold mb-4">Yeni Duyuru Oluştur</h4>
+            <input type="text" id="announcementTitle" placeholder="Duyuru Başlığı" class="w-full p-3 mb-4 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500 transition duration-300">
+            <textarea id="announcementContent" placeholder="Duyuru içeriğini buraya yazın..." rows="5" class="w-full p-3 mb-4 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500 transition duration-300"></textarea>
+            <button onclick="postAnnouncement()" class="w-full py-3 bg-red-700 hover:bg-red-600 text-white font-bold rounded-lg shadow-md hover:shadow-lg transform hover:-translate-y-1 transition duration-300">Duyuruyu Yayınla</button>
         </div>
+        
+        <div id="announcementList" class="space-y-6">
+            </div>
     </div>
     
   </div>
@@ -238,7 +312,7 @@
 
 
   <div id="adminPanelModal" class="modal-overlay fixed inset-0 bg-black bg-opacity-70 flex justify-center items-center z-50 hidden">
-    <div class="modal-content bg-gray-800 p-8 rounded-xl shadow-2xl border border-red-700 w-11/12 max-w-4xl text-center relative max-h-[90vh] overflow-y-auto">
+    <div class="modal-content bg-gray-800 p-8 rounded-xl shadow-2xl border border-red-700 w-11/12 max-w-4xl text-center relative max-h-[90vh] overflow-y-auto scrollable-list">
       <button class="modal-close-button absolute top-2 right-4 text-white text-4xl leading-none bg-transparent border-none cursor-pointer hover:text-red-500 transition duration-200" onclick="closeAdminPanelModal()">&times;</button>
       <h3 class="text-yellow-400 text-3xl font-bold mb-6 text-center">Admin Paneli</h3>
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -291,7 +365,7 @@
             </button>
             <button onclick="restartSystem()"
                     class="py-2 px-4 bg-red-700 hover:bg-red-600 text-white font-bold rounded-lg shadow-md hover:-translate-y-1 transition duration-300">
-              Sistemi Baştan Başlat
+              Sistemi Yeniden Başlat
             </button>
             <button onclick="clearAllTotalSpentPoints()"
                     class="py-2 px-4 bg-orange-700 hover:bg-orange-600 text-white font-bold rounded-lg shadow-md hover:-translate-y-1 transition duration-300">
@@ -304,6 +378,20 @@
           </div>
         </div>
       </div>
+      <div class="bg-gray-900 p-6 rounded-lg border border-gray-700 mt-6 col-span-full">
+          <h4 class="text-yellow-300 text-xl font-semibold mb-4">Günlük Giriş Ödülü Ayarları</h4>
+          <p class="text-gray-400 text-sm mb-4">Kullanıcıların her gün alabileceği ödülü ve bekleme süresini buradan ayarlayın.</p>
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <select id="dailyRewardType" class="w-full p-2 bg-gray-700 border border-gray-600 rounded-lg text-white">
+                <option value="points">Puan</option>
+                <option value="boxRights">Kutu Hakkı</option>
+                <option value="iflasShield">İflas Kalkanı</option>
+              </select>
+              <input type="number" id="dailyRewardValue" placeholder="Ödül Miktarı" min="1" class="w-full p-2 bg-gray-700 border border-gray-600 rounded-lg text-white">
+              <input type="number" id="dailyRewardCooldown" placeholder="Bekleme Süresi (Saat)" min="1" class="w-full p-2 bg-gray-700 border border-gray-600 rounded-lg text-white">
+          </div>
+          <button onclick="saveDailyRewardSettings()" class="w-full mt-4 py-2 bg-green-600 hover:bg-green-500 text-white font-bold rounded-lg">Ayarları Kaydet</button>
+        </div>
       <div class="bg-gray-900 p-6 rounded-lg border border-gray-700 mt-6">
         <h4 class="text-yellow-300 text-xl font-semibold mb-4">Kullanıcı Yönetimi</h4>
         <input type="text" id="searchUser" placeholder="Kullanıcı Ara" oninput="searchUsers()"
@@ -486,7 +574,7 @@
         WeizendTV Kutu Oyunu'na katıldığın için teşekkürler! Başlangıç olarak sana özel bir hediyemiz var.
       </p>
       <p class="text-2xl text-green-400 font-bold mb-8">
-        🎁 3 Kutu Açma Hakkı Kazandın! 🎁
+        🎁 3 Kutu Açma Hakkı Kazandın!
       </p>
       <button onclick="closeWelcomeGiftModal()"
               class="w-full py-3 bg-red-700 hover:bg-red-600 text-white font-bold rounded-lg shadow-md hover:shadow-lg transform hover:-translate-y-1 transition duration-300">
@@ -498,7 +586,7 @@
 
   <div id="cardSelectionModal" class="modal-overlay fixed inset-0 bg-black bg-opacity-70 flex justify-center items-center z-50 hidden">
     <div class="modal-content bg-gray-800 p-8 rounded-xl shadow-2xl border border-red-700 w-11/12 max-w-2xl text-center relative">
-      <h4 class="text-yellow-400 text-2xl font-bold mb-6">Sürpriz Kutu! Bir Kart Seçin</h4>
+      <h4 id="cardSelectionTitle" class="text-yellow-400 text-2xl font-bold mb-6">Sürpriz Kutu! Bir Kart Seçin</h4>
       <div class="card-container grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4 justify-center items-center">
         </div>
     </div>
@@ -723,6 +811,39 @@
     </div>
 </div>
 
+<div id="announcementModal" class="modal-overlay fixed inset-0 bg-black bg-opacity-80 flex justify-center items-center z-[99999] hidden">
+    <div class="modal-content bg-gray-800 p-8 rounded-xl shadow-2xl border border-yellow-500 w-11/12 max-w-lg text-center relative">
+        <button class="modal-close-button absolute top-2 right-4 text-white text-4xl" onclick="closeAnnouncementModal()">&times;</button>
+        <h4 class="text-yellow-400 text-3xl font-bold mb-4">📢 YENİ DUYURU!</h4>
+        <div id="announcementModalContent" class="text-lg text-white mb-6"></div>
+        <button onclick="goToAnnouncements()" class="w-full py-3 bg-red-700 hover:bg-red-600 text-white font-bold rounded-lg shadow-md hover:shadow-lg transform hover:-translate-y-1 transition duration-300">Duyuruya Git</button>
+    </div>
+  </div>
+
+  <div id="likersModal" class="modal-overlay fixed inset-0 bg-black bg-opacity-70 flex justify-center items-center z-[99999] hidden">
+      <div class="modal-content bg-gray-800 p-6 rounded-xl shadow-2xl border border-red-700 w-11/12 max-w-sm text-center relative max-h-[80vh]">
+          <button class="modal-close-button absolute top-2 right-4 text-white text-3xl" onclick="closeLikersModal()">&times;</button>
+          <h4 class="text-yellow-400 text-xl font-bold mb-4">Beğenen Kullanıcılar</h4>
+          <div id="likersList" class="scrollable-list max-h-[60vh] overflow-y-auto bg-gray-900 p-3 rounded-lg">
+              </div>
+      </div>
+  </div>
+
+  <div id="dailyRewardModal" class="modal-overlay fixed inset-0 bg-black bg-opacity-70 flex justify-center items-center z-[99999] hidden">
+    <div class="modal-content bg-gray-800 p-8 rounded-xl shadow-2xl border border-yellow-500 w-11/12 max-w-md text-center relative">
+        <button class="modal-close-button absolute top-2 right-4 text-white text-4xl" onclick="closeDailyRewardModal()">&times;</button>
+        <h4 class="text-yellow-400 text-3xl font-bold mb-4">🎁 Günlük Giriş Ödülü</h4>
+        <div id="dailyRewardContent">
+            <p class="text-lg text-gray-300 mb-6">Bugünkü ödülünü almak için butona tıkla!</p>
+            <p id="dailyRewardDescription" class="text-2xl text-green-400 font-bold mb-8"></p>
+            <button id="claimDailyRewardBtn" onclick="claimDailyReward()" class="w-full py-3 bg-green-600 hover:bg-green-500 text-white font-bold rounded-lg shadow-md hover:shadow-lg transform hover:-translate-y-1 transition duration-300">Ödülü Al!</button>
+        </div>
+        <div id="dailyRewardCountdownContent" class="hidden">
+            <p class="text-lg text-gray-300 mb-6">Bugünkü ödülünü zaten aldın. Sonraki ödül için kalan süre:</p>
+            <p id="dailyRewardCountdown" class="text-3xl text-red-500 font-bold mb-8"></p>
+        </div>
+    </div>
+  </div>
 
 <script>
   // Firebase yapılandırması
@@ -747,7 +868,7 @@
   const db = firebase.database();
   const auth = firebase.auth();
 
-  // Global değişkenler
+  // --- Global Değişkenler ---
   let currentUser = null;
   let isAdmin = false;
   let boxes = [];
@@ -771,7 +892,7 @@
   ];
   const TOTAL_BOXES = BOX_CONTENTS.reduce((sum, item) => sum + item.count, 0);
 
-  // Modal elementleri
+  // --- Modal Elementleri ---
   const pointAdjustmentModal = document.getElementById('pointAdjustmentModal');
   const boxRightAdjustmentModal = document.getElementById('boxRightAdjustmentModal');
   const iflasShieldAdjustmentModal = document.getElementById('iflasShieldAdjustmentModal');
@@ -795,6 +916,9 @@
   const purchaseHistoryModal = document.getElementById('purchaseHistoryModal');
   const boxStatsModal = document.getElementById('boxStatsModal');
   const spectatorModal = document.getElementById('spectatorModal');
+  const announcementModal = document.getElementById('announcementModal');
+  const likersModal = document.getElementById('likersModal');
+  const dailyRewardModal = document.getElementById('dailyRewardModal');
 
 
   let targetUserForAdjustment = null;
@@ -815,6 +939,9 @@
 
   let editingItemId = null;
   let currentActiveSection = 'game';
+  let currentStoreTab = 'gameStore';
+  let dailyRewardTimer = null;
+  let unreadAnnouncements = {};
 
   let storeCountdownInterval = null;
   let activeStoreCountdowns = {};
@@ -954,6 +1081,8 @@
             storePurchasesCount: 0,
             hasReceivedWelcomeGift: false,
             notifications: {},
+            readAnnouncements: {},
+            lastDailyClaim: null,
         };
 
         db.ref('users/' + username).set(newUser).then(() => {
@@ -1068,11 +1197,16 @@
     document.getElementById("currentUser").textContent = currentUser;
     document.getElementById("role").textContent = isAdmin ? "(Admin)" : "";
     document.getElementById("inventoryButton").style.display = isAdmin ? 'none' : 'inline-block';
+    document.getElementById("dailyRewardButton").style.display = isAdmin ? 'none' : 'inline-block';
+    document.getElementById("announcementsTabBtn").style.display = 'inline-block';
 
     if (isAdmin) {
       adminPanelToggleButton.classList.remove('hidden');
+      document.getElementById('adminAnnouncementBox').classList.remove('hidden');
+      loadDailyRewardSettings();
     } else {
       adminPanelToggleButton.classList.add('hidden');
+      document.getElementById('adminAnnouncementBox').classList.add('hidden');
     }
 
     showSection('game');
@@ -1085,9 +1219,14 @@
     listenForGameChanges();
     if (!isAdmin) {
         listenForAdminNotifications();
+        listenForAnnouncements();
+        checkDailyRewardStatus();
+    } else {
+        renderAnnouncements(null); // Admin için başlangıçta boş render
+        db.ref('announcements').on('value', snap => renderAnnouncements(snap.val()));
     }
     listenForSurpriseBox();
-
+    listenForCustomSurpriseBox();
 
     if (!isAdmin) {
         const userRef = db.ref('users/' + currentUser);
@@ -1110,37 +1249,35 @@
   function showSection(sectionId) {
     document.getElementById('gameContent').classList.add('hidden');
     document.getElementById('storeSection').classList.add('hidden');
+    document.getElementById('announcementsSection').classList.add('hidden');
 
-    document.getElementById('gameTabBtn').classList.remove('bg-red-700', 'hover:bg-red-600');
-    document.getElementById('gameTabBtn').classList.add('bg-gray-700', 'hover:bg-gray-600');
-    document.getElementById('storeTabBtn').classList.remove('bg-red-700', 'hover:bg-red-600');
-    document.getElementById('storeTabBtn').classList.add('bg-gray-700', 'hover:bg-gray-600');
-
-    if (isAdmin) {
-        document.getElementById('adminStoreControls').classList.add('hidden');
-    }
-
-    if (sectionId !== 'store' && storeCountdownInterval) {
-        clearInterval(storeCountdownInterval);
-        storeCountdownInterval = null;
-        activeStoreCountdowns = {};
-    }
+    document.getElementById('gameTabBtn').classList.replace('bg-red-700', 'bg-gray-700');
+    document.getElementById('gameTabBtn').classList.replace('hover:bg-red-600', 'hover:bg-gray-600');
+    document.getElementById('storeTabBtn').classList.replace('bg-red-700', 'bg-gray-700');
+    document.getElementById('storeTabBtn').classList.replace('hover:bg-red-600', 'hover:bg-gray-600');
+    document.getElementById('announcementsTabBtn').classList.replace('bg-red-700', 'bg-gray-700');
+    document.getElementById('announcementsTabBtn').classList.replace('hover:bg-red-600', 'hover:bg-gray-600');
 
     if (sectionId === 'game') {
       document.getElementById('gameContent').classList.remove('hidden');
-      document.getElementById('gameTabBtn').classList.remove('bg-gray-700', 'hover:bg-gray-600');
-      document.getElementById('gameTabBtn').classList.add('bg-red-700', 'hover:bg-red-600');
-      currentActiveSection = 'game';
+      document.getElementById('gameTabBtn').classList.replace('bg-gray-700', 'bg-red-700');
+      document.getElementById('gameTabBtn').classList.replace('hover:bg-gray-600', 'hover:bg-red-600');
     } else if (sectionId === 'store') {
       document.getElementById('storeSection').classList.remove('hidden');
-      document.getElementById('storeTabBtn').classList.remove('bg-gray-700', 'hover:bg-gray-600');
-      document.getElementById('storeTabBtn').classList.add('bg-red-700', 'hover:bg-red-600');
-      currentActiveSection = 'store';
+      document.getElementById('storeTabBtn').classList.replace('bg-gray-700', 'bg-red-700');
+      document.getElementById('storeTabBtn').classList.replace('hover:bg-gray-600', 'hover:bg-red-600');
       loadStoreItems();
+      switchStoreTab(currentStoreTab);
       if (isAdmin) {
           document.getElementById('adminStoreControls').classList.remove('hidden');
       }
+    } else if (sectionId === 'announcements') {
+      document.getElementById('announcementsSection').classList.remove('hidden');
+      document.getElementById('announcementsTabBtn').classList.replace('bg-gray-700', 'bg-red-700');
+      document.getElementById('announcementsTabBtn').classList.replace('hover:bg-gray-600', 'hover:bg-red-600');
+      if(!isAdmin) markAnnouncementsAsRead();
     }
+    currentActiveSection = sectionId;
   }
   
   // Admin panel
@@ -1235,18 +1372,17 @@
       for (const u in usersData) {
         const userData = usersData[u];
         if (userData.approved) {
-          if ((userData.balance || 0) > leaders.highestCurrentBalance) { leaders.highestCurrentBalance = userData.balance; leaders.currentBalanceUser = u; }
-          if ((userData.highestBalanceEver || 0) > leaders.highestEverBalance) { leaders.highestEverBalance = userData.highestBalanceEver; leaders.highEverBalanceUser = u; }
-          if ((userData.surpriseBoxesOpened || 0) > leaders.maxSurpriseBoxes) { leaders.maxSurpriseBoxes = userData.surpriseBoxesOpened; leaders.surpriseBoxUser = u; }
-          if ((userData.iflasCount || 0) > leaders.maxBombCount) { leaders.maxBombCount = userData.iflasCount; leaders.bombUser = u; }
-          if ((userData.totalSpentPoints || 0) > leaders.maxSpentPoints) { leaders.maxSpentPoints = userData.totalSpentPoints; leaders.spentPointsUser = u; }
-          if ((userData.multiplierFoundCount || 0) > leaders.maxMultiplierFound) { leaders.maxMultiplierFound = userData.multiplierFoundCount; leaders.multiplierUser = u; }
-          if ((userData.boxesOpenedCount || 0) > leaders.maxBoxesOpened) { leaders.maxBoxesOpened = userData.boxesOpenedCount; leaders.boxUser = u; }
-          if ((userData.iflasShieldUsedCount || 0) > leaders.maxShieldUsed) { leaders.maxShieldUsed = userData.iflasShieldUsedCount; leaders.shieldUser = u; }
+          if ((userData.balance || 0) > leaders.highestCurrentBalance && userData.balance > 0) { leaders.highestCurrentBalance = userData.balance; leaders.currentBalanceUser = u; }
+          if ((userData.highestBalanceEver || 0) > leaders.highestEverBalance && userData.highestBalanceEver > 0) { leaders.highestEverBalance = userData.highestBalanceEver; leaders.highEverBalanceUser = u; }
+          if ((userData.surpriseBoxesOpened || 0) > leaders.maxSurpriseBoxes && userData.surpriseBoxesOpened > 0) { leaders.maxSurpriseBoxes = userData.surpriseBoxesOpened; leaders.surpriseBoxUser = u; }
+          if ((userData.iflasCount || 0) > leaders.maxBombCount && userData.iflasCount > 0) { leaders.maxBombCount = userData.iflasCount; leaders.bombUser = u; }
+          if ((userData.totalSpentPoints || 0) > leaders.maxSpentPoints && userData.totalSpentPoints > 0) { leaders.maxSpentPoints = userData.totalSpentPoints; leaders.spentPointsUser = u; }
+          if ((userData.multiplierFoundCount || 0) > leaders.maxMultiplierFound && userData.multiplierFoundCount > 0) { leaders.maxMultiplierFound = userData.multiplierFoundCount; leaders.multiplierUser = u; }
+          if ((userData.boxesOpenedCount || 0) > leaders.maxBoxesOpened && userData.boxesOpenedCount > 0) { leaders.maxBoxesOpened = userData.boxesOpenedCount; leaders.boxUser = u; }
+          if ((userData.iflasShieldUsedCount || 0) > leaders.maxShieldUsed && userData.iflasShieldUsedCount > 0) { leaders.maxShieldUsed = userData.iflasShieldUsedCount; leaders.shieldUser = u; }
         }
       }
       
-      // DÜZELTME 1: Engelli kullanıcılar sıralamadan kaldırılmıyor.
       let allUsersArray = Object.entries(usersData)
         .filter(([username, userData]) => username !== 'weizendtv' && userData.approved)
         .map(([username, userData]) => ({ username, ...userData }));
@@ -1296,7 +1432,6 @@
             }
         }
 
-        // DÜZELTME 4: Yeni sıralama listesi tasarımı
         return `<div class="mb-3 p-3 bg-gray-800 rounded-md border border-gray-700 cursor-pointer hover:bg-gray-700 text-center" onclick="openPublicUserDetailModal('${u.username}')">
                   ${userIcons}
                   <div class="flex items-center justify-between mt-1">
@@ -1327,14 +1462,14 @@
       for (const u in usersData) {
         const userData = usersData[u];
         if (userData.approved) {
-          if ((userData.balance || 0) > leaders.highestCurrentBalance) { leaders.highestCurrentBalance = userData.balance; leaders.currentBalanceUser = u; }
-          if ((userData.highestBalanceEver || 0) > leaders.highestEverBalance) { leaders.highestEverBalance = userData.highestBalanceEver; leaders.highEverBalanceUser = u; }
-          if ((userData.surpriseBoxesOpened || 0) > leaders.maxSurpriseBoxes) { leaders.maxSurpriseBoxes = userData.surpriseBoxesOpened; leaders.surpriseBoxUser = u; }
-          if ((userData.iflasCount || 0) > leaders.maxBombCount) { leaders.maxBombCount = userData.iflasCount; leaders.bombUser = u; }
-          if ((userData.totalSpentPoints || 0) > leaders.maxSpentPoints) { leaders.maxSpentPoints = userData.totalSpentPoints; leaders.spentPointsUser = u; }
-          if ((userData.multiplierFoundCount || 0) > leaders.maxMultiplierFound) { leaders.maxMultiplierFound = userData.multiplierFoundCount; leaders.multiplierUser = u; }
-          if ((userData.boxesOpenedCount || 0) > leaders.maxBoxesOpened) { leaders.maxBoxesOpened = userData.boxesOpenedCount; leaders.boxUser = u; }
-          if ((userData.iflasShieldUsedCount || 0) > leaders.maxShieldUsed) { leaders.maxShieldUsed = userData.iflasShieldUsedCount; leaders.shieldUser = u; }
+          if ((userData.balance || 0) > leaders.highestCurrentBalance && userData.balance > 0) { leaders.highestCurrentBalance = userData.balance; leaders.currentBalanceUser = u; }
+          if ((userData.highestBalanceEver || 0) > leaders.highestEverBalance && userData.highestBalanceEver > 0) { leaders.highestEverBalance = userData.highestBalanceEver; leaders.highEverBalanceUser = u; }
+          if ((userData.surpriseBoxesOpened || 0) > leaders.maxSurpriseBoxes && userData.surpriseBoxesOpened > 0) { leaders.maxSurpriseBoxes = userData.surpriseBoxesOpened; leaders.surpriseBoxUser = u; }
+          if ((userData.iflasCount || 0) > leaders.maxBombCount && userData.iflasCount > 0) { leaders.maxBombCount = userData.iflasCount; leaders.bombUser = u; }
+          if ((userData.totalSpentPoints || 0) > leaders.maxSpentPoints && userData.totalSpentPoints > 0) { leaders.maxSpentPoints = userData.totalSpentPoints; leaders.spentPointsUser = u; }
+          if ((userData.multiplierFoundCount || 0) > leaders.maxMultiplierFound && userData.multiplierFoundCount > 0) { leaders.maxMultiplierFound = userData.multiplierFoundCount; leaders.multiplierUser = u; }
+          if ((userData.boxesOpenedCount || 0) > leaders.maxBoxesOpened && userData.boxesOpenedCount > 0) { leaders.maxBoxesOpened = userData.boxesOpenedCount; leaders.boxUser = u; }
+          if ((userData.iflasShieldUsedCount || 0) > leaders.maxShieldUsed && userData.iflasShieldUsedCount > 0) { leaders.maxShieldUsed = userData.iflasShieldUsedCount; leaders.shieldUser = u; }
         }
       }
 
@@ -1353,7 +1488,6 @@
           };
           const hasAnyBadge = Object.values(userLeaderStatus).some(Boolean) || (userData.surpriseBoxesOpened || 0) > 0;
           
-          // DÜZELTME 1: Engelli liderler de listede görünecek
           if (hasAnyBadge && userData.approved) {
               leaderUsers.push({ username, ...userData, ...userLeaderStatus });
           }
@@ -1637,7 +1771,7 @@
             timestamp: firebase.database.ServerValue.TIMESTAMP
         });
 
-        openCardSelectionModal(currentUser);
+        openCardSelectionModal(currentUser, shuffleArray([...cardValues]), 'standard');
         message = `Sürpriz Kutu buldunuz!`;
     } else if (box.content === 'multiplier') {
         updates['multiplierFoundCount'] = (user.multiplierFoundCount || 0) + 1;
@@ -1685,17 +1819,9 @@
     };
     await boxRef.update(boxUpdate);
     
-    const allUsersSnap = await db.ref('users').once('value');
-    const allUsersData = allUsersSnap.val();
-    let leaders = { highestCurrentBalance: -1, currentBalanceUser: null, highestEverBalance: -1, highEverBalanceUser: null, maxSurpriseBoxes: -1, surpriseBoxUser: null, maxBombCount: -1, bombUser: null, maxSpentPoints: -1, spentPointsUser: null, maxMultiplierFound: -1, multiplierUser: null, maxBoxesOpened: -1, boxUser: null, maxShieldUsed: -1, shieldUser: null };
-    for (const u in allUsersData) { const data = allUsersData[u]; if (data.approved) { if ((data.balance || 0) > leaders.highestCurrentBalance) { leaders.highestCurrentBalance = data.balance; leaders.currentBalanceUser = u; } if ((data.highestBalanceEver || 0) > leaders.highestEverBalance) { leaders.highestEverBalance = data.highestBalanceEver; leaders.highEverBalanceUser = u; } if ((data.surpriseBoxesOpened || 0) > leaders.maxSurpriseBoxes) { leaders.maxSurpriseBoxes = data.surpriseBoxesOpened; leaders.surpriseBoxUser = u; } if ((data.iflasCount || 0) > leaders.maxBombCount) { leaders.maxBombCount = data.iflasCount; leaders.bombUser = u; } if ((data.totalSpentPoints || 0) > leaders.maxSpentPoints) { leaders.maxSpentPoints = data.totalSpentPoints; leaders.spentPointsUser = u; } if ((data.multiplierFoundCount || 0) > leaders.maxMultiplierFound) { leaders.maxMultiplierFound = data.multiplierFoundCount; leaders.multiplierUser = u; } if ((data.boxesOpenedCount || 0) > leaders.maxBoxesOpened) { leaders.maxBoxesOpened = data.boxesOpenedCount; leaders.boxUser = u; } if ((data.iflasShieldUsedCount || 0) > leaders.maxShieldUsed) { leaders.maxShieldUsed = data.iflasShieldUsedCount; leaders.shieldUser = u; } } }
-    const userLeaderStatus = { isCurrentLeader: currentUser === leaders.currentBalanceUser, isHighLeader: currentUser === leaders.highEverBalanceUser, isSurpriseLeader: currentUser === leaders.surpriseBoxUser, isBombLeader: currentUser === leaders.bombUser, isStoreLeader: currentUser === leaders.spentPointsUser, isMultiplierLeader: currentUser === leaders.multiplierUser, isBoxLeader: currentUser === leaders.boxUser, isShieldLeader: currentUser === leaders.shieldUser, };
-    const openerBadgesHTML = getUserBadgesHtml({username: currentUser, ...user}, userLeaderStatus);
-
     const boxOpenInfo = {
         boxId: box.id,
         opener: currentUser,
-        openerBadgesHTML: openerBadgesHTML,
         content: box.content,
         value: finalMultiplier > 1 && box.content === 'points' ? box.value * finalMultiplier : box.value,
         multiplierUsed: finalMultiplier,
@@ -1818,54 +1944,81 @@
   function closeOpenedBoxInfoModal() { openedBoxInfoModal.style.display = 'none'; }
   function shuffleArray(array) { for (let i = array.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [array[i], array[j]] = [array[j], array[i]]; } return array; }
   
-  function openCardSelectionModal(userId) {
+  function openCardSelectionModal(userId, cards, type = 'standard') {
+      const cardContainer = document.querySelector('#cardSelectionModal .card-container');
       cardContainer.innerHTML = '';
-      db.ref('surprise_box_session').once('value').then(snap => {
-          const sessionData = snap.val();
-          if (!sessionData || !sessionData.active) return;
-          
-          sessionData.cards.forEach((cardValue, index) => {
-              const cardDiv = document.createElement('div');
-              cardDiv.className = 'card bg-gray-700 border-2 border-red-700 rounded-xl w-28 h-40 flex flex-col items-center justify-center font-bold text-2xl cursor-pointer relative';
-              cardDiv.dataset.value = cardValue;
-              cardDiv.dataset.index = index;
-              const cardBack = document.createElement('div');
-              cardBack.className = 'card-back absolute inset-0 bg-gradient-to-br from-red-700 to-red-900 flex items-center justify-center text-white text-5xl';
-              cardBack.textContent = '?';
-              cardDiv.appendChild(cardBack);
-              const cardFront = document.createElement('div');
-              cardFront.className = 'card-front absolute inset-0 bg-gray-900 flex items-center justify-center text-yellow-400 text-3xl';
-              cardFront.classList.add('card-value');
-              cardDiv.appendChild(cardFront);
-              cardDiv.onclick = () => selectCard(cardDiv, userId);
-              cardContainer.appendChild(cardDiv);
-          });
-          cardSelectionModal.style.display = 'flex';
+      const title = document.getElementById('cardSelectionTitle');
+      title.textContent = type === 'standard' ? "Sürpriz Kutu! Bir Kart Seçin" : "Sürpriz Paket! Bir Kart Seçin";
+
+      cards.forEach((cardValue, index) => {
+          const cardDiv = document.createElement('div');
+          cardDiv.className = 'card bg-gray-700 border-2 border-red-700 rounded-xl w-28 h-40 flex flex-col items-center justify-center font-bold text-2xl cursor-pointer relative';
+          cardDiv.dataset.card = JSON.stringify(cardValue);
+          cardDiv.dataset.index = index;
+          const cardBack = document.createElement('div');
+          cardBack.className = 'card-back absolute inset-0 bg-gradient-to-br from-red-700 to-red-900 flex items-center justify-center text-white text-5xl';
+          cardBack.textContent = '?';
+          cardDiv.appendChild(cardBack);
+          const cardFront = document.createElement('div');
+          cardFront.className = 'card-front absolute inset-0 bg-gray-900 flex items-center justify-center text-yellow-400 text-3xl p-2';
+          cardFront.classList.add('card-value');
+          cardDiv.appendChild(cardFront);
+          cardDiv.onclick = () => selectCard(cardDiv, userId, type);
+          cardContainer.appendChild(cardDiv);
       });
+      cardSelectionModal.style.display = 'flex';
   }
 
-  async function selectCard(selectedCardDiv, userId) { 
-    if (selectedCardDiv.classList.contains('opened')) return; 
+  async function selectCard(selectedCardDiv, userId, type = 'standard') { 
+    if (selectedCardDiv.classList.contains('opened')) return;
 
     const cardIndex = selectedCardDiv.dataset.index;
-    const sessionRef = db.ref('surprise_box_session');
+    const sessionRef = db.ref(type === 'standard' ? 'surprise_box_session' : 'custom_surprise_session');
     
     await sessionRef.child('selection').set({ user: userId, cardIndex: cardIndex });
 
     const snap = await sessionRef.once('value');
     const sessionData = snap.val();
-    let points = parseInt(selectedCardDiv.dataset.value) * sessionData.multiplier;
-    await sessionRef.child('result').set({ points: points });
+    const cardData = JSON.parse(selectedCardDiv.dataset.card);
+    const userRef = db.ref('users/' + userId);
 
-    const userRef = db.ref('users/' + userId); 
-    const userSnap = await userRef.once('value'); 
-    let user = userSnap.val(); 
-    if (user) { 
-      user.balance = (user.balance || 0) + points; 
-      if (user.balance > (user.highestBalanceEver || 0)) user.highestBalanceEver = user.balance; 
-      await userRef.update({ balance: user.balance, highestBalanceEver: user.highestBalanceEver }); 
+    let resultData = { ...cardData };
+    
+    // Standard Sürpriz Kutu
+    if (type === 'standard') {
+        const points = parseInt(cardData) * sessionData.multiplier;
+        resultData = { type: 'points', value: points };
+        await sessionRef.child('result').set({ points: points });
+        await userRef.transaction(user => {
+            if (user) {
+                user.balance = (user.balance || 0) + points;
+                if (user.balance > (user.highestBalanceEver || 0)) user.highestBalanceEver = user.balance;
+            }
+            return user;
+        });
     } 
+    // Custom Sürpriz Paket
+    else {
+        await sessionRef.child('result').set(resultData);
+        await userRef.transaction(user => {
+            if(user) {
+                if(resultData.type === 'iflas') user.balance = 0;
+                else if(resultData.type === 'points') {
+                    user.balance = (user.balance || 0) + resultData.value;
+                    if (user.balance > (user.highestBalanceEver || 0)) user.highestBalanceEver = user.balance;
+                }
+                else if(resultData.type === 'iflasShield') user.iflasShieldUses = (user.iflasShieldUses || 0) + resultData.value;
+                else if(resultData.type === 'multiplier') {
+                    user.activeMultiplier = resultData.value;
+                    user.multiplierSource = 'box'; // kutudan çıkmış gibi davranır
+                    user.multiplierRemainingUses = 0;
+                }
+            }
+            return user;
+        });
+    }
   }
+
 
   function closeCardSelectionModal() { 
     cardSelectionModal.style.display = 'none'; 
@@ -1916,21 +2069,69 @@
       }
   }
 
+  function switchStoreTab(tab) {
+    currentStoreTab = tab;
+    const gameStoreContent = document.getElementById('gameStoreContent');
+    const specialStoreContent = document.getElementById('specialStoreContent');
+    const gameStoreTabBtn = document.getElementById('gameStoreTabBtn');
+    const specialStoreTabBtn = document.getElementById('specialStoreTabBtn');
+    
+    const adminControls = document.getElementById('adminStoreControls');
+
+    if (tab === 'gameStore') {
+        document.getElementById('gameStoreContent').classList.remove('hidden');
+        document.getElementById('specialStoreContent').classList.add('hidden');
+        gameStoreTabBtn.classList.add('border-red-500', 'text-white');
+        gameStoreTabBtn.classList.remove('border-transparent', 'text-gray-400');
+        specialStoreTabBtn.classList.add('border-transparent', 'text-gray-400');
+        specialStoreTabBtn.classList.remove('border-red-500', 'text-white');
+    } else { // specialStore
+        document.getElementById('gameStoreContent').classList.add('hidden');
+        document.getElementById('specialStoreContent').classList.remove('hidden');
+        specialStoreTabBtn.classList.add('border-red-500', 'text-white');
+        specialStoreTabBtn.classList.remove('border-transparent', 'text-gray-400');
+        gameStoreTabBtn.classList.add('border-transparent', 'text-gray-400');
+        gameStoreTabBtn.classList.remove('border-red-500', 'text-white');
+    }
+    if (isAdmin) adminControls.classList.remove('hidden');
+  }
+
   function renderStoreItems(items) { 
-      const container = document.getElementById('storeItemsContainer'); 
-      container.innerHTML = ''; 
+      const gameContainer = document.getElementById('storeItemsContainer'); 
+      const specialContainer = document.getElementById('specialStoreItemsContainer');
+      gameContainer.innerHTML = ''; 
+      specialContainer.innerHTML = '';
       
       if (storeCountdownInterval) clearInterval(storeCountdownInterval);
       activeStoreCountdowns = {};
 
       if (!items) { 
-          container.innerHTML = '<p class="text-center col-span-full">Mağazada şu an ürün bulunmamaktadır.</p>'; 
+          gameContainer.innerHTML = '<p class="text-center col-span-full">Mağazada şu an ürün bulunmamaktadır.</p>'; 
+          specialContainer.innerHTML = '<p class="text-center col-span-full">Mağazada şu an özel ürün bulunmamaktadır.</p>';
           return; 
-      } 
+      }
       
-      const sortedItems = Object.entries(items).sort(([, a], [, b]) => (b.purchaseCount || 0) - (a.purchaseCount || 0));
+      const allItems = Object.entries(items);
+      const gameItems = allItems.filter(([id, item]) => item.type !== 'special');
+      const specialItems = allItems.filter(([id, item]) => item.type === 'special');
+      
+      const findBestSeller = (arr) => {
+        if (arr.length === 0) return null;
+        let best = arr[0];
+        for(let i = 1; i < arr.length; i++) {
+            if((arr[i][1].purchaseCount || 0) > (best[1].purchaseCount || 0)) {
+                best = arr[i];
+            }
+        }
+        // Eğer kimse almadıysa ve en az bir ürün varsa, best seller olmasın
+        if((best[1].purchaseCount || 0) === 0) return null;
+        return best[0];
+      };
+      
+      const gameBestSellerId = findBestSeller(gameItems);
+      const specialBestSellerId = findBestSeller(specialItems);
 
-      sortedItems.forEach(([itemId, item]) => { 
+      const createItemHtml = (itemId, item, isBestSeller) => {
           const outOfStock = item.stock !== undefined && item.stock <= 0;
           let isExpired = false;
           let countdownHtml = '';
@@ -1948,11 +2149,13 @@
           }
 
           const disabled = outOfStock || isExpired;
-          
           const popularityHtml = `<p class="text-blue-300 text-sm mb-2">🔥 ${item.purchaseCount || 0} kez satın alındı</p>`;
+          const frameClass = isBestSeller ? 'bestseller-frame' : '';
+          const badgeHtml = isBestSeller ? '<div class="bestseller-badge">ÇOK SATAN</div>' : '';
 
-          const itemHtml = `
-            <div class="bg-gray-800 p-6 rounded-xl shadow-lg border border-red-700 text-center flex flex-col justify-between">
+          return `
+            <div class="bg-gray-800 p-6 rounded-xl shadow-lg border border-red-700 text-center flex flex-col justify-between ${frameClass}">
+              ${badgeHtml}
               <div class="flex-grow">
                 <img src="${item.imageUrl || 'https://via.placeholder.com/150'}" alt="${item.name}" class="w-24 h-24 mx-auto mb-4 rounded-lg object-cover">
                 <h4 class="text-yellow-400 text-xl font-bold">${item.name}</h4>
@@ -1968,9 +2171,14 @@
                 </button>
               </div>
             </div>`; 
-          container.innerHTML += itemHtml; 
-      });
+      };
+      
+      gameItems.forEach(([itemId, item]) => gameContainer.innerHTML += createItemHtml(itemId, item, itemId === gameBestSellerId));
+      specialItems.forEach(([itemId, item]) => specialContainer.innerHTML += createItemHtml(itemId, item, itemId === specialBestSellerId));
 
+      if (gameContainer.innerHTML === '') gameContainer.innerHTML = '<p class="text-center col-span-full">Mağazada şu an ürün bulunmamaktadır.</p>';
+      if (specialContainer.innerHTML === '') specialContainer.innerHTML = '<p class="text-center col-span-full">Mağazada şu an özel ürün bulunmamaktadır.</p>';
+      
       if (Object.keys(activeStoreCountdowns).length > 0) {
           updateStoreCountdowns();
           storeCountdownInterval = setInterval(updateStoreCountdowns, 1000);
@@ -1994,6 +2202,14 @@
     if (item.type === 'tempMultiplier') {
         if (user.multiplierSource === 'store' || user.multiplierSource === 'box') {
             displayMessage("Mevcut bir çarpanınız varken yenisini alamazsınız. Lütfen önce mevcut olanı kullanın.");
+            return;
+        }
+    }
+
+    if (item.type === 'surprisePackage') {
+        const lockSnap = await db.ref('custom_surprise_session/active').once('value');
+        if (lockSnap.val() === true) {
+            displayMessage("Şu anda başka bir kullanıcı özel bir paket açıyor. Lütfen daha sonra tekrar deneyin.");
             return;
         }
     }
@@ -2026,7 +2242,28 @@
             updates.activeStoreMultiplierItemId = itemId; 
         } else if (item.type === 'iflasShield') {
             updates.iflasShieldUses = (user.iflasShieldUses || 0) + item.value;
-        } else if (item.type === 'special') {
+        } else if (item.type === 'surprisePackage') {
+            const details = item.packageDetails;
+            let cardContents = [];
+            for (let i = 0; i < (details.bombs || 0); i++) cardContents.push({ type: 'iflas' });
+            for (let i = 0; i < (details.shields || 0); i++) cardContents.push({ type: 'iflasShield', value: 1 });
+            (details.multipliers || []).forEach(m => cardContents.push({ type: 'multiplier', value: m }));
+            (details.points || []).forEach(p => cardContents.push({ type: 'points', value: p }));
+            
+            const remaining = details.total - cardContents.length;
+            for (let i = 0; i < remaining; i++) cardContents.push({ type: 'points', value: 10 });
+
+            db.ref('custom_surprise_session').set({
+                active: true,
+                user: currentUser,
+                cards: shuffleArray(cardContents),
+                selection: null,
+                result: null,
+                timestamp: firebase.database.ServerValue.TIMESTAMP
+            });
+            message = 'Sürpriz Paketiniz hazır! Kart seçme ekranı açılıyor...';
+        }
+        else if (item.type === 'special') {
             purchaseStatus = 'pending';
             recordToPending = true;
             message = 'Özel ürün talebiniz alındı. Onay bekleniyor.';
@@ -2070,16 +2307,28 @@
     document.getElementById('newItemCountdownDuration').value = '';
     document.getElementById('newItemImageUrl').value = '';
     document.getElementById('addUpdateStoreItemBtn').textContent = 'ÜRÜN EKLE';
+    
+    document.getElementById('pkgTotalCards').value = '';
+    document.getElementById('pkgBombCards').value = '';
+    document.getElementById('pkgShieldCards').value = '';
+    document.getElementById('pkgMultiplierCards').value = '';
+    document.getElementById('pkgPointCards').value = '';
+    
+    document.getElementById('surprisePackageSettings').classList.add('hidden');
     document.getElementById('newItemMultiplierDuration').classList.add('hidden');
     editingItemId = null; 
   }
 
   document.getElementById('newItemType').addEventListener('change', function() {
       const durationInput = document.getElementById('newItemMultiplierDuration');
+      const surpriseSettings = document.getElementById('surprisePackageSettings');
+      durationInput.classList.add('hidden');
+      surpriseSettings.classList.add('hidden');
+
       if (this.value === 'tempMultiplier') {
           durationInput.classList.remove('hidden');
-      } else {
-          durationInput.classList.add('hidden');
+      } else if (this.value === 'surprisePackage') {
+          surpriseSettings.classList.remove('hidden');
       }
   });
 
@@ -2096,10 +2345,15 @@
     const countdown = parseInt(document.getElementById('newItemCountdownDuration').value);
     const imageUrl = document.getElementById('newItemImageUrl').value.trim();
 
-    if (!name || !description || isNaN(cost) || !type || isNaN(value)) {
-      displayMessage("Lütfen tüm zorunlu alanları doldurun (Ürün Adı, Açıklama, Maliyet, Tip, Değer).");
+    if (!name || !description || isNaN(cost) || !type) {
+      displayMessage("Lütfen zorunlu alanları doldurun (Ürün Adı, Açıklama, Maliyet, Tip).");
       return;
     }
+    if(type !== 'surprisePackage' && isNaN(value)) {
+        displayMessage("Lütfen Değer alanını doldurun.");
+        return;
+    }
+
 
     stock = (stock === '' || stock === null) ? null : parseInt(stock);
 
@@ -2110,6 +2364,34 @@
     
     if (!editingItemId) {
         itemData.purchaseCount = 0;
+    }
+    
+    if (type === 'surprisePackage') {
+        const totalCards = parseInt(document.getElementById('pkgTotalCards').value);
+        const bombCards = parseInt(document.getElementById('pkgBombCards').value) || 0;
+        const shieldCards = parseInt(document.getElementById('pkgShieldCards').value) || 0;
+        const multiplierCardsRaw = document.getElementById('pkgMultiplierCards').value.trim();
+        const pointCardsRaw = document.getElementById('pkgPointCards').value.trim();
+        
+        const multiplierCards = multiplierCardsRaw ? multiplierCardsRaw.split(',').map(n => parseInt(n.trim())) : [];
+        const pointCards = pointCardsRaw ? pointCardsRaw.split(',').map(n => parseInt(n.trim())) : [];
+        
+        const cardSum = bombCards + shieldCards + multiplierCards.length + pointCards.length;
+
+        if (isNaN(totalCards) || totalCards <= 0) {
+            displayMessage("Sürpriz paket için geçerli bir 'Toplam Kart Sayısı' girin."); return;
+        }
+        if (cardSum > totalCards) {
+            displayMessage(`Tanımlanan kart içeriği sayısı (${cardSum}), toplam kart sayısından (${totalCards}) fazla olamaz!`); return;
+        }
+        itemData.packageDetails = {
+            total: totalCards,
+            bombs: bombCards,
+            shields: shieldCards,
+            multipliers: multiplierCards,
+            points: pointCards
+        };
+        itemData.value = null; // Bu tip için value alanı kullanılmıyor
     }
 
 
@@ -2179,21 +2461,30 @@
         return;
     }
 
+    resetStoreItemForm();
+
     document.getElementById('newItemName').value = item.name;
     document.getElementById('newItemDescription').value = item.description;
     document.getElementById('newItemCost').value = item.cost;
     document.getElementById('newItemStock').value = item.stock !== null ? item.stock : '';
     document.getElementById('newItemType').value = item.type;
-    document.getElementById('newItemValue').value = item.value;
+    document.getElementById('newItemValue').value = item.value || '';
     document.getElementById('newItemImageUrl').value = item.imageUrl || '';
     document.getElementById('newItemCountdownDuration').value = item.countdownDurationMinutes || '';
     
     const durationInput = document.getElementById('newItemMultiplierDuration');
+    const surpriseSettings = document.getElementById('surprisePackageSettings');
+
     if (item.type === 'tempMultiplier') {
       durationInput.classList.remove('hidden');
       durationInput.value = item.duration || '';
-    } else {
-      durationInput.classList.add('hidden');
+    } else if (item.type === 'surprisePackage' && item.packageDetails) {
+        surpriseSettings.classList.remove('hidden');
+        document.getElementById('pkgTotalCards').value = item.packageDetails.total || '';
+        document.getElementById('pkgBombCards').value = item.packageDetails.bombs || '';
+        document.getElementById('pkgShieldCards').value = item.packageDetails.shields || '';
+        document.getElementById('pkgMultiplierCards').value = (item.packageDetails.multipliers || []).join(',');
+        document.getElementById('pkgPointCards').value = (item.packageDetails.points || []).join(',');
     }
 
     document.getElementById('addUpdateStoreItemBtn').textContent = 'ÜRÜNÜ GÜNCELLE';
@@ -2353,7 +2644,6 @@
       document.getElementById('publicUserTotalSpent').textContent = userData.totalSpentPoints || 0;
       document.getElementById('publicUserShieldUsedCount').textContent = userData.iflasShieldUsedCount || 0;
       
-      // DÜZELTME 2: Engelli kullanıcılar için sayaç gösterimi
       const blockedInfoDiv = document.getElementById('publicUserBlockedInfo');
       const countdownEl = document.getElementById('publicUserBlockedCountdown');
       const isCurrentlyBlocked = userData.blocked && userData.blockedUntil && Date.now() < userData.blockedUntil;
@@ -2441,7 +2731,6 @@
     document.getElementById('managedUserMultiplier').textContent = multiplierText;
     document.getElementById('managedUserMultiplierUses').textContent = userData.multiplierRemainingUses || 0;
     
-    // DÜZELTME 3: Admin paneli profil sayfasında sayaç gösterimi
     const isCurrentlyBlocked = userData.blocked && userData.blockedUntil && Date.now() < userData.blockedUntil;
     const countdownContainer = document.getElementById('managedUserBlockedCountdownContainer');
     const countdownEl = document.getElementById('managedUserBlockedCountdown');
@@ -2624,7 +2913,7 @@
       }
 
       const contentHtml = `
-          <div class="text-3xl font-bold mb-3 flex flex-col justify-center items-center gap-2">${info.openerBadgesHTML || ''} <span class="text-green-400">${info.opener}</span></div>
+          <div class="text-3xl font-bold mb-3 flex flex-col justify-center items-center gap-2"><span class="text-green-400">${info.opener}</span></div>
           <p class="text-lg text-gray-300"><b>${info.boxId}</b> numaralı kutuyu açtı ve...</p>
           <p class="text-2xl font-semibold mt-2 text-yellow-300">${contentDisplay}</p>
       `;
@@ -2691,13 +2980,12 @@
       surpriseSessionListener = sessionRef.on('value', snap => {
           const sessionData = snap.val();
           if (sessionData && sessionData.active && sessionData.user !== currentUser) {
-              openSpectatorModal(sessionData);
+              openSpectatorModal(sessionData, 'standard');
           } else if (sessionData && sessionData.active && sessionData.user === currentUser) {
               if (sessionData.result) {
                   closeCardSelectionModal();
-                  displayMessage(`Sürpriz kutudan tebrikler! Toplam ${sessionData.result.points} puan kazandınız! Oyun yakında sıfırlanacak.`);
+                  displayMessage(`Sürpriz kutudan tebrikler! Toplam ${sessionData.result.points} puan kazandınız!`);
                   setTimeout(() => {
-                      resetGameBoard();
                       sessionRef.remove();
                   }, 4000);
               }
@@ -2707,47 +2995,13 @@
       });
   }
 
-  function openSpectatorModal(sessionData) {
-      document.getElementById('spectatorTitle').innerHTML = `<span class="text-green-400 font-bold">${sessionData.user}</span> Sürpriz Kutu buldu!`;
+  function openSpectatorModal(sessionData, type = 'standard') {
+      document.getElementById('spectatorTitle').innerHTML = `<span class="text-green-400 font-bold">${sessionData.user}</span> ${type === 'standard' ? 'Sürpriz Kutu' : 'Sürpriz Paket'} buldu!`;
       const cardContainer = document.getElementById('spectatorCardContainer');
       cardContainer.innerHTML = '';
+      const resultEl = document.getElementById('spectatorResult');
+      resultEl.textContent = '';
 
-      sessionData.cards.forEach((cardValue, index) => {
+      sessionData.cards.forEach((cardData, index) => {
           const cardDiv = document.createElement('div');
-          cardDiv.className = 'card bg-gray-700 border-2 border-red-700 rounded-xl w-28 h-40 flex flex-col items-center justify-center font-bold text-2xl relative';
-          cardDiv.id = `spectator-card-${index}`;
-          const cardBack = document.createElement('div');
-          cardBack.className = 'card-back absolute inset-0 bg-gradient-to-br from-red-700 to-red-900 flex items-center justify-center text-white text-5xl';
-          cardBack.textContent = '?';
-          cardDiv.appendChild(cardBack);
-          const cardFront = document.createElement('div');
-          cardFront.className = 'card-front absolute inset-0 bg-gray-900 flex items-center justify-center text-yellow-400 text-3xl';
-          cardDiv.appendChild(cardFront);
-          cardContainer.appendChild(cardDiv);
-      });
-
-      if (sessionData.selection) {
-          const selectedCardIndex = sessionData.selection.cardIndex;
-          const selectedCard = document.getElementById(`spectator-card-${selectedCardIndex}`);
-          if (selectedCard) {
-              selectedCard.classList.add('opened');
-              if (sessionData.result) {
-                  const pointsGained = sessionData.result.points;
-                  selectedCard.querySelector('.card-front').textContent = `+${pointsGained}`;
-                  document.getElementById('spectatorResult').textContent = `${sessionData.user}, ${pointsGained} puan kazandı!`;
-              }
-          }
-      } else {
-          document.getElementById('spectatorResult').textContent = '';
-      }
-
-      spectatorModal.style.display = 'flex';
-  }
-
-  function closeSpectatorModal() {
-      spectatorModal.style.display = 'none';
-  }
-
-</script>
-</body>
-</html>
+          cardDiv.className = 'card bg-gray-700 border-2 border-red-700 rounded-xl w-28 h-40 flex flex-col items
