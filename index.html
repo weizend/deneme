@@ -2256,7 +2256,405 @@
             countdownHtml = `<div class="h-5 mb-2"></div>`;
         }
 
-        const disabled = outOfStock || isExpired || isAdmin;0; }); db.ref().update(updates).then(() => displayMessage("Tüm kullanıcıların harcanan puanları sıfırlandı.")) }); } }
+        const disabled = outOfStock || isExpired || isAdmin;
+        
+        return `
+        <div class="bg-gray-800 p-6 rounded-xl shadow-lg text-center flex flex-col justify-between ${isBestSeller ? 'best-seller-item' : 'border border-gray-700'}">
+          ${isBestSeller ? '<div class="best-seller-banner">⭐ ÇOK SATAN ⭐</div>' : ''}
+          <div class="flex-grow">
+            <img src="${item.imageUrl || 'https://via.placeholder.com/150'}" alt="${item.name}" class="w-24 h-24 mx-auto mb-4 rounded-lg object-cover">
+            <h4 class="text-yellow-400 text-xl font-bold">${item.name}</h4>
+            <p class="text-gray-300 mb-2 flex-grow">${item.description}</p>
+          </div>
+          <div>
+            ${countdownHtml}
+            <p class="text-gray-400 text-sm mb-2">Stok: ${item.stock !== undefined && item.stock !== null ? item.stock : 'Sınırsız'}</p>
+            <p class="text-green-400 text-2xl font-bold mb-4">${item.cost} Puan</p>
+            <button id="buy-btn-${itemId}" onclick="buyItem('${itemId}')" ${disabled ? 'disabled' : ''} class="w-full py-3 mt-auto ${disabled ? 'bg-gray-600 cursor-not-allowed' : 'bg-red-700 hover:bg-red-600'} text-white font-bold rounded-lg transition duration-300">
+              ${isExpired ? 'Süre Doldu' : (outOfStock ? 'Stok Tükendi' : 'Satın Al')}
+            </button>
+          </div>
+        </div>`; 
+      };
+
+      let finalHtml = '';
+      if(bestSellerItem) {
+          finalHtml += renderItem(bestSellerItem, true);
+      }
+      otherItems.forEach(item => {
+          finalHtml += renderItem(item, false);
+      });
+      container.innerHTML = finalHtml;
+
+
+      if (Object.keys(activeStoreCountdowns).length > 0) {
+          updateStoreCountdowns();
+          storeCountdownInterval = setInterval(updateStoreCountdowns, 1000);
+      }
+  }
+
+
+  async function buyItem(itemId) {
+    if (isAdmin) {
+        displayMessage("Adminler alışveriş yapamaz.");
+        return;
+    }
+    const userRef = db.ref('users/' + currentUser);
+    const itemRef = db.ref('storeItems/' + itemId);
+    const [userSnap, itemSnap] = await Promise.all([userRef.once('value'), itemRef.once('value')]);
+    const user = userSnap.val();
+    const item = itemSnap.val();
+    
+    if (!user || !item) return;
+
+    if (item.type === 'tempMultiplier') {
+        if (user.multiplierSource === 'store' || user.multiplierSource === 'box') {
+            displayMessage("Mevcut bir çarpanınız varken yenisini alamazsınız. Lütfen önce mevcut olanı kullanın.");
+            return;
+        }
+    }
+
+    if ((user.balance || 0) < item.cost) {
+        displayMessage("Yetersiz Puan!");
+        return;
+    }
+    if (item.stock !== undefined && item.stock !== null && item.stock <= 0) {
+        displayMessage("Bu ürünün stoğu tükenmiştir.");
+        return;
+    }
+    const confirmed = await customConfirm(`${item.name} ürününü ${item.cost} puana almak istiyor musunuz?`);
+    if (confirmed) {
+        let updates = {
+            balance: user.balance - item.cost,
+            totalSpentPoints: (user.totalSpentPoints || 0) + item.cost,
+            storePurchasesCount: (user.storePurchasesCount || 0) + 1
+        };
+        let message = 'Satın alma başarılı!';
+        let purchaseStatus = 'completed';
+        let recordToPending = false;
+        
+        if (item.type === 'boxRights') {
+            updates.kutuHakki = (user.kutuHakki || 0) + item.value;
+        } else if (item.type === 'tempMultiplier') {
+            updates.activeMultiplier = item.value;
+            updates.multiplierSource = 'store';
+            updates.multiplierRemainingUses = item.duration;
+            updates.activeStoreMultiplierItemId = itemId; 
+        } else if (item.type === 'iflasShield') {
+            updates.iflasShieldUses = (user.iflasShieldUses || 0) + item.value;
+        } else if (item.type === 'surpriseBoxPackage') {
+            const packagePath = `inventory/surprisePackages/${itemId}`;
+            updates[packagePath] = true;
+        } else if (item.type === 'special') {
+            purchaseStatus = 'pending';
+            recordToPending = true;
+            message = 'Özel ürün talebiniz alındı. Onay bekleniyor.';
+        }
+        
+        let itemUpdates = {};
+        if (item.stock !== undefined && item.stock !== null) {
+            itemUpdates.stock = item.stock - 1;
+        }
+        itemUpdates.purchaseCount = (item.purchaseCount || 0) + 1;
+        await itemRef.update(itemUpdates);
+
+        await userRef.update(updates);
+        
+        const purchaseRecord = {
+            timestamp: firebase.database.ServerValue.TIMESTAMP,
+            username: currentUser,
+            itemName: item.name,
+            itemCost: item.cost,
+            itemType: item.type,
+            itemValue: item.value || null,
+            imageUrl: item.imageUrl || null,
+            status: purchaseStatus
+        };
+
+        // Kutudan çıkan çarpanlar için geçmiş kaydı oluşturma
+        if (item.type !== 'multiplier' || item.source !== 'box') {
+            const newPurchaseRef = await db.ref('purchaseHistory').push(purchaseRecord);
+            if (recordToPending) {
+                await db.ref('pendingSpecialPurchases/' + newPurchaseRef.key).set({ ...purchaseRecord, purchaseId: newPurchaseRef.key });
+            }
+        }
+
+        displayMessage(message);
+    }
+}
+  
+  function resetStoreItemForm() {
+    document.getElementById('newItemName').value = '';
+    document.getElementById('newItemDescription').value = '';
+    document.getElementById('newItemCost').value = '';
+    document.getElementById('newItemStock').value = '';
+    document.getElementById('newItemType').value = '';
+    document.getElementById('newItemValue').value = '';
+    document.getElementById('newItemMultiplierDuration').value = '';
+    document.getElementById('newItemCountdownDuration').value = '';
+    document.getElementById('newItemImageUrl').value = '';
+    document.getElementById('spCardCount').value = '';
+    document.getElementById('spBombCount').value = '';
+    document.getElementById('spShieldCount').value = '';
+    document.getElementById('spMultiplierCount').value = '';
+
+    document.getElementById('addUpdateStoreItemBtn').textContent = 'ÜRÜN EKLE';
+    document.getElementById('generalItemValueContainer').classList.remove('hidden');
+    document.getElementById('multiplierDurationContainer').classList.add('hidden');
+    document.getElementById('surprisePackageConfigContainer').classList.add('hidden');
+    editingItemId = null; 
+  }
+
+  document.getElementById('newItemType').addEventListener('change', function() {
+      const type = this.value;
+      document.getElementById('generalItemValueContainer').classList.toggle('hidden', type === 'surpriseBoxPackage');
+      document.getElementById('multiplierDurationContainer').classList.toggle('hidden', type !== 'tempMultiplier');
+      document.getElementById('surprisePackageConfigContainer').classList.toggle('hidden', type !== 'surpriseBoxPackage');
+  });
+
+  async function saveStoreItem() {
+    if (!isAdmin) return;
+
+    const name = document.getElementById('newItemName').value.trim();
+    const description = document.getElementById('newItemDescription').value.trim();
+    const cost = parseInt(document.getElementById('newItemCost').value);
+    let stock = document.getElementById('newItemStock').value;
+    const type = document.getElementById('newItemType').value;
+    const countdown = parseInt(document.getElementById('newItemCountdownDuration').value);
+    const imageUrl = document.getElementById('newItemImageUrl').value.trim();
+
+    if (!name || !description || isNaN(cost) || !type) {
+        displayMessage("Lütfen Ürün Adı, Açıklama, Maliyet ve Tip alanlarını doldurun.");
+        return;
+    }
+
+    stock = (stock === '' || stock === null) ? null : parseInt(stock);
+    const allItemsSnap = await db.ref('storeItems').once('value');
+    const allItems = allItemsSnap.val() || {};
+    const displayOrder = editingItemId ? items[editingItemId].displayOrder : Object.keys(allItems).length;
+
+    const itemData = {
+      name, description, cost, stock, type, displayOrder,
+      imageUrl: imageUrl || 'https://via.placeholder.com/150',
+    };
+    
+    if (!editingItemId) {
+        itemData.purchaseCount = 0;
+    }
+
+    if (type === 'tempMultiplier') {
+        const duration = parseInt(document.getElementById('newItemMultiplierDuration').value);
+        if (isNaN(duration) || duration <= 0) { displayMessage("Lütfen geçerli bir çarpan süresi girin."); return; }
+        itemData.duration = duration;
+        itemData.value = parseInt(document.getElementById('newItemValue').value);
+    } else if (type === 'surpriseBoxPackage') {
+        const cardCount = parseInt(document.getElementById('spCardCount').value);
+        const bombCount = parseInt(document.getElementById('spBombCount').value) || 0;
+        const shieldCount = parseInt(document.getElementById('spShieldCount').value) || 0;
+        const multiplierCount = parseInt(document.getElementById('spMultiplierCount').value) || 0;
+        if (isNaN(cardCount) || cardCount <= 0 || (bombCount + shieldCount + multiplierCount > cardCount) ) {
+            displayMessage("Lütfen Sürpriz Kutu Paketi için geçerli kart sayıları girin. İçerik toplamı toplam kart sayısını aşamaz.");
+            return;
+        }
+        itemData.surpriseConfig = { cardCount, bombCount, shieldCount, multipliers: [{ value: 2, count: multiplierCount }] };
+    } else {
+        const value = parseInt(document.getElementById('newItemValue').value);
+        if (isNaN(value)) { displayMessage("Lütfen geçerli bir Değer girin."); return; }
+        itemData.value = value;
+    }
+    
+    if (!isNaN(countdown) && countdown > 0) {
+      itemData.countdownDurationMinutes = countdown;
+    }
+
+    try {
+      if (editingItemId) {
+        const existingItemSnap = await db.ref('storeItems/' + editingItemId).once('value');
+        const existingItem = existingItemSnap.val();
+        itemData.createdAt = existingItem.createdAt || firebase.database.ServerValue.TIMESTAMP;
+        await db.ref('storeItems/' + editingItemId).update(itemData);
+        displayMessage(`'${name}' ürünü başarıyla güncellendi!`);
+      } else {
+        itemData.createdAt = firebase.database.ServerValue.TIMESTAMP;
+        await db.ref('storeItems').push(itemData);
+        displayMessage(`'${name}' ürünü başarıyla eklendi!`);
+      }
+      resetStoreItemForm();
+    } catch (error) {
+        console.error("Mağaza ürünü kaydetme hatası:", error);
+        displayMessage("Ürün kaydedilirken bir hata oluştu.");
+    }
+  }
+
+  function loadAdminStoreItems(items) {
+      const container = document.getElementById('currentStoreItems');
+      container.innerHTML = '';
+      if (!items) {
+          container.innerHTML = '<p class="text-center text-gray-400">Henüz mağazada ürün yok.</p>';
+          return;
+      }
+      
+      const sortedItems = Object.entries(items).sort(([,a], [,b]) => (a.displayOrder || 0) - (b.displayOrder || 0));
+      
+      let html = '';
+      sortedItems.forEach(([itemId, item]) => {
+          html += `
+              <div class="flex justify-between items-center p-3 mb-2 bg-gray-700 rounded-md">
+                  <div class="flex items-center">
+                    <button onclick="moveStoreItem('${itemId}', 'up')" class="mr-2 text-lg text-gray-400 hover:text-white"><i class="fa-solid fa-arrow-up"></i></button>
+                    <button onclick="moveStoreItem('${itemId}', 'down')" class="mr-3 text-lg text-gray-400 hover:text-white"><i class="fa-solid fa-arrow-down"></i></button>
+                    <span class="text-gray-200">${item.name}</span>
+                  </div>
+                  <div>
+                      <button onclick="editStoreItem('${itemId}')" class="py-1 px-3 bg-blue-600 hover:bg-blue-500 text-white text-sm font-bold rounded-md mr-2">Düzenle</button>
+                      <button onclick="deleteStoreItem('${itemId}')" class="py-1 px-3 bg-red-600 hover:bg-red-500 text-white text-sm font-bold rounded-md">Sil</button>
+                  </div>
+              </div>
+          `;
+      });
+      container.innerHTML = html;
+  }
+  
+  async function moveStoreItem(itemId, direction) {
+    if(!isAdmin) return;
+    const itemsRef = db.ref('storeItems');
+    const snap = await itemsRef.orderByChild('displayOrder').once('value');
+    const items = [];
+    snap.forEach(child => {
+        items.push({ id: child.key, ...child.val() });
+    });
+
+    const currentIndex = items.findIndex(item => item.id === itemId);
+    if (currentIndex === -1) return;
+
+    if (direction === 'up' && currentIndex > 0) {
+        // Swap with previous item
+        const prevIndex = currentIndex - 1;
+        [items[currentIndex].displayOrder, items[prevIndex].displayOrder] = [items[prevIndex].displayOrder, items[currentIndex].displayOrder];
+    } else if (direction === 'down' && currentIndex < items.length - 1) {
+        // Swap with next item
+        const nextIndex = currentIndex + 1;
+        [items[currentIndex].displayOrder, items[nextIndex].displayOrder] = [items[nextIndex].displayOrder, items[currentIndex].displayOrder];
+    }
+
+    const updates = {};
+    items.forEach(item => {
+        updates[item.id + '/displayOrder'] = item.displayOrder;
+    });
+
+    await itemsRef.update(updates);
+}
+
+  async function editStoreItem(itemId) {
+    if (!isAdmin) return;
+    
+    const itemSnap = await db.ref('storeItems/' + itemId).once('value');
+    const item = itemSnap.val();
+    if (!item) {
+        displayMessage("Düzenlenecek ürün bulunamadı.");
+        return;
+    }
+    
+    resetStoreItemForm(); // Önce formu temizle
+
+    document.getElementById('newItemName').value = item.name;
+    document.getElementById('newItemDescription').value = item.description;
+    document.getElementById('newItemCost').value = item.cost;
+    document.getElementById('newItemStock').value = item.stock !== null ? item.stock : '';
+    document.getElementById('newItemType').value = item.type;
+    document.getElementById('newItemImageUrl').value = item.imageUrl || '';
+    document.getElementById('newItemCountdownDuration').value = item.countdownDurationMinutes || '';
+    
+    document.getElementById('newItemType').dispatchEvent(new Event('change'));
+
+    if(item.type === 'tempMultiplier') {
+        document.getElementById('newItemMultiplierDuration').value = item.duration || '';
+        document.getElementById('newItemValue').value = item.value || '';
+    } else if (item.type === 'surpriseBoxPackage') {
+        if(item.surpriseConfig) {
+            document.getElementById('spCardCount').value = item.surpriseConfig.cardCount || '';
+            document.getElementById('spBombCount').value = item.surpriseConfig.bombCount || '';
+            document.getElementById('spShieldCount').value = item.surpriseConfig.shieldCount || '';
+            document.getElementById('spMultiplierCount').value = item.surpriseConfig.multipliers ? item.surpriseConfig.multipliers[0].count : '';
+        }
+    } else {
+        document.getElementById('newItemValue').value = item.value || '';
+    }
+
+    document.getElementById('addUpdateStoreItemBtn').textContent = 'ÜRÜNÜ GÜNCELLE';
+    editingItemId = itemId;
+    
+    document.getElementById('adminStoreControls').scrollIntoView({ behavior: 'smooth' });
+  }
+
+  async function deleteStoreItem(itemId) {
+      if (!isAdmin) return;
+      const confirmed = await customConfirm("Bu ürünü silmek istediğinizden emin misiniz? Bu işlem geri alınamaz!");
+      if (confirmed) {
+          try {
+              await db.ref('storeItems/' + itemId).remove();
+              displayMessage("Ürün başarıyla silindi.");
+              resetStoreItemForm();
+          } catch (error) {
+              console.error("Ürün silme hatası:", error);
+              displayMessage("Ürün silinirken bir hata oluştu.");
+          }
+      }
+  }
+
+  function openPurchaseHistoryModal() {
+      loadPurchaseHistory();
+      purchaseHistoryModal.style.display = 'flex';
+  }
+  function closePurchaseHistoryModal() {
+      purchaseHistoryModal.style.display = 'none';
+  }
+  
+  function loadPurchaseHistory() { 
+      const list = document.getElementById('purchaseHistoryList'); 
+      list.innerHTML = "<div class='text-center text-gray-400'>Yükleniyor...</div>"; 
+      let ref = db.ref('purchaseHistory'); 
+      if (!isAdmin) {
+          ref = ref.orderByChild('username').equalTo(currentUser); 
+      }
+      ref.once('value').then(snap => {
+          const history = snap.val(); 
+          let html = ''; 
+          if (!history || Object.keys(history).length === 0) { 
+              list.innerHTML = "<div class='text-center text-gray-400'>Henüz bir satın alma işlemi yapmadınız.</div>"; 
+              return; 
+          } 
+          const sorted = Object.values(history).sort((a, b) => b.timestamp - a.timestamp); 
+          sorted.forEach(r => { 
+              let statusBadge = '';
+              if (r.status === 'pending') {
+                  statusBadge = '<span class="text-xs font-semibold inline-block py-1 px-2 uppercase rounded-full text-yellow-600 bg-yellow-200">Beklemede</span>';
+              } else if (r.status === 'denied') {
+                  statusBadge = '<span class="text-xs font-semibold inline-block py-1 px-2 uppercase rounded-full text-red-600 bg-red-200">Reddedildi</span>';
+              }
+
+              html += `
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center p-4 mb-3 bg-gray-700 rounded-lg border-l-4 border-red-500">
+                    <div class="flex items-center mb-2 sm:mb-0">
+                        <img src="${r.imageUrl || 'https://via.placeholder.com/150'}" alt="${r.itemName}" class="w-12 h-12 rounded-md mr-4 object-cover">
+                        <div>
+                            <p class="font-bold text-lg text-yellow-300">${r.itemName}</p>
+                            <p class="text-sm text-gray-300">Maliyet: ${r.itemCost} Puan</p>
+                        </div>
+                    </div>
+                    <div class="text-xs text-gray-400 text-right w-full sm:w-auto mt-2 sm:mt-0">
+                        ${new Date(r.timestamp).toLocaleString()}
+                        ${isAdmin ? `<br><span class="font-semibold text-white">${r.username}</span>` : ''}
+                        ${statusBadge ? `<br class="mt-1">${statusBadge}` : ''}
+                    </div>
+                </div>
+              `; 
+          }); 
+          list.innerHTML = html; 
+      }); 
+  }
+  async function clearPurchaseHistory() { if(await customConfirm("Tüm satın alma geçmişini silmek istediğinize emin misiniz? Bu işlem geri alınamaz!")) { db.ref('purchaseHistory').remove().then(() => displayMessage("Satın alma geçmişi başarıyla temizlendi.")) } }
+  async function clearAllTotalSpentPoints() { if(await customConfirm("Tüm kullanıcıların harcadığı puanları sıfırlamak istediğinize emin misiniz?")) { db.ref('users').once('value').then(snap => { const updates = {}; snap.forEach(c => { if(c.key !== 'weizendtv') updates[`users/${c.key}/totalSpentPoints`] =0; }); db.ref().update(updates).then(() => displayMessage("Tüm kullanıcıların harcanan puanları sıfırlandı.")) }); } }
   
   function openInventoryModal() {
       const userRef = db.ref('users/' + currentUser);
