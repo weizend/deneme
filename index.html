@@ -2620,36 +2620,41 @@
   }
 
   async function denySpecialPurchase(purchaseId, username, itemCost) {
-      const purchaseItemSnap = await db.ref(`/pendingSpecialPurchases/${purchaseId}`).once('value');
-      const purchaseItem = purchaseItemSnap.val();
-       if (!purchaseItem) {
-        displayMessage("Reddedilecek öğe bulunamadı.");
-        return;
-      }
+    const purchaseItemSnap = await db.ref(`/pendingSpecialPurchases/${purchaseId}`).once('value');
+    const purchaseItem = purchaseItemSnap.val();
+     if (!purchaseItem) {
+      displayMessage("Reddedilecek öğe bulunamadı.");
+      return;
+    }
 
-      if (!await customConfirm(`${username} kullanıcısının '${purchaseItem.itemName}' alımını reddetmek istediğinize emin misiniz? Puan iadesi yapılacaktır.`)) return;
-      
-      const userRef = db.ref(`users/${username}`);
-      const updates = {};
+    if (!await customConfirm(`${username} kullanıcısının '${purchaseItem.itemName}' alımını reddetmek istediğinize emin misiniz? Puan iadesi yapılacaktır.`)) return;
 
-      const userSnap = await userRef.once('value');
-      const userData = userSnap.val();
-      if (userData) {
-          updates[`users/${username}/balance`] = (userData.balance || 0) + itemCost;
-          updates[`users/${username}/totalSpentPoints`] = Math.max(0, (userData.totalSpentPoints || 0) - itemCost);
-      }
+    const userRef = db.ref(`users/${username}`);
+    const updates = {};
 
-      updates[`/pendingSpecialPurchases/${purchaseId}`] = null;
-      updates[`/purchaseHistory/${purchaseId}/status`] = 'denied';
+    const userSnap = await userRef.once('value');
+    const userData = userSnap.val();
+    if (userData) {
+        const newBalance = (userData.balance || 0) + itemCost;
+        updates[`users/${username}/balance`] = newBalance;
+        updates[`users/${username}/totalSpentPoints`] = Math.max(0, (userData.totalSpentPoints || 0) - itemCost);
+        // DÜZELTME: Ulaşılan en yüksek puan kontrolü eklendi.
+        if (newBalance > (userData.highestBalanceEver || 0)) {
+          updates[`users/${username}/highestBalanceEver`] = newBalance;
+        }
+    }
 
-      db.ref().update(updates).then(() => {
-          notifyUser(username, `'${purchaseItem.itemName}' adlı özel ürün alımınız reddedildi. ${itemCost} puan hesabınıza iade edildi.`);
-          displayMessage("Özel ürün alımı reddedildi ve puan iadesi yapıldı.");
-      }).catch(err => {
-          console.error("Reddetme hatası: ", err);
-          displayMessage("Reddetme sırasında bir hata oluştu.");
-      });
-  }
+    updates[`/pendingSpecialPurchases/${purchaseId}`] = null;
+    updates[`/purchaseHistory/${purchaseId}/status`] = 'denied';
+
+    db.ref().update(updates).then(() => {
+        notifyUser(username, `'${purchaseItem.itemName}' adlı özel ürün alımınız reddedildi. ${itemCost} puan hesabınıza iade edildi.`);
+        displayMessage("Özel ürün alımı reddedildi ve puan iadesi yapıldı.");
+    }).catch(err => {
+        console.error("Reddetme hatası: ", err);
+        displayMessage("Reddetme sırasında bir hata oluştu.");
+    });
+}
 
   let globalCountdownInterval = null;
 
