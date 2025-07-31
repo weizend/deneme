@@ -125,16 +125,17 @@
 
     <div class="flex justify-center gap-4 mb-8">
       <button id="gameTabBtn" onclick="showSection('game')"
-              class="py-3 px-8 bg-red-700 hover:bg-red-600 text-white font-bold rounded-lg shadow-md hover:shadow-lg transform hover:-translate-y-1 transition duration-300">
+              class="relative py-3 px-8 bg-red-700 hover:bg-red-600 text-white font-bold rounded-lg shadow-md hover:shadow-lg transform hover:-translate-y-1 transition duration-300">
         Kutu Oyunu
       </button>
       <button id="storeTabBtn" onclick="showSection('store')"
-              class="py-3 px-8 bg-gray-700 hover:bg-gray-600 text-white font-bold rounded-lg shadow-md hover:shadow-lg transform hover:-translate-y-1 transition duration-300">
+              class="relative py-3 px-8 bg-gray-700 hover:bg-gray-600 text-white font-bold rounded-lg shadow-md hover:shadow-lg transform hover:-translate-y-1 transition duration-300">
         Puan Alışverişi
       </button>
       <button id="announcementsTabBtn" onclick="showSection('announcements')"
-              class="py-3 px-8 bg-gray-700 hover:bg-gray-600 text-white font-bold rounded-lg shadow-md hover:shadow-lg transform hover:-translate-y-1 transition duration-300">
+              class="relative py-3 px-8 bg-gray-700 hover:bg-gray-600 text-white font-bold rounded-lg shadow-md hover:shadow-lg transform hover:-translate-y-1 transition duration-300">
         Duyurular
+        <span id="announcementIndicator" class="hidden absolute -top-1 -right-1 h-3 w-3 rounded-full bg-red-500 animate-pulse"></span>
       </button>
     </div>
     
@@ -210,7 +211,7 @@
         
         <div id="announcementsContent" class="w-full hidden">
             <h3 class="text-yellow-400 text-3xl font-bold mb-6 text-center">Duyurular</h3>
-            <div id="announcementsList" class="space-y-4 max-w-2xl mx-auto">
+            <div id="announcementsList" class="space-y-6 max-w-2xl mx-auto">
                 <p class="text-center text-gray-400">Duyurular yükleniyor...</p>
             </div>
         </div>
@@ -786,6 +787,29 @@
         <h4 class="text-yellow-400 text-3xl font-bold mb-2">Günlük Ödüller</h4>
         <p id="dailyRewardMessage" class="text-lg text-gray-300 mb-6">Aşağıdaki ödüllerden alabileceklerini topla. Bol şans!</p>
         <div id="dailyRewardItemsContainer" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 p-4">
+        </div>
+    </div>
+</div>
+
+<div id="newAnnouncementModal" class="modal-overlay fixed inset-0 bg-black bg-opacity-80 flex justify-center items-center z-[99999] hidden">
+    <div class="modal-content bg-gray-800 p-8 rounded-xl shadow-2xl border border-yellow-500 w-11/12 max-w-md text-center relative">
+        <h4 class="text-yellow-400 text-3xl font-bold mb-4 flex justify-center items-center">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 mr-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5.882V19.24a1.76 1.76 0 01-3.417.592l-2.147-6.15M18 13a3 3 0 100-6M5.436 13.683A4.001 4.001 0 017 6h1.832c4.1 0 7.625-2.236 9.168-5.584C18.354 1.832 18.666 2 19 2h2v2a1 1 0 01-1 1h-1.168a2.992 2.992 0 00-2.312.962l-3.35 4.188-2.312.962a4.001 4.001 0 01-2.829 2.829l-2.147 6.15a1.76 1.76 0 01-3.417-.592l.533-1.524a1 1 0 00-.28-1.124l-2.148-2.148A1 1 0 012 13.243V11a1 1 0 011-1h2.168a2.992 2.992 0 002.312-.962l.533-1.524z" /></svg>
+            Yeni Duyuru!
+        </h4>
+        <p id="newAnnouncementText" class="text-lg text-gray-300 my-6 break-words"></p>
+        <div class="flex flex-col gap-3">
+            <button onclick="goToAnnouncements()" class="w-full py-3 bg-red-700 hover:bg-red-600 text-white font-bold rounded-lg shadow-md hover:shadow-lg transform hover:-translate-y-1 transition duration-300">Duyurulara Git</button>
+            <button onclick="closeNewAnnouncementModal()" class="w-full py-2 bg-gray-600 hover:bg-gray-500 text-white font-bold rounded-lg transition duration-200">Kapat</button>
+        </div>
+    </div>
+</div>
+
+<div id="announcementLikesModal" class="modal-overlay fixed inset-0 bg-black bg-opacity-70 flex justify-center items-center z-[9999] hidden">
+    <div class="modal-content bg-gray-800 p-8 rounded-xl shadow-2xl border border-red-700 w-11/12 max-w-md text-center relative">
+        <button class="modal-close-button absolute top-2 right-4 text-white text-4xl" onclick="closeAnnouncementLikesModal()">&times;</button>
+        <h4 class="text-yellow-400 text-2xl font-bold mb-6">Duyuruyu Beğenenler</h4>
+        <div id="announcementLikesList" class="scrollable-list max-h-80 overflow-y-auto bg-gray-900 rounded-lg p-3">
             </div>
     </div>
 </div>
@@ -821,6 +845,7 @@
   const BOX_RIGHTS_COST_PER_BOX = 1;
   let isGameLocked = false; 
   let sessionStartTime = Date.now();
+  let latestAnnouncementTimestamp = 0;
   
   const BOX_CONTENTS = [
     { type: 'surpriz', value: 0, count: 1 },
@@ -863,7 +888,8 @@
   const boxStatsModal = document.getElementById('boxStatsModal');
   const spectatorModal = document.getElementById('spectatorModal');
   const dailyRewardModal = document.getElementById('dailyRewardModal');
-
+  const newAnnouncementModal = document.getElementById('newAnnouncementModal');
+  const announcementLikesModal = document.getElementById('announcementLikesModal');
 
   let targetUserForAdjustment = null;
   let targetUserForBoxRightAdjustment = null;
@@ -1024,6 +1050,7 @@
             hasReceivedWelcomeGift: false,
             notifications: {},
             dailyRewardsClaimed: {},
+            lastSeenAnnouncementTimestamp: 0,
         };
 
         db.ref('users/' + username).set(newUser).then(() => {
@@ -1157,6 +1184,7 @@
     listenForGameChanges();
     if (!isAdmin) {
         listenForAdminNotifications();
+        listenForNewAnnouncements();
     }
     listenForSurpriseBox();
 
@@ -1177,7 +1205,6 @@
     }
   }
 
-    // Bölüm değiştirme (Sekmeleme)
     function showSection(sectionId) {
         document.getElementById('gameContent').classList.add('hidden');
         document.getElementById('storeSection').classList.add('hidden');
@@ -1206,6 +1233,11 @@
             loadStoreItems();
             if (isAdmin) {
                 document.getElementById('adminStoreControls').classList.remove('hidden');
+            }
+        } else if (sectionId === 'announcements') {
+            document.getElementById('announcementIndicator').classList.add('hidden');
+            if(!isAdmin) {
+                db.ref(`users/${currentUser}/lastSeenAnnouncementTimestamp`).set(latestAnnouncementTimestamp);
             }
         }
         
@@ -1597,6 +1629,8 @@
     updates[`${userRef}/activeStoreMultiplierItemId`] = null;
     updates[`${userRef}/notifications`] = null;
     updates[`${userRef}/dailyRewardsClaimed`] = null;
+    updates[`${userRef}/lastSeenAnnouncementTimestamp`] = null;
+
 
     const purchaseHistorySnap = await db.ref('purchaseHistory').orderByChild('username').equalTo(username).once('value');
     if (purchaseHistorySnap.exists()) {
@@ -1821,6 +1855,7 @@
                     updates['users/' + u + '/approvalNotified'] = null;
                     updates['users/' + u + '/notifications'] = null;
                     updates['users/' + u + '/dailyRewardsClaimed'] = null;
+                    updates['users/' + u + '/lastSeenAnnouncementTimestamp'] = null;
                 }
             }
             await db.ref().update(updates);
@@ -1962,7 +1997,7 @@
 
           if (timeLeft > 0) {
               const days = Math.floor(timeLeft / (1000 * 60 * 60 * 24));
-              const hours = Math.floor((timeLeft % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+              const hours = Math.floor((timeLeft % (1000 * 60 * 60 * 24)) / (1000* 60 * 60));
               const minutes = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
               const seconds = Math.floor((timeLeft % (1000 * 60)) / 1000);
               
@@ -1976,7 +2011,8 @@
               countdownEl.innerHTML = `<span class="text-red-500 font-bold">Süre Doldu</span>`;
               if (buyButton) {
                   buyButton.disabled = true;
-                  buyButton.classList.add('bg-gray-600', 'cursor-not-allowed');buyButton.classList.remove('bg-red-700', 'hover:bg-red-600');
+                  buyButton.classList.add('bg-gray-600', 'cursor-not-allowed');
+                  buyButton.classList.remove('bg-red-700', 'hover:bg-red-600');
               }
               delete activeStoreCountdowns[itemId];
           }
@@ -2361,14 +2397,13 @@
   function closeBadgeInfoModal() { badgeInfoModal.style.display = 'none'; }
 
 
-  // DÜZELTİLMİŞ KULLANICI PROFİLİ FONKSİYONU
   async function openPublicUserDetailModal(username) {
       if (activeBlockedUserTimers[username]) {
           clearInterval(activeBlockedUserTimers[username]);
           delete activeBlockedUserTimers[username];
       }
       const userSnap = await db.ref('users/' + username).once('value');
-      const userData = userSnap.val(); // Hata burada 'user' yerine 'userData' olmalıydı, düzeltildi.
+      const userData = userSnap.val(); 
       if (!userData) return;
 
       const allUsersSnap = await db.ref('users').once('value');
@@ -2410,7 +2445,6 @@
       document.getElementById('publicUserBoxRight').textContent = userData.kutuHakki || 0;
       document.getElementById('publicUserIflasShield').textContent = userData.iflasShieldUses || 0;
       
-      // DÜZELTME: 'user' değişkeni 'userData' olarak değiştirildi.
       let multiplierText = 'Yok';
       if (userData.multiplierSource === 'store' && userData.multiplierRemainingUses > 0) {
         multiplierText = `${userData.activeMultiplier}x (Mağaza - ${userData.multiplierRemainingUses} kullanım)`;
@@ -2719,8 +2753,7 @@
       }, 1000);
   }
 
-
-    // DUYURU SİSTEMİ
+    // YENİ DUYURU SİSTEMİ
     async function postAnnouncement() {
         if (!isAdmin) return;
         const text = document.getElementById('announcementText').value.trim();
@@ -2730,7 +2763,8 @@
         }
         await db.ref('announcements').push({
             text: text,
-            timestamp: firebase.database.ServerValue.TIMESTAMP
+            timestamp: firebase.database.ServerValue.TIMESTAMP,
+            likes: 0
         });
         document.getElementById('announcementText').value = '';
         displayMessage("Duyuru başarıyla yayınlandı.");
@@ -2746,21 +2780,44 @@
     
     function loadAnnouncements() {
         const listEl = document.getElementById('announcementsList');
-        db.ref('announcements').orderByChild('timestamp').on('value', snap => {
+        const userRef = db.ref(`users/${currentUser}`);
+
+        db.ref('announcements').orderByChild('timestamp').on('value', async (snap) => {
             listEl.innerHTML = '';
             const announcements = snap.val();
+
+            const userSnap = await userRef.once('value');
+            const userData = userSnap.val();
+            const likedAnnouncements = userData.likedAnnouncements || {};
+
             if (!announcements) {
                 listEl.innerHTML = '<p class="text-center text-gray-400">Henüz yayınlanmış bir duyuru yok.</p>';
                 return;
             }
             const sortedAnnouncements = Object.entries(announcements).sort((a, b) => b[1].timestamp - a[1].timestamp);
+            
             sortedAnnouncements.forEach(([id, ann]) => {
                 const date = new Date(ann.timestamp).toLocaleString('tr-TR');
+                const isLiked = likedAnnouncements[id];
+                const likeButtonClass = isLiked 
+                    ? 'bg-blue-600 text-white' 
+                    : 'bg-gray-600 hover:bg-gray-500 text-gray-300';
+                const likeButtonText = isLiked ? 'Beğenildi' : 'Beğen';
+
                 const div = document.createElement('div');
-                div.className = 'bg-gray-800 p-4 rounded-lg border-l-4 border-red-500 shadow-md';
+                div.className = 'bg-gray-800 p-6 rounded-lg border-l-4 border-yellow-500 shadow-lg';
                 div.innerHTML = `
-                    <p class="text-gray-300">${ann.text}</p>
-                    <p class="text-xs text-gray-500 text-right mt-2">${date}</p>
+                    <p class="text-lg text-gray-200 mb-4 whitespace-pre-wrap">${ann.text}</p>
+                    <div class="flex justify-between items-center mt-4 pt-4 border-t border-gray-700">
+                        <p class="text-xs text-gray-500">${date}</p>
+                        <div class="flex items-center gap-4">
+                             <span class="font-bold text-yellow-400">${ann.likes || 0} Beğeni</span>
+                             <button id="likeBtn-${id}" onclick="likeAnnouncement('${id}')" class="${likeButtonClass} px-4 py-2 rounded-lg text-sm font-bold transition-colors flex items-center gap-2">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M2 10.5a1.5 1.5 0 113 0v6a1.5 1.5 0 01-3 0v-6zM6 10.333v5.43a2 2 0 001.106 1.79l.05.025A4 4 0 008.943 18h5.416a2 2 0 001.962-1.608l1.2-6A2 2 0 0015.562 8H12V4a2 2 0 00-2-2 1 1 0 00-1 1v.667a4 4 0 01-.82 2.316l-1.09 1.817c-.381.636-.632 1.356-.632 2.146z" /></svg>
+                                ${likeButtonText}
+                            </button>
+                        </div>
+                    </div>
                 `;
                 listEl.appendChild(div);
             });
@@ -2779,15 +2836,99 @@
             const sortedAnnouncements = Object.entries(announcements).sort((a, b) => b[1].timestamp - a[1].timestamp);
             sortedAnnouncements.forEach(([id, ann]) => {
                 const div = document.createElement('div');
-                div.className = 'flex justify-between items-center p-2 mb-2 bg-gray-700 rounded-md';
+                div.className = 'p-2 mb-2 bg-gray-700 rounded-md';
                 div.innerHTML = `
-                    <span class="text-gray-300 text-sm truncate pr-2">${ann.text}</span>
-                    <button onclick="deleteAnnouncement('${id}')" class="py-1 px-2 bg-red-600 hover:bg-red-500 text-white text-xs font-bold rounded-md flex-shrink-0">Sil</button>
+                    <p class="text-gray-300 text-sm truncate pr-2">${ann.text}</p>
+                    <div class="flex justify-end items-center gap-2 mt-2">
+                        <span class="text-xs text-yellow-300">👍 ${ann.likes || 0}</span>
+                        <button onclick="showAnnouncementLikes('${id}')" class="py-1 px-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold rounded-md">Beğenenler</button>
+                        <button onclick="deleteAnnouncement('${id}')" class="py-1 px-2 bg-red-600 hover:bg-red-500 text-white text-xs font-bold rounded-md">Sil</button>
+                    </div>
                 `;
                 listEl.appendChild(div);
             });
         });
     }
+    
+    async function likeAnnouncement(announcementId) {
+        if (isAdmin) {
+            displayMessage("Adminler beğeni yapamaz.");
+            return;
+        }
+
+        const userLikeRef = db.ref(`users/${currentUser}/likedAnnouncements/${announcementId}`);
+        const userLikeSnap = await userLikeRef.once('value');
+
+        const announcementRef = db.ref(`announcements/${announcementId}`);
+
+        if (userLikeSnap.exists()) {
+            // Beğeniyi geri al
+            await userLikeRef.remove();
+            await db.ref(`announcements/${announcementId}/likedBy/${currentUser}`).remove();
+            await announcementRef.child('likes').transaction(currentLikes => (currentLikes || 0) - 1);
+        } else {
+            // Beğen
+            await userLikeRef.set(true);
+            await db.ref(`announcements/${announcementId}/likedBy/${currentUser}`).set(true);
+            await announcementRef.child('likes').transaction(currentLikes => (currentLikes || 0) + 1);
+        }
+    }
+    
+    function listenForNewAnnouncements() {
+        const announcementsRef = db.ref('announcements');
+        const userRef = db.ref(`users/${currentUser}`);
+
+        announcementsRef.orderByChild('timestamp').limitToLast(1).on('child_added', async (snap) => {
+            const latestAnn = snap.val();
+            if (!latestAnn) return;
+            
+            latestAnnouncementTimestamp = latestAnn.timestamp;
+            
+            const userSnap = await userRef.once('value');
+            const userData = userSnap.val();
+            
+            if (userData && latestAnn.timestamp > (userData.lastSeenAnnouncementTimestamp || 0)) {
+                document.getElementById('newAnnouncementText').textContent = latestAnn.text.substring(0, 150) + (latestAnn.text.length > 150 ? '...' : '');
+                newAnnouncementModal.style.display = 'flex';
+                document.getElementById('announcementIndicator').classList.remove('hidden');
+            }
+        });
+    }
+
+    function closeNewAnnouncementModal() {
+        newAnnouncementModal.style.display = 'none';
+        db.ref(`users/${currentUser}/lastSeenAnnouncementTimestamp`).set(latestAnnouncementTimestamp);
+    }
+    
+    function goToAnnouncements() {
+        closeNewAnnouncementModal();
+        showSection('announcements');
+    }
+
+    async function showAnnouncementLikes(announcementId) {
+        const likesRef = db.ref(`announcements/${announcementId}/likedBy`);
+        const likesSnap = await likesRef.once('value');
+        const likers = likesSnap.val();
+        
+        const listEl = document.getElementById('announcementLikesList');
+        listEl.innerHTML = '';
+
+        if (!likers) {
+            listEl.innerHTML = '<p class="text-gray-400">Bu duyuruyu henüz kimse beğenmedi.</p>';
+        } else {
+            const usernames = Object.keys(likers);
+            usernames.forEach(username => {
+                listEl.innerHTML += `<div class="p-2 bg-gray-800 rounded mb-2 text-white">${username}</div>`;
+            });
+        }
+        
+        announcementLikesModal.style.display = 'flex';
+    }
+
+    function closeAnnouncementLikesModal() {
+        announcementLikesModal.style.display = 'none';
+    }
+
 
     // YENİ GÜNLÜK ÖDÜL SİSTEMİ (ZAMAN AYARLI)
     function closeDailyRewardModal() { 
@@ -2976,7 +3117,6 @@
 
         await db.ref('dailyRewardOptions').push(rewardData);
         displayMessage("Yeni günlük ödül başarıyla oluşturuldu.");
-        // Formu temizle
         ['dailyRewardName', 'dailyRewardType', 'dailyRewardValue', 'dailyRewardDescription', 'dailyRewardImageUrl', 'dailyRewardMultiplierUses', 'dailyRewardCooldownHours', 'dailyRewardCooldownMinutes', 'dailyRewardCooldownSeconds'].forEach(id => document.getElementById(id).value = '');
         document.getElementById('dailyRewardMultiplierUses').classList.add('hidden');
     }
