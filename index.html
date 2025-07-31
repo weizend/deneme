@@ -2395,70 +2395,84 @@
       });
   }
   
-  function listenForAdminNotifications() {
-      if(isAdmin) return;
-      const userNotifRef = db.ref(`users/${currentUser}/notifications`);
-      userNotifRef.on('child_added', (snap) => {
-          if (snap.val().timestamp > sessionStartTime) {
-              displayMessage(`<b>Yönetici Bildirimi:</b><br>${snap.val().message}`);
-              userNotifRef.child(snap.key).remove(); // Bildirimi gösterdikten sonra sil
-          }
-      });
-  }
+  function listenForSurpriseBox() {
+    const sessionRef = db.ref('surprise_box_session');
+    if (surpriseSessionListener) sessionRef.off('value', surpriseSessionListener);
 
-  // Sürpriz Kutu Mantığı
-  async function listenForSurpriseBox() {
-    db.ref('game/isSurpriseBoxActive').on('value', async (snap) => {
-      const isActive = snap.val();
-      const gameSnap = await db.ref('game').once('value');
-      const gameData = gameSnap.val();
-      const surpriseUser = gameData.surpriseBoxUser;
-
-      if (isActive && surpriseUser) {
-        // Admin veya başka bir oyuncu ise izleyici modunu aç
-        if (currentUser !== surpriseUser) {
-          document.getElementById('spectatorTitle').textContent = `Sürpriz Kutu Bulundu!`;
-          document.getElementById('spectatorInfo').textContent = `${surpriseUser} bir kart seçiyor... Bekleyin!`;
-          document.getElementById('spectatorResult').textContent = '';
-          const spectatorCardContainer = document.getElementById('spectatorCardContainer');
-          spectatorCardContainer.innerHTML = '';
-          for (let i = 0; i < 5; i++) {
-            spectatorCardContainer.innerHTML += `<div class="h-28 w-20 bg-yellow-500 rounded-lg flex items-center justify-center text-4xl shadow-lg">?</div>`;
-          }
-          spectatorModal.style.display = 'flex';
-        }
-        // Eğer sürpriz kutuyu açan kullanıcı sensen seçim ekranını aç
-        else {
-          const storeItemSnap = await db.ref('storeItems').orderByChild('type').equalTo('surpriseBox').once('value');
-          let cards = defaultSurpriseCardValues;
-          if (storeItemSnap.exists()) {
-              storeItemSnap.forEach(child => {
-                  const item = child.val();
-                  if (item.surpriseBoxCards && item.surpriseBoxCards.length === 5) {
-                      cards = item.surpriseBoxCards;
-                  }
-              });
-          }
-          
-          cardContainer.innerHTML = '';
-          cards.forEach((card, index) => {
-            const cardElement = document.createElement('div');
-            cardElement.className = 'card h-40 w-28 cursor-pointer perspective';
-            cardElement.innerHTML = `
-              <div class="card-back absolute w-full h-full bg-yellow-500 rounded-lg flex items-center justify-center text-6xl shadow-lg border-2 border-yellow-300">?</div>
-              <div class="card-front absolute w-full h-full bg-gray-700 rounded-lg flex flex-col items-center justify-center p-2 shadow-lg border-2 border-green-400"></div>
-            `;
-            cardElement.onclick = () => selectCard(index, cards);
-            cardContainer.appendChild(cardElement);
-          });
-          cardSelectionModal.style.display = 'flex';
+    surpriseSessionListener = sessionRef.on('value', snap => {
+      const sessionData = snap.val();
+      if (sessionData && sessionData.active && sessionData.user !== currentUser) {
+        openSpectatorModal(sessionData);
+      } else if (sessionData && sessionData.active && sessionData.user === currentUser) {
+        if (sessionData.result) {
+          closeCardSelectionModal();
+          displayMessage(`Sürpriz kutudan tebrikler! Toplam ${sessionData.result.points} puan kazandınız!`);
+          setTimeout(() => {
+            sessionRef.remove();
+          }, 4000);
         }
       } else {
         closeSpectatorModal();
       }
     });
   }
-  
+
+  function openCardSelectionModal(userId) {
+    cardContainer.innerHTML = '';
+    db.ref('surprise_box_session').once('value').then(snap => {
+      const sessionData = snap.val();
+      if (!sessionData || !sessionData.active) return;
+
+      sessionData.cards.forEach((cardValue, index) => {
+        const cardDiv = document.createElement('div');
+        cardDiv.className = 'card bg-gray-700 border-2 border-red-700 rounded-xl w-28 h-40 flex flex-col items-center justify-center font-bold text-2xl cursor-pointer relative';
+        cardDiv.dataset.value = cardValue;
+        cardDiv.dataset.index = index;
+        const cardBack = document.createElement('div');
+        cardBack.className = 'card-back absolute inset-0 bg-gradient-to-br from-red-700 to-red-900 flex items-center justify-center text-white text-5xl';
+        cardBack.textContent = '?';
+        cardDiv.appendChild(cardBack);
+        const cardFront = document.createElement('div');
+        cardFront.className = 'card-front absolute inset-0 bg-gray-900 flex items-center justify-center text-yellow-400 text-3xl';
+        cardFront.classList.add('card-value');
+        cardDiv.appendChild(cardFront);
+        cardDiv.onclick = () => selectCard(cardDiv, userId);
+        cardContainer.appendChild(cardDiv);
+      });
+      cardSelectionModal.style.display = 'flex';
+    });
+  }
+
+  async function selectCard(selectedCardDiv, userId) {
+    if (selectedCardDiv.classList.contains('opened')) return;
+
+    const cardIndex = selectedCardDiv.dataset.index;
+    const sessionRef = db.ref('surprise_box_session');
+
+    await sessionRef.child('selection').set({
+      user: userId,
+      cardIndex: cardIndex
+    });
+
+    const snap = await sessionRef.once('value');
+    const sessionData = snap.val();
+    let points = parseInt(selectedCardDiv.dataset.value) * sessionData.multiplier;
+    await sessionRef.child('result').set({
+      points: points
+    });
+
+    const userRef = db.ref('users/' + userId);
+    const userSnap = await userRef.once('value');
+    let user = userSnap.val();
+    if (user) {
+      user.balance = (user.balance || 0) + points;
+      if (user.balance > (user.highestBalanceEver || 0)) user.highestBalanceEver = user.balance;
+      await userRef.update({
+        balance: user.balance,
+        highestBalanceEver: user.highestBalanceEver
+      });
+    }
+  }
   async function selectCard(selectedIndex, cards) {
       // Prevent multiple clicks
       document.querySelectorAll('.card').forEach(c => c.onclick = null);
