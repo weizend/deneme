@@ -1637,4 +1637,1588 @@
   }
   async function approveUser(user) { const confirmed = await customConfirm(user + " kullanıcısını onaylamak istiyor musunuz?"); if(confirmed) { db.ref('users/' + user).update({ approved: true, approvalNotified: false }); displayMessage(`${user} onaylandı.`); } }
   async function denyUser(user, fromPending = false, fromManagementModal = false) { const confirmed = await customConfirm(user + " kullanıcısını silmek istiyor musunuz? Bu işlem geri alınamaz!"); if(confirmed) db.ref('users/' + user).remove().then(() => { displayMessage(user + " silindi."); if(fromManagementModal) closeUserManagementModal(); }); }
-  async function changeAllPoints(add) { const amount = parseInt(document.getElementById("globalPoint").value); if (isNaN(amount) || amount <= 0) { displayMessage("Geçerli miktar girin."); return; } const confirmed = await customConfirm(`Tüm kullanıcılara ${add ? 'eklemek' : 'silmek'} istediğinizden emin misiniz?`); if (confirmed) { db.ref('users').once('value').then(snap => { const updates = {}; snap.forEach(child => { if (child.val().approved && !child.val().blocked && child.key
+  async function changeAllPoints(add) { const amount = parseInt(document.getElementById("globalPoint").value); if (isNaN(amount) || amount <= 0) { displayMessage("Geçerli miktar girin."); return; } const confirmed = await customConfirm(`Tüm kullanıcılara ${add ? 'eklemek' : 'silmek'} istediğinizden emin misiniz?`); if (confirmed) { db.ref('users').once('value').then(snap => { const updates = {}; snap.forEach(child => { if (child.val().approved && !child.val().blocked && child.key!== 'weizendtv') {
+            const currentData = child.val();
+            let currentBalance = currentData.balance || 0;
+            let currentHighest = currentData.highestBalanceEver || 0;
+            const newBalance = add ? currentBalance + amount : Math.max(0, currentBalance - amount);
+            if (newBalance > currentHighest) {
+                currentHighest = newBalance;
+            }
+            updates['/users/' + child.key + '/balance'] = newBalance;
+            updates['/users/' + child.key + '/highestBalanceEver'] = currentHighest;
+          }
+        });
+        db.ref().update(updates).then(() => {
+          displayMessage(`Tüm kullanıcıların puanları ${amount} miktarında ${add ? 'artırıldı' : 'azaltıldı'}.`);
+          document.getElementById("globalPoint").value = '';
+        });
+      });
+    }
+  }
+
+  async function changeAllBoxRights(add) {
+    const amount = parseInt(document.getElementById("globalBoxRight").value);
+    if (isNaN(amount) || amount <= 0) {
+      displayMessage("Geçerli bir kutu hakkı miktarı girin.");
+      return;
+    }
+    const confirmed = await customConfirm(`Tüm kullanıcılara ${amount} kutu hakkı ${add ? 'eklemek' : 'silmek'} istediğinizden emin misiniz?`);
+    if (confirmed) {
+      db.ref('users').once('value').then(snap => {
+        const updates = {};
+        snap.forEach(child => {
+          if (child.val().approved && !child.val().blocked && child.key !== 'weizendtv') {
+            const currentRights = child.val().kutuHakki || 0;
+            updates['/users/' + child.key + '/kutuHakki'] = add ? currentRights + amount : Math.max(0, currentRights - amount);
+          }
+        });
+        db.ref().update(updates).then(() => {
+          displayMessage(`Tüm kullanıcıların kutu hakları ${amount} miktarında ${add ? 'artırıldı' : 'azaltıldı'}.`);
+          document.getElementById("globalBoxRight").value = '';
+        });
+      });
+    }
+  }
+
+  async function revealAll() {
+    const confirmed = await customConfirm("Tüm kutuları gerçekten açmak istiyor musunuz? Bu işlem, tüm kutuların içeriğini ortaya çıkarır ve mevcut turu bitirir.");
+    if (confirmed) {
+      db.ref('boxes').once('value', snap => {
+        const boxesData = snap.val();
+        const updates = {};
+        for (const boxId in boxesData) {
+          updates[`/boxes/${boxId}/opened`] = true;
+        }
+        db.ref().update(updates).then(() => {
+            isGameLocked = true;
+            displayMessage("Tüm kutular açıldı! Yeni oyun için 'Oyunu Baştan Başlat' butonunu kullanabilirsiniz.");
+        });
+      });
+    }
+  }
+
+  async function resetGame() {
+    const confirmed = await customConfirm("Oyunu baştan başlatmak istediğinizden emin misiniz? Tüm kutular sıfırlanacak ve kullanıcıların puanları, hakları ve diğer oyun verileri SIFIRLANACAKTIR.");
+    if (confirmed) {
+      isGameLocked = true;
+      const usersRef = db.ref('users');
+      usersRef.once('value').then(snap => {
+        const updates = {};
+        snap.forEach(child => {
+            if (child.key !== 'weizendtv') {
+                updates[`/users/${child.key}/balance`] = 0;
+                updates[`/users/${child.key}/highestBalanceEver`] = 0;
+                updates[`/users/${child.key}/kutuHakki`] = 0;
+                updates[`/users/${child.key}/activeMultiplier`] = 1;
+                updates[`/users/${child.key}/multiplierSource`] = 'none';
+                updates[`/users/${child.key}/multiplierRemainingUses`] = 0;
+                updates[`/users/${child.key}/iflasShieldUses`] = 0;
+                updates[`/users/${child.key}/iflasCount`] = 0;
+                updates[`/users/${child.key}/iflasShieldUsedCount`] = 0;
+                updates[`/users/${child.key}/multiplierFoundCount`] = 0;
+                updates[`/users/${child.key}/surpriseBoxesOpened`] = 0;
+                updates[`/users/${child.key}/boxesOpenedCount`] = 0;
+                updates[`/users/${child.key}/lastDailyRewardClaim`] = null;
+            }
+        });
+        updates['/game/totalOpenedBoxes'] = 0;
+        updates['/game/boxOpeningStats'] = null; // İstatistikleri sıfırla
+
+        db.ref().update(updates).then(() => {
+          restartSystem(false); // Kullanıcılara sormadan sistemi yeniden başlat
+        });
+      });
+    }
+  }
+
+  async function restartSystem(ask = true) {
+      let confirmed = true;
+      if (ask) {
+        confirmed = await customConfirm("Sistemi yeniden başlatmak istediğinizden emin misiniz? Bu işlem, kutuları karıştırıp yeniden oluşturacak ve yeni bir tur başlatacaktır.");
+      }
+      if (confirmed) {
+        let newBoxes = [];
+        BOX_CONTENTS.forEach(item => {
+          for (let i = 0; i < item.count; i++) {
+            newBoxes.push({ type: item.type, value: item.value || null });
+          }
+        });
+  
+        // Fisher-Yates shuffle
+        for (let i = newBoxes.length - 1; i > 0; i--) {
+          const j = Math.floor(Math.random() * (i + 1));
+          [newBoxes[i], newBoxes[j]] = [newBoxes[j], newBoxes[i]];
+        }
+  
+        const boxesToSave = {};
+        newBoxes.forEach((box, index) => {
+          boxesToSave[index] = {
+            ...box,
+            opened: false,
+            openedBy: null
+          };
+        });
+  
+        db.ref('boxes').set(boxesToSave).then(() => {
+            db.ref('game').update({ totalOpenedBoxes: 0, isSurpriseBoxActive: false, surpriseBoxUser: null, boxOpeningStats: null }).then(() => {
+                isGameLocked = false;
+                displayMessage("Sistem başarıyla yeniden başlatıldı. Yeni tur başladı!");
+                loadBoxes();
+            });
+        });
+      }
+  }
+  
+  async function clearAllTotalSpentPoints() {
+    const confirmed = await customConfirm("Tüm kullanıcıların 'Mağazada Harcanan Puan' istatistiğini sıfırlamak istediğinizden emin misiniz? Bu işlem geri alınamaz.");
+    if(confirmed){
+        const userRef = db.ref('users');
+        userRef.once('value').then(snap => {
+            const updates = {};
+            snap.forEach(child => {
+                if (child.key !== 'weizendtv') {
+                    updates[`/users/${child.key}/totalSpentPoints`] = 0;
+                }
+            });
+            db.ref().update(updates).then(() => {
+                displayMessage("Tüm kullanıcıların harcanan puan istatistikleri sıfırlandı.");
+            });
+        });
+    }
+  }
+
+  async function clearPurchaseHistory() {
+      const confirmed = await customConfirm("Tüm satın alma geçmişini temizlemek istediğinizden emin misiniz? Bu işlem geri alınamaz.");
+      if (confirmed) {
+          db.ref('purchaseHistory').remove().then(() => {
+              displayMessage("Satın alma geçmişi başarıyla temizlendi.");
+          });
+      }
+  }
+  
+  function searchUsers() {
+      const searchTerm = document.getElementById('searchUser').value.toLowerCase();
+      const allUserElements = document.querySelectorAll('#allUsers > div');
+      allUserElements.forEach(userElement => {
+          const username = userElement.querySelector('span.text-gray-200').textContent.toLowerCase();
+          if (username.includes(searchTerm)) {
+              userElement.style.display = 'flex';
+          } else {
+              userElement.style.display = 'none';
+          }
+      });
+  }
+
+
+  // Diğer Modallar ve Fonksiyonları
+  
+  function openUserManagementModal(username) {
+    selectedUserForManagement = username;
+    const userRef = db.ref('users/' + username);
+    userRef.once('value').then(snap => {
+        const u = snap.val();
+        if (!u) return;
+
+        closeAdminPanelModal(); // Paneli kapat
+        document.getElementById('managedUserName').textContent = u.username || username;
+        document.getElementById('managedUserBalance').textContent = u.balance || 0;
+        document.getElementById('managedUserHighestBalance').textContent = u.highestBalanceEver || 0;
+        document.getElementById('managedUserBoxRight').textContent = u.kutuHakki || 0;
+        document.getElementById('managedUserIflasShield').textContent = u.iflasShieldUses || 0;
+        document.getElementById('managedUserMultiplier').textContent = (u.activeMultiplier > 1) ? `${u.activeMultiplier}x` : 'Yok';
+        document.getElementById('managedUserMultiplierUses').textContent = u.multiplierRemainingUses || 0;
+        
+        const isCurrentlyBlocked = u.blocked && u.blockedUntil && Date.now() < u.blockedUntil;
+        document.getElementById('managedUserBlockedStatus').textContent = isCurrentlyBlocked ? 'Evet' : 'Hayır';
+        document.getElementById('managedUserBlockedStatus').className = isCurrentlyBlocked ? 'font-bold text-red-400' : 'font-bold text-green-400';
+        
+        const countdownContainer = document.getElementById('managedUserBlockedCountdownContainer');
+        if (isCurrentlyBlocked) {
+            countdownContainer.classList.remove('hidden');
+            const countdownEl = document.getElementById('managedUserBlockedCountdown');
+            const timer = setInterval(() => {
+                const timeLeft = u.blockedUntil - Date.now();
+                if (timeLeft <= 0) {
+                    clearInterval(timer);
+                    countdownEl.textContent = "Süre Doldu";
+                } else {
+                    const minutes = Math.floor(timeLeft / 60000);
+                    const seconds = Math.floor((timeLeft % 60000) / 1000).toString().padStart(2, '0');
+                    countdownEl.textContent = `${minutes}dk ${seconds}sn`;
+                }
+            }, 1000);
+        } else {
+            countdownContainer.classList.add('hidden');
+        }
+
+        document.getElementById('managedUserBoxesOpened').textContent = u.boxesOpenedCount || 0;
+        document.getElementById('managedUserSurpriseBoxes').textContent = u.surpriseBoxesOpened || 0;
+        document.getElementById('managedUserBombCount').textContent = u.iflasCount || 0;
+        document.getElementById('managedUserMultiplierFoundCount').textContent = u.multiplierFoundCount || 0;
+        document.getElementById('managedUserTotalSpent').textContent = u.totalSpentPoints || 0;
+        document.getElementById('managedUserShieldUsedCount').textContent = u.iflasShieldUsedCount || 0;
+
+        const toggleBtn = document.getElementById('toggleBlockUserBtn');
+        toggleBtn.textContent = isCurrentlyBlocked ? 'Engeli Kaldır' : 'Engelle';
+        toggleBtn.onclick = () => toggleBlockUser(username, u.blocked, u.blockedUntil);
+
+        loadManagedUserPurchaseHistory(username);
+        userManagementModal.style.display = 'flex';
+    });
+  }
+
+  function closeUserManagementModal() {
+      userManagementModal.style.display = 'none';
+      selectedUserForManagement = null;
+      openAdminPanelModal(); // Paneli tekrar aç
+  }
+
+  async function resetUser(username) {
+      const confirmed = await customConfirm(`${username} kullanıcısının tüm oyun verilerini (puan, haklar, istatistikler vb.) sıfırlamak istediğinizden emin misiniz? Bu işlem geri alınamaz.`);
+      if(confirmed){
+          const updates = {
+              balance: 0,
+              highestBalanceEver: 0,
+              kutuHakki: 3, // Sıfırlanınca 3 hediye hak ver
+              activeMultiplier: 1,
+              multiplierSource: 'none',
+              multiplierRemainingUses: 0,
+              iflasShieldUses: 0,
+              iflasCount: 0,
+              iflasShieldUsedCount: 0,
+              multiplierFoundCount: 0,
+              surpriseBoxesOpened: 0,
+              boxesOpenedCount: 0,
+              totalSpentPoints: 0,
+              lastDailyRewardClaim: null,
+              hasReceivedWelcomeGift: true // Sıfırlandığı için tekrar hoşgeldin hediyesi almasın
+          };
+          db.ref(`users/${username}`).update(updates).then(() => {
+              displayMessage(`${username} kullanıcısı başarıyla sıfırlandı.`);
+              closeUserManagementModal();
+          });
+      }
+  }
+  
+  function loadManagedUserPurchaseHistory(username) {
+      const historyList = document.getElementById('managedUserPurchaseHistory');
+      historyList.innerHTML = "<div class='text-center text-gray-400'>Yükleniyor...</div>";
+
+      db.ref('purchaseHistory/' + username).orderByChild('timestamp').once('value', snap => {
+          if (!snap.exists()) {
+              historyList.innerHTML = "<div class='text-center text-gray-400'>Bu kullanıcının satın alma geçmişi bulunmuyor.</div>";
+              return;
+          }
+          let html = "";
+          let purchases = [];
+          snap.forEach(child => {
+              purchases.push(child.val());
+          });
+          purchases.reverse(); // En yeni en üstte
+          
+          purchases.forEach(item => {
+              const date = new Date(item.timestamp).toLocaleString('tr-TR');
+              let statusHtml = '';
+              if (item.type === 'special' && !item.approved) {
+                  statusHtml = `<span class="text-yellow-400 font-bold ml-2">(Onay Bekliyor)</span>`;
+              } else if (item.type === 'special' && item.approved) {
+                  statusHtml = `<span class="text-green-400 font-bold ml-2">(Onaylandı)</span>`;
+              }
+
+              html += `<div class="p-3 mb-2 bg-gray-700 rounded-md">
+                          <p class="font-bold text-white">${item.name} ${statusHtml}</p>
+                          <p class="text-sm text-gray-300">Maliyet: ${item.cost} Puan</p>
+                          <p class="text-xs text-gray-400">${date}</p>
+                       </div>`;
+          });
+          historyList.innerHTML = html;
+      });
+  }
+
+  function openPublicUserDetailModal(username) {
+    const userRef = db.ref('users/' + username);
+    userRef.once('value').then(snap => {
+        const u = snap.val();
+        if (!u) return;
+        
+        document.getElementById('publicUserName').textContent = username;
+        
+        // Blocked info
+        const blockedInfoDiv = document.getElementById('publicUserBlockedInfo');
+        const isCurrentlyBlocked = u.blocked && u.blockedUntil && Date.now() < u.blockedUntil;
+        if (isCurrentlyBlocked) {
+            blockedInfoDiv.classList.remove('hidden');
+            const countdownEl = document.getElementById('publicUserBlockedCountdown');
+            if (activeBlockedUserTimers[username + '_public']) {
+                clearInterval(activeBlockedUserTimers[username + '_public']);
+            }
+            const timerId = setInterval(() => {
+                const timeLeft = u.blockedUntil - Date.now();
+                if (timeLeft <= 0) {
+                    clearInterval(timerId);
+                    countdownEl.textContent = "Süre Doldu";
+                } else {
+                    const minutes = Math.floor(timeLeft / 60000);
+                    const seconds = Math.floor((timeLeft % 60000) / 1000).toString().padStart(2, '0');
+                    countdownEl.textContent = `${minutes}dk ${seconds}sn`;
+                }
+            }, 1000);
+            activeBlockedUserTimers[username + '_public'] = timerId;
+        } else {
+            blockedInfoDiv.classList.add('hidden');
+        }
+
+        // Details
+        document.getElementById('publicUserBalance').textContent = u.balance || 0;
+        document.getElementById('publicUserHighestBalance').textContent = u.highestBalanceEver || 0;
+        document.getElementById('publicUserBoxRight').textContent = u.kutuHakki || 0;
+        document.getElementById('publicUserIflasShield').textContent = u.iflasShieldUses || 0;
+        
+        let multiplierText = "Yok";
+        if (u.activeMultiplier > 1) {
+            multiplierText = `${u.activeMultiplier}x`;
+            if (u.multiplierSource === 'store') {
+                multiplierText += ` (${u.multiplierRemainingUses} kullanım)`;
+            } else if (u.multiplierSource === 'box') {
+                multiplierText += ` (1 kullanım)`;
+            }
+        }
+        document.getElementById('publicUserMultiplier').textContent = multiplierText;
+
+        // Stats
+        document.getElementById('publicUserBoxesOpened').textContent = u.boxesOpenedCount || 0;
+        document.getElementById('publicUserSurpriseBoxes').textContent = u.surpriseBoxesOpened || 0;
+        document.getElementById('publicUserBombCount').textContent = u.iflasCount || 0;
+        document.getElementById('publicUserMultiplierFoundCount').textContent = u.multiplierFoundCount || 0;
+        document.getElementById('publicUserShieldUsedCount').textContent = u.iflasShieldUsedCount || 0;
+        document.getElementById('publicUserTotalSpent').textContent = u.totalSpentPoints || 0;
+
+        // Badges
+        db.ref('users').once('value').then(allUsersSnap => {
+            const usersData = allUsersSnap.val();
+            let leaders = {
+                highestCurrentBalance: -1, currentBalanceUser: null, highestEverBalance: -1, highEverBalanceUser: null, maxSurpriseBoxes: -1, surpriseBoxUser: null,
+                maxBombCount: -1, bombUser: null, maxSpentPoints: -1, spentPointsUser: null, maxMultiplierFound: -1, multiplierUser: null,
+                maxBoxesOpened: -1, boxUser: null, maxShieldUsed: -1, shieldUser: null,
+            };
+            for (const userKey in usersData) {
+                const userData = usersData[userKey];
+                if(userData.approved) {
+                    if ((userData.balance || 0) > leaders.highestCurrentBalance) { leaders.highestCurrentBalance = userData.balance; leaders.currentBalanceUser = userKey; }
+                    if ((userData.highestBalanceEver || 0) > leaders.highestEverBalance) { leaders.highestEverBalance = userData.highestBalanceEver; leaders.highEverBalanceUser = userKey; }
+                    if ((userData.surpriseBoxesOpened || 0) > leaders.maxSurpriseBoxes) { leaders.maxSurpriseBoxes = userData.surpriseBoxesOpened; leaders.surpriseBoxUser = userKey; }
+                    if ((userData.iflasCount || 0) > leaders.maxBombCount) { leaders.maxBombCount = userData.iflasCount; leaders.bombUser = userKey; }
+                    if ((userData.totalSpentPoints || 0) > leaders.maxSpentPoints) { leaders.maxSpentPoints = userData.totalSpentPoints; leaders.spentPointsUser = userKey; }
+                    if ((userData.multiplierFoundCount || 0) > leaders.maxMultiplierFound) { leaders.maxMultiplierFound = userData.multiplierFoundCount; leaders.multiplierUser = userKey; }
+                    if ((userData.boxesOpenedCount || 0) > leaders.maxBoxesOpened) { leaders.maxBoxesOpened = userData.boxesOpenedCount; leaders.boxUser = userKey; }
+                    if ((userData.iflasShieldUsedCount || 0) > leaders.maxShieldUsed) { leaders.maxShieldUsed = userData.iflasShieldUsedCount; leaders.shieldUser = userKey; }
+                }
+            }
+
+            const allLeaderBadges = [
+                username === leaders.currentBalanceUser && leaders.highestCurrentBalance > 0,
+                username === leaders.highEverBalanceUser && leaders.highestEverBalance > 0,
+                username === leaders.surpriseBoxUser && leaders.maxSurpriseBoxes > 0,
+                username === leaders.bombUser && leaders.maxBombCount > 0,
+                username === leaders.storeUser && leaders.maxSpentPoints > 0,
+                username === leaders.multiplierUser && leaders.maxMultiplierFound > 0,
+                username === leaders.boxUser && leaders.maxBoxesOpened > 0,
+                username === leaders.shieldUser && leaders.maxShieldUsed > 0
+            ];
+            const isKing = allLeaderBadges.every(Boolean) && allLeaderBadges.length > 0;
+            
+            document.getElementById('publicUserKingBadge').innerHTML = isKing ? '👑' : '';
+            document.getElementById('publicBadgeCurrent').innerHTML = (username === leaders.currentBalanceUser && leaders.highestCurrentBalance > 0) ? '🥇' : '';
+            document.getElementById('publicBadgeHighest').innerHTML = (username === leaders.highEverBalanceUser && leaders.highestEverBalance > 0) ? '🏆' : '';
+            document.getElementById('publicBadgeSurprise').innerHTML = (username === leaders.surpriseBoxUser && leaders.maxSurpriseBoxes > 0) ? '🎉' : ((u.surpriseBoxesOpened || 0) > 0 ? '🎁' : '');
+            document.getElementById('publicBadgeBomb').innerHTML = (username === leaders.bombUser && leaders.maxBombCount > 0) ? '💣' : '';
+            document.getElementById('publicBadgeStore').innerHTML = (username === leaders.spentPointsUser && leaders.maxSpentPoints > 0) ? '🛒' : '';
+            document.getElementById('publicBadgeMultiplier').innerHTML = (username === leaders.multiplierUser && leaders.maxMultiplierFound > 0) ? '✖️' : '';
+            document.getElementById('publicBadgeBox').innerHTML = (username === leaders.boxUser && leaders.maxBoxesOpened > 0) ? '📦' : '';
+            document.getElementById('publicBadgeShield').innerHTML = (username === leaders.shieldUser && leaders.maxShieldUsed > 0) ? '🛡️' : '';
+
+            publicUserDetailModal.style.display = 'flex';
+        });
+    });
+  }
+
+  function closePublicUserDetailModal() {
+    publicUserDetailModal.style.display = 'none';
+    const username = document.getElementById('publicUserName').textContent;
+    if (activeBlockedUserTimers[username + '_public']) {
+        clearInterval(activeBlockedUserTimers[username + '_public']);
+        delete activeBlockedUserTimers[username + '_public'];
+    }
+  }
+
+  function openInventoryModal() {
+      if(isAdmin) return;
+      db.ref('users/' + currentUser).once('value').then(snap => {
+          const u = snap.val();
+          document.getElementById('inventoryBoxRights').textContent = u.kutuHakki || 0;
+          document.getElementById('inventoryIflasShields').textContent = u.iflasShieldUses || 0;
+          
+          let multiplierHtml = "<p>Aktif çarpan yok.</p>";
+          if(u.activeMultiplier > 1) {
+              if (u.multiplierSource === 'box') {
+                  multiplierHtml = `<p class="font-bold text-white">${u.activeMultiplier}x <span class="text-sm font-normal text-gray-400">(Kutudan - 1 kullanım hakkı)</span></p>`;
+              } else if (u.multiplierSource === 'store') {
+                   multiplierHtml = `<p class="font-bold text-white">${u.activeMultiplier}x <span class="text-sm font-normal text-gray-400">(Mağaza - ${u.multiplierRemainingUses} kullanım hakkı)</span></p>`;
+              }
+          }
+          document.getElementById('inventoryMultiplierDetails').innerHTML = multiplierHtml;
+          inventoryModal.style.display = 'flex';
+      });
+  }
+  function closeInventoryModal() { inventoryModal.style.display = 'none'; }
+  function openBadgeInfoModal() { badgeInfoModal.style.display = 'flex'; }
+  function closeBadgeInfoModal() { badgeInfoModal.style.display = 'none'; }
+  function openPurchaseHistoryModal() { loadPurchaseHistory(); purchaseHistoryModal.style.display = 'flex'; }
+  function closePurchaseHistoryModal() { purchaseHistoryModal.style.display = 'none'; }
+  function openBoxStatsModal() { loadBoxOpeningStats(); boxStatsModal.style.display = 'flex'; }
+  function closeBoxStatsModal() { boxStatsModal.style.display = 'none'; }
+  function closeSpectatorModal() { spectatorModal.style.display = 'none'; }
+
+
+  // Oyun Mantığı
+  
+  function loadBoxes() {
+    db.ref('boxes').on('value', snap => {
+      boxes = snap.val() || [];
+      const boxContainer = document.getElementById("boxContainer");
+      boxContainer.innerHTML = '';
+      for (let i = 0; i < TOTAL_BOXES; i++) {
+        const boxData = boxes[i];
+        const boxElement = document.createElement("div");
+        boxElement.className = `box-item h-12 w-12 flex items-center justify-center font-bold text-xl rounded-md cursor-pointer transition-all duration-300`;
+        boxElement.dataset.id = i;
+  
+        if (boxData && boxData.opened) {
+          boxElement.classList.add('opened');
+          let content = '';
+          if (boxData.type === 'iflas') content = '💣';
+          else if (boxData.type === 'surpriz') content = '🎉';
+          else if (boxData.type === 'multiplier') content = `✖️${boxData.value}`;
+          else content = boxData.value;
+          boxElement.innerHTML = `<div class="text-center"><span class="block text-lg">${content}</span><span class="block text-xs font-normal text-gray-400">${boxData.openedBy}</span></div>`;
+        } else {
+            boxElement.textContent = i + 1;
+            if(!isAdmin) boxElement.onclick = () => openBox(i);
+            boxElement.classList.add('bg-red-700', 'hover:bg-red-600', 'shadow-lg');
+        }
+  
+        boxContainer.appendChild(boxElement);
+      }
+    });
+  }
+
+  function loadTotalOpenedBoxesCount() {
+      db.ref('game/totalOpenedBoxes').on('value', snap => {
+          const count = snap.val() || 0;
+          document.getElementById('totalOpenedBoxesCount').textContent = `${count} / ${TOTAL_BOXES}`;
+      });
+  }
+
+  function loadBoxOpeningStats() {
+      const listEl = document.getElementById('boxStatsList');
+      listEl.innerHTML = "Yükleniyor...";
+      db.ref('game/boxOpeningStats').orderByChild('timestamp').once('value', snap => {
+          if (!snap.exists()) {
+              listEl.innerHTML = "<div class='text-gray-400'>Henüz bu turda kutu açılmadı.</div>";
+              return;
+          }
+          let stats = [];
+          snap.forEach(child => {
+              stats.push(child.val());
+          });
+          stats.reverse(); // En yeni en üstte
+          
+          let html = stats.map(stat => {
+              let resultHtml = '';
+              if (stat.type === 'iflas') {
+                  resultHtml = `<span class="font-bold text-red-500">İFLAS</span>`;
+              } else if (stat.type === 'surpriz') {
+                  resultHtml = `<span class="font-bold text-yellow-400">SÜRPRİZ KUTU</span>`;
+              } else if (stat.type === 'multiplier') {
+                  resultHtml = `<span class="font-bold text-purple-400">${stat.value}x ÇARPAN</span>`;
+              } else {
+                  resultHtml = `<span class="font-bold text-green-400">+${stat.value} Puan</span>`;
+              }
+
+              return `<div class="p-3 mb-2 bg-gray-800 rounded-md text-left">
+                          <p><b class="text-white">${stat.username}</b> kutusundan çıkan: ${resultHtml}</p>
+                          <p class="text-xs text-gray-500">${new Date(stat.timestamp).toLocaleTimeString('tr-TR')}</p>
+                      </div>`;
+          }).join('');
+          listEl.innerHTML = html;
+      });
+  }
+
+  async function openBox(boxId) {
+    if (isGameLocked) { displayMessage("Oyun şu an kilitli. Lütfen adminin yeni turu başlatmasını bekleyin."); return; }
+    if (isAdmin) { displayMessage("Adminler kutu açamaz."); return; }
+  
+    const boxRef = db.ref('boxes/' + boxId);
+    const boxSnap = await boxRef.once('value');
+    if (boxSnap.val().opened) { displayMessage("Bu kutu zaten açılmış."); return; }
+  
+    const userRef = db.ref('users/' + currentUser);
+    const userSnap = await userRef.once('value');
+    const userData = userSnap.val();
+  
+    if (userData.kutuHakki < BOX_RIGHTS_COST_PER_BOX) { displayMessage(`Yeterli kutu hakkın yok. Kutu açmak için ${BOX_RIGHTS_COST_PER_BOX} hakka ihtiyacın var.`); return; }
+    
+    isGameLocked = true; // Prevent opening multiple boxes at once
+  
+    const boxData = boxSnap.val();
+    const updates = {};
+    const newKutuHakki = userData.kutuHakki - BOX_RIGHTS_COST_PER_BOX;
+    let newBalance = userData.balance || 0;
+    let newHighestBalance = userData.highestBalanceEver || 0;
+    
+    updates[`/users/${currentUser}/kutuHakki`] = newKutuHakki;
+    updates[`/boxes/${boxId}/opened`] = true;
+    updates[`/boxes/${boxId}/openedBy`] = currentUser;
+    updates[`/game/totalOpenedBoxes`] = firebase.database.ServerValue.increment(1);
+    updates[`/users/${currentUser}/boxesOpenedCount`] = firebase.database.ServerValue.increment(1);
+    
+    const statRef = db.ref('game/boxOpeningStats').push();
+    statRef.set({
+        username: currentUser,
+        boxId: boxId + 1,
+        type: boxData.type,
+        value: boxData.value || null,
+        timestamp: firebase.database.ServerValue.TIMESTAMP
+    });
+
+    let message = `<b>${boxId + 1}. kutu</b> açıldı! İçinden çıkan: `;
+    let globalMessage = `<b>${currentUser}</b>, ${boxId + 1}. kutuyu açtı ve...<br>`;
+  
+    if (boxData.type === 'iflas') {
+        updates[`/users/${currentUser}/iflasCount`] = firebase.database.ServerValue.increment(1);
+        if (userData.iflasShieldUses > 0) {
+            updates[`/users/${currentUser}/iflasShieldUses`] = userData.iflasShieldUses - 1;
+            updates[`/users/${currentUser}/iflasShieldUsedCount`] = firebase.database.ServerValue.increment(1);
+            message += "<b class='text-blue-400'>İFLAS KORUMASI KULLANILDI!</b> Puanların güvende.";
+            globalMessage += "<b class='text-blue-400'>İFLAS KORUMASI KULLANILDI!</b> Şanslıymış!";
+        } else {
+            newBalance = 0;
+            message += "<b class='text-red-500'>İFLAS!</b> Tüm puanlarını kaybettin.";
+            globalMessage += "<b class='text-red-500'>İFLAS!</b> Tüm puanlarını kaybetti!";
+        }
+    } else if (boxData.type === 'points') {
+        const pointsToAdd = boxData.value * (userData.activeMultiplier || 1);
+        newBalance += pointsToAdd;
+        message += `<b class='text-green-400'>+${pointsToAdd} Puan</b> kazandın!`;
+        globalMessage += `<b class='text-green-400'>+${pointsToAdd} Puan</b> kazandı!`;
+        if (userData.activeMultiplier > 1) {
+            message += ` (${userData.activeMultiplier}x çarpan ile)`;
+            globalMessage += ` (${userData.activeMultiplier}x çarpan ile)`;
+        }
+    } else if (boxData.type === 'surpriz') {
+        updates[`/users/${currentUser}/surpriseBoxesOpened`] = firebase.database.ServerValue.increment(1);
+        updates['/game/isSurpriseBoxActive'] = true;
+        updates['/game/surpriseBoxUser'] = currentUser;
+        message = "Sürpriz kutu buldun! Kartını seçmek için bekle...";
+        globalMessage = `<b>${currentUser}</b> bir <b class="text-yellow-400">SÜRPRİZ KUTU</b> buldu! Herkes izliyor...`;
+    } else if (boxData.type === 'multiplier') {
+        updates[`/users/${currentUser}/activeMultiplier`] = boxData.value;
+        updates[`/users/${currentUser}/multiplierSource`] = 'box';
+        updates[`/users/${currentUser}/multiplierRemainingUses`] = 0; // 'box' çarpanları tek kullanımlıktır, bu bilgi multiplier uygulandığında işlenir.
+        updates[`/users/${currentUser}/multiplierFoundCount`] = firebase.database.ServerValue.increment(1);
+        message += `<b class='text-purple-400'>${boxData.value}x Puan Çarpanı</b> kazandın! Bir sonraki puan kutun bu çarpanla çarpılacak.`;
+        globalMessage += `<b class='text-purple-400'>${boxData.value}x Puan Çarpanı</b> buldu!`;
+    }
+
+    // Çarpanı kullan ve sıfırla (puan kutusu ise)
+    if (boxData.type === 'points' && userData.multiplierSource === 'box') {
+        updates[`/users/${currentUser}/activeMultiplier`] = 1;
+        updates[`/users/${currentUser}/multiplierSource`] = 'none';
+    } else if (boxData.type === 'points' && userData.multiplierSource === 'store' && userData.multiplierRemainingUses > 0) {
+        const newUses = userData.multiplierRemainingUses - 1;
+        updates[`/users/${currentUser}/multiplierRemainingUses`] = newUses;
+        if (newUses <= 0) {
+            updates[`/users/${currentUser}/activeMultiplier`] = 1;
+            updates[`/users/${currentUser}/multiplierSource`] = 'none';
+            updates[`/users/${currentUser}/activeStoreMultiplierItemId`] = null;
+        }
+    }
+
+    updates[`/users/${currentUser}/balance`] = newBalance;
+    if (newBalance > newHighestBalance) {
+        updates[`/users/${currentUser}/highestBalanceEver`] = newBalance;
+    }
+    
+    // Global bildirim
+    db.ref('game/lastOpenedBox').set({
+      message: globalMessage,
+      timestamp: firebase.database.ServerValue.TIMESTAMP
+    }).then(() => {
+        db.ref().update(updates).then(() => {
+            if (boxData.type !== 'surpriz') {
+                openOpenedBoxInfoModal(message);
+                isGameLocked = false;
+            }
+        });
+    });
+  }
+
+  function openOpenedBoxInfoModal(message) {
+      document.getElementById('openedBoxInfoContent').innerHTML = message;
+      openedBoxInfoModal.style.display = 'flex';
+  }
+  function closeOpenedBoxInfoModal() {
+      openedBoxInfoModal.style.display = 'none';
+  }
+
+  function listenForGameChanges() {
+      db.ref('game/lastOpenedBox').on('value', snap => {
+          if(!snap.exists()) return;
+          const data = snap.val();
+          const now = Date.now();
+          // Sadece son 10 saniyedeki bildirimleri göster
+          if (now - data.timestamp < 10000 && data.timestamp > sessionStartTime) {
+              if (countdownInterval) clearInterval(countdownInterval);
+
+              const contentEl = document.getElementById('globalOpenedBoxInfoContent');
+              const countdownEl = document.getElementById('globalOpenedBoxCountdown');
+              contentEl.innerHTML = data.message;
+              globalOpenedBoxInfoModal.style.display = 'flex';
+              
+              let timeLeft = 5;
+              countdownEl.textContent = `(Kapanıyor: ${timeLeft}s)`;
+              countdownInterval = setInterval(() => {
+                  timeLeft--;
+                  countdownEl.textContent = `(Kapanıyor: ${timeLeft}s)`;
+                  if (timeLeft <= 0) {
+                      clearInterval(countdownInterval);
+                      globalOpenedBoxInfoModal.style.display = 'none';
+                  }
+              }, 1000);
+          }
+      });
+  }
+  
+  function listenForAdminNotifications() {
+      if(isAdmin) return;
+      const userNotifRef = db.ref(`users/${currentUser}/notifications`);
+      userNotifRef.on('child_added', (snap) => {
+          if (snap.val().timestamp > sessionStartTime) {
+              displayMessage(`<b>Yönetici Bildirimi:</b><br>${snap.val().message}`);
+              userNotifRef.child(snap.key).remove(); // Bildirimi gösterdikten sonra sil
+          }
+      });
+  }
+
+  // Sürpriz Kutu Mantığı
+  async function listenForSurpriseBox() {
+    db.ref('game/isSurpriseBoxActive').on('value', async (snap) => {
+      const isActive = snap.val();
+      const gameSnap = await db.ref('game').once('value');
+      const gameData = gameSnap.val();
+      const surpriseUser = gameData.surpriseBoxUser;
+
+      if (isActive && surpriseUser) {
+        // Admin veya başka bir oyuncu ise izleyici modunu aç
+        if (currentUser !== surpriseUser) {
+          document.getElementById('spectatorTitle').textContent = `Sürpriz Kutu Bulundu!`;
+          document.getElementById('spectatorInfo').textContent = `${surpriseUser} bir kart seçiyor... Bekleyin!`;
+          document.getElementById('spectatorResult').textContent = '';
+          const spectatorCardContainer = document.getElementById('spectatorCardContainer');
+          spectatorCardContainer.innerHTML = '';
+          for (let i = 0; i < 5; i++) {
+            spectatorCardContainer.innerHTML += `<div class="h-28 w-20 bg-yellow-500 rounded-lg flex items-center justify-center text-4xl shadow-lg">?</div>`;
+          }
+          spectatorModal.style.display = 'flex';
+        }
+        // Eğer sürpriz kutuyu açan kullanıcı sensen seçim ekranını aç
+        else {
+          const storeItemSnap = await db.ref('storeItems').orderByChild('type').equalTo('surpriseBox').once('value');
+          let cards = defaultSurpriseCardValues;
+          if (storeItemSnap.exists()) {
+              storeItemSnap.forEach(child => {
+                  const item = child.val();
+                  if (item.surpriseBoxCards && item.surpriseBoxCards.length === 5) {
+                      cards = item.surpriseBoxCards;
+                  }
+              });
+          }
+          
+          cardContainer.innerHTML = '';
+          cards.forEach((card, index) => {
+            const cardElement = document.createElement('div');
+            cardElement.className = 'card h-40 w-28 cursor-pointer perspective';
+            cardElement.innerHTML = `
+              <div class="card-back absolute w-full h-full bg-yellow-500 rounded-lg flex items-center justify-center text-6xl shadow-lg border-2 border-yellow-300">?</div>
+              <div class="card-front absolute w-full h-full bg-gray-700 rounded-lg flex flex-col items-center justify-center p-2 shadow-lg border-2 border-green-400"></div>
+            `;
+            cardElement.onclick = () => selectCard(index, cards);
+            cardContainer.appendChild(cardElement);
+          });
+          cardSelectionModal.style.display = 'flex';
+        }
+      } else {
+        closeSpectatorModal();
+      }
+    });
+  }
+  
+  async function selectCard(selectedIndex, cards) {
+      // Prevent multiple clicks
+      document.querySelectorAll('.card').forEach(c => c.onclick = null);
+
+      const userSnap = await db.ref('users/' + currentUser).once('value');
+      const userData = userSnap.val();
+      const updates = {};
+      const chosenCard = cards[selectedIndex];
+
+      let rewardMessage = "";
+
+      if (chosenCard.type === 'points') {
+          const pointsToAdd = chosenCard.value;
+          updates[`/users/${currentUser}/balance`] = (userData.balance || 0) + pointsToAdd;
+          if ((userData.balance || 0) + pointsToAdd > (userData.highestBalanceEver || 0)) {
+              updates[`/users/${currentUser}/highestBalanceEver`] = (userData.balance || 0) + pointsToAdd;
+          }
+          rewardMessage = `<b class="text-green-400">+${pointsToAdd} Puan</b> kazandın!`;
+      } else if (chosenCard.type === 'boxRights') {
+          updates[`/users/${currentUser}/kutuHakki`] = (userData.kutuHakki || 0) + chosenCard.value;
+          rewardMessage = `<b class="text-green-400">+${chosenCard.value} Kutu Hakkı</b> kazandın!`;
+      } else if (chosenCard.type === 'iflasShield') {
+          updates[`/users/${currentUser}/iflasShieldUses`] = (userData.iflasShieldUses || 0) + chosenCard.value;
+          rewardMessage = `<b class="text-blue-400">+${chosenCard.value} İflas Kalkanı</b> kazandın!`;
+      } else if (chosenCard.type === 'tempMultiplier') {
+          // Bu özellik sürpriz kutuda şu an için aktif değil, ama altyapısı hazır.
+          rewardMessage = `Bir çarpan kazandın!`;
+      }
+      
+      const allCards = cardContainer.querySelectorAll('.card');
+      allCards.forEach((card, index) => {
+          const cardData = cards[index];
+          const front = card.querySelector('.card-front');
+          let content = '';
+          if (cardData.type === 'points') content = `<span class="text-2xl font-bold text-green-400">${cardData.value}</span><span class="text-sm text-gray-300">Puan</span>`;
+          else if (cardData.type === 'boxRights') content = `<span class="text-2xl font-bold text-green-400">${cardData.value}</span><span class="text-sm text-gray-300">Kutu Hakkı</span>`;
+          else if (cardData.type === 'iflasShield') content = `<span class="text-2xl font-bold text-blue-400">${cardData.value}</span><span class="text-sm text-gray-300">Kalkan</span>`;
+          front.innerHTML = content;
+          card.classList.add('opened');
+      });
+
+      // Update the database with the reward
+      await db.ref().update(updates);
+      
+      // Notify spectators
+      await db.ref('game/surpriseResult').set({
+          user: currentUser,
+          result: rewardMessage,
+          allCards: cards
+      });
+
+      setTimeout(() => {
+          cardSelectionModal.style.display = 'none';
+          openOpenedBoxInfoModal(`Sürpriz kutu sonucu: ${rewardMessage}`);
+          db.ref('game').update({ isSurpriseBoxActive: false, surpriseBoxUser: null, surpriseResult: null });
+          isGameLocked = false;
+      }, 5000); // Show cards for 5 seconds
+  }
+
+  db.ref('game/surpriseResult').on('value', (snap) => {
+      if (spectatorModal.style.display === 'flex' && snap.exists()) {
+          const data = snap.val();
+          if (currentUser !== data.user) {
+              const allCards = data.allCards;
+              const spectatorCardContainer = document.getElementById('spectatorCardContainer');
+              spectatorCardContainer.innerHTML = '';
+              allCards.forEach(cardData => {
+                  let content = '';
+                  if (cardData.type === 'points') content = `<span class="text-xl font-bold text-green-400">${cardData.value}</span><span class="text-xs text-gray-300">Puan</span>`;
+                  else if (cardData.type === 'boxRights') content = `<span class="text-xl font-bold text-green-400">${cardData.value}</span><span class="text-xs text-gray-300">Kutu Hakkı</span>`;
+                  else if (cardData.type === 'iflasShield') content = `<span class="text-xl font-bold text-blue-400">${cardData.value}</span><span class="text-xs text-gray-300">Kalkan</span>`;
+                  
+                  spectatorCardContainer.innerHTML += `<div class="h-28 w-20 bg-gray-700 rounded-lg flex flex-col items-center justify-center p-1 shadow-lg border-2 border-green-400">${content}</div>`;
+              });
+              document.getElementById('spectatorInfo').textContent = `${data.user} seçimini yaptı!`;
+              document.getElementById('spectatorResult').innerHTML = `Kazanç: ${data.result}`;
+          }
+      }
+  });
+
+
+  // MAĞAZA SİSTEMİ
+  function switchStoreTab(tab) {
+      currentStoreTab = tab;
+      const gameContent = document.getElementById('gameStoreContent');
+      const specialContent = document.getElementById('specialStoreContent');
+      const gameTabBtn = document.getElementById('gameStoreTab');
+      const specialTabBtn = document.getElementById('specialStoreTab');
+      
+      if (tab === 'game') {
+          gameContent.classList.remove('hidden');
+          specialContent.classList.add('hidden');
+          gameTabBtn.classList.add('border-red-500', 'text-white');
+          gameTabBtn.classList.remove('border-transparent', 'text-gray-400');
+          specialTabBtn.classList.add('border-transparent', 'text-gray-400');
+          specialTabBtn.classList.remove('border-red-500', 'text-white');
+      } else {
+          gameContent.classList.add('hidden');
+          specialContent.classList.remove('hidden');
+          specialTabBtn.classList.add('border-red-500', 'text-white');
+          specialTabBtn.classList.remove('border-transparent', 'text-gray-400');
+          gameTabBtn.classList.add('border-transparent', 'text-gray-400');
+          gameTabBtn.classList.remove('border-red-500', 'text-white');
+      }
+      loadStoreItems();
+  }
+  
+  document.getElementById('newItemType').addEventListener('change', function() {
+      const type = this.value;
+      document.getElementById('tempMultiplierFields').classList.toggle('hidden', type !== 'tempMultiplier');
+      document.getElementById('surpriseBoxFields').classList.toggle('hidden', type !== 'surpriseBox');
+  });
+
+  function resetStoreItemForm() {
+      editingItemId = null;
+      document.getElementById('newItemName').value = '';
+      document.getElementById('newItemDescription').value = '';
+      document.getElementById('newItemCost').value = '';
+      document.getElementById('newItemStock').value = '';
+      document.getElementById('newItemType').value = '';
+      document.getElementById('newItemValue').value = '';
+      document.getElementById('newItemOrder').value = '';
+      document.getElementById('newItemImageUrl').value = '';
+      document.getElementById('newItemMultiplierDuration').value = '';
+      document.getElementById('newItemCountdownDuration').value = '';
+      for (let i = 1; i <= 5; i++) {
+        document.getElementById(`surpriseCardType${i}`).value = 'points';
+        document.getElementById(`surpriseCardValue${i}`).value = '';
+      }
+      document.getElementById('addUpdateStoreItemBtn').textContent = 'ÜRÜN EKLE';
+      document.getElementById('tempMultiplierFields').classList.add('hidden');
+      document.getElementById('surpriseBoxFields').classList.add('hidden');
+  }
+
+  async function saveStoreItem() {
+      const name = document.getElementById('newItemName').value;
+      const description = document.getElementById('newItemDescription').value;
+      const cost = parseInt(document.getElementById('newItemCost').value);
+      const stock = document.getElementById('newItemStock').value; // String olarak al, boş olabilir
+      const type = document.getElementById('newItemType').value;
+      const value = parseInt(document.getElementById('newItemValue').value);
+      const order = parseInt(document.getElementById('newItemOrder').value);
+      const imageUrl = document.getElementById('newItemImageUrl').value;
+      const multiplierDuration = parseInt(document.getElementById('newItemMultiplierDuration').value);
+      const countdownDuration = document.getElementById('newItemCountdownDuration').value;
+
+      if (!name || !cost || !type || (!value && type !== 'special' && type !== 'surpriseBox') || !order) {
+          displayMessage("Lütfen zorunlu alanları doldurun: Ürün Adı, Maliyet, Tip, Değer ve Sıralama.");
+          return;
+      }
+      
+      const itemData = {
+          name, description, cost, 
+          stock: stock === '' ? -1 : parseInt(stock), // -1 for unlimited
+          type, value, order, imageUrl,
+          isBestSeller: false,
+          availableUntil: null,
+      };
+
+      if (type === 'tempMultiplier') {
+          if (!multiplierDuration) {
+              displayMessage("Geçici çarpan için 'Çarpan Süresi' belirtilmelidir.");
+              return;
+          }
+          itemData.multiplierDuration = multiplierDuration;
+      }
+
+      if (type === 'surpriseBox') {
+          itemData.surpriseBoxCards = [];
+          for (let i = 1; i <= 5; i++) {
+              const cardType = document.getElementById(`surpriseCardType${i}`).value;
+              const cardValue = parseInt(document.getElementById(`surpriseCardValue${i}`).value);
+              if (!cardType || isNaN(cardValue)) {
+                  displayMessage(`Lütfen Sürpriz Kutu için ${i}. kartın bilgilerini tam girin.`);
+                  return;
+              }
+              itemData.surpriseBoxCards.push({ type: cardType, value: cardValue });
+          }
+      }
+
+      if (countdownDuration) {
+          const availableUntil = Date.now() + parseInt(countdownDuration) * 60 * 1000;
+          itemData.availableUntil = availableUntil;
+      }
+      
+      let itemRef;
+      if (editingItemId) {
+          itemRef = db.ref('storeItems/' + editingItemId);
+      } else {
+          itemRef = db.ref('storeItems').push();
+      }
+      
+      await itemRef.set(itemData);
+      displayMessage(`Ürün başarıyla ${editingItemId ? 'güncellendi' : 'eklendi'}.`);
+      resetStoreItemForm();
+      loadStoreItems();
+  }
+
+  function loadStoreItems() {
+      const gameContainer = document.getElementById('gameStoreItemsContainer');
+      const specialContainer = document.getElementById('specialStoreItemsContainer');
+      const adminList = document.getElementById('currentStoreItems');
+
+      gameContainer.innerHTML = '';
+      specialContainer.innerHTML = '';
+      if(isAdmin) adminList.innerHTML = 'Yükleniyor...';
+
+      db.ref('storeItems').orderByChild('order').on('value', snap => {
+          gameContainer.innerHTML = '';
+          specialContainer.innerHTML = '';
+          if(isAdmin) adminList.innerHTML = '';
+          
+          Object.values(activeStoreCountdowns).forEach(clearInterval);
+
+          if (!snap.exists()) {
+              gameContainer.innerHTML = '<p class="text-center text-gray-400 col-span-full">Mağazada ürün bulunmamaktadır.</p>';
+              specialContainer.innerHTML = '<p class="text-center text-gray-400 col-span-full">Mağazada ürün bulunmamaktadır.</p>';
+              if(isAdmin) adminList.innerHTML = '<p class="text-center text-gray-400">Mağazada ürün bulunmamaktadır.</p>';
+              return;
+          }
+          
+          let gameItemsExist = false;
+          let specialItemsExist = false;
+
+          snap.forEach(child => {
+              const itemId = child.key;
+              const item = child.val();
+              
+              const isAvailable = !item.availableUntil || Date.now() < item.availableUntil;
+              const stockInfo = item.stock === -1 ? 'Sınırsız' : item.stock;
+              const soldOut = item.stock === 0;
+
+              if (!isAvailable && !isAdmin) return; // Süresi dolmuş ürünleri normal kullanıcılara gösterme
+
+              // Admin Listesi
+              if(isAdmin) {
+                  const adminItemHtml = `
+                    <div class="flex justify-between items-center p-3 mb-2 bg-gray-700 rounded-md">
+                        <span class="text-gray-200">${item.order}. ${item.name} (${item.type})</span>
+                        <div class="flex space-x-2">
+                           <button onclick="editStoreItem('${itemId}')" class="py-1 px-3 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold rounded-md">Düzenle</button>
+                           <button onclick="deleteStoreItem('${itemId}')" class="py-1 px-3 bg-red-600 hover:bg-red-500 text-white text-xs font-bold rounded-md">Sil</button>
+                        </div>
+                    </div>`;
+                  adminList.innerHTML += adminItemHtml;
+              }
+
+              // Kullanıcı Kartları
+              let countdownHtml = '';
+              if (item.availableUntil && isAvailable) {
+                  const countdownId = `countdown-store-${itemId}`;
+                  countdownHtml = `<div id="${countdownId}" class="text-xs text-center text-red-400 font-bold mt-2">--:--:--</div>`;
+                  
+                  const timerId = setInterval(() => {
+                      const countdownEl = document.getElementById(countdownId);
+                      if (!countdownEl) { clearInterval(timerId); return; }
+                      const timeLeft = item.availableUntil - Date.now();
+                      if (timeLeft <= 0) {
+                          clearInterval(timerId);
+                          countdownEl.textContent = "Süre Doldu!";
+                          // Optionally, hide or disable the item
+                          const cardEl = document.getElementById(`store-card-${itemId}`);
+                          if (cardEl) cardEl.style.opacity = '0.5';
+                      } else {
+                          const hours = Math.floor(timeLeft / (1000 * 60 * 60)).toString().padStart(2, '0');
+                          const minutes = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60)).toString().padStart(2, '0');
+                          const seconds = Math.floor((timeLeft % (1000 * 60)) / 1000).toString().padStart(2, '0');
+                          countdownEl.textContent = `Kalan Süre: ${hours}:${minutes}:${seconds}`;
+                      }
+                  }, 1000);
+                  activeStoreCountdowns[itemId] = timerId;
+              } else if (item.availableUntil && !isAvailable) {
+                  countdownHtml = `<div class="text-xs text-center text-red-600 font-bold mt-2">Süre Doldu</div>`;
+              }
+              
+              const cardClass = `store-card bg-gray-800 rounded-xl shadow-lg border border-gray-700 p-4 flex flex-col justify-between transition-transform transform hover:scale-105 ${item.isBestSeller ? 'best-seller' : ''} ${(soldOut || !isAvailable) && !isAdmin ? 'opacity-50' : ''}`;
+              const buyButtonClass = `w-full mt-4 py-2 px-4 text-white font-bold rounded-lg shadow-md transition duration-300 ${soldOut || (!isAvailable && !isAdmin) ? 'bg-gray-600 cursor-not-allowed' : 'bg-green-600 hover:bg-green-500'}`;
+              const buyButtonAction = (soldOut || !isAvailable || isAdmin) ? '' : `onclick="buyStoreItem('${itemId}')"`;
+              
+              const itemHtml = `
+                  <div id="store-card-${itemId}" class="${cardClass}">
+                      <div>
+                          <img src="${item.imageUrl || 'https://via.placeholder.com/300x150.png?text=WeizendTV'}" alt="${item.name}" class="rounded-lg mb-4 w-full h-32 object-cover">
+                          <h4 class="text-yellow-400 text-xl font-bold">${item.name}</h4>
+                          <p class="text-gray-300 text-sm mt-2 mb-3">${item.description}</p>
+                          <div class="text-sm text-gray-400 space-y-1">
+                              <p>Stok: <span class="font-bold text-white">${stockInfo}</span></p>
+                              <p>Maliyet: <span class="font-bold text-yellow-300">${item.cost} Puan</span></p>
+                          </div>
+                          ${countdownHtml}
+                      </div>
+                      <button class="${buyButtonClass}" ${buyButtonAction}>
+                          ${soldOut ? 'Tükendi' : (!isAvailable && !isAdmin ? 'Süre Doldu' : (isAdmin ? 'Admin' : 'Satın Al'))}
+                      </button>
+                  </div>`;
+              
+              if (item.type === 'special') {
+                  specialContainer.innerHTML += itemHtml;
+                  specialItemsExist = true;
+              } else {
+                  gameContainer.innerHTML += itemHtml;
+                  gameItemsExist = true;
+              }
+          });
+          
+          if (!gameItemsExist) gameContainer.innerHTML = '<p class="text-center text-gray-400 col-span-full">Oyun mağazasında ürün bulunmamaktadır.</p>';
+          if (!specialItemsExist) specialContainer.innerHTML = '<p class="text-center text-gray-400 col-span-full">Özel ürün mağazasında ürün bulunmamaktadır.</p>';
+      });
+  }
+
+  function editStoreItem(itemId) {
+      editingItemId = itemId;
+      db.ref('storeItems/' + itemId).once('value', snap => {
+          const item = snap.val();
+          document.getElementById('newItemName').value = item.name;
+          document.getElementById('newItemDescription').value = item.description;
+          document.getElementById('newItemCost').value = item.cost;
+          document.getElementById('newItemStock').value = item.stock === -1 ? '' : item.stock;
+          document.getElementById('newItemType').value = item.type;
+          document.getElementById('newItemValue').value = item.value;
+          document.getElementById('newItemOrder').value = item.order;
+          document.getElementById('newItemImageUrl').value = item.imageUrl || '';
+          
+          document.getElementById('tempMultiplierFields').classList.toggle('hidden', item.type !== 'tempMultiplier');
+          document.getElementById('surpriseBoxFields').classList.toggle('hidden', item.type !== 'surpriseBox');
+
+          if (item.type === 'tempMultiplier') {
+              document.getElementById('newItemMultiplierDuration').value = item.multiplierDuration;
+          }
+          if (item.type === 'surpriseBox' && item.surpriseBoxCards) {
+              item.surpriseBoxCards.forEach((card, index) => {
+                  document.getElementById(`surpriseCardType${index + 1}`).value = card.type;
+                  document.getElementById(`surpriseCardValue${index + 1}`).value = card.value;
+              });
+          }
+          if (item.availableUntil) {
+             // Geri sayımı düzenleme formunda göstermek karmaşık olabilir, şimdilik boş bırakıyoruz.
+             document.getElementById('newItemCountdownDuration').value = '';
+          }
+
+          document.getElementById('addUpdateStoreItemBtn').textContent = 'ÜRÜNÜ GÜNCELLE';
+          document.getElementById('adminStoreControls').scrollIntoView({ behavior: 'smooth' });
+      });
+  }
+
+  async function deleteStoreItem(itemId) {
+      const confirmed = await customConfirm("Bu ürünü silmek istediğinizden emin misiniz?");
+      if (confirmed) {
+          await db.ref('storeItems/' + itemId).remove();
+          displayMessage("Ürün silindi.");
+          loadStoreItems();
+      }
+  }
+
+  async function buyStoreItem(itemId) {
+    if (isAdmin) { displayMessage("Adminler alışveriş yapamaz."); return; }
+    
+    const itemRef = db.ref('storeItems/' + itemId);
+    const itemSnap = await itemRef.once('value');
+    const item = itemSnap.val();
+
+    if (!item) { displayMessage("Ürün bulunamadı."); return; }
+    if (item.stock === 0) { displayMessage("Bu ürünün stoğu tükenmiştir."); return; }
+    if (item.availableUntil && Date.now() > item.availableUntil) { displayMessage("Bu ürünün satış süresi dolmuştur."); return; }
+    
+    const userRef = db.ref('users/' + currentUser);
+    const userSnap = await userRef.once('value');
+    const user = userSnap.val();
+
+    if (user.balance < item.cost) { displayMessage("Yetersiz puan!"); return; }
+
+    const confirmed = await customConfirm(`<b>${item.name}</b> ürününü <b>${item.cost} puana</b> satın almak istediğinizden emin misiniz?`);
+    if (!confirmed) return;
+    
+    // Check stock again before proceeding (race condition)
+    const currentItemSnap = await itemRef.once('value');
+    const currentItem = currentItemSnap.val();
+    if (currentItem.stock === 0) { displayMessage("Maalesef, siz işlemi onaylarken ürün tükendi."); return; }
+
+    const updates = {};
+    updates[`/users/${currentUser}/balance`] = user.balance - item.cost;
+    updates[`/users/${currentUser}/totalSpentPoints`] = (user.totalSpentPoints || 0) + item.cost;
+    updates[`/users/${currentUser}/storePurchasesCount`] = firebase.database.ServerValue.increment(1);
+
+    if (item.stock !== -1) { // -1 is unlimited
+        updates[`/storeItems/${itemId}/stock`] = item.stock - 1;
+    }
+
+    let purchaseMessage = `<b>${item.name}</b> başarıyla satın alındı!`;
+
+    // Apply item effect
+    if (item.type === 'boxRights') {
+        updates[`/users/${currentUser}/kutuHakki`] = (user.kutuHakki || 0) + item.value;
+        purchaseMessage += ` Hesabınıza ${item.value} kutu hakkı eklendi.`;
+    } else if (item.type === 'iflasShield') {
+        updates[`/users/${currentUser}/iflasShieldUses`] = (user.iflasShieldUses || 0) + item.value;
+        purchaseMessage += ` Hesabınıza ${item.value} iflas kalkanı eklendi.`;
+    } else if (item.type === 'tempMultiplier') {
+        // Kullanıcının zaten bir çarpanı varsa üzerine yazma
+        if (user.activeMultiplier && user.activeMultiplier > 1) {
+            displayMessage("Zaten aktif bir çarpanınız var. Onu kullandıktan sonra yenisini alabilirsiniz.");
+            return; // İşlemi iptal et
+        }
+        updates[`/users/${currentUser}/activeMultiplier`] = item.value;
+        updates[`/users/${currentUser}/multiplierRemainingUses`] = item.multiplierDuration;
+        updates[`/users/${currentUser}/multiplierSource`] = 'store';
+        updates[`/users/${currentUser}/activeStoreMultiplierItemId`] = itemId;
+        purchaseMessage += ` ${item.value}x puan çarpanı ${item.multiplierDuration} kutu açımı boyunca aktif edildi.`;
+    } else if (item.type === 'special') {
+        // Özel ürünler için onay süreci gerekiyor
+        purchaseMessage = `<b>${item.name}</b> satın alma talebiniz alındı. Admin onayı sonrası ürün hesabınıza tanımlanacaktır.`;
+    }
+
+    // Save purchase to history
+    const purchaseRef = db.ref('purchaseHistory/' + currentUser).push();
+    const purchaseData = {
+        itemId: itemId,
+        name: item.name,
+        cost: item.cost,
+        type: item.type,
+        approved: item.type !== 'special', // Special items need approval
+        timestamp: firebase.database.ServerValue.TIMESTAMP
+    };
+    updates[`/purchaseHistory/${currentUser}/${purchaseRef.key}`] = purchaseData;
+
+    if(item.type === 'special') {
+        const pendingPurchaseRef = db.ref('pendingSpecialPurchases').push();
+        updates[`/pendingSpecialPurchases/${pendingPurchaseRef.key}`] = {
+            username: currentUser,
+            ...purchaseData
+        };
+    }
+    
+    await db.ref().update(updates);
+    displayMessage(purchaseMessage);
+  }
+
+  function loadPurchaseHistory() {
+      const historyList = document.getElementById('purchaseHistoryList');
+      if(isAdmin) return;
+
+      historyList.innerHTML = "<div class='text-center text-gray-400'>Yükleniyor...</div>";
+
+      db.ref('purchaseHistory/' + currentUser).orderByChild('timestamp').once('value', snap => {
+          if (!snap.exists()) {
+              historyList.innerHTML = "<div class='text-center text-gray-400'>Henüz bir şey satın almadınız.</div>";
+              return;
+          }
+          let html = "";
+          let purchases = [];
+          snap.forEach(child => {
+              purchases.push(child.val());
+          });
+          purchases.reverse(); // En yeni en üstte
+          
+          purchases.forEach(item => {
+              const date = new Date(item.timestamp).toLocaleString('tr-TR');
+              let statusHtml = '';
+              if (item.type === 'special' && !item.approved) {
+                  statusHtml = `<span class="text-yellow-400 font-bold ml-2">(Onay Bekliyor)</span>`;
+              } else if (item.type === 'special' && item.approved) {
+                  statusHtml = `<span class="text-green-400 font-bold ml-2">(Onaylandı)</span>`;
+              }
+
+              html += `<div class="p-4 mb-3 bg-gray-900 rounded-lg border border-gray-700 text-left">
+                          <h5 class="font-bold text-lg text-white">${item.name} ${statusHtml}</h5>
+                          <p class="text-sm text-gray-300">Maliyet: <span class="font-semibold text-yellow-300">${item.cost} Puan</span></p>
+                          <p class="text-xs text-gray-400 mt-2">${date}</p>
+                       </div>`;
+          });
+          historyList.innerHTML = html;
+      });
+  }
+
+  function loadPendingSpecialPurchases() {
+      const listContainer = document.getElementById('pendingSpecialPurchasesList');
+      db.ref('pendingSpecialPurchases').on('value', snap => {
+          listContainer.innerHTML = '';
+          if (!snap.exists()) {
+              listContainer.innerHTML = "<div class='text-center text-gray-400'>Onay bekleyen satın alım yok.</div>";
+              return;
+          }
+          snap.forEach(child => {
+              const purchase = child.val();
+              const purchaseId = child.key;
+              const date = new Date(purchase.timestamp).toLocaleString('tr-TR');
+              listContainer.innerHTML += `
+                  <div class="p-3 mb-2 bg-gray-700 rounded-md">
+                      <p class="font-bold">${purchase.username} - ${purchase.name}</p>
+                      <p class="text-sm text-gray-300">Maliyet: ${purchase.cost} Puan | Tarih: ${date}</p>
+                      <div class="mt-2 flex space-x-2">
+                          <button onclick="approveSpecialPurchase('${purchaseId}')" class="py-1 px-3 bg-green-600 hover:bg-green-500 text-white text-sm font-bold rounded-md">Onayla</button>
+                          <button onclick="denySpecialPurchase('${purchaseId}')" class="py-1 px-3 bg-red-600 hover:bg-red-500 text-white text-sm font-bold rounded-md">Reddet</button>
+                      </div>
+                  </div>
+              `;
+          });
+      });
+  }
+  
+  async function approveSpecialPurchase(pendingId) {
+      const pendingRef = db.ref('pendingSpecialPurchases/' + pendingId);
+      const pendingSnap = await pendingRef.once('value');
+      if (!pendingSnap.exists()) { displayMessage("Talep bulunamadı."); return; }
+      
+      const purchaseData = pendingSnap.val();
+      const userHistoryRef = db.ref('purchaseHistory/' + purchaseData.username).orderByChild('timestamp').equalTo(purchaseData.timestamp);
+      
+      const historySnap = await userHistoryRef.once('value');
+      if(!historySnap.exists()) { displayMessage("Kullanıcı geçmişinde bu talep bulunamadı."); return; }
+
+      const historyKey = Object.keys(historySnap.val())[0];
+
+      await db.ref(`purchaseHistory/${purchaseData.username}/${historyKey}`).update({ approved: true });
+      await pendingRef.remove();
+
+      notifyUser(purchaseData.username, `<b>${purchaseData.name}</b> adlı özel ürün satın alımınız onaylandı!`);
+      displayMessage(`${purchaseData.username} kullanıcısının satın alımı onaylandı.`);
+  }
+
+  async function denySpecialPurchase(pendingId) {
+    const confirmed = await customConfirm("Bu satın alımı reddetmek istediğinizden emin misiniz? Kullanıcının puanı iade edilecektir.");
+    if (!confirmed) return;
+
+    const pendingRef = db.ref('pendingSpecialPurchases/' + pendingId);
+    const pendingSnap = await pendingRef.once('value');
+    if (!pendingSnap.exists()) { displayMessage("Talep bulunamadı."); return; }
+    
+    const purchaseData = pendingSnap.val();
+    const userRef = db.ref('users/' + purchaseData.username);
+
+    // İade et ve geçmişten sil
+    await userRef.update({
+        balance: firebase.database.ServerValue.increment(purchaseData.cost),
+        totalSpentPoints: firebase.database.ServerValue.increment(-purchaseData.cost)
+    });
+    
+    const userHistoryRef = db.ref('purchaseHistory/' + purchaseData.username).orderByChild('timestamp').equalTo(purchaseData.timestamp);
+    const historySnap = await userHistoryRef.once('value');
+    if(historySnap.exists()) {
+      const historyKey = Object.keys(historySnap.val())[0];
+      await db.ref(`purchaseHistory/${purchaseData.username}/${historyKey}`).remove();
+    }
+    
+    await pendingRef.remove();
+    notifyUser(purchaseData.username, `<b>${purchaseData.name}</b> adlı özel ürün satın alımınız reddedildi ve ${purchaseData.cost} puanınız iade edildi.`);
+    displayMessage(`${purchaseData.username} kullanıcısının satın alımı reddedildi ve puan iade edildi.`);
+  }
+
+  // DUYURU SİSTEMİ
+  function listenForNewAnnouncements() {
+    const announcementsRef = db.ref('announcements').limitToLast(1);
+    announcementsRef.on('child_added', snap => {
+        const announcement = snap.val();
+        const announcementId = snap.key;
+        if(announcement.timestamp > sessionStartTime && !isAdmin) {
+            db.ref(`users/${currentUser}/seenAnnouncements/${announcementId}`).once('value', seenSnap => {
+                if(!seenSnap.exists()) {
+                    document.getElementById('newAnnouncementIndicator').classList.remove('hidden');
+                    document.getElementById('newAnnouncementModalText').textContent = announcement.text;
+                    newAnnouncementModal.style.display = 'flex';
+                }
+            });
+        }
+    });
+  }
+
+  function closeNewAnnouncementModal() {
+      newAnnouncementModal.style.display = 'none';
+  }
+
+  function goToAnnouncements() {
+      closeNewAnnouncementModal();
+      showSection('announcements');
+  }
+
+  async function loadAnnouncements() {
+      const listEl = document.getElementById('announcementsList');
+      const adminListEl = document.getElementById('adminAnnouncementsList');
+      listEl.innerHTML = '<p class="text-center text-gray-400">Duyurular yükleniyor...</p>';
+      if(isAdmin) adminListEl.innerHTML = '<p class="text-center text-gray-400">Yükleniyor...</p>';
+      
+      const userSeenRef = isAdmin ? null : db.ref(`users/${currentUser}/seenAnnouncements`);
+      const userSeenSnap = isAdmin ? null : await userSeenRef.once('value');
+      const seenAnnouncements = isAdmin ? {} : userSeenSnap.val() || {};
+      let hasUnseen = false;
+
+      db.ref('announcements').orderByChild('timestamp').on('value', snap => {
+          listEl.innerHTML = '';
+          if(isAdmin) adminListEl.innerHTML = '';
+
+          if (!snap.exists()) {
+              const noDataMsg = '<p class="text-center text-gray-400">Yayınlanmış bir duyuru yok.</p>';
+              listEl.innerHTML = noDataMsg;
+              if (isAdmin) adminListEl.innerHTML = noDataMsg;
+              return;
+          }
+
+          let announcements = [];
+          snap.forEach(child => {
+              announcements.push({ id: child.key, ...child.val() });
+          });
+          announcements.reverse(); // En yeni en üstte
+
+          announcements.forEach(announcement => {
+              const date = new Date(announcement.timestamp).toLocaleString('tr-TR');
+              const likes = announcement.likes ? Object.keys(announcement.likes).length : 0;
+              const isLikedByCurrentUser = !isAdmin && announcement.likes && announcement.likes[currentUser];
+
+              if (!isAdmin && !seenAnnouncements[announcement.id]) {
+                  hasUnseen = true;
+              }
+
+              // Normal Kullanıcı Arayüzü
+              const announcementHtml = `
+                  <div id="announcement-${announcement.id}" class="bg-gray-800 border ${!isAdmin && !seenAnnouncements[announcement.id] ? 'border-yellow-400' : 'border-gray-700'} p-6 rounded-lg shadow-lg">
+                      <p class="text-gray-200 text-lg whitespace-pre-wrap">${announcement.text}</p>
+                      <div class="flex justify-between items-center mt-4 pt-4 border-t border-gray-600">
+                          <span class="text-xs text-gray-400">${date}</span>
+                          <div class="flex items-center gap-4">
+                              <button onclick="openAnnouncementLikesModal('${announcement.id}')" class="text-sm text-gray-300 hover:text-white transition">
+                                  <span class="likes-count">${likes}</span> Beğeni
+                              </button>
+                              ${!isAdmin ? `
+                              <button onclick="likeAnnouncement('${announcement.id}')" class="like-btn text-2xl transition transform hover:scale-125 ${isLikedByCurrentUser ? 'text-red-500' : 'text-gray-500'}">
+                                  ♥
+                              </button>` : ''}
+                          </div>
+                      </div>
+                  </div>
+              `;
+              listEl.innerHTML += announcementHtml;
+
+              // Admin Arayüzü
+              if (isAdmin) {
+                  const adminHtml = `
+                      <div class="p-3 mb-2 bg-gray-700 rounded-md">
+                          <p class="text-sm text-gray-300 truncate">${announcement.text}</p>
+                          <div class="text-xs text-gray-500 mt-1">${date} - ${likes} Beğeni</div>
+                          <button onclick="deleteAnnouncement('${announcement.id}')" class="text-red-500 hover:text-red-400 text-xs font-bold mt-2">SİL</button>
+                      </div>
+                  `;
+                  adminListEl.innerHTML += adminHtml;
+              }
+          });
+          
+          if (!isAdmin) {
+              document.getElementById('newAnnouncementIndicator').classList.toggle('hidden', !hasUnseen);
+              if (currentActiveSection === 'announcements') {
+                  // Kullanıcı duyurular sekmesine geldiğinde tümünü görmüş say
+                  let updates = {};
+                  announcements.forEach(ann => {
+                      if(!seenAnnouncements[ann.id]) {
+                          updates[ann.id] = true;
+                      }
+                  });
+                  if(Object.keys(updates).length > 0) {
+                      userSeenRef.update(updates);
+                  }
+              }
+          }
+      });
+  }
+
+  async function postAnnouncement() {
+      const text = document.getElementById('announcementText').value.trim();
+      if (!text) { displayMessage("Duyuru metni boş olamaz."); return; }
+
+      const newAnnouncement = {
+          text: text,
+          timestamp: firebase.database.ServerValue.TIMESTAMP,
+          likes: {}
+      };
+
+      await db.ref('announcements').push(newAnnouncement);
+      displayMessage("Duyuru başarıyla yayınlandı.");
+      document.getElementById('announcementText').value = '';
+  }
+
+  async function deleteAnnouncement(announcementId) {
+      const confirmed = await customConfirm("Bu duyuruyu silmek istediğinizden emin misiniz?");
+      if (confirmed) {
+          await db.ref('announcements/' + announcementId).remove();
+          displayMessage("Duyuru silindi.");
+      }
+  }
+
+  function likeAnnouncement(announcementId) {
+      if(isAdmin) return;
+      const likeRef = db.ref(`announcements/${announcementId}/likes/${currentUser}`);
+      likeRef.transaction(currentData => {
+          return currentData ? null : true; // Beğenilmişse kaldır, değilse ekle
+      });
+  }
+
+  function openAnnouncementLikesModal(announcementId) {
+    const likesList = document.getElementById('announcementLikesList');
+    likesList.innerHTML = 'Yükleniyor...';
+    announcementLikesModal.style.display = 'flex';
+
+    db.ref(`announcements/${announcementId}/likes`).once('value', snap => {
+        if (!snap.exists()) {
+            likesList.innerHTML = '<p class="text-gray-400">Henüz kimse beğenmemiş.</p>';
+            return;
+        }
+        const likers = Object.keys(snap.val());
+        let html = likers.map(user => `<div class="p-2 bg-gray-800 rounded-md my-1">${user}</div>`).join('');
+        likesList.innerHTML = html;
+    });
+  }
+
+  function closeAnnouncementLikesModal() {
+      announcementLikesModal.style.display = 'none';
+  }
+
+  // GÜNLÜK ÖDÜL SİSTEMİ
+  function loadDailyRewardManagement() {
+      const listContainer = document.getElementById('adminDailyRewardsList');
+      db.ref('dailyRewards/customReward').on('value', snap => {
+          listContainer.innerHTML = '';
+          if (!snap.exists()) {
+              listContainer.innerHTML = "<div class='text-center text-gray-400'>Özel günlük ödül ayarlanmamış.</div>";
+              return;
+          }
+          const reward = snap.val();
+          let rewardDetails = `Tip: ${reward.type}, Değer: ${reward.value}`;
+          if (reward.type === 'tempMultiplier') {
+              rewardDetails += `, Süre: ${reward.multiplierDuration} kutu`;
+          }
+          rewardDetails += `, Bekleme Süresi: ${reward.cooldownHours} saat`;
+
+          listContainer.innerHTML = `
+              <div class="p-3 bg-gray-700 rounded-md">
+                  <p class="font-bold text-white">${rewardDetails}</p>
+                  <button onclick="removeCustomDailyReward()" class="text-red-500 hover:text-red-400 text-xs font-bold mt-2">KALDIR</button>
+              </div>
+          `;
+      });
+  }
+  
+  document.getElementById('customRewardType').addEventListener('change', function() {
+      const isMultiplier = this.value === 'tempMultiplier';
+      document.getElementById('customRewardMultiplierDuration').classList.toggle('hidden', !isMultiplier);
+  });
+
+  async function saveCustomDailyReward() {
+      const type = document.getElementById('customRewardType').value;
+      const value = parseInt(document.getElementById('customRewardValue').value);
+      const cooldown = parseInt(document.getElementById('customRewardCooldown').value);
+      const multiplierDuration = parseInt(document.getElementById('customRewardMultiplierDuration').value);
+      
+      if (!type || isNaN(value) || isNaN(cooldown)) {
+          displayMessage("Lütfen tüm alanları doldurun.");
+          return;
+      }
+      if (type === 'tempMultiplier' && isNaN(multiplierDuration)) {
+          displayMessage("Çarpan için süreyi belirtin.");
+          return;
+      }
+      
+      const rewardData = { type, value, cooldownHours: cooldown };
+      if (type === 'tempMultiplier') {
+          rewardData.multiplierDuration = multiplierDuration;
+      }
+
+      await db.ref('dailyRewards/customReward').set(rewardData);
+      displayMessage("Özel günlük ödül ayarlandı.");
+  }
+  
+  async function removeCustomDailyReward() {
+      const confirmed = await customConfirm("Mevcut özel günlük ödülü kaldırmak istediğinizden emin misiniz?");
+      if (confirmed) {
+          await db.ref('dailyRewards/customReward').remove();
+          displayMessage("Özel günlük ödül kaldırıldı.");
+      }
+  }
+
+  async function openDailyRewardModal() {
+      if(isAdmin) return;
+      
+      const userSnap = await db.ref(`users/${currentUser}`).once('value');
+      const userData = userSnap.val();
+      const lastClaim = userData.lastDailyRewardClaim;
+      
+      const rewardSnap = await db.ref('dailyRewards/customReward').once('value');
+      if (!rewardSnap.exists()) {
+          displayMessage("Şu anda aktif bir günlük ödül bulunmamaktadır.");
+          return;
+      }
+      const reward = rewardSnap.val();
+      const cooldownMillis = reward.cooldownHours * 60 * 60 * 1000;
+
+      if (lastClaim && (Date.now() - lastClaim < cooldownMillis)) {
+          const timeLeft = cooldownMillis - (Date.now() - lastClaim);
+          const hours = Math.floor(timeLeft / (1000 * 60 * 60));
+          const minutes = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
+          displayMessage(`Günlük ödülünü zaten aldın. Sonraki ödül için kalan süre: ${hours} saat ${minutes} dakika.`);
+          return;
+      }
+
+      const container = document.getElementById('dailyRewardItemContainer');
+      let rewardHtml = '';
+      let claimFunction = `() => claimDailyReward(${JSON.stringify(reward)})`;
+
+      rewardHtml = `
+          <div class="bg-gray-900 border-2 border-yellow-400 rounded-lg p-6 text-center shadow-lg animate-pulse">
+              <h5 class="text-2xl font-bold text-white">${reward.value} ${reward.type === 'points' ? 'Puan' : (reward.type === 'boxRights' ? 'Kutu Hakkı' : 'Ödül')}</h5>
+              <p class="text-gray-300 mt-2">${reward.type === 'tempMultiplier' ? `${reward.value}x Çarpan (${reward.multiplierDuration} kutu)` : ''}</p>
+              <button onclick="${claimFunction}" class="mt-6 w-full py-3 bg-yellow-600 hover:bg-yellow-500 text-white font-bold rounded-lg">ÖDÜLÜ AL</button>
+          </div>
+      `;
+
+      container.innerHTML = rewardHtml;
+      dailyRewardModal.style.display = 'flex';
+  }
+
+  function closeDailyRewardModal() {
+      dailyRewardModal.style.display = 'none';
+  }
+
+  async function claimDailyReward(reward) {
+    const userRef = db.ref(`users/${currentUser}`);
+    const userSnap = await userRef.once('value');
+    const userData = userSnap.val();
+    const updates = {};
+    let message = "Ödülün başarıyla alındı: ";
+
+    if (reward.type === 'points') {
+        updates.balance = (userData.balance || 0) + reward.value;
+        message += `${reward.value} Puan.`;
+    } else if (reward.type === 'boxRights') {
+        updates.kutuHakki = (userData.kutuHakki || 0) + reward.value;
+        message += `${reward.value} Kutu Hakkı.`;
+    } else if (reward.type === 'iflasShield') {
+        updates.iflasShieldUses = (userData.iflasShieldUses || 0) + reward.value;
+        message += `${reward.value} İflas Kalkanı.`;
+    } else if (reward.type === 'tempMultiplier') {
+        if (userData.activeMultiplier > 1) {
+            displayMessage("Zaten aktif bir çarpanın varken günlük ödül çarpanını alamazsın.");
+            closeDailyRewardModal();
+            return;
+        }
+        updates.activeMultiplier = reward.value;
+        updates.multiplierRemainingUses = reward.multiplierDuration;
+        updates.multiplierSource = 'store'; // Mağaza gibi davransın
+        message += `${reward.value}x Çarpan (${reward.multiplierDuration} kutu).`;
+    }
+
+    updates.lastDailyRewardClaim = firebase.database.ServerValue.TIMESTAMP;
+    await userRef.update(updates);
+    
+    displayMessage(message);
+    closeDailyRewardModal();
+  }
+
+</script>
+</body>
+</html>
