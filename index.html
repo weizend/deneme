@@ -2162,13 +2162,6 @@
       container.appendChild(div);
     });
   }
-  function loadTotalOpenedBoxesCount() {
-      db.ref('game/totalOpenedBoxes').on('value', snap => {
-          const count = snap.val() || 0;
-          document.getElementById('totalOpenedBoxesCount').textContent = `${count} / ${TOTAL_BOXES}`;
-      });
-  }
-
   function loadBoxOpeningStats() {
       const listEl = document.getElementById('boxStatsList');
       listEl.innerHTML = "Yükleniyor...";
