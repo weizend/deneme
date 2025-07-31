@@ -806,62 +806,6 @@
               document.getElementById('dailyRewardCooldown').value = settings.cooldownHours;
           }
       });
-// --- ŞİFRE SIFIRLAMA SİSTEMİ (EKSİK KISIM) ---
-  
-  function openPasswordResetModal() {
-    document.getElementById('resetStep1').classList.remove('hidden');
-    document.getElementById('resetStep3').classList.add('hidden');
-    document.getElementById('resetUsername').value = '';
-    document.getElementById('resetPin').value = '';
-    passwordResetModal.style.display = 'flex';
-  }
-
-  async function verifyResetInfo() {
-      const username = document.getElementById('resetUsername').value.trim().toLowerCase();
-      const pin = document.getElementById('resetPin').value.trim();
-      
-      if (!username || !pin) {
-          displayMessage("Kullanıcı adı ve PIN gereklidir.");
-          return;
-      }
-
-      const userSnap = await db.ref('users/' + username).once('value');
-      if (!userSnap.exists()) {
-          displayMessage("Kullanıcı bulunamadı.");
-          return;
-      }
-
-      const userData = userSnap.val();
-      if (userData.pin !== pin) {
-          displayMessage("Girilen PIN, kullanıcı ile eşleşmiyor.");
-          return;
-      }
-      
-      userForPasswordReset = username;
-      document.getElementById('resetStep1').classList.add('hidden');
-      document.getElementById('resetStep3').classList.remove('hidden');
-  }
-
-  async function updatePassword() {
-      const newPass = document.getElementById('newPassword').value.trim();
-      const newPassConfirm = document.getElementById('newPasswordConfirm').value.trim();
-
-      if (newPass.length < 6) {
-          displayMessage("Yeni şifre en az 6 karakter olmalıdır.");
-          return;
-      }
-      if (newPass !== newPassConfirm) {
-          displayMessage("Yeni şifreler uyuşmuyor.");
-          return;
-      }
-      await db.ref('users/' + userForPasswordReset).update({ password: newPass });
-      displayMessage("Şifreniz başarıyla güncellendi. Artık giriş yapabilirsiniz.");
-      closePasswordResetModal();
-  }
-  
-  function closePasswordResetModal() {
-      passwordResetModal.style.display = 'none';
-      userForPasswordReset = null;
   }
 
 </script>
