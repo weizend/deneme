@@ -1711,7 +1711,12 @@
             const refundItemSnap = await db.ref('storeItems/' + refundItemId).once('value');
             const refundItem = refundItemSnap.val();
             if (refundItem) {
-                updates['balance'] = (user.balance || 0) + refundItem.cost;
+                // DÜZELTME: Puan iadesi yapılırken en yüksek puan kontrolü eklendi.
+                const newBalance = (user.balance || 0) + refundItem.cost;
+                updates['balance'] = newBalance;
+                if (newBalance > (user.highestBalanceEver || 0)) {
+                    updates['highestBalanceEver'] = newBalance;
+                }
                 updates['totalSpentPoints'] = Math.max(0, (user.totalSpentPoints || 0) - refundItem.cost);
                 message = `Kutudan çarpan buldunuz! Mağazadan aldığınız çarpanın ücreti (${refundItem.cost} Puan) iade edildi. Yeni çarpanınız: ${box.value}x. Ayrıca bonus kutu hakkı kazandınız!`;
             }
