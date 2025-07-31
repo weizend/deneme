@@ -2367,32 +2367,59 @@
       openedBoxInfoModal.style.display = 'none';
   }
 
-  function listenForGameChanges() {
-      db.ref('game/lastOpenedBox').on('value', snap => {
-          if(!snap.exists()) return;
-          const data = snap.val();
-          const now = Date.now();
-          // Sadece son 10 saniyedeki bildirimleri göster
-          if (now - data.timestamp < 10000 && data.timestamp > sessionStartTime) {
-              if (countdownInterval) clearInterval(countdownInterval);
+ function listenForGameChanges() {
+    db.ref('gameLock').on('value', snap => {
+      isGameLocked = snap.val() === true;
+    });
 
-              const contentEl = document.getElementById('globalOpenedBoxInfoContent');
-              const countdownEl = document.getElementById('globalOpenedBoxCountdown');
-              contentEl.innerHTML = data.message;
-              globalOpenedBoxInfoModal.style.display = 'flex';
-              
-              let timeLeft = 5;
-              countdownEl.textContent = `(Kapanıyor: ${timeLeft}s)`;
-              countdownInterval = setInterval(() => {
-                  timeLeft--;
-                  countdownEl.textContent = `(Kapanıyor: ${timeLeft}s)`;
-                  if (timeLeft <= 0) {
-                      clearInterval(countdownInterval);
-                      globalOpenedBoxInfoModal.style.display = 'none';
-                  }
-              }, 1000);
-          }
-      });
+    db.ref('lastOpenedBox').on('value', snap => {
+      const info = snap.val();
+      if (info && (Date.now() - info.timestamp < 10000)) {
+        if (info.content !== 'surpriz') {
+          showGlobalOpenedBoxInfo(info);
+        }
+      }
+    });
+  }
+
+  function showGlobalOpenedBoxInfo(info) {
+    let contentDisplay = '';
+    if (info.content === 'points') {
+      contentDisplay = `+${info.value} Puan kazandı!`;
+      if (info.multiplierUsed > 1) {
+        contentDisplay += ` (${info.multiplierUsed}x Çarpan ile)`;
+      }
+    } else if (info.content === 'surpriz') {
+      contentDisplay = 'Sürpriz Kutu buldu!';
+    } else if (info.content === 'iflas') {
+      contentDisplay = 'İflas etti! 💣';
+    } else if (info.content === 'multiplier') {
+      contentDisplay = `${info.value}X Çarpan buldu!`;
+    }
+
+    const contentHtml = `
+          <div class="text-3xl font-bold mb-3 flex flex-col justify-center items-center gap-2">${info.openerBadgesHTML || ''} <span class="text-green-400">${info.opener}</span></div>
+          <p class="text-lg text-gray-300"><b>${info.boxId}</b> numaralı kutuyu açtı ve...</p>
+          <p class="text-2xl font-semibold mt-2 text-yellow-300">${contentDisplay}</p>
+      `;
+
+    document.getElementById('globalOpenedBoxInfoContent').innerHTML = contentHtml;
+    globalOpenedBoxInfoModal.style.display = 'flex';
+
+    let countdown = 5;
+    const countdownEl = document.getElementById('globalOpenedBoxCountdown');
+    countdownEl.textContent = `(Sıradaki kutu ${countdown} saniye içinde açılabilir)`;
+
+    if (globalCountdownInterval) clearInterval(globalCountdownInterval);
+    globalCountdownInterval = setInterval(() => {
+      countdown--;
+      countdownEl.textContent = `(Sıradaki kutu ${countdown} saniye içinde açılabilir)`;
+      if (countdown <= 0) {
+        clearInterval(globalCountdownInterval);
+        globalOpenedBoxInfoModal.style.display = 'none';
+        db.ref('gameLock').set(false);
+      }
+    }, 1000);
   }
   
   function listenForSurpriseBox() {
