@@ -1634,7 +1634,8 @@
     updates[`${userRef}/iflasShieldUsedCount`] = 0;
     updates[`${userRef}/multiplierFoundCount`] = 0;
     updates[`${userRef}/storePurchasesCount`] = 0;
-    updates[`${userRef}/activeStoreMultiplierItemId`] = null;
+    updates[`${userRef}/hasReceivedWelcomeGift`] = false;
+    updates[`${userRef}/approvalNotified`] = null;
     updates[`${userRef}/notifications`] = null;
     updates[`${userRef}/dailyRewardsClaimed`] = null;
     updates[`${userRef}/lastSeenAnnouncementTimestamp`] = null;
@@ -2515,7 +2516,7 @@
       document.getElementById('publicUserSurpriseBoxes').textContent = userData.surpriseBoxesOpened || 0;
       document.getElementById('publicUserBombCount').textContent = userData.iflasCount || 0;
       document.getElementById('publicUserMultiplierFoundCount').textContent = userData.multiplierFoundCount || 0;
-      document.getElementById('publicUserTotalSpent').textContent` = userData.totalSpentPoints || 0;
+      document.getElementById('publicUserTotalSpent').textContent = userData.totalSpentPoints || 0;
       document.getElementById('publicUserShieldUsedCount').textContent = userData.iflasShieldUsedCount || 0;
       
       const blockedInfoDiv = document.getElementById('publicUserBlockedInfo');
