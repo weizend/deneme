@@ -170,13 +170,13 @@
 
           <div id="tablesWrapper" class="flex flex-wrap justify-center gap-6 mb-8">
             <div class="tableBox bg-gray-800 p-6 rounded-xl shadow-lg border border-red-700 w-full md:flex-1 min-w-[280px] md:max-w-md">
-              <h3 class="text-yellow-400 text-xl font-bold border-b border-gray-600 pb-3 mb-4">KULLANICI SIRALAMASI</h3>
+              <h3 class="text-yellow-400 text-xl font-bold border-b border-gray-600 pb-3 mb-4">KULLANICI PUAN SIRALAMASI 🥇</h3>
               <p class="text-gray-300 mb-3">Toplam Kullanıcı: <span id="totalUsers" class="font-bold text-yellow-400">0</span></p>
               <div id="allUserRankings" class="scrollable-list max-h-80 overflow-y-auto border border-gray-600 rounded-lg p-3 bg-gray-900 text-sm leading-relaxed">Yükleniyor...</div>
             </div>
             <div class="tableBox bg-gray-800 p-6 rounded-xl shadow-lg border border-red-700 w-full md:flex-1 min-w-[280px] md:max-w-md">
                <h3 class="text-yellow-400 text-xl font-bold border-b border-gray-600 pb-3 mb-4 flex justify-between items-center">
-                    <span>LİDERLER SIRALAMASI</span>
+                    <span>LİDERLER SIRALAMASI 👑</span>
                     <button onclick="openBadgeInfoModal()" class="text-xl text-blue-400 hover:text-blue-300 transition-colors" title="Rozet Bilgileri">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                     </button>
@@ -187,31 +187,40 @@
         </div>
 
         <div id="storeSection" class="w-full hidden">
-          <h3 class="text-yellow-400 text-3xl font-bold mb-2 text-center">Mağaza</h3>
-          <div id="storeUserPointInfo" class="text-center mb-6 bg-gray-800 p-3 rounded-lg border border-gray-700 max-w-lg mx-auto flex justify-center items-center gap-4">
-            <div>
-                <span class="text-green-400">Mevcut Puan: <b id="storeCurrentUserBalance">0</b></span> |
-                <span class="text-red-400">Harcanan Puan: <b id="storeCurrentUserSpent">0</b></span>
-            </div>
-            <button onclick="openPurchaseHistoryModal()" class="py-1 px-4 bg-purple-700 hover:bg-purple-600 text-white font-bold rounded-lg text-sm">
-                Alışveriş Geçmişim
-            </button>
-          </div>
-          
+  <h3 class="text-yellow-400 text-3xl font-bold mb-2 text-center">Mağaza</h3>
+  <div id="storeUserPointInfo" class="text-center mb-6 bg-gray-800 p-3 rounded-lg border border-gray-700 max-w-lg mx-auto flex justify-center items-center gap-4">
+    <div>
+        <span class="text-green-400">Mevcut Puan: <b id="storeCurrentUserBalance">0</b></span> |
+        <span class="text-red-400">Harcanan Puan: <b id="storeCurrentUserSpent">0</b></span>
+    </div>
+    <button onclick="openPurchaseHistoryModal()" class="py-1 px-4 bg-purple-700 hover:bg-purple-600 text-white font-bold rounded-lg text-sm">
+        Alışveriş Geçmişim
+    </button>
+  </div>
+  
+  <div id="adminStoreManagementButtonContainer" class="text-center mb-6 hidden">
+     <button onclick="openAdminStoreModal()" class="py-2 px-6 bg-green-700 hover:bg-green-600 text-white font-bold rounded-lg shadow-md hover:shadow-lg transform hover:-translate-y-1 transition duration-300">
+       Mağazayı Yönet
+     </button>
+  </div>
+
+  <div class="flex border-b border-gray-600 mb-6 max-w-md mx-auto">
+    <button id="gameStoreTabBtn" onclick="switchStoreTab('game')" class="flex-1 py-3 text-lg font-bold border-b-2 border-red-500 text-white transition-colors duration-300">Oyun Mağazası</button>
+    <button id="specialStoreTabBtn" onclick="switchStoreTab('special')" class="flex-1 py-3 text-lg font-bold border-b-2 border-transparent text-gray-400 hover:text-white transition-colors duration-300">Özel Ürün Mağazası</button>
+  </div>
+  
+  <div id="gameStoreItemsContainer" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 p-4">
+    </div>
+
+  <div id="specialStoreItemsContainer" class="hidden grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 p-4">
+    </div>
+</div>
+      
           <div id="adminStoreManagementButtonContainer" class="text-center mb-6 hidden">
              <button onclick="openAdminStoreModal()" class="py-2 px-6 bg-green-700 hover:bg-green-600 text-white font-bold rounded-lg shadow-md hover:shadow-lg transform hover:-translate-y-1 transition duration-300">
-               Mağazayı Yönet
+               Yeni Ürün Ekle
              </button>
           </div>
-
-          <h3 class="text-yellow-300 text-2xl font-semibold mb-4 text-center">Oyun Mağazası</h3>
-          <div id="gameStoreItemsContainer" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 p-4">
-            </div>
-
-          <h3 class="text-yellow-300 text-2xl font-semibold mb-4 text-center mt-8">Özel Ürün Mağazası</h3>
-          <div id="specialStoreItemsContainer" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 p-4">
-            </div>
-        </div>
         
         <div id="announcementsContent" class="w-full hidden">
             <h3 class="text-yellow-400 text-3xl font-bold mb-6 text-center">Duyurular</h3>
@@ -232,12 +241,11 @@
     </div>
   </div>
   
-  <div id="adminStoreModal" class="modal-overlay fixed inset-0 bg-black bg-opacity-70 flex justify-center items-center z-50 hidden">
+  <div id="adminStoreModal" class="modal-overlay fixed inset-0 bg-black bg-opacity-70 flex justify-center items-center z-60 hidden">
     <div class="modal-content bg-gray-800 p-8 rounded-xl shadow-2xl border border-red-700 w-11/12 max-w-3xl text-center relative max-h-[90vh] overflow-y-auto scrollable-list">
         <button class="modal-close-button absolute top-2 right-4 text-white text-4xl" onclick="closeAdminStoreModal()">&times;</button>
-        <h3 class="text-yellow-400 text-3xl font-bold mb-6 text-center">Mağaza Yönetimi</h3>
+        <h3 class="text-yellow-400 text-3xl font-bold mb-6 text-center">Ürün Ekle / Düzenle</h3>
         <div id="adminStoreControls" class="bg-gray-900 p-6 rounded-lg border border-gray-700 mb-6">
-            <h4 class="text-yellow-300 text-xl font-semibold mb-4">ÜRÜN EKLE / DÜZENLE</h4>
             <div class="mb-4">
               <input type="text" id="newItemName" placeholder="Ürün Adı" class="w-full p-2 mb-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500 transition duration-300">
               <textarea id="newItemDescription" placeholder="Ürün Açıklaması" rows="3" class="w-full p-2 mb-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500 transition duration-300"></textarea>
@@ -258,13 +266,11 @@
               <button onclick="saveStoreItem()" id="addUpdateStoreItemBtn" class="w-full py-2 bg-green-600 hover:bg-green-500 text-white font-bold rounded-lg shadow-md hover:shadow-lg transform hover:-translate-y-1 transition duration-300">ÜRÜN EKLE</button>
               <button onclick="resetStoreItemForm()" class="w-full py-2 mt-2 bg-gray-600 hover:bg-gray-500 text-white font-bold rounded-lg shadow-md hover:-translate-y-1 transition duration-300">Formu Temizle</button>
             </div>
-            <h5 class="text-gray-200 text-lg font-semibold mb-2 mt-6">Mevcut Ürünler</h5>
-            <div id="currentStoreItems" class="scrollable-list max-h-60 overflow-y-auto p-3 bg-gray-800 rounded-md">Yükleniyor...</div>
           </div>
     </div>
   </div>
 
-  <div id="adminDailyRewardModal" class="modal-overlay fixed inset-0 bg-black bg-opacity-70 flex justify-center items-center z-50 hidden">
+  <div id="adminDailyRewardModal" class="modal-overlay fixed inset-0 bg-black bg-opacity-70 flex justify-center items-center z-[100] hidden">
     <div class="modal-content bg-gray-800 p-8 rounded-xl shadow-2xl border border-red-700 w-11/12 max-w-3xl text-center relative max-h-[90vh] overflow-y-auto scrollable-list">
         <button class="modal-close-button absolute top-2 right-4 text-white text-4xl" onclick="closeAdminDailyRewardModal()">&times;</button>
         <h3 class="text-yellow-400 text-3xl font-bold mb-6 text-center">Günlük Ödül Yönetimi</h3>
@@ -1260,46 +1266,73 @@
     }
   }
 
-    function showSection(sectionId) {
-        document.getElementById('gameContent').classList.add('hidden');
-        document.getElementById('storeSection').classList.add('hidden');
-        document.getElementById('announcementsContent').classList.add('hidden');
-        document.getElementById('adminStoreManagementButtonContainer').classList.add('hidden');
-        document.getElementById('adminAnnouncementControls').classList.add('hidden');
+    function switchStoreTab(tabName) {
+    const gameTabBtn = document.getElementById('gameStoreTabBtn');
+    const specialTabBtn = document.getElementById('specialStoreTabBtn');
+    const gameItemsContainer = document.getElementById('gameStoreItemsContainer');
+    const specialItemsContainer = document.getElementById('specialStoreItemsContainer');
 
-        const tabButtons = ['gameTabBtn', 'storeTabBtn', 'announcementsTabBtn'];
-        tabButtons.forEach(btnId => {
-            const btn = document.getElementById(btnId);
-            btn.classList.remove('bg-red-700', 'hover:bg-red-600');
-            btn.classList.add('bg-gray-700', 'hover:bg-gray-600');
-        });
+    if (tabName === 'game') {
+        gameItemsContainer.classList.remove('hidden');
+        specialItemsContainer.classList.add('hidden');
         
-        const activeBtn = document.getElementById(`${sectionId}TabBtn`);
-        const activeContent = document.getElementById(sectionId === 'store' ? 'storeSection' : `${sectionId}Content`);
-
-        if(activeContent) activeContent.classList.remove('hidden');
-        if(activeBtn) {
-            activeBtn.classList.add('bg-red-700', 'hover:bg-red-600');
-            activeBtn.classList.remove('bg-gray-700', 'hover:bg-gray-600');
-        }
-
-        if (sectionId === 'store') {
-            loadStoreItems();
-            if (isAdmin) {
-                document.getElementById('adminStoreManagementButtonContainer').classList.remove('hidden');
-            }
-        } else if (sectionId === 'announcements') {
-            document.getElementById('announcementIndicator').classList.add('hidden');
-            if (isAdmin) {
-                document.getElementById('adminAnnouncementControls').classList.remove('hidden');
-            }
-            if(!isAdmin) {
-                db.ref(`users/${currentUser}/lastSeenAnnouncementTimestamp`).set(latestAnnouncementTimestamp);
-            }
-        }
+        gameTabBtn.classList.add('border-red-500', 'text-white');
+        gameTabBtn.classList.remove('border-transparent', 'text-gray-400');
+        specialTabBtn.classList.add('border-transparent', 'text-gray-400');
+        specialTabBtn.classList.remove('border-red-500', 'text-white');
+    } else { // 'special'
+        gameItemsContainer.classList.add('hidden');
+        specialItemsContainer.classList.remove('hidden');
         
-        currentActiveSection = sectionId;
+        specialTabBtn.classList.add('border-red-500', 'text-white');
+        specialTabBtn.classList.remove('border-transparent', 'text-gray-400');
+        gameTabBtn.classList.add('border-transparent', 'text-gray-400');
+        gameTabBtn.classList.remove('border-red-500', 'text-white');
     }
+}
+
+function showSection(sectionId) {
+    document.getElementById('gameContent').classList.add('hidden');
+    document.getElementById('storeSection').classList.add('hidden');
+    document.getElementById('announcementsContent').classList.add('hidden');
+    document.getElementById('adminStoreManagementButtonContainer').classList.add('hidden');
+    document.getElementById('adminAnnouncementControls').classList.add('hidden');
+
+    const tabButtons = ['gameTabBtn', 'storeTabBtn', 'announcementsTabBtn'];
+    tabButtons.forEach(btnId => {
+        const btn = document.getElementById(btnId);
+        btn.classList.remove('bg-red-700', 'hover:bg-red-600');
+        btn.classList.add('bg-gray-700', 'hover:bg-gray-600');
+    });
+    
+    const activeBtn = document.getElementById(`${sectionId}TabBtn`);
+    const activeContent = document.getElementById(sectionId === 'store' ? 'storeSection' : `${sectionId}Content`);
+
+    if(activeContent) activeContent.classList.remove('hidden');
+    if(activeBtn) {
+        activeBtn.classList.add('bg-red-700', 'hover:bg-red-600');
+        activeBtn.classList.remove('bg-gray-700', 'hover:bg-gray-600');
+    }
+
+    if (sectionId === 'store') {
+        loadStoreItems();
+        if (isAdmin) {
+            document.getElementById('adminStoreManagementButtonContainer').classList.remove('hidden');
+        }
+        // Mağaza açıldığında varsayılan olarak oyun mağazası sekmesini göster
+        switchStoreTab('game'); 
+    } else if (sectionId === 'announcements') {
+        document.getElementById('announcementIndicator').classList.add('hidden');
+        if (isAdmin) {
+            document.getElementById('adminAnnouncementControls').classList.remove('hidden');
+        }
+        if(!isAdmin) {
+            db.ref(`users/${currentUser}/lastSeenAnnouncementTimestamp`).set(latestAnnouncementTimestamp);
+        }
+    }
+    
+    currentActiveSection = sectionId;
+}
 
   // Admin panel
   function openAdminPanelModal() { 
@@ -2030,13 +2063,24 @@
     cardSelectionModal.style.display = 'none'; 
   }
   
+  // Mağaza Yönetim Modalı için Listener
+  let adminStoreItemsListener = null;
+  const storeItemsRef = db.ref('storeItems');
+
   function openAdminStoreModal() {
     adminStoreModal.style.display = 'flex';
-    loadAdminStoreItems(null); // Load fresh
-    db.ref('storeItems').once('value').then(snap => loadAdminStoreItems(snap.val()));
+    if (adminStoreItemsListener) {
+        storeItemsRef.off('value', adminStoreItemsListener);
+    }
+    adminStoreItemsListener = storeItemsRef.on('value', snap => {
+        loadAdminStoreItems(snap.val());
+    });
   }
   function closeAdminStoreModal() {
       adminStoreModal.style.display = 'none';
+      if (adminStoreItemsListener) {
+        storeItemsRef.off('value', adminStoreItemsListener);
+      }
   }
 
   function loadStoreItems() {
@@ -2318,14 +2362,21 @@
 
     try {
       if (editingItemId) {
-        const existingItemSnap = await db.ref('storeItems/' + editingItemId).once('value');
+        const existingItemSnap = await storeItemsRef.child(editingItemId).once('value');
         const existingItem = existingItemSnap.val();
         itemData.createdAt = existingItem.createdAt || firebase.database.ServerValue.TIMESTAMP;
-        await db.ref('storeItems/' + editingItemId).update(itemData);
+        await storeItemsRef.child(editingItemId).update(itemData);
         displayMessage(`'${name}' ürünü başarıyla güncellendi!`);
       } else {
         itemData.createdAt = firebase.database.ServerValue.TIMESTAMP;
-        await db.ref('storeItems').push(itemData);
+        // Get current max order
+        const maxOrderSnap = await storeItemsRef.orderByChild('order').limitToLast(1).once('value');
+        let maxOrder = -1;
+        if(maxOrderSnap.exists()){
+            maxOrder = Object.values(maxOrderSnap.val())[0].order || 0;
+        }
+        itemData.order = maxOrder + 1;
+        await storeItemsRef.push(itemData);
         displayMessage(`'${name}' ürünü başarıyla eklendi!`);
       }
       resetStoreItemForm();
@@ -2366,27 +2417,33 @@
   }
   
   async function reorderStoreItem(itemId, newIndex) {
-      const storeItemsRef = db.ref('storeItems');
       const itemsSnap = await storeItemsRef.once('value');
       const items = itemsSnap.val();
-      const sortedItems = Object.entries(items).sort(([, a], [, b]) => (a.order || 0) - (b.order || 0));
+      if (!items) return;
       
-      const movedItem = sortedItems.find(([id,]) => id === itemId);
-      sortedItems.splice(sortedItems.findIndex(([id,]) => id === itemId), 1);
+      let sortedItems = Object.entries(items).sort(([, a], [, b]) => (a.order || 0) - (b.order || 0));
+      
+      const itemToMoveIndex = sortedItems.findIndex(([id,]) => id === itemId);
+      if (itemToMoveIndex === -1) return;
+
+      // Remove item from its current position
+      const [movedItem] = sortedItems.splice(itemToMoveIndex, 1);
+      
+      // Insert item at the new position
       sortedItems.splice(newIndex, 0, movedItem);
 
       const updates = {};
       sortedItems.forEach(([id, item], index) => {
           updates[id + '/order'] = index;
       });
-
+      
       await storeItemsRef.update(updates);
   }
 
   async function editStoreItem(itemId) {
     if (!isAdmin) return;
     
-    const itemSnap = await db.ref('storeItems/' + itemId).once('value');
+    const itemSnap = await storeItemsRef.child(itemId).once('value');
     const item = itemSnap.val();
     if (!item) {
         displayMessage("Düzenlenecek ürün bulunamadı.");
@@ -2421,7 +2478,7 @@
       const confirmed = await customConfirm("Bu ürünü silmek istediğinizden emin misiniz? Bu işlem geri alınamaz!");
       if (confirmed) {
           try {
-              await db.ref('storeItems/' + itemId).remove();
+              await storeItemsRef.child(itemId).remove();
               displayMessage("Ürün başarıyla silindi.");
               resetStoreItemForm();
           } catch (error) {
@@ -2942,7 +2999,6 @@
             sortedAnnouncements.forEach(([id, ann]) => {
                 const date = new Date(ann.timestamp).toLocaleString('tr-TR');
                 
-                // Metin içindeki @mention'ları işle
                 const processedText = ann.text.replace(/@(\w+)/g, (match, username) => {
                     const isCurrentUserMention = username.toLowerCase() === (currentUser || '').toLowerCase();
                     const highlightClass = isCurrentUserMention ? 'user-mention highlighted' : 'user-mention';
@@ -2981,7 +3037,6 @@
                 listEl.appendChild(div);
             });
             
-            // Tıklama olayını tüm duyuru listesine delege et
             listEl.addEventListener('click', (e) => {
                 if (e.target.classList.contains('user-mention')) {
                     const usernameToView = e.target.dataset.username;
