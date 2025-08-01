@@ -17,10 +17,6 @@
   .scrollable-list::-webkit-scrollbar {
     width: 8px;
   }
-  #gameDiv.modal-is-open .admin-controls,
-  #gameDiv.modal-is-open .best-seller-badge {
-    visibility: hidden;
-  }
   .scrollable-list::-webkit-scrollbar-track {
     background: #333;
     border-radius: 10px;
@@ -71,6 +67,10 @@
   .admin-controls button:disabled svg {
     fill: #4a5568;
     cursor: not-allowed;
+  }
+  #gameDiv.modal-is-open .admin-controls,
+  #gameDiv.modal-is-open .best-seller-badge {
+    visibility: hidden;
   }
 </style>
 </head>
@@ -300,8 +300,7 @@
           </div>
           <button onclick="saveDailyReward()" id="saveDailyRewardBtn" class="w-full py-2 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-lg">GÜNLÜK ÖDÜL OLUŞTUR</button>
           <button onclick="resetDailyRewardForm()" class="w-full py-2 mt-2 bg-gray-600 hover:bg-gray-500 text-white font-bold rounded-lg shadow-md hover:-translate-y-1 transition duration-300">Formu Temizle</button>
-          <h5 class="text-gray-200 text-lg font-semibold mb-2 mt-4">Mevcut Günlük Ödüller</h5>
-          <div id="adminDailyRewardsList" class="scrollable-list max-h-40 overflow-y-auto p-3 bg-gray-800 rounded-md">Yükleniyor...</div>
+          
       </div>
   </div>
 </div>
@@ -838,7 +837,7 @@
       <p id="dailyRewardMessage" class="text-lg text-gray-300 mb-6">Aşağıdaki ödüllerden alabileceklerini topla. Bol şans!</p>
       <div id="adminDailyRewardManagementButtonContainer" class="text-center mb-6 hidden">
           <button onclick="openAdminDailyRewardModal()" class="py-2 px-6 bg-blue-700 hover:bg-blue-600 text-white font-bold rounded-lg shadow-md">
-              Yeni Ödül Ekle
+              Günlük Ödül Yönetimi
           </button>
       </div>
       <div id="dailyRewardItemsContainer" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 p-4">
@@ -1263,7 +1262,28 @@
         });
     }
   }
+  function switchStoreTab(tab) {
+    const gameStoreContainer = document.getElementById('gameStoreItemsContainer');
+    const specialStoreContainer = document.getElementById('specialStoreItemsContainer');
+    const gameTabBtn = document.getElementById('gameStoreTabBtn');
+    const specialTabBtn = document.getElementById('specialStoreTabBtn');
 
+    if (tab === 'game') {
+        gameStoreContainer.classList.remove('hidden');
+        specialStoreContainer.classList.add('hidden');
+        gameTabBtn.classList.add('border-red-500', 'text-white');
+        gameTabBtn.classList.remove('border-transparent', 'text-gray-400');
+        specialTabBtn.classList.add('border-transparent', 'text-gray-400');
+        specialTabBtn.classList.remove('border-red-500', 'text-white');
+    } else { // special
+        gameStoreContainer.classList.add('hidden');
+        specialStoreContainer.classList.remove('hidden');
+        specialTabBtn.classList.add('border-red-500', 'text-white');
+        specialTabBtn.classList.remove('border-transparent', 'text-gray-400');
+        gameTabBtn.classList.add('border-transparent', 'text-gray-400');
+        gameTabBtn.classList.remove('border-red-500', 'text-white');
+    }
+  }
   function showSection(sectionId) {
     document.getElementById('gameContent').classList.add('hidden');
     document.getElementById('storeSection').classList.add('hidden');
@@ -1277,6 +1297,7 @@
         btn.classList.remove('bg-red-700', 'hover:bg-red-600');
         btn.classList.add('bg-gray-700', 'hover:bg-gray-600');
     });
+    
     
     const activeBtn = document.getElementById(`${sectionId}TabBtn`);
     const activeContent = document.getElementById(sectionId === 'store' ? 'storeSection' : `${sectionId}Content`);
@@ -1821,7 +1842,7 @@
         if (multiplierUsedThisTurn && user.multiplierSource === 'store') {
             refundOccurred = true;
             updates['multiplierRemainingUses'] = (user.multiplierRemainingUses || 0) + 1;
-            message = `Vay canına! Çarpanla açtığın kutudan yeni bir çarpan buldun! Mağazadan aldığın çarpan hakkın iade edildi. Sonraki kutu açılışında yeni <b>${box.value}x</b> çarpanın otomatik olarak kullanılacak. Ayrıca bonus bir kutu hakkı kazandın!`;
+            message = `Vay canına! Çarpanla açtığın kutudan yeni bir çarpan buldun! Mevcut çarpan hakkın iade edildi. Sonraki kutu açılışında yeni <b>${box.value}x</b> çarpanın otomatik olarak kullanılacak. Ayrıca bonus bir kutu hakkı kazandın!`;
         } else {
             message = `<b>${box.value}x</b> çarpan buldunuz! Bu çarpan bir sonraki kutu açılışında otomatik olarak kullanılacak. Ayrıca bonus bir kutu hakkı kazandınız.`;
         }
@@ -2053,7 +2074,7 @@
       adminStoreModal.style.display = 'none';
       resetStoreItemForm();
   }
-
+  
   function loadStoreItems() {
     storeItemsRef.on('value', snap => {
         const items = snap.val();
@@ -2078,12 +2099,15 @@
               const minutes = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
               const seconds = Math.floor((timeLeft % (1000 * 60)) / 1000);
               
-              let timeString = '';
-              if (days > 0) timeString += `${days}g `;
-              if (hours > 0 || days > 0) timeString += `${hours}s `;
-              timeString += `${minutes}d ${seconds}s`;
+              let parts = [];
+              if (days > 0) parts.push(`${days}g`);
+              if (hours > 0) parts.push(`${hours}sa`);
+              if (minutes > 0) parts.push(`${minutes}d`);
+              if (seconds >= 0) parts.push(`${seconds}sn`);
+              
+              const timeString = parts.join(' ');
 
-              countdownEl.innerHTML = `Kalan Süre: <b class="text-white">${timeString.trim()}</b>`;
+              countdownEl.innerHTML = `Kalan Süre: <b class="text-white">${timeString}</b>`;
           } else {
               countdownEl.innerHTML = `<span class="text-red-500 font-bold">Süre Doldu</span>`;
               if (buyButton) {
@@ -2151,6 +2175,9 @@
                   </button>
                   <button onclick="editStoreItem('${item.id}')" title="Düzenle" class="p-1 rounded-full hover:bg-gray-700">
                       <svg class="w-5 h-5 fill-current text-white" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M17.414 2.586a2 2 0 00-2.828 0L7 10.172V13h2.828l7.586-7.586a2 2 0 000-2.828zM5 12V7a1 1 0 011-1h2.586l-2 2H6v3h3v-1.586l2-2H13a1 1 0 011 1v5a1 1 0 01-1 1H6a1 1 0 01-1-1v-2z"/></svg>
+                  </button>
+                   <button onclick="deleteStoreItem('${item.id}')" title="Sil" class="p-1 rounded-full hover:bg-gray-700">
+                      <svg class="w-5 h-5 fill-current text-white" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M6 2l2-2h4l2 2h4v2H2V2h4zM3 6h14l-1 14H4L3 6zm5 2v10h1V8H8zm3 0v10h1V8h-1z"/></svg>
                   </button>
                   <button onclick="reorderStoreItem('${item.id}', ${index + 1}, '${item.type}')" ${rightArrowDisabled} title="Sağa Taşı" class="p-1 rounded-full hover:bg-gray-700 disabled:cursor-not-allowed">
                       <svg class="w-5 h-5 fill-current text-white" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z"/></svg>
@@ -2393,43 +2420,52 @@
       const items = itemsSnap.val();
       if (!items) return;
       
-      const allItemsArray = Object.entries(items);
+      let allSortedItems = Object.entries(items).sort(([, a], [, b]) => (a.order || 0) - (b.order || 0));
+      
+      let typeSpecificItems = allSortedItems.filter(([, item]) => (item.type === 'special' ? 'special' : 'game') === (itemType === 'special' ? 'special' : 'game'));
+      
+      const itemToMoveIndex = typeSpecificItems.findIndex(([id,]) => id === itemId);
+      if (itemToMoveIndex === -1) return;
 
-      // Separate items into two lists based on their type and sort each list by its order
-      const gameItems = allItemsArray
-          .filter(([, item]) => item.type !== 'special')
-          .sort(([, a], [, b]) => (a.order || 0) - (b.order || 0));
-          
-      const specialItems = allItemsArray
-          .filter(([, item]) => item.type === 'special')
-          .sort(([, a], [, b]) => (a.order || 0) - (b.order || 0));
-          
-      // Identify the list that contains the item to be moved
-      const isSpecial = itemType === 'special';
-      const targetList = isSpecial ? specialItems : gameItems;
+      const [movedItem] = typeSpecificItems.splice(itemToMoveIndex, 1);
+      
+      typeSpecificItems.splice(newIndex, 0, movedItem);
 
-      const currentIndex = targetList.findIndex(([id]) => id === itemId);
-      
-      // Ensure the item exists and the new index is valid
-      if (currentIndex === -1 || newIndex < 0 || newIndex >= targetList.length) {
-          console.error("Invalid move operation:", { itemId, newIndex, listLength: targetList.length });
-          return;
-      }
-      
-      // Perform the move within the target list
-      const [movedItem] = targetList.splice(currentIndex, 1);
-      targetList.splice(newIndex, 0, movedItem);
-      
       const updates = {};
-      let globalOrderIndex = 0;
+      let currentOrder = 0;
+      allSortedItems.forEach(([id, item]) => {
+        let isSpecial = item.type === 'special';
+        let isMovingItemType = itemType === 'special';
+        if(isSpecial !== isMovingItemType){
+            updates[id + '/order'] = currentOrder++;
+        }
+        async function reorderDailyRewardItem(rewardId, newIndex) {
+      if (!isAdmin) return;
+      const rewardsRef = db.ref('dailyRewardOptions');
+      const rewardsSnap = await rewardsRef.once('value');
+      const rewards = rewardsSnap.val();
+      if (!rewards) return;
+
+      let sortedRewards = Object.entries(rewards).sort(([, a], [, b]) => (a.order || 0) - (b.order || 0));
       
-      // Re-calculate the 'order' for all items and prepare the update object
-      gameItems.forEach(([id]) => {
-          updates[`${id}/order`] = globalOrderIndex++;
+      const itemToMoveIndex = sortedRewards.findIndex(([id,]) => id === rewardId);
+      if (itemToMoveIndex === -1) return;
+
+      if (newIndex < 0 || newIndex >= sortedRewards.length) return;
+
+      const [movedItem] = sortedRewards.splice(itemToMoveIndex, 1);
+      sortedRewards.splice(newIndex, 0, movedItem);
+
+      const updates = {};
+      sortedRewards.forEach(([id, item], index) => {
+        updates[id + '/order'] = index;
       });
       
-      specialItems.forEach(([id]) => {
-          updates[`${id}/order`] = globalOrderIndex++;
+      await rewardsRef.update(updates);
+  }
+      });
+      typeSpecificItems.forEach(([id, item]) => {
+        updates[id + '/order'] = currentOrder++;
       });
       
       await storeItemsRef.update(updates);
@@ -3179,31 +3215,52 @@
 
         const userSnap = await db.ref('users/' + currentUser).once('value');
         const user = userSnap.val();
-        const rewardsSnap = await db.ref('dailyRewardOptions').once('value');
-        const rewards = rewardsSnap.val();
+        const rewardsSnap = await db.ref('dailyRewardOptions').orderByChild('order').once('value');
+        const rewardsData = rewardsSnap.val();
         
         const container = document.getElementById('dailyRewardItemsContainer');
         container.innerHTML = '';
         document.getElementById('dailyRewardMessage').textContent = 'Aşağıdaki ödüllerden alabileceklerini topla. Bol şans!';
 
-        if (!rewards) {
+        if (!rewardsData) {
             container.innerHTML = '<p class="text-center col-span-full">Şu anda mevcut bir günlük ödül bulunmamaktadır.</p>';
             dailyRewardModal.style.display = 'flex';
             return;
         }
 
         const userClaims = user ? (user.dailyRewardsClaimed || {}) : {};
+        const rewardsArray = Object.entries(rewardsData);
         
-        for (const rewardId in rewards) {
-            const reward = rewards[rewardId];
+        rewardsArray.forEach(([rewardId, reward], index) => {
             const lastClaim = userClaims[rewardId] || 0;
             const cooldown = reward.cooldownMs || 0;
             const nextAvailableTime = lastClaim + cooldown;
             const canClaim = isAdmin ? false : (Date.now() > nextAvailableTime);
 
             const card = document.createElement('div');
-            card.className = 'bg-gray-900 p-4 rounded-xl shadow-lg border border-yellow-600 text-center flex flex-col justify-between';
+            card.className = 'relative bg-gray-900 p-4 rounded-xl shadow-lg border border-yellow-600 text-center flex flex-col justify-between';
             
+            let adminControlsHtml = '';
+            if(isAdmin){
+                const leftArrowDisabled = index === 0 ? 'disabled' : '';
+                const rightArrowDisabled = index === rewardsArray.length - 1 ? 'disabled' : '';
+                adminControlsHtml = `
+                  <div class="admin-controls absolute top-0 right-0 p-1 bg-gray-900 bg-opacity-70 rounded-bl-lg flex gap-1 z-10">
+                      <button onclick="reorderDailyRewardItem('${rewardId}', ${index - 1})" ${leftArrowDisabled} title="Sola Taşı" class="p-1 rounded-full hover:bg-gray-700 disabled:cursor-not-allowed">
+                          <svg class="w-5 h-5 fill-current text-white" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z"/></svg>
+                      </button>
+                      <button onclick="editDailyReward('${rewardId}')" title="Düzenle" class="p-1 rounded-full hover:bg-gray-700">
+                          <svg class="w-5 h-5 fill-current text-white" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M17.414 2.586a2 2 0 00-2.828 0L7 10.172V13h2.828l7.586-7.586a2 2 0 000-2.828zM5 12V7a1 1 0 011-1h2.586l-2 2H6v3h3v-1.586l2-2H13a1 1 0 011 1v5a1 1 0 01-1 1H6a1 1 0 01-1-1v-2z"/></svg>
+                      </button>
+                       <button onclick="removeDailyReward('${rewardId}')" title="Sil" class="p-1 rounded-full hover:bg-gray-700">
+                          <svg class="w-5 h-5 fill-current text-white" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M6 2l2-2h4l2 2h4v2H2V2h4zM3 6h14l-1 14H4L3 6zm5 2v10h1V8H8zm3 0v10h1V8h-1z"/></svg>
+                      </button>
+                      <button onclick="reorderDailyRewardItem('${rewardId}', ${index + 1})" ${rightArrowDisabled} title="Sağa Taşı" class="p-1 rounded-full hover:bg-gray-700 disabled:cursor-not-allowed">
+                          <svg class="w-5 h-5 fill-current text-white" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z"/></svg>
+                      </button>
+                  </div>`;
+            }
+
             let buttonHTML = `<button onclick="claimDailyReward('${rewardId}')" class="w-full py-2 mt-auto bg-green-600 hover:bg-green-500 text-white font-bold rounded-lg transition duration-300">Ödülü Al</button>`;
             let cooldownHTML = `<div class="text-sm text-gray-500 font-bold mb-3 h-5">Süre: ${reward.cooldownText || 'Tek Seferlik'}</div>`;
 
@@ -3240,12 +3297,14 @@
                             const hours = Math.floor((timeLeft % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
                             const minutes = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
                             const seconds = Math.floor((timeLeft % (1000 * 60)) / 1000);
-                            let timeString = '';
-                            if (days > 0) timeString += `${days}g `;
-                            if (hours > 0) timeString += `${hours}s `;
-                            if(minutes > 0 || hours > 0 || days > 0) timeString += `${minutes}d `;
-                            timeString += `${seconds}sn`;
-                            el.textContent = `Kalan Süre: ${timeString}`;
+                            
+                            let parts = [];
+                            if (days > 0) parts.push(`${days}g`);
+                            if (hours > 0) parts.push(`${hours}sa`);
+                            if (minutes > 0) parts.push(`${minutes}d`);
+                            if (seconds >= 0) parts.push(`${seconds}sn`);
+
+                            el.textContent = `Kalan Süre: ${parts.join(' ')}`;
                         }
                     }, 1000);
                     activeDailyRewardTimers[rewardId] = timerId;
@@ -3253,6 +3312,7 @@
             }
 
             card.innerHTML = `
+                ${adminControlsHtml}
                 <div>
                     <img src="${reward.imageUrl || 'https://via.placeholder.com/150'}" alt="${reward.name}" class="w-20 h-20 mx-auto mb-3 rounded-lg object-cover">
                     <h4 class="text-yellow-300 text-lg font-bold">${reward.name}</h4>
@@ -3262,7 +3322,7 @@
                 ${buttonHTML}
             `;
             container.appendChild(card);
-        }
+        });
         
         dailyRewardModal.style.display = 'flex';
     }
@@ -3382,6 +3442,19 @@
 
         const rewardData = { name, type, value, description, cooldownMs, cooldownText, imageUrl: imageUrl || 'https://via.placeholder.com/150' };
 
+        if (editingDailyRewardId) {
+            const existingRewardSnap = await db.ref('dailyRewardOptions/' + editingDailyRewardId).once('value');
+            const existingReward = existingRewardSnap.val();
+            rewardData.order = existingReward.order; // Düzenlemede sırayı koru
+        } else {
+            const maxOrderSnap = await db.ref('dailyRewardOptions').orderByChild('order').limitToLast(1).once('value');
+            let maxOrder = -1;
+            if(maxOrderSnap.exists()){
+                maxOrder = Object.values(maxOrderSnap.val())[0].order || 0;
+            }
+            rewardData.order = maxOrder + 1;
+        }
+
         if (type === 'tempMultiplier') {
             const uses = parseInt(document.getElementById('dailyRewardMultiplierUses').value);
             if (isNaN(uses) || uses <= 0) {
@@ -3439,6 +3512,9 @@
 
         document.getElementById('saveDailyRewardBtn').textContent = 'ÖDÜLÜ GÜNCELLE';
         editingDailyRewardId = rewardId;
+        
+        // Düzeltme burada: Düzenleme penceresini açan fonksiyonu çağırıyoruz.
+        openAdminDailyRewardModal(); 
         
         document.querySelector('#adminDailyRewardModal .modal-content').scrollTop = 0;
     }
