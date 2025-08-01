@@ -260,8 +260,14 @@
             </select>
             <input type="number" id="newItemValue" placeholder="Değer (Kutu Hakkı Adedi / Çarpan Değeri / Kalkan Sayısı)" class="w-full p-2 mb-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500 transition duration-300">
             <input type="number" id="newItemMultiplierDuration" placeholder="Çarpan Süresi (Kutu Sayısı)" min="1" class="w-full p-2 mb-2 bg-gray-700 border border-gray-600 rounded-lg text-white hidden focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500 transition duration-300">
-            <label for="newItemCountdownDuration" class="text-gray-300 text-sm block mt-2 mb-1 text-left">Geri Sayım Süresi (Dakika, Boş Bırakılırsa Süresiz):</label>
-            <input type="number" id="newItemCountdownDuration" placeholder="Dakika" min="1" class="w-full p-2 mb-4 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500 transition duration-300">
+            
+            <label class="text-gray-300 text-sm block mt-2 mb-1 text-left">Geri Sayım Süresi (Boş Bırakılırsa Süresiz):</label>
+            <div class="flex gap-2 mb-4">
+                <input type="number" id="storeItemCountdownDays" placeholder="Gün" min="0" class="w-full p-2 bg-gray-700 border border-gray-600 rounded-lg text-white">
+                <input type="number" id="storeItemCountdownHours" placeholder="Saat" min="0" class="w-full p-2 bg-gray-700 border border-gray-600 rounded-lg text-white">
+                <input type="number" id="storeItemCountdownMinutes" placeholder="Dakika" min="0" class="w-full p-2 bg-gray-700 border border-gray-600 rounded-lg text-white">
+                <input type="number" id="storeItemCountdownSeconds" placeholder="Saniye" min="0" class="w-full p-2 bg-gray-700 border border-gray-600 rounded-lg text-white">
+            </div>
             <input type="text" id="newItemImageUrl" placeholder="Resim URL (Opsiyonel)" class="w-full p-2 mb-4 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500 transition duration-300">
             <button onclick="saveStoreItem()" id="addUpdateStoreItemBtn" class="w-full py-2 bg-green-600 hover:bg-green-500 text-white font-bold rounded-lg shadow-md hover:shadow-lg transform hover:-translate-y-1 transition duration-300">ÜRÜN EKLE</button>
             <button onclick="resetStoreItemForm()" class="w-full py-2 mt-2 bg-gray-600 hover:bg-gray-500 text-white font-bold rounded-lg shadow-md hover:-translate-y-1 transition duration-300">Formu Temizle</button>
@@ -836,8 +842,8 @@
       <h4 class="text-yellow-400 text-3xl font-bold mb-2">Günlük Ödüller</h4>
       <p id="dailyRewardMessage" class="text-lg text-gray-300 mb-6">Aşağıdaki ödüllerden alabileceklerini topla. Bol şans!</p>
       <div id="adminDailyRewardManagementButtonContainer" class="text-center mb-6 hidden">
-          <button onclick="openAdminDailyRewardModal()" class="py-2 px-6 bg-blue-700 hover:bg-blue-600 text-white font-bold rounded-lg shadow-md">
-              Günlük Ödül Yönetimi
+          <button onclick="openNewDailyRewardForm()" class="py-2 px-6 bg-blue-700 hover:bg-blue-600 text-white font-bold rounded-lg shadow-md">
+              Yeni Ödül Ekle
           </button>
       </div>
       <div id="dailyRewardItemsContainer" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 p-4">
@@ -1517,7 +1523,7 @@
         const userData = usersData[u];
         if (userData.approved) {
           if ((userData.balance || 0) > leaders.highestCurrentBalance && userData.balance > 0) { leaders.highestCurrentBalance = userData.balance; leaders.currentBalanceUser = u; }
-          if ((userData.highestBalanceEver || 0) > leaders.highestEverBalance && userData.highestBalanceEver > 0) { leaders.highestEverBalance = userData.highestBalanceEver; leaders.highEverBalanceUser = u; }
+          if ((userData.highestBalanceEver || 0) > leaders.highestEverBalance && userData.highestEverBalance > 0) { leaders.highestEverBalance = userData.highestBalanceEver; leaders.highEverBalanceUser = u; }
           if ((userData.surpriseBoxesOpened || 0) > leaders.maxSurpriseBoxes && userData.surpriseBoxesOpened > 0) { leaders.maxSurpriseBoxes = userData.surpriseBoxesOpened; leaders.surpriseBoxUser = u; }
           if ((userData.iflasCount || 0) > leaders.maxBombCount && userData.iflasCount > 0) { leaders.maxBombCount = userData.iflasCount; leaders.bombUser = u; }
           if ((userData.totalSpentPoints || 0) > leaders.maxSpentPoints && userData.totalSpentPoints > 0) { leaders.maxSpentPoints = userData.totalSpentPoints; leaders.spentPointsUser = u; }
@@ -2334,7 +2340,12 @@
     document.getElementById('newItemType').value = '';
     document.getElementById('newItemValue').value = '';
     document.getElementById('newItemMultiplierDuration').value = '';
-    document.getElementById('newItemCountdownDuration').value = '';
+    
+    document.getElementById('storeItemCountdownDays').value = '';
+    document.getElementById('storeItemCountdownHours').value = '';
+    document.getElementById('storeItemCountdownMinutes').value = '';
+    document.getElementById('storeItemCountdownSeconds').value = '';
+
     document.getElementById('newItemImageUrl').value = '';
     document.getElementById('addUpdateStoreItemBtn').textContent = 'ÜRÜN EKLE';
     document.getElementById('newItemMultiplierDuration').classList.add('hidden');
@@ -2360,8 +2371,15 @@
     const type = document.getElementById('newItemType').value;
     const value = parseInt(document.getElementById('newItemValue').value);
     const multiplierDuration = parseInt(document.getElementById('newItemMultiplierDuration').value);
-    const countdown = parseInt(document.getElementById('newItemCountdownDuration').value);
     const imageUrl = document.getElementById('newItemImageUrl').value.trim();
+
+    // DEĞİŞİKLİK BURADA BAŞLIYOR: Yeni zamanlayıcı inputlarını oku
+    const days = parseInt(document.getElementById('storeItemCountdownDays').value) || 0;
+    const hours = parseInt(document.getElementById('storeItemCountdownHours').value) || 0;
+    const minutes = parseInt(document.getElementById('storeItemCountdownMinutes').value) || 0;
+    const seconds = parseInt(document.getElementById('storeItemCountdownSeconds').value) || 0;
+    const totalMinutes = (days * 24 * 60) + (hours * 60) + minutes + Math.round(seconds / 60);
+    // DEĞİŞİKLİK BURADA BİTİYOR
 
     if (!name || !description || isNaN(cost) || !type || isNaN(value)) {
       displayMessage("Lütfen tüm zorunlu alanları doldurun (Ürün Adı, Açıklama, Maliyet, Tip, Değer).");
@@ -2383,9 +2401,13 @@
       itemData.duration = multiplierDuration;
     }
     
-    if (!isNaN(countdown) && countdown > 0) {
-      itemData.countdownDurationMinutes = countdown;
+    // DEĞİŞİKLİK BURADA BAŞLIYOR: countdownDurationMinutes'i ayarla
+    if (totalMinutes > 0) {
+      itemData.countdownDurationMinutes = totalMinutes;
+    } else {
+      itemData.countdownDurationMinutes = null; 
     }
+    // DEĞİŞİKLİK BURADA BİTİYOR
 
     try {
       if (editingItemId) {
@@ -2415,61 +2437,55 @@
     }
   }
   
+  // DEĞİŞİKLİK BURADA BAŞLIYOR: Kod bloğu düzeltildi ve yeniden düzenlendi
   async function reorderStoreItem(itemId, newIndex, itemType) {
-      const itemsSnap = await storeItemsRef.once('value');
+      if (!isAdmin) return;
+      const itemsRef = db.ref('storeItems');
+      const itemsSnap = await itemsRef.once('value');
       const items = itemsSnap.val();
       if (!items) return;
+
+      let allItemsArray = Object.entries(items);
+
+      // Öğeleri oyun ve özel olarak ayır
+      let gameItems = allItemsArray
+          .filter(([, item]) => item.type !== 'special')
+          .sort(([, a], [, b]) => (a.order || 0) - (b.order || 0));
+
+      let specialItems = allItemsArray
+          .filter(([, item]) => item.type === 'special')
+          .sort(([, a], [, b]) => (a.order || 0) - (b.order || 0));
+
+      let listToModify;
+      if (itemType === 'special') {
+          listToModify = specialItems;
+      } else {
+          listToModify = gameItems;
+      }
       
-      let allSortedItems = Object.entries(items).sort(([, a], [, b]) => (a.order || 0) - (b.order || 0));
-      
-      let typeSpecificItems = allSortedItems.filter(([, item]) => (item.type === 'special' ? 'special' : 'game') === (itemType === 'special' ? 'special' : 'game'));
-      
-      const itemToMoveIndex = typeSpecificItems.findIndex(([id,]) => id === itemId);
+      const itemToMoveIndex = listToModify.findIndex(([id,]) => id === itemId);
       if (itemToMoveIndex === -1) return;
 
-      const [movedItem] = typeSpecificItems.splice(itemToMoveIndex, 1);
-      
-      typeSpecificItems.splice(newIndex, 0, movedItem);
+      if (newIndex < 0 || newIndex >= listToModify.length) return;
+
+      // Öğeyi listeden çıkar ve yeni konumuna ekle
+      const [movedItem] = listToModify.splice(itemToMoveIndex, 1);
+      listToModify.splice(newIndex, 0, movedItem);
 
       const updates = {};
       let currentOrder = 0;
-      allSortedItems.forEach(([id, item]) => {
-        let isSpecial = item.type === 'special';
-        let isMovingItemType = itemType === 'special';
-        if(isSpecial !== isMovingItemType){
-            updates[id + '/order'] = currentOrder++;
-        }
-        async function reorderDailyRewardItem(rewardId, newIndex) {
-      if (!isAdmin) return;
-      const rewardsRef = db.ref('dailyRewardOptions');
-      const rewardsSnap = await rewardsRef.once('value');
-      const rewards = rewardsSnap.val();
-      if (!rewards) return;
-
-      let sortedRewards = Object.entries(rewards).sort(([, a], [, b]) => (a.order || 0) - (b.order || 0));
       
-      const itemToMoveIndex = sortedRewards.findIndex(([id,]) => id === rewardId);
-      if (itemToMoveIndex === -1) return;
-
-      if (newIndex < 0 || newIndex >= sortedRewards.length) return;
-
-      const [movedItem] = sortedRewards.splice(itemToMoveIndex, 1);
-      sortedRewards.splice(newIndex, 0, movedItem);
-
-      const updates = {};
-      sortedRewards.forEach(([id, item], index) => {
-        updates[id + '/order'] = index;
+      // Her iki listeyi de yeniden sırala ve güncelleme objesine ekle
+      gameItems.forEach(([id, ]) => {
+          updates[`${id}/order`] = currentOrder++;
+      });
+      specialItems.forEach(([id, ]) => {
+          updates[`${id}/order`] = currentOrder++;
       });
       
-      await rewardsRef.update(updates);
+      await itemsRef.update(updates);
   }
-      });
-      typeSpecificItems.forEach(([id, item]) => {
-        updates[id + '/order'] = currentOrder++;
-      });
-      
-      await storeItemsRef.update(updates);
-  }
+  // DEĞİŞİKLİK BURADA BİTİYOR
 
   async function editStoreItem(itemId) {
     if (!isAdmin) return;
@@ -2488,7 +2504,19 @@
     document.getElementById('newItemType').value = item.type;
     document.getElementById('newItemValue').value = item.value;
     document.getElementById('newItemImageUrl').value = item.imageUrl || '';
-    document.getElementById('newItemCountdownDuration').value = item.countdownDurationMinutes || '';
+
+    // DEĞİŞİKLİK BURADA BAŞLIYOR: Zamanlayıcı inputlarını doldur
+    const totalMins = item.countdownDurationMinutes || 0;
+    const days = Math.floor(totalMins / 1440);
+    const remainingMins = totalMins % 1440;
+    const hours = Math.floor(remainingMins / 60);
+    const minutes = remainingMins % 60;
+
+    document.getElementById('storeItemCountdownDays').value = days > 0 ? days : '';
+    document.getElementById('storeItemCountdownHours').value = hours > 0 ? hours : '';
+    document.getElementById('storeItemCountdownMinutes').value = minutes > 0 ? minutes : '';
+    document.getElementById('storeItemCountdownSeconds').value = ''; // Saniye saklanmadığı için boş bırak
+    // DEĞİŞİKLİK BURADA BİTİYOR
     
     const durationInput = document.getElementById('newItemMultiplierDuration');
     if (item.type === 'tempMultiplier') {
@@ -2902,17 +2930,7 @@
         isGameLocked = snap.val() === true;
     });
 
-    db.ref('lastOpenedBox').on('value', snap => {
-        const info = snap.val();
-        if (info && (Date.now() - info.timestamp < 10000)) { 
-            if (info.content !== 'surpriz') {
-                showGlobalOpenedBoxInfo(info);
-            }
-        }
-    });
-  }
-
-  function showGlobalOpenedBoxInfo(info) {
+    db.ref('lastOpenedBox').on('value', snapfunction showGlobalOpenedBoxInfo(info) {
       let contentDisplay = '';
       if (info.content === 'points') {
           contentDisplay = `+${info.value} Puan kazandı!`;
@@ -3156,9 +3174,16 @@
 
 
     // YENİ GÜNLÜK ÖDÜL SİSTEMİ (ZAMAN AYARLI)
+    // DEĞİŞİKLİK BURADA BAŞLIYOR: Yeni fonksiyon eklendi
+    function openNewDailyRewardForm() {
+        resetDailyRewardForm();
+        openAdminDailyRewardModal();
+    }
+    // DEĞİŞİKLİK BURADA BİTİYOR
+
     function openAdminDailyRewardModal() {
         adminDailyRewardModal.style.display = 'flex';
-        loadDailyRewardManagement();
+        // loadDailyRewardManagement(); // Bu artık gereksiz, form doğrudan açılıyor
     }
     function closeAdminDailyRewardModal() {
         adminDailyRewardModal.style.display = 'none';
@@ -3191,8 +3216,8 @@
 
         for (const rewardId in rewards) {
             const reward = rewards[rewardId];
-            const lastClaim = userClaims[rewardId] || 0;
             const cooldown = reward.cooldownMs || 0;
+            const lastClaim = userClaims[rewardId] || 0;
             if (Date.now() > lastClaim + cooldown) {
                 hasAvailableReward = true;
                 break;
@@ -3473,7 +3498,35 @@
         }
         
         resetDailyRewardForm();
+        closeAdminDailyRewardModal();
     }
+    
+    // DEĞİŞİKLİK BURADA BAŞLIYOR: Fonksiyon düzeltildi
+    async function reorderDailyRewardItem(rewardId, newIndex) {
+        if (!isAdmin) return;
+        const rewardsRef = db.ref('dailyRewardOptions');
+        const rewardsSnap = await rewardsRef.once('value');
+        const rewards = rewardsSnap.val();
+        if (!rewards) return;
+
+        let sortedRewards = Object.entries(rewards).sort(([, a], [, b]) => (a.order || 0) - (b.order || 0));
+        
+        const itemToMoveIndex = sortedRewards.findIndex(([id,]) => id === rewardId);
+        if (itemToMoveIndex === -1) return;
+
+        if (newIndex < 0 || newIndex >= sortedRewards.length) return;
+
+        const [movedItem] = sortedRewards.splice(itemToMoveIndex, 1);
+        sortedRewards.splice(newIndex, 0, movedItem);
+
+        const updates = {};
+        sortedRewards.forEach(([id, ], index) => {
+          updates[id + '/order'] = index;
+        });
+        
+        await rewardsRef.update(updates);
+    }
+    // DEĞİŞİKLİK BURADA BİTİYOR
 
     async function editDailyReward(rewardId) {
         if (!isAdmin) return;
@@ -3513,9 +3566,7 @@
         document.getElementById('saveDailyRewardBtn').textContent = 'ÖDÜLÜ GÜNCELLE';
         editingDailyRewardId = rewardId;
         
-        // Düzeltme burada: Düzenleme penceresini açan fonksiyonu çağırıyoruz.
         openAdminDailyRewardModal(); 
-        
         document.querySelector('#adminDailyRewardModal .modal-content').scrollTop = 0;
     }
 
@@ -3527,30 +3578,6 @@
         }
     }
     
-    function loadDailyRewardManagement() {
-        const listEl = document.getElementById('adminDailyRewardsList');
-        db.ref('dailyRewardOptions').on('value', async (rewardsSnap) => {
-            listEl.innerHTML = '';
-            const rewards = rewardsSnap.val();
-            if (!rewards) {
-                listEl.innerHTML = '<p class="text-center text-gray-400 text-sm">Oluşturulmuş günlük ödül yok.</p>';
-                return;
-            }
-            for (const rewardId in rewards) {
-                const reward = rewards[rewardId];
-                const div = document.createElement('div');
-                div.className = 'flex justify-between items-center p-2 mb-2 bg-gray-700 rounded-md';
-                div.innerHTML = `
-                    <span class="text-gray-300 text-sm truncate pr-2">${reward.name} (${reward.cooldownText})</span>
-                    <div class="flex items-center gap-2 flex-shrink-0">
-                        <button onclick="editDailyReward('${rewardId}')" class="py-1 px-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold rounded-md">Düzenle</button>
-                        <button onclick="removeDailyReward('${rewardId}')" class="py-1 px-2 bg-red-600 hover:bg-red-500 text-white text-xs font-bold rounded-md">Kaldır</button>
-                    </div>
-                `;
-                listEl.appendChild(div);
-            }
-        });
-    }
 
     function listenForAdminNotifications() {
       const notificationsRef = db.ref(`users/${currentUser}/notifications`);
