@@ -68,6 +68,10 @@
     fill: #4a5568;
     cursor: not-allowed;
   }
+  #gameDiv.modal-is-open .admin-controls,
+  #gameDiv.modal-is-open .best-seller-badge {
+    visibility: hidden;
+  }
 </style>
 </head>
 <body class="bg-gray-900 text-white min-h-screen flex flex-col items-center py-8 px-4">
@@ -2062,14 +2066,16 @@
   }
 
   function openAdminStoreModal() {
+    document.getElementById('gameDiv').classList.add('modal-is-open');
     adminStoreModal.style.display = 'flex';
   }
 
   function closeAdminStoreModal() {
+      document.getElementById('gameDiv').classList.remove('modal-is-open');
       adminStoreModal.style.display = 'none';
       resetStoreItemForm();
   }
-
+  
   function loadStoreItems() {
     storeItemsRef.on('value', snap => {
         const items = snap.val();
@@ -2168,6 +2174,9 @@
                   <button onclick="editStoreItem('${item.id}')" title="Düzenle" class="p-1 rounded-full hover:bg-gray-700">
                       <svg class="w-5 h-5 fill-current text-white" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M17.414 2.586a2 2 0 00-2.828 0L7 10.172V13h2.828l7.586-7.586a2 2 0 000-2.828zM5 12V7a1 1 0 011-1h2.586l-2 2H6v3h3v-1.586l2-2H13a1 1 0 011 1v5a1 1 0 01-1 1H6a1 1 0 01-1-1v-2z"/></svg>
                   </button>
+                   <button onclick="deleteStoreItem('${item.id}')" title="Sil" class="p-1 rounded-full hover:bg-gray-700">
+                      <svg class="w-5 h-5 fill-current text-white" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M6 2l2-2h4l2 2h4v2H2V2h4zM3 6h14l-1 14H4L3 6zm5 2v10h1V8H8zm3 0v10h1V8h-1z"/></svg>
+                  </button>
                   <button onclick="reorderStoreItem('${item.id}', ${index + 1}, '${item.type}')" ${rightArrowDisabled} title="Sağa Taşı" class="p-1 rounded-full hover:bg-gray-700 disabled:cursor-not-allowed">
                       <svg class="w-5 h-5 fill-current text-white" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z"/></svg>
                   </button>
@@ -2189,7 +2198,7 @@
           const disabled = outOfStock || isExpired;
           
           const popularityHtml = `<p class="text-blue-300 text-sm mb-2">🔥 ${item.purchaseCount || 0} kez satın alındı</p>`;
-          const bestSellerBadge = isBestSeller ? `<span class="absolute top-2 left-2 bg-yellow-500 text-gray-900 text-xs font-bold px-2 py-1 rounded-full z-10">ÇOK SATAN</span>` : '';
+          const bestSellerBadge = isBestSeller ? `<span class="best-seller-badge absolute top-2 left-2 bg-yellow-500 text-gray-900 text-xs font-bold px-2 py-1 rounded-full z-10">ÇOK SATAN</span>` : '';
           const cardClass = isBestSeller ? 'glowing-border' : 'border-red-700';
 
           const cardDiv = document.createElement('div');
