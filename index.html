@@ -2363,8 +2363,14 @@
   async function saveStoreItem() {
         if (!isAdmin) return;
 
-        // ... (fonksiyonun başındaki değişken tanımlamaları aynı) ...
+        const name = document.getElementById('newItemName').value.trim();
+        const description = document.getElementById('newItemDescription').value.trim();
+        const cost = parseInt(document.getElementById('newItemCost').value);
+        const type = document.getElementById('newItemType').value;
+        const value = parseInt(document.getElementById('newItemValue').value);
+        const multiplierDuration = parseInt(document.getElementById('newItemMultiplierDuration').value);
         const imageUrl = document.getElementById('newItemImageUrl').value.trim();
+        let stockInput = document.getElementById('newItemStock').value;
 
         const days = parseInt(document.getElementById('storeItemCountdownDays').value) || 0;
         const hours = parseInt(document.getElementById('storeItemCountdownHours').value) || 0;
@@ -2373,11 +2379,11 @@
         const totalMinutes = (days * 24 * 60) + (hours * 60) + minutes + Math.round(seconds / 60);
 
         if (!name || !description || isNaN(cost) || !type || isNaN(value)) {
-        displayMessage("Lütfen tüm zorunlu alanları doldurun (Ürün Adı, Açıklama, Maliyet, Tip, Değer).");
-        return;
+            displayMessage("Lütfen tüm zorunlu alanları doldurun (Ürün Adı, Açıklama, Maliyet, Tip, Değer).");
+            return;
         }
 
-        const stock = (document.getElementById('newItemStock').value === '' || document.getElementById('newItemStock').value === null) ? null : parseInt(document.getElementById('newItemStock').value);
+        const stock = (stockInput === '' || stockInput === null) ? null : parseInt(stockInput);
 
         const itemData = {
             name, description, cost, stock, type, value,
@@ -2385,7 +2391,6 @@
         };
         
         if (type === 'tempMultiplier') {
-            const multiplierDuration = parseInt(document.getElementById('newItemMultiplierDuration').value);
             if (isNaN(multiplierDuration) || multiplierDuration <= 0) {
                 displayMessage("Geçici Çarpan için geçerli bir 'Çarpan Süresi' girin.");
                 return;
@@ -2394,9 +2399,9 @@
         }
         
         if (totalMinutes > 0) {
-        itemData.countdownDurationMinutes = totalMinutes;
+            itemData.countdownDurationMinutes = totalMinutes;
         } else {
-        itemData.countdownDurationMinutes = null; 
+            itemData.countdownDurationMinutes = null; 
         }
 
         try {
@@ -2421,7 +2426,6 @@
                 displayMessage(`'${name}' ürünü başarıyla eklendi!`);
             }
             closeAdminStoreModal();
-            // YENİ EKLENEN SATIR: Kaydetme sonrası mağazayı günceller.
             loadStoreItems();
         } catch (error) {
             console.error("Mağaza ürünü kaydetme hatası:", error);
