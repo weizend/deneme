@@ -1259,7 +1259,28 @@
         });
     }
   }
+  function switchStoreTab(tab) {
+    const gameStoreContainer = document.getElementById('gameStoreItemsContainer');
+    const specialStoreContainer = document.getElementById('specialStoreItemsContainer');
+    const gameTabBtn = document.getElementById('gameStoreTabBtn');
+    const specialTabBtn = document.getElementById('specialStoreTabBtn');
 
+    if (tab === 'game') {
+        gameStoreContainer.classList.remove('hidden');
+        specialStoreContainer.classList.add('hidden');
+        gameTabBtn.classList.add('border-red-500', 'text-white');
+        gameTabBtn.classList.remove('border-transparent', 'text-gray-400');
+        specialTabBtn.classList.add('border-transparent', 'text-gray-400');
+        specialTabBtn.classList.remove('border-red-500', 'text-white');
+    } else { // special
+        gameStoreContainer.classList.add('hidden');
+        specialStoreContainer.classList.remove('hidden');
+        specialTabBtn.classList.add('border-red-500', 'text-white');
+        specialTabBtn.classList.remove('border-transparent', 'text-gray-400');
+        gameTabBtn.classList.add('border-transparent', 'text-gray-400');
+        gameTabBtn.classList.remove('border-red-500', 'text-white');
+    }
+  }
   function showSection(sectionId) {
     document.getElementById('gameContent').classList.add('hidden');
     document.getElementById('storeSection').classList.add('hidden');
@@ -1273,6 +1294,7 @@
         btn.classList.remove('bg-red-700', 'hover:bg-red-600');
         btn.classList.add('bg-gray-700', 'hover:bg-gray-600');
     });
+    
     
     const activeBtn = document.getElementById(`${sectionId}TabBtn`);
     const activeContent = document.getElementById(sectionId === 'store' ? 'storeSection' : `${sectionId}Content`);
