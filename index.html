@@ -1900,7 +1900,8 @@
               }, 2000);
               return;
           }
-          const minutes = Math.floor(` min) / 1000).toString().padStart(2, '0');
+          const minutes = Math.floor(timeLeft / 60000);
+          const seconds = Math.floor((timeLeft % 60000) / 1000).toString().padStart(2, '0');
           document.getElementById('blockedCountdown').textContent = `Kalan süre: ${minutes}:${seconds}`;
       };
       countdownInterval = setInterval(updateCountdown, 1000);
@@ -2514,7 +2515,7 @@
       document.getElementById('publicUserSurpriseBoxes').textContent = userData.surpriseBoxesOpened || 0;
       document.getElementById('publicUserBombCount').textContent = userData.iflasCount || 0;
       document.getElementById('publicUserMultiplierFoundCount').textContent = userData.multiplierFoundCount || 0;
-      document.getElementById('publicUserTotalSpent').textContent = userData.totalSpentPoints || 0;
+      document.getElementById('publicUserTotalSpent').textContent` = userData.totalSpentPoints || 0;
       document.getElementById('publicUserShieldUsedCount').textContent = userData.iflasShieldUsedCount || 0;
       
       const blockedInfoDiv = document.getElementById('publicUserBlockedInfo');
@@ -3059,8 +3060,9 @@
                         const seconds = Math.floor((timeLeft % (1000 * 60)) / 1000);
                         let timeString = '';
                         if (days > 0) timeString += `${days}g `;
-                        if (hours > 0 || days > 0) timeString += `${hours}s `;
-                        timeString += `${minutes}d ${seconds}sn`;
+                        if (hours > 0) timeString += `${hours}s `;
+                        if(minutes > 0 || hours > 0 || days > 0) timeString += `${minutes}d `;
+                        timeString += `${seconds}sn`;
                         el.textContent = `Kalan Süre: ${timeString}`;
                     }
                 }, 1000);
