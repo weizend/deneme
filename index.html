@@ -2361,76 +2361,73 @@
   });
 
   async function saveStoreItem() {
-    if (!isAdmin) return;
+        if (!isAdmin) return;
 
-    const name = document.getElementById('newItemName').value.trim();
-    const description = document.getElementById('newItemDescription').value.trim();
-    const cost = parseInt(document.getElementById('newItemCost').value);
-    let stock = document.getElementById('newItemStock').value;
-    const type = document.getElementById('newItemType').value;
-    const value = parseInt(document.getElementById('newItemValue').value);
-    const multiplierDuration = parseInt(document.getElementById('newItemMultiplierDuration').value);
-    const imageUrl = document.getElementById('newItemImageUrl').value.trim();
+        // ... (fonksiyonun başındaki değişken tanımlamaları aynı) ...
+        const imageUrl = document.getElementById('newItemImageUrl').value.trim();
 
-    const days = parseInt(document.getElementById('storeItemCountdownDays').value) || 0;
-    const hours = parseInt(document.getElementById('storeItemCountdownHours').value) || 0;
-    const minutes = parseInt(document.getElementById('storeItemCountdownMinutes').value) || 0;
-    const seconds = parseInt(document.getElementById('storeItemCountdownSeconds').value) || 0;
-    const totalMinutes = (days * 24 * 60) + (hours * 60) + minutes + Math.round(seconds / 60);
+        const days = parseInt(document.getElementById('storeItemCountdownDays').value) || 0;
+        const hours = parseInt(document.getElementById('storeItemCountdownHours').value) || 0;
+        const minutes = parseInt(document.getElementById('storeItemCountdownMinutes').value) || 0;
+        const seconds = parseInt(document.getElementById('storeItemCountdownSeconds').value) || 0;
+        const totalMinutes = (days * 24 * 60) + (hours * 60) + minutes + Math.round(seconds / 60);
 
-    if (!name || !description || isNaN(cost) || !type || isNaN(value)) {
-      displayMessage("Lütfen tüm zorunlu alanları doldurun (Ürün Adı, Açıklama, Maliyet, Tip, Değer).");
-      return;
-    }
-
-    stock = (stock === '' || stock === null) ? null : parseInt(stock);
-
-    const itemData = {
-      name, description, cost, stock, type, value,
-      imageUrl: imageUrl || 'https://via.placeholder.com/150',
-    };
-    
-    if (type === 'tempMultiplier') {
-      if (isNaN(multiplierDuration) || multiplierDuration <= 0) {
-        displayMessage("Geçici Çarpan için geçerli bir 'Çarpan Süresi' girin.");
+        if (!name || !description || isNaN(cost) || !type || isNaN(value)) {
+        displayMessage("Lütfen tüm zorunlu alanları doldurun (Ürün Adı, Açıklama, Maliyet, Tip, Değer).");
         return;
-      }
-      itemData.duration = multiplierDuration;
-    }
-    
-    if (totalMinutes > 0) {
-      itemData.countdownDurationMinutes = totalMinutes;
-    } else {
-      itemData.countdownDurationMinutes = null; 
-    }
-
-    try {
-      if (editingItemId) {
-        const existingItemSnap = await storeItemsRef.child(editingItemId).once('value');
-        const existingItem = existingItemSnap.val();
-        itemData.createdAt = existingItem.createdAt || firebase.database.ServerValue.TIMESTAMP;
-        itemData.order = existingItem.order;
-        itemData.purchaseCount = existingItem.purchaseCount || 0;
-        await storeItemsRef.child(editingItemId).update(itemData);
-        displayMessage(`'${name}' ürünü başarıyla güncellendi!`);
-      } else {
-        itemData.createdAt = firebase.database.ServerValue.TIMESTAMP;
-        itemData.purchaseCount = 0;
-        const maxOrderSnap = await storeItemsRef.orderByChild('order').limitToLast(1).once('value');
-        let maxOrder = -1;
-        if(maxOrderSnap.exists()){
-            maxOrder = Object.values(maxOrderSnap.val())[0].order || 0;
         }
-        itemData.order = maxOrder + 1;
-        await storeItemsRef.push(itemData);
-        displayMessage(`'${name}' ürünü başarıyla eklendi!`);
-      }
-      closeAdminStoreModal();
-    } catch (error) {
-        console.error("Mağaza ürünü kaydetme hatası:", error);
-        displayMessage("Ürün kaydedilirken bir hata oluştu.");
+
+        const stock = (document.getElementById('newItemStock').value === '' || document.getElementById('newItemStock').value === null) ? null : parseInt(document.getElementById('newItemStock').value);
+
+        const itemData = {
+            name, description, cost, stock, type, value,
+            imageUrl: imageUrl || 'https://via.placeholder.com/150',
+        };
+        
+        if (type === 'tempMultiplier') {
+            const multiplierDuration = parseInt(document.getElementById('newItemMultiplierDuration').value);
+            if (isNaN(multiplierDuration) || multiplierDuration <= 0) {
+                displayMessage("Geçici Çarpan için geçerli bir 'Çarpan Süresi' girin.");
+                return;
+            }
+            itemData.duration = multiplierDuration;
+        }
+        
+        if (totalMinutes > 0) {
+        itemData.countdownDurationMinutes = totalMinutes;
+        } else {
+        itemData.countdownDurationMinutes = null; 
+        }
+
+        try {
+            if (editingItemId) {
+                const existingItemSnap = await storeItemsRef.child(editingItemId).once('value');
+                const existingItem = existingItemSnap.val();
+                itemData.createdAt = existingItem.createdAt || firebase.database.ServerValue.TIMESTAMP;
+                itemData.order = existingItem.order;
+                itemData.purchaseCount = existingItem.purchaseCount || 0;
+                await storeItemsRef.child(editingItemId).update(itemData);
+                displayMessage(`'${name}' ürünü başarıyla güncellendi!`);
+            } else {
+                itemData.createdAt = firebase.database.ServerValue.TIMESTAMP;
+                itemData.purchaseCount = 0;
+                const maxOrderSnap = await storeItemsRef.orderByChild('order').limitToLast(1).once('value');
+                let maxOrder = -1;
+                if(maxOrderSnap.exists()){
+                    maxOrder = Object.values(maxOrderSnap.val())[0].order || 0;
+                }
+                itemData.order = maxOrder + 1;
+                await storeItemsRef.push(itemData);
+                displayMessage(`'${name}' ürünü başarıyla eklendi!`);
+            }
+            closeAdminStoreModal();
+            // YENİ EKLENEN SATIR: Kaydetme sonrası mağazayı günceller.
+            loadStoreItems();
+        } catch (error) {
+            console.error("Mağaza ürünü kaydetme hatası:", error);
+            displayMessage("Ürün kaydedilirken bir hata oluştu.");
+        }
     }
-  }
   
   async function reorderStoreItem(itemId, newIndex, itemType) {
       if (!isAdmin) return;
@@ -3244,7 +3241,9 @@
 
         if (!rewardsData) {
             container.innerHTML = '<p class="text-center col-span-full">Şu anda mevcut bir günlük ödül bulunmamaktadır.</p>';
-            dailyRewardModal.style.display = 'flex';
+            if (dailyRewardModal.style.display !== 'flex') {
+                dailyRewardModal.style.display = 'flex';
+            }
             return;
         }
 
@@ -3304,7 +3303,7 @@
 
                         if (timeLeft <= 0) {
                             el.innerHTML = `<span class="text-green-400">Şimdi Alınabilir!</span>`;
-                            const claimButton = el.closest('.flex-col').querySelector('button');
+                            const claimButton = el.closest('div.flex-col').querySelector('button');
                             if (claimButton) {
                                 claimButton.disabled = false;
                                 claimButton.classList.replace('bg-gray-600', 'bg-green-600');
@@ -3344,7 +3343,9 @@
             container.appendChild(card);
         });
         
-        dailyRewardModal.style.display = 'flex';
+        if (dailyRewardModal.style.display !== 'flex') {
+            dailyRewardModal.style.display = 'flex';
+        }
     }
 
 
@@ -3494,6 +3495,7 @@
         
         resetDailyRewardForm();
         closeAdminDailyRewardModal();
+        openDailyRewardModal(); // YENİ EKLENEN SATIR: Kaydetme sonrası ana ödül ekranını günceller.
     }
     
     async function reorderDailyRewardItem(rewardId, newIndex) {
@@ -3519,6 +3521,7 @@
         });
         
         await rewardsRef.update(updates);
+        openDailyRewardModal(); // YENİ EKLENEN SATIR: Bu satır, işlem sonrası ödül listesini anında günceller.
     }
 
     async function editDailyReward(rewardId) {
@@ -3568,6 +3571,7 @@
         if (await customConfirm("Bu günlük ödülü silmek istediğinizden emin misiniz?")) {
             await db.ref('dailyRewardOptions/' + rewardId).remove();
             displayMessage("Günlük ödül kaldırıldı.");
+            openDailyRewardModal(); // YENİ EKLENEN SATIR: Silme sonrası listeyi günceller.
         }
     }
     
