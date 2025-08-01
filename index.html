@@ -268,6 +268,7 @@
                 <input type="number" id="storeItemCountdownMinutes" placeholder="Dakika" min="0" class="w-full p-2 bg-gray-700 border border-gray-600 rounded-lg text-white">
                 <input type="number" id="storeItemCountdownSeconds" placeholder="Saniye" min="0" class="w-full p-2 bg-gray-700 border border-gray-600 rounded-lg text-white">
             </div>
+
             <input type="text" id="newItemImageUrl" placeholder="Resim URL (Opsiyonel)" class="w-full p-2 mb-4 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500 transition duration-300">
             <button onclick="saveStoreItem()" id="addUpdateStoreItemBtn" class="w-full py-2 bg-green-600 hover:bg-green-500 text-white font-bold rounded-lg shadow-md hover:shadow-lg transform hover:-translate-y-1 transition duration-300">ÜRÜN EKLE</button>
             <button onclick="resetStoreItemForm()" class="w-full py-2 mt-2 bg-gray-600 hover:bg-gray-500 text-white font-bold rounded-lg shadow-md hover:-translate-y-1 transition duration-300">Formu Temizle</button>
@@ -1523,7 +1524,7 @@
         const userData = usersData[u];
         if (userData.approved) {
           if ((userData.balance || 0) > leaders.highestCurrentBalance && userData.balance > 0) { leaders.highestCurrentBalance = userData.balance; leaders.currentBalanceUser = u; }
-          if ((userData.highestBalanceEver || 0) > leaders.highestEverBalance && userData.highestEverBalance > 0) { leaders.highestEverBalance = userData.highestBalanceEver; leaders.highEverBalanceUser = u; }
+          if ((userData.highestBalanceEver || 0) > leaders.highestEverBalance && userData.highestBalanceEver > 0) { leaders.highestEverBalance = userData.highestBalanceEver; leaders.highEverBalanceUser = u; }
           if ((userData.surpriseBoxesOpened || 0) > leaders.maxSurpriseBoxes && userData.surpriseBoxesOpened > 0) { leaders.maxSurpriseBoxes = userData.surpriseBoxesOpened; leaders.surpriseBoxUser = u; }
           if ((userData.iflasCount || 0) > leaders.maxBombCount && userData.iflasCount > 0) { leaders.maxBombCount = userData.iflasCount; leaders.bombUser = u; }
           if ((userData.totalSpentPoints || 0) > leaders.maxSpentPoints && userData.totalSpentPoints > 0) { leaders.maxSpentPoints = userData.totalSpentPoints; leaders.spentPointsUser = u; }
@@ -2061,8 +2062,6 @@
     cardSelectionModal.style.display = 'none'; 
   }
   
-  // Mağaza Yönetim Modalı için Listener
-  let adminStoreItemsListener = null;
   const storeItemsRef = db.ref('storeItems');
 
   function openNewItemForm() {
@@ -2373,13 +2372,11 @@
     const multiplierDuration = parseInt(document.getElementById('newItemMultiplierDuration').value);
     const imageUrl = document.getElementById('newItemImageUrl').value.trim();
 
-    // DEĞİŞİKLİK BURADA BAŞLIYOR: Yeni zamanlayıcı inputlarını oku
     const days = parseInt(document.getElementById('storeItemCountdownDays').value) || 0;
     const hours = parseInt(document.getElementById('storeItemCountdownHours').value) || 0;
     const minutes = parseInt(document.getElementById('storeItemCountdownMinutes').value) || 0;
     const seconds = parseInt(document.getElementById('storeItemCountdownSeconds').value) || 0;
     const totalMinutes = (days * 24 * 60) + (hours * 60) + minutes + Math.round(seconds / 60);
-    // DEĞİŞİKLİK BURADA BİTİYOR
 
     if (!name || !description || isNaN(cost) || !type || isNaN(value)) {
       displayMessage("Lütfen tüm zorunlu alanları doldurun (Ürün Adı, Açıklama, Maliyet, Tip, Değer).");
@@ -2401,20 +2398,18 @@
       itemData.duration = multiplierDuration;
     }
     
-    // DEĞİŞİKLİK BURADA BAŞLIYOR: countdownDurationMinutes'i ayarla
     if (totalMinutes > 0) {
       itemData.countdownDurationMinutes = totalMinutes;
     } else {
       itemData.countdownDurationMinutes = null; 
     }
-    // DEĞİŞİKLİK BURADA BİTİYOR
 
     try {
       if (editingItemId) {
         const existingItemSnap = await storeItemsRef.child(editingItemId).once('value');
         const existingItem = existingItemSnap.val();
         itemData.createdAt = existingItem.createdAt || firebase.database.ServerValue.TIMESTAMP;
-        itemData.order = existingItem.order; // Preserve order on edit
+        itemData.order = existingItem.order;
         itemData.purchaseCount = existingItem.purchaseCount || 0;
         await storeItemsRef.child(editingItemId).update(itemData);
         displayMessage(`'${name}' ürünü başarıyla güncellendi!`);
@@ -2437,7 +2432,6 @@
     }
   }
   
-  // DEĞİŞİKLİK BURADA BAŞLIYOR: Kod bloğu düzeltildi ve yeniden düzenlendi
   async function reorderStoreItem(itemId, newIndex, itemType) {
       if (!isAdmin) return;
       const itemsRef = db.ref('storeItems');
@@ -2447,7 +2441,6 @@
 
       let allItemsArray = Object.entries(items);
 
-      // Öğeleri oyun ve özel olarak ayır
       let gameItems = allItemsArray
           .filter(([, item]) => item.type !== 'special')
           .sort(([, a], [, b]) => (a.order || 0) - (b.order || 0));
@@ -2463,29 +2456,26 @@
           listToModify = gameItems;
       }
       
-      const itemToMoveIndex = listToModify.findIndex(([id,]) => id === itemId);
+      const itemToMoveIndex = listToModify.findIndex(([id]) => id === itemId);
       if (itemToMoveIndex === -1) return;
 
       if (newIndex < 0 || newIndex >= listToModify.length) return;
 
-      // Öğeyi listeden çıkar ve yeni konumuna ekle
       const [movedItem] = listToModify.splice(itemToMoveIndex, 1);
       listToModify.splice(newIndex, 0, movedItem);
 
       const updates = {};
       let currentOrder = 0;
       
-      // Her iki listeyi de yeniden sırala ve güncelleme objesine ekle
-      gameItems.forEach(([id, ]) => {
+      gameItems.forEach(([id]) => {
           updates[`${id}/order`] = currentOrder++;
       });
-      specialItems.forEach(([id, ]) => {
+      specialItems.forEach(([id]) => {
           updates[`${id}/order`] = currentOrder++;
       });
       
       await itemsRef.update(updates);
   }
-  // DEĞİŞİKLİK BURADA BİTİYOR
 
   async function editStoreItem(itemId) {
     if (!isAdmin) return;
@@ -2505,18 +2495,16 @@
     document.getElementById('newItemValue').value = item.value;
     document.getElementById('newItemImageUrl').value = item.imageUrl || '';
 
-    // DEĞİŞİKLİK BURADA BAŞLIYOR: Zamanlayıcı inputlarını doldur
     const totalMins = item.countdownDurationMinutes || 0;
     const days = Math.floor(totalMins / 1440);
-    const remainingMins = totalMins % 1440;
-    const hours = Math.floor(remainingMins / 60);
-    const minutes = remainingMins % 60;
+    const remainingMinsAfterDays = totalMins % 1440;
+    const hours = Math.floor(remainingMinsAfterDays / 60);
+    const minutes = remainingMinsAfterDays % 60;
 
     document.getElementById('storeItemCountdownDays').value = days > 0 ? days : '';
     document.getElementById('storeItemCountdownHours').value = hours > 0 ? hours : '';
     document.getElementById('storeItemCountdownMinutes').value = minutes > 0 ? minutes : '';
-    document.getElementById('storeItemCountdownSeconds').value = ''; // Saniye saklanmadığı için boş bırak
-    // DEĞİŞİKLİK BURADA BİTİYOR
+    document.getElementById('storeItemCountdownSeconds').value = '';
     
     const durationInput = document.getElementById('newItemMultiplierDuration');
     if (item.type === 'tempMultiplier') {
@@ -2563,11 +2551,11 @@
           const history = snap.val(); 
           let html = ''; 
           if (!history || Object.keys(history).length === 0) { 
-              list.innerHTML = "<div class='text-center text-gray-400'>Henüz bir satın alma işlemi yapmadınız.</div>"; 
-              return; 
-          } 
-          const sorted = Object.values(history).sort((a, b) => b.timestamp - a.timestamp); 
-          sorted.forEach(r => { 
+              list.innerHTML = "<div class='text-center text-gray-400'>Henüz bir satın alma işlemi yapmadınız.</div>";
+              return;
+          }
+          const sorted = Object.values(history).sort((a, b) => b.timestamp - a.timestamp);
+          sorted.forEach(r => {
               let statusBadge = '';
               if (r.status === 'pending') {
                   statusBadge = '<span class="text-xs font-semibold inline-block py-1 px-2 uppercase rounded-full text-yellow-600 bg-yellow-200">Beklemede</span>';
@@ -2590,10 +2578,10 @@
                         ${statusBadge ? `<br class="mt-1">${statusBadge}` : ''}
                     </div>
                 </div>
-              `; 
-          }); 
-          list.innerHTML = html; 
-      }); 
+              `;
+          });
+          list.innerHTML = html;
+      });
   }
   async function clearPurchaseHistory() { if(await customConfirm("Tüm satın alma geçmişini silmek istediğinize emin misiniz? Bu işlem geri alınamaz!")) { db.ref('purchaseHistory').remove().then(() => displayMessage("Satın alma geçmişi başarıyla temizlendi.")) } }
   async function clearAllTotalSpentPoints() { if(await customConfirm("Tüm kullanıcıların harcadığı puanları sıfırlamak istediğinize emin misiniz?")) { db.ref('users').once('value').then(snap => { const updates = {}; snap.forEach(c => { if(c.key !== 'weizendtv') updates[`users/${c.key}/totalSpentPoints`] = 0; }); db.ref().update(updates).then(() => displayMessage("Tüm kullanıcıların harcanan puanları sıfırlandı.")) }); } }
@@ -2930,7 +2918,17 @@
         isGameLocked = snap.val() === true;
     });
 
-    db.ref('lastOpenedBox').on('value', snapfunction showGlobalOpenedBoxInfo(info) {
+    db.ref('lastOpenedBox').on('value', snap => {
+        const info = snap.val();
+        if (info && (Date.now() - info.timestamp < 10000)) { 
+            if (info.content !== 'surpriz') {
+                showGlobalOpenedBoxInfo(info);
+            }
+        }
+    });
+  }
+
+  function showGlobalOpenedBoxInfo(info) {
       let contentDisplay = '';
       if (info.content === 'points') {
           contentDisplay = `+${info.value} Puan kazandı!`;
@@ -3174,16 +3172,13 @@
 
 
     // YENİ GÜNLÜK ÖDÜL SİSTEMİ (ZAMAN AYARLI)
-    // DEĞİŞİKLİK BURADA BAŞLIYOR: Yeni fonksiyon eklendi
     function openNewDailyRewardForm() {
         resetDailyRewardForm();
         openAdminDailyRewardModal();
     }
-    // DEĞİŞİKLİK BURADA BİTİYOR
 
     function openAdminDailyRewardModal() {
         adminDailyRewardModal.style.display = 'flex';
-        // loadDailyRewardManagement(); // Bu artık gereksiz, form doğrudan açılıyor
     }
     function closeAdminDailyRewardModal() {
         adminDailyRewardModal.style.display = 'none';
@@ -3409,7 +3404,7 @@
         
         displayMessage(message);
         closeDailyRewardModal();
-        checkAvailableDailyRewards(); // Check again to update the indicator
+        checkAvailableDailyRewards();
     }
     
     document.getElementById('dailyRewardType').addEventListener('change', function() {
@@ -3470,7 +3465,7 @@
         if (editingDailyRewardId) {
             const existingRewardSnap = await db.ref('dailyRewardOptions/' + editingDailyRewardId).once('value');
             const existingReward = existingRewardSnap.val();
-            rewardData.order = existingReward.order; // Düzenlemede sırayı koru
+            rewardData.order = existingReward.order;
         } else {
             const maxOrderSnap = await db.ref('dailyRewardOptions').orderByChild('order').limitToLast(1).once('value');
             let maxOrder = -1;
@@ -3501,7 +3496,6 @@
         closeAdminDailyRewardModal();
     }
     
-    // DEĞİŞİKLİK BURADA BAŞLIYOR: Fonksiyon düzeltildi
     async function reorderDailyRewardItem(rewardId, newIndex) {
         if (!isAdmin) return;
         const rewardsRef = db.ref('dailyRewardOptions');
@@ -3511,7 +3505,7 @@
 
         let sortedRewards = Object.entries(rewards).sort(([, a], [, b]) => (a.order || 0) - (b.order || 0));
         
-        const itemToMoveIndex = sortedRewards.findIndex(([id,]) => id === rewardId);
+        const itemToMoveIndex = sortedRewards.findIndex(([id]) => id === rewardId);
         if (itemToMoveIndex === -1) return;
 
         if (newIndex < 0 || newIndex >= sortedRewards.length) return;
@@ -3520,13 +3514,12 @@
         sortedRewards.splice(newIndex, 0, movedItem);
 
         const updates = {};
-        sortedRewards.forEach(([id, ], index) => {
+        sortedRewards.forEach(([id], index) => {
           updates[id + '/order'] = index;
         });
         
         await rewardsRef.update(updates);
     }
-    // DEĞİŞİKLİK BURADA BİTİYOR
 
     async function editDailyReward(rewardId) {
         if (!isAdmin) return;
@@ -3578,7 +3571,6 @@
         }
     }
     
-
     function listenForAdminNotifications() {
       const notificationsRef = db.ref(`users/${currentUser}/notifications`);
       notificationsRef.orderByChild('timestamp').startAt(sessionStartTime).on('child_added', snap => {
