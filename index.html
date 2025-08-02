@@ -72,6 +72,41 @@
   #gameDiv.modal-is-open .best-seller-badge {
     visibility: hidden;
   }
+  /* YENİ EKLENEN KISIM: Düello Oyunu Stilleri */
+  #duelGameArea {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(17, 24, 39, 0.9); /* bg-gray-900 with opacity */
+    border: 2px solid #fde047; /* yellow-300 */
+    border-radius: 0.75rem; /* rounded-lg */
+    overflow: hidden;
+    cursor: crosshair;
+  }
+  .duel-target {
+    position: absolute;
+    width: 40px;
+    height: 40px;
+    background-color: #dc2626; /* red-600 */
+    border-radius: 50%;
+    cursor: pointer;
+    transition: transform 0.1s ease;
+    box-shadow: 0 0 15px #f87171; /* red-400 */
+  }
+  .duel-target:hover {
+    transform: scale(1.1);
+  }
+  .countdown-text {
+    font-size: 10rem;
+    font-weight: 800;
+    color: #fde047; /* yellow-300 */
+    text-shadow: 0 0 20px #f59e0b; /* yellow-500 */
+    animation: countdown-zoom 1s ease-in-out infinite;
+  }
+  @keyframes countdown-zoom {
+    0%, 100% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.2); opacity: 0.7; }
+  }
 </style>
 </head>
 <body class="bg-gray-900 text-white min-h-screen flex flex-col items-center py-8 px-4">
@@ -364,6 +399,32 @@
       </div>
     </div>
     
+    <div class="bg-gray-900 p-6 rounded-lg border border-gray-700 mt-6 col-span-full">
+        <h4 class="text-yellow-300 text-xl font-semibold mb-4">Mini Oyun: Hızlı Çekan Kazanır</h4>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+                <input type="number" id="duelTargetCount" placeholder="Hedef Sayısı (Örn: 10)" min="1" class="w-full p-3 mb-2 bg-gray-700 border border-gray-600 rounded-lg text-white">
+                <input type="number" id="duelRewardPoints" placeholder="Ödül (Puan)" min="1" class="w-full p-3 mb-2 bg-gray-700 border border-gray-600 rounded-lg text-white">
+                <button onclick="startDuelGame()" class="w-full py-2 bg-green-700 hover:bg-green-600 text-white font-bold rounded-lg shadow-md">
+                    Oyunu Hazırla (Lobi Aç)
+                </button>
+            </div>
+            <div>
+                <h5 class="text-yellow-200 font-semibold mb-2">Katılımcılar: <span id="duelParticipantCount">0</span></h5>
+                <div id="duelParticipantList" class="scrollable-list max-h-28 overflow-y-auto p-2 bg-gray-800 rounded-md text-left mb-2">
+                    Katılımcı bekleniyor...
+                </div>
+                <div class="flex gap-2">
+                     <button onclick="forceStartDuel()" id="forceStartDuelBtn" class="flex-1 py-2 bg-blue-700 hover:bg-blue-600 text-white font-bold rounded-lg shadow-md disabled:bg-gray-500 disabled:cursor-not-allowed" disabled>
+                        Oyunu Başlat
+                    </button>
+                    <button onclick="resetDuelGame()" class="flex-1 py-2 bg-red-700 hover:bg-red-600 text-white font-bold rounded-lg shadow-md">
+                        Oyunu Sıfırla
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
     <div class="bg-gray-900 p-6 rounded-lg border border-gray-700 mt-6 col-span-full">
         <h4 class="text-yellow-300 text-xl font-semibold mb-4">Tüm Kullanıcı İşlemleri</h4>
         <div class="mb-4">
@@ -874,6 +935,66 @@
           </div>
   </div>
 </div>
+
+<div id="duelGameModal" class="modal-overlay fixed inset-0 bg-black bg-opacity-90 flex justify-center items-center z-[99990] hidden transition-all duration-500">
+  <div id="duelGameModalContent" class="modal-content bg-gray-800 p-8 rounded-xl shadow-2xl border border-yellow-500 w-11/12 max-w-4xl text-center relative transition-all duration-500 max-h-[95vh] flex flex-col">
+    
+    <div id="duelLobbyScreen">
+      <h3 class="text-yellow-400 text-4xl font-extrabold mb-4">Hızlı Çekan Kazanır!</h3>
+      <p class="text-gray-300 mb-6">Admin oyunu hazırladı. Katılmak için "Hazır Ol" butonuna tıkla!</p>
+      <div class="flex flex-col md:flex-row gap-6">
+        <div class="flex-1 bg-gray-900 p-4 rounded-lg">
+          <h4 class="text-yellow-300 font-bold text-xl mb-3">Katılımcılar (<span id="duelModalParticipantCount">0</span>)</h4>
+          <div id="duelModalParticipantList" class="scrollable-list max-h-48 overflow-y-auto text-left">
+            <p class="text-gray-500">Henüz katılan yok...</p>
+          </div>
+        </div>
+        <div class="flex-1 flex flex-col justify-center items-center bg-gray-900 p-4 rounded-lg">
+          <p class="text-lg mb-2">Ödül</p>
+          <p class="text-3xl font-bold text-green-400 mb-4"><span id="duelModalReward">...</span> Puan</p>
+          <button id="joinDuelBtn" onclick="joinDuel()" class="w-full py-3 bg-green-600 hover:bg-green-500 text-white font-bold rounded-lg shadow-md text-xl">
+            Hazır Ol!
+          </button>
+        </div>
+      </div>
+      <p class="text-sm text-gray-500 mt-6">Adminin oyunu başlatması bekleniyor...</p>
+    </div>
+
+    <div id="duelCountdownScreen" class="hidden flex-grow flex justify-center items-center">
+      <span id="duelCountdownText" class="countdown-text">3</span>
+    </div>
+
+    <div id="duelGameScreen" class="hidden flex-grow flex-col">
+      <div class="flex justify-between items-center mb-2 p-2 bg-gray-900 rounded-lg">
+        <h4 class="text-xl font-bold text-yellow-300">Hepsini Yakala!</h4>
+        <div class="text-lg">
+          <span class="text-gray-400">Skorun:</span>
+          <span id="duelPlayerScore" class="font-bold text-green-400 text-2xl">0</span>
+        </div>
+      </div>
+      <div id="duelGameArea" class="flex-grow">
+        </div>
+    </div>
+
+    <div id="duelResultScreen" class="hidden">
+      <h3 class="text-yellow-400 text-4xl font-extrabold mb-4">Oyun Bitti!</h3>
+      <div id="duelWinnerInfo">
+        <p class="text-2xl text-white">Kazanan:</p>
+        <p id="duelWinnerName" class="text-5xl font-bold text-green-400 my-4 animate-pulse"></p>
+        <p class="text-xl text-white">Ödül: <span id="duelWinnerReward" class="font-bold text-green-400"></span> Puan</p>
+        <p class="text-lg text-gray-400">Skor: <span id="duelWinnerScore" class="font-bold text-white"></span></p>
+      </div>
+      <div id="duelNoWinnerInfo" class="hidden">
+         <p class="text-2xl text-white">Kimse kazanamadı!</p>
+         <p class="text-gray-400 mt-4">Oyun admin tarafından sıfırlandı.</p>
+      </div>
+      <button onclick="closeDuelGameModal()" class="w-full max-w-xs mx-auto mt-8 py-3 bg-red-700 hover:bg-red-600 text-white font-bold rounded-lg shadow-md">
+        Kapat
+      </button>
+    </div>
+
+  </div>
+</div>
 <script>
   // Firebase yapılandırması
   const firebaseConfig = {
@@ -896,6 +1017,7 @@
 
   const db = firebase.database();
   const auth = firebase.auth();
+  const duelGameRef = db.ref('duelGame'); // YENİ EKLENEN KISIM
 
   // Global değişkenler
   let currentUser = null;
@@ -951,6 +1073,14 @@
   const announcementLikesModal = document.getElementById('announcementLikesModal');
   const adminStoreModal = document.getElementById('adminStoreModal');
   const adminDailyRewardModal = document.getElementById('adminDailyRewardModal');
+  // YENİ EKLENEN KISIM: Düello Modalı Elementleri
+  const duelGameModal = document.getElementById('duelGameModal');
+  const duelGameModalContent = document.getElementById('duelGameModalContent');
+  const duelLobbyScreen = document.getElementById('duelLobbyScreen');
+  const duelCountdownScreen = document.getElementById('duelCountdownScreen');
+  const duelGameScreen = document.getElementById('duelGameScreen');
+  const duelResultScreen = document.getElementById('duelResultScreen');
+  const duelGameArea = document.getElementById('duelGameArea');
 
 
   let targetUserForAdjustment = null;
@@ -1246,6 +1376,7 @@
     loadTotalOpenedBoxesCount();
     loadAnnouncements();
     listenForGameChanges();
+    listenForDuelGameChanges(); // YENİ EKLENEN KISIM
     if (!isAdmin) {
         listenForAdminNotifications();
         listenForNewAnnouncements();
@@ -1525,7 +1656,7 @@
         const userData = usersData[u];
         if (userData.approved) {
           if ((userData.balance || 0) > leaders.highestCurrentBalance && userData.balance > 0) { leaders.highestCurrentBalance = userData.balance; leaders.currentBalanceUser = u; }
-          if ((userData.highestBalanceEver || 0) > leaders.highestEverBalance && userData.highestBalanceEver > 0) { leaders.highestEverBalance = userData.highestBalanceEver; leaders.highEverBalanceUser = u; }
+          if ((userData.highestBalanceEver || 0) > leaders.highestEverBalance && userData.highestEverBalance > 0) { leaders.highestEverBalance = userData.highestBalanceEver; leaders.highEverBalanceUser = u; }
           if ((userData.surpriseBoxesOpened || 0) > leaders.maxSurpriseBoxes && userData.surpriseBoxesOpened > 0) { leaders.maxSurpriseBoxes = userData.surpriseBoxesOpened; leaders.surpriseBoxUser = u; }
           if ((userData.iflasCount || 0) > leaders.maxBombCount && userData.iflasCount > 0) { leaders.maxBombCount = userData.iflasCount; leaders.bombUser = u; }
           if ((userData.totalSpentPoints || 0) > leaders.maxSpentPoints && userData.totalSpentPoints > 0) { leaders.maxSpentPoints = userData.totalSpentPoints; leaders.spentPointsUser = u; }
@@ -1956,6 +2087,7 @@
         await db.ref('gameStats').remove();
         await db.ref('announcements').remove();
         await db.ref('dailyRewardOptions').remove();
+        await db.ref('duelGame').remove(); // YENİ EKLENEN KISIM
         displayMessage("Sistem başarıyla baştan başlatıldı!");
     }
   }
@@ -2601,1125 +2733,4 @@
           list.innerHTML = html;
       });
   }
-  async function clearPurchaseHistory() { if(await customConfirm("Tüm satın alma geçmişini silmek istediğinize emin misiniz? Bu işlem geri alınamaz!")) { db.ref('purchaseHistory').remove().then(() => displayMessage("Satın alma geçmişi başarıyla temizlendi.")) } }
-  async function clearAllTotalSpentPoints() { if(await customConfirm("Tüm kullanıcıların harcadığı puanları sıfırlamak istediğinize emin misiniz?")) { db.ref('users').once('value').then(snap => { const updates = {}; snap.forEach(c => { if(c.key !== 'weizendtv') updates[`users/${c.key}/totalSpentPoints`] = 0; }); db.ref().update(updates).then(() => displayMessage("Tüm kullanıcıların harcanan puanları sıfırlandı.")) }); } }
-  
-  function openInventoryModal() {
-      const userRef = db.ref('users/' + currentUser);
-      userRef.once('value').then(snap => {
-          const user = snap.val();
-          if (user) {
-              document.getElementById('inventoryBoxRights').textContent = user.kutuHakki || 0;
-              document.getElementById('inventoryIflasShields').textContent = user.iflasShieldUses || 0;
-              
-              let multiplierHtml = '<p>Aktif çarpan yok.</p>';
-              if (user.multiplierSource === 'store' && user.multiplierRemainingUses > 0) {
-                  multiplierHtml = `<p><b>Tür:</b> Mağaza Çarpanı</p><p><b>Değer:</b> ${user.activeMultiplier}x</p><p><b>Kalan Kullanım:</b> ${user.multiplierRemainingUses} kutu</p>`;
-              } else if (user.multiplierSource === 'box') {
-                  multiplierHtml = `<p><b>Tür:</b> Kutu Çarpanı</p><p><b>Değer:</b> ${user.activeMultiplier}x</p><p><b>Kalan Kullanım:</b> 1 kutu (Otomatik)</p>`;
-              }
-              document.getElementById('inventoryMultiplierDetails').innerHTML = multiplierHtml;
-          }
-      });
-      inventoryModal.style.display = 'flex';
-  }
-  function closeInventoryModal() { inventoryModal.style.display = 'none'; }
-  function openBadgeInfoModal() { badgeInfoModal.style.display = 'flex'; }
-  function closeBadgeInfoModal() { badgeInfoModal.style.display = 'none'; }
-
-
-  async function openPublicUserDetailModal(username) {
-      if (activeBlockedUserTimers[username]) {
-          clearInterval(activeBlockedUserTimers[username]);
-          delete activeBlockedUserTimers[username];
-      }
-      const userSnap = await db.ref('users/' + username).once('value');
-      const userData = userSnap.val(); 
-      if (!userData) return;
-
-      const allUsersSnap = await db.ref('users').once('value');
-      const allUsersData = allUsersSnap.val();
-      let leaders = {
-          highestCurrentBalance: -1, currentBalanceUser: null, highestEverBalance: -1, highEverBalanceUser: null, maxSurpriseBoxes: -1, surpriseBoxUser: null,
-          maxBombCount: -1, bombUser: null, maxSpentPoints: -1, spentPointsUser: null, maxMultiplierFound: -1, multiplierUser: null, 
-          maxBoxesOpened: -1, boxUser: null, maxShieldUsed: -1, shieldUser: null,
-      };
-      for (const u in allUsersData) { 
-          if (u === 'weizendtv') continue;
-          const data = allUsersData[u]; 
-          if (data.approved) { 
-              if ((data.balance || 0) > leaders.highestCurrentBalance) { leaders.highestCurrentBalance = data.balance; leaders.currentBalanceUser = u; }
-              if ((data.highestBalanceEver || 0) > leaders.highestEverBalance) { leaders.highestEverBalance = data.highestBalanceEver; leaders.highEverBalanceUser = u; }
-              if ((data.surpriseBoxesOpened || 0) > leaders.maxSurpriseBoxes) { leaders.maxSurpriseBoxes = data.surpriseBoxesOpened; leaders.surpriseBoxUser = u; }
-              if ((data.iflasCount || 0) > leaders.maxBombCount) { leaders.maxBombCount = data.iflasCount; leaders.bombUser = u; }
-              if ((data.totalSpentPoints || 0) > leaders.maxSpentPoints) { leaders.maxSpentPoints = data.totalSpentPoints; leaders.spentPointsUser = u; }
-              if ((data.multiplierFoundCount || 0) > leaders.maxMultiplierFound) { leaders.maxMultiplierFound = data.multiplierFoundCount; leaders.multiplierUser = u; }
-              if ((data.boxesOpenedCount || 0) > leaders.maxBoxesOpened) { leaders.maxBoxesOpened = data.boxesOpenedCount; leaders.boxUser = u; }
-              if ((data.iflasShieldUsedCount || 0) > leaders.maxShieldUsed) { leaders.maxShieldUsed = data.iflasShieldUsedCount; leaders.shieldUser = u; }
-          } 
-      }
-      
-      const userLeaderStatus = {
-          isCurrentLeader: username === leaders.currentBalanceUser && leaders.highestCurrentBalance > 0,
-          isHighLeader: username === leaders.highEverBalanceUser && leaders.highestEverBalance > 0,
-          isSurpriseLeader: username === leaders.surpriseBoxUser && leaders.maxSurpriseBoxes > 0,
-          isBombLeader: username === leaders.bombUser && leaders.maxBombCount > 0,
-          isStoreLeader: username === leaders.spentPointsUser && leaders.maxSpentPoints > 0, 
-          isMultiplierLeader: username === leaders.multiplierUser && leaders.maxMultiplierFound > 0,
-          isBoxLeader: username === leaders.boxUser && leaders.maxBoxesOpened > 0,
-          isShieldLeader: username === leaders.shieldUser && leaders.maxShieldUsed > 0,
-      };
-
-      document.getElementById('publicUserName').textContent = username;
-      document.getElementById('publicUserBalance').textContent = userData.balance || 0;
-      document.getElementById('publicUserHighestBalance').textContent = userData.highestBalanceEver || 0;
-      document.getElementById('publicUserBoxRight').textContent = userData.kutuHakki || 0;
-      document.getElementById('publicUserIflasShield').textContent = userData.iflasShieldUses || 0;
-      
-      let multiplierText = 'Yok';
-      if (userData.multiplierSource === 'store' && userData.multiplierRemainingUses > 0) {
-        multiplierText = `${userData.activeMultiplier}x (Mağaza - ${userData.multiplierRemainingUses} kullanım)`;
-      } else if (userData.multiplierSource === 'box') {
-        multiplierText = `${userData.activeMultiplier}x (Kutu - Otomatik)`;
-      }
-      document.getElementById('publicUserMultiplier').textContent = multiplierText;
-      
-      document.getElementById('publicUserBoxesOpened').textContent = userData.boxesOpenedCount || 0;
-      document.getElementById('publicUserSurpriseBoxes').textContent = userData.surpriseBoxesOpened || 0;
-      document.getElementById('publicUserBombCount').textContent = userData.iflasCount || 0;
-      document.getElementById('publicUserMultiplierFoundCount').textContent = userData.multiplierFoundCount || 0;
-      document.getElementById('publicUserTotalSpent').textContent = userData.totalSpentPoints || 0;
-      document.getElementById('publicUserShieldUsedCount').textContent = userData.iflasShieldUsedCount || 0;
-      
-      const blockedInfoDiv = document.getElementById('publicUserBlockedInfo');
-      const countdownEl = document.getElementById('publicUserBlockedCountdown');
-      const isCurrentlyBlocked = userData.blocked && userData.blockedUntil && Date.now() < userData.blockedUntil;
-      
-      if(isCurrentlyBlocked) {
-          blockedInfoDiv.classList.remove('hidden');
-          const updateCountdown = () => {
-              const timeLeft = userData.blockedUntil - Date.now();
-              if (timeLeft <= 0) {
-                  clearInterval(activeBlockedUserTimers[username]);
-                  delete activeBlockedUserTimers[username];
-                  countdownEl.textContent = 'Engel Kalktı';
-              } else {
-                  const minutes = Math.floor(timeLeft / 60000);
-                  const seconds = Math.floor((timeLeft % 60000) / 1000).toString().padStart(2, '0');
-                  countdownEl.textContent = `${minutes}:${seconds}`;
-              }
-          };
-          updateCountdown();
-          activeBlockedUserTimers[username] = setInterval(updateCountdown, 1000);
-      } else {
-          blockedInfoDiv.classList.add('hidden');
-      }
-
-      document.getElementById('publicUserKingBadge').innerHTML = '';
-      document.getElementById('publicBadgeCurrent').innerHTML = '';
-      document.getElementById('publicBadgeHighest').innerHTML = '';
-      document.getElementById('publicBadgeBox').innerHTML = '';
-      document.getElementById('publicBadgeSurprise').innerHTML = '';
-      document.getElementById('publicBadgeBomb').innerHTML = '';
-      document.getElementById('publicBadgeMultiplier').innerHTML = '';
-      document.getElementById('publicBadgeShield').innerHTML = '';
-      document.getElementById('publicBadgeStore').innerHTML = '';
-
-      const allLeaderBadges = Object.values(userLeaderStatus);
-      const hasKingCrown = allLeaderBadges.every(Boolean) && allLeaderBadges.length > 0;
-      
-      if (hasKingCrown) {
-          document.getElementById('publicUserKingBadge').innerHTML = `<span title="Tüm rozetlerin lideri!">👑</span>`;
-      }
-      
-      if (userLeaderStatus.isCurrentLeader) document.getElementById('publicBadgeCurrent').innerHTML = `<span title="Mevcut Puan Lideri">🥇</span>`;
-      if (userLeaderStatus.isHighLeader) document.getElementById('publicBadgeHighest').innerHTML = `<span title="Ulaşılan En Yüksek Puan Lideri">🏆</span>`;
-      if (userLeaderStatus.isBoxLeader) document.getElementById('publicBadgeBox').innerHTML = `<span title="Kutu Lideri">📦</span>`;
-      if (userLeaderStatus.isSurpriseLeader) {
-          document.getElementById('publicBadgeSurprise').innerHTML = `<span title="Sürpriz Kutu Lideri">🎉</span>`;
-      } else if (userData.surpriseBoxesOpened > 0) {
-          document.getElementById('publicBadgeSurprise').innerHTML = `<span title="Sürpriz Kutu Rozeti">🎁</span>`;
-      }
-      if (userLeaderStatus.isBombLeader) document.getElementById('publicBadgeBomb').innerHTML = `<span title="Bomba Lideri">💣</span>`;
-      if (userLeaderStatus.isMultiplierLeader) document.getElementById('publicBadgeMultiplier').innerHTML = `<span title="Çarpan Lideri">✖️</span>`;
-      if (userLeaderStatus.isShieldLeader) document.getElementById('publicBadgeShield').innerHTML = `<span title="Kalkan Lideri">🛡️</span>`;
-      if (userLeaderStatus.isStoreLeader) document.getElementById('publicBadgeStore').innerHTML = `<span title="Alışveriş Lideri (En Çok Puan Harcayan)">🛒</span>`;
-
-      publicUserDetailModal.style.display = 'flex';
-  }
-
-  function closePublicUserDetailModal() {
-      const username = document.getElementById('publicUserName').textContent;
-      if (username && activeBlockedUserTimers[username]) {
-          clearInterval(activeBlockedUserTimers[username]);
-          delete activeBlockedUserTimers[username];
-      }
-      publicUserDetailModal.style.display = 'none';
-  }
-  
-  async function openUserManagementModal(username) {
-    if (activeBlockedUserTimers[username]) {
-        clearInterval(activeBlockedUserTimers[username]);
-        delete activeBlockedUserTimers[username];
-    }
-    selectedUserForManagement = username;
-    const userSnap = await db.ref('users/' + username).once('value');
-    const userData = userSnap.val();
-    if (!userData) { displayMessage("Kullanıcı bulunamadı."); return; }
-
-    document.getElementById('managedUserName').textContent = username;
-    document.getElementById('managedUserBalance').textContent = userData.balance || 0;
-    document.getElementById('managedUserHighestBalance').textContent = userData.highestBalanceEver || 0;
-    document.getElementById('managedUserBoxRight').textContent = userData.kutuHakki || 0;
-    document.getElementById('managedUserIflasShield').textContent = userData.iflasShieldUses || 0;
-    let multiplierText = 'Yok';
-    if (userData.multiplierSource === 'store') multiplierText = `${userData.activeMultiplier}x (Mağaza - ${userData.multiplierRemainingUses} kullanım)`;
-    else if (userData.multiplierSource === 'box') multiplierText = `${userData.activeMultiplier}x (Kutu - Otomatik)`;
-    document.getElementById('managedUserMultiplier').textContent = multiplierText;
-    document.getElementById('managedUserMultiplierUses').textContent = userData.multiplierRemainingUses || 0;
-    
-    const isCurrentlyBlocked = userData.blocked && userData.blockedUntil && Date.now() < userData.blockedUntil;
-    const countdownContainer = document.getElementById('managedUserBlockedCountdownContainer');
-    const countdownEl = document.getElementById('managedUserBlockedCountdown');
-    
-    document.getElementById('managedUserBlockedStatus').textContent = isCurrentlyBlocked ? 'Engelli' : 'Aktif';
-    if(isCurrentlyBlocked) {
-        countdownContainer.classList.remove('hidden');
-        const updateCountdown = () => {
-              const timeLeft = userData.blockedUntil - Date.now();
-              if (timeLeft <= 0) {
-                  clearInterval(activeBlockedUserTimers[username]);
-                  delete activeBlockedUserTimers[username];
-                  countdownEl.textContent = 'Engel Kalktı';
-              } else {
-                  const minutes = Math.floor(timeLeft / 60000);
-                  const seconds = Math.floor((timeLeft % 60000) / 1000).toString().padStart(2, '0');
-                  countdownEl.textContent = `${minutes}:${seconds}`;
-              }
-          };
-        updateCountdown();
-        activeBlockedUserTimers[username] = setInterval(updateCountdown, 1000);
-    } else {
-        countdownContainer.classList.add('hidden');
-    }
-    
-    const toggleBtn = document.getElementById('toggleBlockUserBtn');
-    toggleBtn.textContent = isCurrentlyBlocked ? 'Engeli Kaldır' : 'Engelle';
-    toggleBtn.onclick = () => toggleBlockUser(username, userData.blocked, userData.blockedUntil);
-
-    document.getElementById('managedUserBoxesOpened').textContent = userData.boxesOpenedCount || 0;
-    document.getElementById('managedUserSurpriseBoxes').textContent = userData.surpriseBoxesOpened || 0;
-    document.getElementById('managedUserBombCount').textContent = userData.iflasCount || 0;
-    document.getElementById('managedUserMultiplierFoundCount').textContent = userData.multiplierFoundCount || 0;
-    document.getElementById('managedUserTotalSpent').textContent = userData.totalSpentPoints || 0;
-    document.getElementById('managedUserShieldUsedCount').textContent = userData.iflasShieldUsedCount || 0;
-
-    const historyList = document.getElementById('managedUserPurchaseHistory');
-    historyList.innerHTML = 'Yükleniyor...';
-    db.ref('purchaseHistory').orderByChild('username').equalTo(username).once('value').then(snap => {
-        const history = snap.val();
-        let html = '';
-        if (!history) {
-            historyList.innerHTML = '<div class="text-center text-gray-400">Bu kullanıcının satın alma geçmişi yok.</div>';
-            return;
-        }
-        const sorted = Object.values(history).sort((a,b) => b.timestamp - a.timestamp);
-        sorted.forEach(r => {
-            html += `<div class="p-2 bg-gray-900 mb-2 rounded text-sm">
-                <p><b>Ürün:</b> ${r.itemName}</p>
-                <p><b>Maliyet:</b> ${r.itemCost} Puan</p>
-                <p><b>Tarih:</b> ${new Date(r.timestamp).toLocaleString()}</p>
-            </div>`;
-        });
-        historyList.innerHTML = html;
-    });
-
-    userManagementModal.style.display = 'flex';
-  }
-  function closeUserManagementModal() {
-    if (selectedUserForManagement && activeBlockedUserTimers[selectedUserForManagement]) {
-        clearInterval(activeBlockedUserTimers[selectedUserForManagement]);
-        delete activeBlockedUserTimers[selectedUserForManagement];
-    }
-    userManagementModal.style.display = 'none'; 
-    selectedUserForManagement = null; 
-  }
-
-  // Özel Ürün Onay Sistemi
-  function loadPendingSpecialPurchases() {
-    const list = document.getElementById('pendingSpecialPurchasesList');
-    db.ref('pendingSpecialPurchases').on('value', snap => {
-        const purchases = snap.val();
-        let html = '';
-        if (!purchases || Object.keys(purchases).length === 0) {
-            list.innerHTML = "<div class='text-center text-gray-400'>Onay bekleyen özel ürün alımı yok.</div>";
-            return;
-        }
-        for (const key in purchases) {
-            const purchase = purchases[key];
-            html += `
-                <div class="flex flex-col items-start justify-between p-3 mb-2 bg-gray-700 rounded-md border-l-4 border-yellow-500">
-                    <div>
-                        <span class="text-gray-200 font-bold">${purchase.username}</span>
-                        <span class="text-gray-300">- ${purchase.itemName}</span>
-                    </div>
-                    <div class="flex space-x-2 mt-2 self-end">
-                        <button onclick="approveSpecialPurchase('${key}', '${purchase.username}')" class="py-1 px-3 bg-green-600 hover:bg-green-500 text-white text-sm font-bold rounded-md">Onayla</button>
-                        <button onclick="denySpecialPurchase('${key}', '${purchase.username}', ${purchase.itemCost})" class="py-1 px-3 bg-red-600 hover:bg-red-500 text-white text-sm font-bold rounded-md">Reddet</button>
-                    </div>
-                </div>
-            `;
-        }
-        list.innerHTML = html;
-    });
-  }
-
-  async function approveSpecialPurchase(purchaseId, username) {
-      const purchaseItemSnap = await db.ref(`/pendingSpecialPurchases/${purchaseId}`).once('value');
-      const purchaseItem = purchaseItemSnap.val();
-      if (!purchaseItem) {
-        displayMessage("Onaylanacak öğe bulunamadı.");
-        return;
-      }
-      
-      if (!await customConfirm(`${username} kullanıcısının '${purchaseItem.itemName}' alımını onaylamak istediğinize emin misiniz?`)) return;
-
-      const updates = {};
-      updates[`/pendingSpecialPurchases/${purchaseId}`] = null; 
-      updates[`/purchaseHistory/${purchaseId}/status`] = 'completed'; 
-
-      db.ref().update(updates).then(() => {
-          notifyUser(username, `'${purchaseItem.itemName}' adlı özel ürün alımınız onaylandı!`);
-          displayMessage("Özel ürün alımı başarıyla onaylandı.");
-      }).catch(err => {
-          console.error("Onaylama hatası: ", err);
-          displayMessage("Onaylama sırasında bir hata oluştu.");
-      });
-  }
-
-  async function denySpecialPurchase(purchaseId, username, itemCost) {
-      const purchaseItemSnap = await db.ref(`/pendingSpecialPurchases/${purchaseId}`).once('value');
-      const purchaseItem = purchaseItemSnap.val();
-       if (!purchaseItem) {
-        displayMessage("Reddedilecek öğe bulunamadı.");
-        return;
-      }
-
-      if (!await customConfirm(`${username} kullanıcısının '${purchaseItem.itemName}' alımını reddetmek istediğinize emin misiniz? Puan iadesi yapılacaktır.`)) return;
-      
-      const userRef = db.ref(`users/${username}`);
-      const updates = {};
-
-      const userSnap = await userRef.once('value');
-      const userData = userSnap.val();
-      if (userData) {
-          updates[`users/${username}/balance`] = (userData.balance || 0) + itemCost;
-          updates[`users/${username}/totalSpentPoints`] = Math.max(0, (userData.totalSpentPoints || 0) - itemCost);
-      }
-
-      updates[`/pendingSpecialPurchases/${purchaseId}`] = null;
-      updates[`/purchaseHistory/${purchaseId}/status`] = 'denied';
-
-      db.ref().update(updates).then(() => {
-          notifyUser(username, `'${purchaseItem.itemName}' adlı özel ürün alımınız reddedildi. ${itemCost} puan hesabınıza iade edildi.`);
-          displayMessage("Özel ürün alımı reddedildi ve puan iadesi yapıldı.");
-      }).catch(err => {
-          console.error("Reddetme hatası: ", err);
-          displayMessage("Reddetme sırasında bir hata oluştu.");
-      });
-  }
-
-  let globalCountdownInterval = null;
-
-  function listenForGameChanges() {
-    db.ref('gameLock').on('value', snap => {
-        isGameLocked = snap.val() === true;
-    });
-
-    db.ref('lastOpenedBox').on('value', snap => {
-        const info = snap.val();
-        if (info && (Date.now() - info.timestamp < 10000)) { 
-            if (info.content !== 'surpriz') {
-                showGlobalOpenedBoxInfo(info);
-            }
-        }
-    });
-  }
-
-  function showGlobalOpenedBoxInfo(info) {
-    let contentDisplay = '';
-    // DEĞİŞİKLİK BURADA BAŞLIYOR
-    if (info.content === 'points') {
-        if (info.multiplierUsed && info.multiplierUsed > 1) {
-            contentDisplay = `<b>+${info.finalPoints} Puan</b> kazandı! <br> <span class="text-sm text-gray-400">(${info.basePoints} Puan x ${info.multiplierUsed} Çarpan)</span>`;
-        } else {
-            contentDisplay = `+${info.basePoints} Puan kazandı!`;
-        }
-    } else if (info.content === 'iflas') {
-        if (info.shieldUsed) {
-            contentDisplay = 'İflas etti! 💣 <br> <span class="text-blue-400">ama Kalkanı tarafından korundu!</span>';
-        } else {
-            contentDisplay = 'İflas etti! 💣';
-        }
-    } else if (info.content === 'multiplier') {
-        contentDisplay = `${info.value}X Çarpan buldu!`;
-    }
-    // DEĞİŞİKLİK BURADA BİTİYOR
-
-    const contentHtml = `
-        <div class="text-3xl font-bold mb-3 flex flex-col justify-center items-center gap-2"><span class="text-green-400">${info.opener}</span></div>
-        <p class="text-lg text-gray-300"><b>${info.boxId}</b> numaralı kutuyu açtı ve...</p>
-        <p class="text-2xl font-semibold mt-2 text-yellow-300">${contentDisplay}</p>
-    `;
-
-    document.getElementById('globalOpenedBoxInfoContent').innerHTML = contentHtml;
-    globalOpenedBoxInfoModal.style.display = 'flex';
-
-    let countdown = 5;
-    const countdownEl = document.getElementById('globalOpenedBoxCountdown');
-    countdownEl.textContent = `(Sıradaki kutu ${countdown} saniye içinde açılabilir)`;
-
-    if(globalCountdownInterval) clearInterval(globalCountdownInterval);
-    globalCountdownInterval = setInterval(() => {
-        countdown--;
-        countdownEl.textContent = `(Sıradaki kutu ${countdown} saniye içinde açılabilir)`;
-        if (countdown <= 0) {
-            clearInterval(globalCountdownInterval);
-            globalOpenedBoxInfoModal.style.display = 'none';
-            db.ref('gameLock').set(false);
-        }
-    }, 1000);
-}
-
-    // YENİ DUYURU SİSTEMİ
-    function resetAnnouncementForm() {
-        document.getElementById('announcementText').value = '';
-        document.getElementById('announcementFormTitle').textContent = 'Yeni Duyuru Yap';
-        document.getElementById('postAnnouncementBtn').textContent = 'DUYURU YAP';
-        document.getElementById('cancelEditAnnouncementBtn').classList.add('hidden');
-        editingAnnouncementId = null;
-    }
-
-    async function postAnnouncement() {
-        if (!isAdmin) return;
-        const text = document.getElementById('announcementText').value.trim();
-        if (!text) {
-            displayMessage("Duyuru metni boş olamaz.");
-            return;
-        }
-
-        const announcementData = {
-            text: text,
-            timestamp: firebase.database.ServerValue.TIMESTAMP,
-            likes: editingAnnouncementId ? (await db.ref(`announcements/${editingAnnouncementId}/likes`).once('value')).val() || 0 : 0,
-            likedBy: editingAnnouncementId ? (await db.ref(`announcements/${editingAnnouncementId}/likedBy`).once('value')).val() || {} : {}
-        };
-
-        if (editingAnnouncementId) {
-            await db.ref('announcements/' + editingAnnouncementId).update(announcementData);
-            displayMessage("Duyuru başarıyla güncellendi.");
-        } else {
-            await db.ref('announcements').push(announcementData);
-            displayMessage("Duyuru başarıyla yayınlandı.");
-        }
-        resetAnnouncementForm();
-    }
-    
-    async function editAnnouncement(id) {
-        const annSnap = await db.ref(`announcements/${id}`).once('value');
-        const ann = annSnap.val();
-        if (ann) {
-            editingAnnouncementId = id;
-            document.getElementById('announcementText').value = ann.text;
-            document.getElementById('announcementFormTitle').textContent = 'Duyuruyu Düzenle';
-            document.getElementById('postAnnouncementBtn').textContent = 'GÜNCELLE';
-            document.getElementById('cancelEditAnnouncementBtn').classList.remove('hidden');
-            document.getElementById('adminAnnouncementControls').scrollIntoView({ behavior: 'smooth' });
-        }
-    }
-
-    async function deleteAnnouncement(id) {
-        if (!isAdmin) return;
-        if (await customConfirm("Bu duyuruyu silmek istediğinizden emin misiniz?")) {
-            await db.ref('announcements/' + id).remove();
-            displayMessage("Duyuru silindi.");
-        }
-    }
-    
-    function loadAnnouncements() {
-        const listEl = document.getElementById('announcementsList');
-        const userRef = db.ref(`users/${currentUser}`);
-
-        db.ref('announcements').orderByChild('timestamp').on('value', async (snap) => {
-            listEl.innerHTML = '';
-            const announcements = snap.val();
-
-            if (!announcements) {
-                listEl.innerHTML = '<p class="text-center text-gray-400">Henüz yayınlanmış bir duyuru yok.</p>';
-                return;
-            }
-            
-            const userSnap = await userRef.once('value');
-            const userData = userSnap.val() || {};
-            const likedAnnouncements = userData.likedAnnouncements || {};
-            
-            const sortedAnnouncements = Object.entries(announcements).sort((a, b) => b[1].timestamp - a[1].timestamp);
-            
-            sortedAnnouncements.forEach(([id, ann]) => {
-                const date = new Date(ann.timestamp).toLocaleString('tr-TR');
-                
-                const processedText = ann.text.replace(/@(\w+)/g, (match, username) => {
-                    const isCurrentUserMention = username.toLowerCase() === (currentUser || '').toLowerCase();
-                    const highlightClass = isCurrentUserMention ? 'user-mention highlighted' : 'user-mention';
-                    return `<span class="${highlightClass}" data-username="${username}">${match}</span>`;
-                });
-                
-                let adminButtons = '';
-                if(isAdmin) {
-                    adminButtons = `
-                        <button onclick="editAnnouncement('${id}')" class="py-1 px-3 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold rounded-md">Düzenle</button>
-                        <button onclick="deleteAnnouncement('${id}')" class="py-1 px-3 bg-red-600 hover:bg-red-500 text-white text-xs font-bold rounded-md">Sil</button>
-                    `;
-                }
-
-                const isLiked = likedAnnouncements[id] && !isAdmin;
-                const likeButtonClass = isLiked ? 'bg-blue-600 text-white' : 'bg-gray-600 hover:bg-gray-500 text-gray-300';
-                const likeButtonText = isLiked ? 'Beğenildi' : 'Beğen';
-
-                const div = document.createElement('div');
-                div.className = 'bg-gray-800 p-6 rounded-lg border-l-4 border-yellow-500 shadow-lg';
-                div.innerHTML = `
-                    <p class="text-lg text-gray-200 mb-4 whitespace-pre-wrap">${processedText}</p>
-                    <div class="flex justify-between items-center mt-4 pt-4 border-t border-gray-700">
-                        <p class="text-xs text-gray-500">${date}</p>
-                        <div class="flex items-center gap-4">
-                             <a onclick="showAnnouncementLikes('${id}')" class="cursor-pointer font-bold text-yellow-400 hover:text-yellow-300">${ann.likes || 0} Beğeni</a>
-                             ${!isAdmin ? `
-                             <button id="likeBtn-${id}" onclick="likeAnnouncement('${id}')" class="${likeButtonClass} px-4 py-2 rounded-lg text-sm font-bold transition-colors flex items-center gap-2">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M2 10.5a1.5 1.5 0 113 0v6a1.5 1.5 0 01-3 0v-6zM6 10.333v5.43a2 2 0 001.106 1.79l.05.025A4 4 0 008.943 18h5.416a2 2 0 001.962-1.608l1.2-6A2 2 0 0015.562 8H12V4a2 2 0 00-2-2 1 1 0 00-1 1v.667a4 4 0 01-.82 2.316l-1.09 1.817c-.381.636-.632 1.356-.632 2.146z" /></svg>
-                                ${likeButtonText}
-                            </button>
-                             ` : adminButtons}
-                        </div>
-                    </div>
-                `;
-                listEl.appendChild(div);
-            });
-            
-            listEl.addEventListener('click', (e) => {
-                if (e.target.classList.contains('user-mention')) {
-                    const usernameToView = e.target.dataset.username;
-                    if (usernameToView) {
-                        openPublicUserDetailModal(usernameToView.toLowerCase());
-                    }
-                }
-            });
-        });
-    }
-
-    async function likeAnnouncement(announcementId) {
-        if (isAdmin) {
-            displayMessage("Adminler beğeni yapamaz.");
-            return;
-        }
-
-        const userLikeRef = db.ref(`users/${currentUser}/likedAnnouncements/${announcementId}`);
-        const userLikeSnap = await userLikeRef.once('value');
-        const announcementRef = db.ref(`announcements/${announcementId}`);
-
-        if (userLikeSnap.exists()) {
-            await userLikeRef.remove();
-            await db.ref(`announcements/${announcementId}/likedBy/${currentUser}`).remove();
-            await announcementRef.child('likes').transaction(currentLikes => (currentLikes || 0) - 1);
-        } else {
-            await userLikeRef.set(true);
-            await db.ref(`announcements/${announcementId}/likedBy/${currentUser}`).set(true);
-            await announcementRef.child('likes').transaction(currentLikes => (currentLikes || 0) + 1);
-        }
-    }
-    
-    function listenForNewAnnouncements() {
-        const announcementsRef = db.ref('announcements');
-        const userRef = db.ref(`users/${currentUser}`);
-
-        announcementsRef.orderByChild('timestamp').limitToLast(1).on('child_added', async (snap) => {
-            const latestAnn = snap.val();
-            if (!latestAnn) return;
-            
-            latestAnnouncementTimestamp = latestAnn.timestamp;
-            
-            const userSnap = await userRef.once('value');
-            const userData = userSnap.val();
-            
-            if (userData && latestAnn.timestamp > (userData.lastSeenAnnouncementTimestamp || 0)) {
-                document.getElementById('newAnnouncementText').textContent = latestAnn.text.substring(0, 150) + (latestAnn.text.length > 150 ? '...' : '');
-                newAnnouncementModal.style.display = 'flex';
-                document.getElementById('announcementIndicator').classList.remove('hidden');
-            }
-        });
-    }
-
-    function closeNewAnnouncementModal() {
-        newAnnouncementModal.style.display = 'none';
-        if (!isAdmin) {
-            db.ref(`users/${currentUser}/lastSeenAnnouncementTimestamp`).set(latestAnnouncementTimestamp);
-        }
-    }
-    
-    function goToAnnouncements() {
-        closeNewAnnouncementModal();
-        showSection('announcements');
-    }
-
-    async function showAnnouncementLikes(announcementId) {
-        const likesRef = db.ref(`announcements/${announcementId}/likedBy`);
-        const likesSnap = await likesRef.once('value');
-        const likers = likesSnap.val();
-        
-        const listEl = document.getElementById('announcementLikesList');
-        listEl.innerHTML = '';
-
-        if (!likers) {
-            listEl.innerHTML = '<p class="text-gray-400">Bu duyuruyu henüz kimse beğenmedi.</p>';
-        } else {
-            const usernames = Object.keys(likers);
-            usernames.forEach(username => {
-                listEl.innerHTML += `<div class="p-2 bg-gray-800 rounded mb-2 text-white">${username}</div>`;
-            });
-        }
-        
-        announcementLikesModal.style.display = 'flex';
-    }
-
-    function closeAnnouncementLikesModal() {
-        announcementLikesModal.style.display = 'none';
-    }
-
-
-    // YENİ GÜNLÜK ÖDÜL SİSTEMİ (ZAMAN AYARLI)
-    function openNewDailyRewardForm() {
-        resetDailyRewardForm();
-        openAdminDailyRewardModal();
-    }
-
-    function openAdminDailyRewardModal() {
-        adminDailyRewardModal.style.display = 'flex';
-    }
-    function closeAdminDailyRewardModal() {
-        adminDailyRewardModal.style.display = 'none';
-    }
-
-    function closeDailyRewardModal() { 
-        Object.values(activeDailyRewardTimers).forEach(clearInterval);
-        activeDailyRewardTimers = {};
-        dailyRewardModal.style.display = 'none'; 
-    }
-    
-    async function checkAvailableDailyRewards() {
-        if (isAdmin) {
-            document.getElementById('dailyRewardIndicator').classList.add('hidden');
-            return;
-        }
-
-        const userSnap = await db.ref('users/' + currentUser).once('value');
-        const user = userSnap.val();
-        const rewardsSnap = await db.ref('dailyRewardOptions').once('value');
-        const rewards = rewardsSnap.val();
-
-        if (!rewards || !user) {
-            document.getElementById('dailyRewardIndicator').classList.add('hidden');
-            return;
-        }
-
-        const userClaims = user.dailyRewardsClaimed || {};
-        let hasAvailableReward = false;
-
-        for (const rewardId in rewards) {
-            const reward = rewards[rewardId];
-            const cooldown = reward.cooldownMs || 0;
-            const lastClaim = userClaims[rewardId] || 0;
-            if (Date.now() > lastClaim + cooldown) {
-                hasAvailableReward = true;
-                break;
-            }
-        }
-        
-        if (hasAvailableReward) {
-            document.getElementById('dailyRewardIndicator').classList.remove('hidden');
-        } else {
-            document.getElementById('dailyRewardIndicator').classList.add('hidden');
-        }
-    }
-    
-    async function openDailyRewardModal() {
-    if (isAdmin) {
-        document.getElementById('adminDailyRewardManagementButtonContainer').classList.remove('hidden');
-    } else {
-        document.getElementById('adminDailyRewardManagementButtonContainer').classList.add('hidden');
-    }
-
-    const userSnap = await db.ref('users/' + currentUser).once('value');
-    const user = userSnap.val();
-    const rewardsRef = db.ref('dailyRewardOptions');
-    const rewardsSnap = await rewardsRef.orderByChild('order').once('value'); // Veriyi sıralı istiyoruz
-    
-    const container = document.getElementById('dailyRewardItemsContainer');
-    container.innerHTML = '';
-    document.getElementById('dailyRewardMessage').textContent = 'Aşağıdaki ödüllerden alabileceklerini topla. Bol şans!';
-
-    // DÜZELTME BURADA: snap.val() kullanmak yerine, sıralamayı korumak için forEach kullanıyoruz.
-    if (!rewardsSnap.exists()) {
-        container.innerHTML = '<p class="text-center col-span-full">Şu anda mevcut bir günlük ödül bulunmamaktadır.</p>';
-        if (dailyRewardModal.style.display !== 'flex') {
-            dailyRewardModal.style.display = 'flex';
-        }
-        return;
-    }
-
-    const rewardsArray = [];
-    rewardsSnap.forEach(childSnap => {
-        rewardsArray.push([childSnap.key, childSnap.val()]);
-    });
-    // Artık rewardsArray'in sıralı olduğundan eminiz.
-
-    const userClaims = user ? (user.dailyRewardsClaimed || {}) : {};
-    
-    rewardsArray.forEach(([rewardId, reward], index) => {
-        const lastClaim = userClaims[rewardId] || 0;
-        const cooldown = reward.cooldownMs || 0;
-        const nextAvailableTime = lastClaim + cooldown;
-        const canClaim = isAdmin ? false : (Date.now() > nextAvailableTime);
-
-        const card = document.createElement('div');
-        card.className = 'relative bg-gray-900 p-4 rounded-xl shadow-lg border border-yellow-600 text-center flex flex-col justify-between';
-        
-        let adminControlsHtml = '';
-        if(isAdmin){
-            const leftArrowDisabled = index === 0 ? 'disabled' : '';
-            const rightArrowDisabled = index === rewardsArray.length - 1 ? 'disabled' : '';
-            
-            adminControlsHtml = `
-              <div class="admin-controls absolute top-0 right-0 p-1 bg-gray-900 bg-opacity-70 rounded-bl-lg flex gap-1 z-10">
-                  <button onclick="reorderDailyRewardItem('${rewardId}', ${index - 1})" ${leftArrowDisabled} title="Sola Taşı" class="p-1 rounded-full hover:bg-gray-700 disabled:cursor-not-allowed">
-                      <svg class="w-5 h-5 fill-current text-white" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z"/></svg>
-                  </button>
-                  <button onclick="editDailyReward('${rewardId}')" title="Düzenle" class="p-1 rounded-full hover:bg-gray-700">
-                      <svg class="w-5 h-5 fill-current text-white" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M17.414 2.586a2 2 0 00-2.828 0L7 10.172V13h2.828l7.586-7.586a2 2 0 000-2.828zM5 12V7a1 1 0 011-1h2.586l-2 2H6v3h3v-1.586l2-2H13a1 1 0 011 1v5a1 1 0 01-1 1H6a1 1 0 01-1-1v-2z"/></svg>
-                  </button>
-                   <button onclick="removeDailyReward('${rewardId}')" title="Sil" class="p-1 rounded-full hover:bg-gray-700">
-                      <svg class="w-5 h-5 fill-current text-white" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M6 2l2-2h4l2 2h4v2H2V2h4zM3 6h14l-1 14H4L3 6zm5 2v10h1V8H8zm3 0v10h1V8h-1z"/></svg>
-                  </button>
-                  <button onclick="reorderDailyRewardItem('${rewardId}', ${index + 1})" ${rightArrowDisabled} title="Sağa Taşı" class="p-1 rounded-full hover:bg-gray-700 disabled:cursor-not-allowed">
-                      <svg class="w-5 h-5 fill-current text-white" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z"/></svg>
-                  </button>
-              </div>`;
-        }
-
-        let buttonHTML = `<button onclick="claimDailyReward('${rewardId}')" class="w-full py-2 mt-auto bg-green-600 hover:bg-green-500 text-white font-bold rounded-lg transition duration-300">Ödülü Al</button>`;
-        let cooldownHTML = `<div class="text-sm text-gray-500 font-bold mb-3 h-5">Süre: ${reward.cooldownText || 'Tek Seferlik'}</div>`;
-
-        if (isAdmin || !canClaim) {
-            const disabledState = isAdmin ? 'disabled' : '';
-            buttonHTML = `<button ${disabledState} class="w-full py-2 mt-auto bg-gray-600 cursor-not-allowed text-white font-bold rounded-lg transition duration-300">${isAdmin ? 'Admin' : 'Alındı'}</button>`;
-
-            if (!isAdmin) {
-               cooldownHTML = `<div id="reward-cooldown-${rewardId}" class="text-sm text-yellow-300 font-bold mb-3 h-5"></div>`;
-                
-                if (activeDailyRewardTimers[rewardId]) clearInterval(activeDailyRewardTimers[rewardId]);
-
-                const timerId = setInterval(() => {
-                    const now = Date.now();
-                    const timeLeft = nextAvailableTime - now;
-                    const el = document.getElementById(`reward-cooldown-${rewardId}`);
-                    if (!el) {
-                        clearInterval(timerId);
-                        return;
-                    }
-
-                    if (timeLeft <= 0) {
-                        el.innerHTML = `<span class="text-green-400">Şimdi Alınabilir!</span>`;
-                        const claimButton = el.closest('.relative').querySelector('button[onclick^="claimDailyReward"]');
-                        if (claimButton) {
-                            claimButton.disabled = false;
-                            claimButton.classList.replace('bg-gray-600', 'bg-green-600');
-                            claimButton.classList.add('hover:bg-green-500');
-                            claimButton.textContent = 'Ödülü Al';
-                        }
-                        clearInterval(timerId);
-                    } else {
-                        const days = Math.floor(timeLeft / (1000 * 60 * 60 * 24));
-                        const hours = Math.floor((timeLeft % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-                        const minutes = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
-                        const seconds = Math.floor((timeLeft % (1000 * 60)) / 1000);
-                        
-                        let parts = [];
-                        if (days > 0) parts.push(`${days}g`);
-                        if (hours > 0) parts.push(`${hours}sa`);
-                        if (minutes > 0) parts.push(`${minutes}d`);
-                        if (seconds >= 0) parts.push(`${seconds}sn`);
-
-                        el.textContent = `Kalan Süre: ${parts.join(' ')}`;
-                    }
-                }, 1000);
-                activeDailyRewardTimers[rewardId] = timerId;
-            }
-        }
-
-        card.innerHTML = `
-            ${adminControlsHtml}
-            <div>
-                <img src="${reward.imageUrl || 'https://via.placeholder.com/150'}" alt="${reward.name}" class="w-20 h-20 mx-auto mb-3 rounded-lg object-cover">
-                <h4 class="text-yellow-300 text-lg font-bold">${reward.name}</h4>
-                <p class="text-gray-400 text-sm mb-3">${reward.description}</p>
-                ${cooldownHTML}
-            </div>
-            ${buttonHTML}
-        `;
-        container.appendChild(card);
-    });
-    
-    if (dailyRewardModal.style.display !== 'flex') {
-        dailyRewardModal.style.display = 'flex';
-    }
-}
-
-    async function claimDailyReward(rewardId) {
-        if (isAdmin) return;
-
-        const userRef = db.ref('users/' + currentUser);
-        const rewardRef = db.ref('dailyRewardOptions/' + rewardId);
-
-        const [userSnap, rewardSnap] = await Promise.all([userRef.once('value'), rewardRef.once('value')]);
-        const user = userSnap.val();
-        const reward = rewardSnap.val();
-
-        if (!reward) {
-            displayMessage("Ödül alınırken bir hata oluştu: Ödül bulunamadı.");
-            return;
-        }
-
-        const lastClaim = (user.dailyRewardsClaimed && user.dailyRewardsClaimed[rewardId]) || 0;
-        const cooldown = reward.cooldownMs || 0;
-
-        if (Date.now() < lastClaim + cooldown) {
-            displayMessage("Bu ödül için bekleme süresi henüz dolmadı.");
-            return;
-        }
-
-        if (reward.type === 'tempMultiplier' && user.multiplierSource !== 'none') {
-            displayMessage("Mevcut bir çarpanınız varken çarpan ödülü alamazsınız. Lütfen önce mevcut çarpanınızı kullanın.");
-            return;
-        }
-
-        let updates = {};
-        let message = `Tebrikler! Günlük ödül olarak <b>${reward.name}</b> kazandın.`;
-        
-        switch(reward.type) {
-            case 'points':
-                updates['balance'] = (user.balance || 0) + reward.value;
-                if(updates['balance'] > (user.highestBalanceEver || 0)) {
-                    updates['highestBalanceEver'] = updates['balance'];
-                }
-                break;
-            case 'boxRights':
-                updates['kutuHakki'] = (user.kutuHakki || 0) + reward.value;
-                break;
-            case 'iflasShield':
-                updates['iflasShieldUses'] = (user.iflasShieldUses || 0) + reward.value;
-                break;
-            case 'tempMultiplier':
-                updates['activeMultiplier'] = reward.value;
-                updates['multiplierRemainingUses'] = reward.uses;
-                updates['multiplierSource'] = 'store';
-                break;
-        }
-        
-        await userRef.update(updates);
-        await db.ref(`users/${currentUser}/dailyRewardsClaimed/${rewardId}`).set(firebase.database.ServerValue.TIMESTAMP);
-        
-        displayMessage(message);
-        closeDailyRewardModal();
-        checkAvailableDailyRewards();
-    }
-    
-    document.getElementById('dailyRewardType').addEventListener('change', function() {
-        const usesInput = document.getElementById('dailyRewardMultiplierUses');
-        if (this.value === 'tempMultiplier') {
-            usesInput.classList.remove('hidden');
-        } else {
-            usesInput.classList.add('hidden');
-        }
-    });
-
-    function resetDailyRewardForm() {
-      document.getElementById('dailyRewardName').value = '';
-      document.getElementById('dailyRewardDescription').value = '';
-      document.getElementById('dailyRewardType').value = '';
-      document.getElementById('dailyRewardValue').value = '';
-      document.getElementById('dailyRewardMultiplierUses').value = '';
-      document.getElementById('dailyRewardCooldownDays').value = '';
-      document.getElementById('dailyRewardCooldownHours').value = '';
-      document.getElementById('dailyRewardCooldownMinutes').value = '';
-      document.getElementById('dailyRewardCooldownSeconds').value = '';
-      document.getElementById('dailyRewardImageUrl').value = '';
-      document.getElementById('saveDailyRewardBtn').textContent = 'GÜNLÜK ÖDÜL OLUŞTUR';
-      document.getElementById('dailyRewardMultiplierUses').classList.add('hidden');
-      editingDailyRewardId = null;
-    }
-
-    async function saveDailyReward() {
-        if (!isAdmin) return;
-        
-        const name = document.getElementById('dailyRewardName').value.trim();
-        const type = document.getElementById('dailyRewardType').value;
-        const value = parseInt(document.getElementById('dailyRewardValue').value);
-        const description = document.getElementById('dailyRewardDescription').value.trim();
-        const imageUrl = document.getElementById('dailyRewardImageUrl').value.trim();
-        
-        const days = parseInt(document.getElementById('dailyRewardCooldownDays').value) || 0;
-        const hours = parseInt(document.getElementById('dailyRewardCooldownHours').value) || 0;
-        const minutes = parseInt(document.getElementById('dailyRewardCooldownMinutes').value) || 0;
-        const seconds = parseInt(document.getElementById('dailyRewardCooldownSeconds').value) || 0;
-
-        if (!name || !type || isNaN(value) || value <= 0 || !description) {
-            displayMessage("Lütfen ödül için tüm zorunlu alanları (Ad, Tip, Değer, Açıklama) geçerli bir şekilde doldurun.");
-            return;
-        }
-
-        const cooldownMs = (days * 24 * 3600 + hours * 3600 + minutes * 60 + seconds) * 1000;
-        let cooldownText = '';
-        if(days > 0) cooldownText += `${days}g `;
-        if(hours > 0) cooldownText += `${hours}s `;
-        if(minutes > 0) cooldownText += `${minutes}d `;
-        if(seconds > 0) cooldownText += `${seconds}sn`;
-        if (cooldownText === '') cooldownText = 'Tek Seferlik';
-
-
-        const rewardData = { name, type, value, description, cooldownMs, cooldownText, imageUrl: imageUrl || 'https://via.placeholder.com/150' };
-
-        if (editingDailyRewardId) {
-            const existingRewardSnap = await db.ref('dailyRewardOptions/' + editingDailyRewardId).once('value');
-            const existingReward = existingRewardSnap.val();
-            rewardData.order = existingReward.order;
-        } else {
-            const maxOrderSnap = await db.ref('dailyRewardOptions').orderByChild('order').limitToLast(1).once('value');
-            let maxOrder = -1;
-            if(maxOrderSnap.exists()){
-                maxOrder = Object.values(maxOrderSnap.val())[0].order || 0;
-            }
-            rewardData.order = maxOrder + 1;
-        }
-
-        if (type === 'tempMultiplier') {
-            const uses = parseInt(document.getElementById('dailyRewardMultiplierUses').value);
-            if (isNaN(uses) || uses <= 0) {
-                displayMessage("Çarpan için geçerli bir kullanım hakkı sayısı girin.");
-                return;
-            }
-            rewardData.uses = uses;
-        }
-        
-        if (editingDailyRewardId) {
-            await db.ref('dailyRewardOptions/' + editingDailyRewardId).update(rewardData);
-            displayMessage("Günlük ödül başarıyla güncellendi.");
-        } else {
-            await db.ref('dailyRewardOptions').push(rewardData);
-            displayMessage("Yeni günlük ödül başarıyla oluşturuldu.");
-        }
-        
-        resetDailyRewardForm();
-        closeAdminDailyRewardModal();
-        openDailyRewardModal(); // YENİ EKLENEN SATIR: Kaydetme sonrası ana ödül ekranını günceller.
-    }
-    
-    async function reorderDailyRewardItem(rewardId, newIndex) {
-        if (!isAdmin) return;
-        const rewardsRef = db.ref('dailyRewardOptions');
-        const rewardsSnap = await rewardsRef.once('value');
-        const rewards = rewardsSnap.val();
-        if (!rewards) return;
-
-        let sortedRewards = Object.entries(rewards).sort(([, a], [, b]) => (a.order || 0) - (b.order || 0));
-        
-        const itemToMoveIndex = sortedRewards.findIndex(([id]) => id === rewardId);
-        if (itemToMoveIndex === -1) return;
-
-        if (newIndex < 0 || newIndex >= sortedRewards.length) return;
-
-        const [movedItem] = sortedRewards.splice(itemToMoveIndex, 1);
-        sortedRewards.splice(newIndex, 0, movedItem);
-
-        const updates = {};
-        sortedRewards.forEach(([id], index) => {
-          updates[id + '/order'] = index;
-        });
-        
-        await rewardsRef.update(updates);
-        openDailyRewardModal(); // YENİ EKLENEN SATIR: Bu satır, işlem sonrası ödül listesini anında günceller.
-    }
-
-    async function editDailyReward(rewardId) {
-        if (!isAdmin) return;
-        
-        const rewardSnap = await db.ref('dailyRewardOptions/' + rewardId).once('value');
-        const reward = rewardSnap.val();
-        if (!reward) {
-            displayMessage("Düzenlenecek ödül bulunamadı.");
-            return;
-        }
-        
-        document.getElementById('dailyRewardName').value = reward.name;
-        document.getElementById('dailyRewardDescription').value = reward.description;
-        document.getElementById('dailyRewardType').value = reward.type;
-        document.getElementById('dailyRewardValue').value = reward.value;
-        document.getElementById('dailyRewardImageUrl').value = reward.imageUrl || '';
-        
-        const cooldownMs = reward.cooldownMs || 0;
-        const days = Math.floor(cooldownMs / (1000 * 60 * 60 * 24));
-        const hours = Math.floor((cooldownMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-        const minutes = Math.floor((cooldownMs % (1000 * 60 * 60)) / (1000 * 60));
-        const seconds = Math.floor((cooldownMs % (1000 * 60)) / 1000);
-
-        document.getElementById('dailyRewardCooldownDays').value = days;
-        document.getElementById('dailyRewardCooldownHours').value = hours;
-        document.getElementById('dailyRewardCooldownMinutes').value = minutes;
-        document.getElementById('dailyRewardCooldownSeconds').value = seconds;
-
-        const usesInput = document.getElementById('dailyRewardMultiplierUses');
-        if (reward.type === 'tempMultiplier') {
-            usesInput.classList.remove('hidden');
-            usesInput.value = reward.uses || '';
-        } else {
-            usesInput.classList.add('hidden');
-        }
-
-        document.getElementById('saveDailyRewardBtn').textContent = 'ÖDÜLÜ GÜNCELLE';
-        editingDailyRewardId = rewardId;
-        
-        openAdminDailyRewardModal(); 
-        document.querySelector('#adminDailyRewardModal .modal-content').scrollTop = 0;
-    }
-
-    async function removeDailyReward(rewardId) {
-        if (!isAdmin) return;
-        if (await customConfirm("Bu günlük ödülü silmek istediğinizden emin misiniz?")) {
-            await db.ref('dailyRewardOptions/' + rewardId).remove();
-            displayMessage("Günlük ödül kaldırıldı.");
-            openDailyRewardModal(); // YENİ EKLENEN SATIR: Silme sonrası listeyi günceller.
-        }
-    }
-  
-    function listenForDailyRewardChanges() {
-        const rewardsRef = db.ref('dailyRewardOptions');
-        rewardsRef.on('value', snap => {
-            // Sadece günlük ödül penceresi o anda açıksa içeriği yenile
-            if (dailyRewardModal.style.display === 'flex') {
-                openDailyRewardModal();
-            }
-            // Ayrıca, ödül varsa ana ekrandaki kırmızı noktayı da kontrol et
-            checkAvailableDailyRewards();
-        });
-    }
-  
-    function listenForAdminNotifications() {
-      const notificationsRef = db.ref(`users/${currentUser}/notifications`);
-      notificationsRef.orderByChild('timestamp').startAt(sessionStartTime).on('child_added', snap => {
-          const notification = snap.val();
-          if (notification && notification.message) {
-              displayMessage(notification.message);
-              snap.ref.remove();
-          }
-        
-      });
-    }
-  
-    function openBoxStatsModal() {
-      const listEl = document.getElementById('boxStatsList');
-      listEl.innerHTML = 'Yükleniyor...';
-      db.ref('gameStats/boxesOpenedByUsers').orderByValue().once('value').then(snap => {
-          const stats = snap.val();
-          if (!stats) {
-              listEl.innerHTML = '<p class="text-center text-gray-400">Bu turda henüz kimse kutu açmadı.</p>';
-          } else {
-              let html = '';
-              const sortedUsers = Object.entries(stats).sort(([, countA], [, countB]) => countB - countA);
-              sortedUsers.forEach(([user, count]) => {
-                  html += `<p class="p-2 bg-gray-800 rounded mb-2">${user}: <span class="font-bold text-yellow-300">${count}</span> kutu</p>`;
-              });
-              listEl.innerHTML = html;
-          }
-          boxStatsModal.style.display = 'flex';
-      });
-    }
-    function closeBoxStatsModal() {
-      boxStatsModal.style.display = 'none';
-    }
-
-    let surpriseSessionListener = null;
-    function listenForSurpriseBox() {
-      const sessionRef = db.ref('surprise_box_session');
-      if (surpriseSessionListener) sessionRef.off('value', surpriseSessionListener);
-
-      surpriseSessionListener = sessionRef.on('value', snap => {
-          const sessionData = snap.val();
-          if (sessionData && sessionData.active && sessionData.user !== currentUser) {
-              openSpectatorModal(sessionData);
-          } else if (sessionData && sessionData.active && sessionData.user === currentUser) {
-              if (sessionData.result) {
-                  closeCardSelectionModal();
-                  displayMessage(`Sürpriz kutudan tebrikler! Toplam ${sessionData.result.points} puan kazandınız! Oyun 4 saniye içinde sıfırlanacak.`);
-                  setTimeout(() => {
-                      resetGameBoard();
-                      sessionRef.remove();
-                  }, 4000);
-              }
-          } else {
-              closeSpectatorModal();
-          }
-      });
-    }
-
-    function openSpectatorModal(sessionData) {
-      document.getElementById('spectatorTitle').innerHTML = `<span class="text-green-400 font-bold">${sessionData.user}</span> Sürpriz Kutu buldu!`;
-      const cardContainer = document.getElementById('spectatorCardContainer');
-      cardContainer.innerHTML = '';
-
-      sessionData.cards.forEach((cardValue, index) => {
-          const cardDiv = document.createElement('div');
-          cardDiv.className = 'card bg-gray-700 border-2 border-red-700 rounded-xl w-28 h-40 flex flex-col items-center justify-center font-bold text-2xl relative';
-          cardDiv.id = `spectator-card-${index}`;
-          const cardBack = document.createElement('div');
-          cardBack.className = 'card-back absolute inset-0 bg-gradient-to-br from-red-700 to-red-900 flex items-center justify-center text-white text-5xl';
-          cardBack.textContent = '?';
-          cardDiv.appendChild(cardBack);
-          const cardFront = document.createElement('div');
-          cardFront.className = 'card-front absolute inset-0 bg-gray-900 flex items-center justify-center text-yellow-400 text-3xl';
-          cardDiv.appendChild(cardFront);
-          cardContainer.appendChild(cardDiv);
-      });
-
-      if (sessionData.selection) {
-          const selectedCardIndex = sessionData.selection.cardIndex;
-          const selectedCard = document.getElementById(`spectator-card-${selectedCardIndex}`);
-          if (selectedCard) {
-              selectedCard.classList.add('opened');
-              if (sessionData.result) {
-                  const pointsGained = sessionData.result.points;
-                  selectedCard.querySelector('.card-front').textContent = `+${pointsGained}`;
-                  document.getElementById('spectatorResult').textContent = `${sessionData.user}, ${pointsGained} puan kazandı!`;
-              }
-          }
-      } else {
-          document.getElementById('spectatorResult').textContent = '';
-      }
-
-      spectatorModal.style.display = 'flex';
-  }
-
-  function closeSpectatorModal() {
-      spectatorModal.style.display = 'none';
-  }
-
-</script>
-</body>
-</html>
+  async function clearPurchaseHistory() { if(await customConfirm("Tüm satın
