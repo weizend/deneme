@@ -2733,4 +2733,1182 @@
           list.innerHTML = html;
       });
   }
-  async function clearPurchaseHistory() { if(await customConfirm("Tüm satın
+  async function clearPurchaseHistory() { 
+    if(await customConfirm("Tüm satın alma geçmişini temizlemek istediğinizden emin misiniz? Bu işlem geri alınamaz!")) {
+        await db.ref('purchaseHistory').remove();
+        await db.ref('pendingSpecialPurchases').remove();
+        displayMessage("Satın alma geçmişi başarıyla temizlendi.");
+    }
+}
+async function clearAllTotalSpentPoints() {
+    if(await customConfirm("Tüm kullanıcıların 'Harcanan Puan' istatistiğini sıfırlamak istediğinizden emin misiniz?")) {
+        const updates = {};
+        db.ref('users').once('value').then(snap => {
+            snap.forEach(child => {
+                if (child.key !== "weizendtv") {
+                    updates['users/' + child.key + '/totalSpentPoints'] = 0;
+                }
+            });
+            db.ref().update(updates).then(() => {
+                displayMessage("Tüm kullanıcıların harcanan puanları sıfırlandı.");
+            });
+        });
+    }
+}
+
+
+function listenForGameChanges() {
+  db.ref('gameLock').on('value', snap => {
+    isGameLocked = snap.val() === true;
+    if(isGameLocked && !isAdmin){
+        setTimeout(() => {
+            db.ref('gameLock').set(false);
+        }, 5000); 
+    }
+  });
+  
+    db.ref('lastOpenedBox').on('value', (snap) => {
+        const boxInfo = snap.val();
+        if (!boxInfo || boxInfo.timestamp < sessionStartTime) return;
+
+        let contentDisplay = '';
+        if (boxInfo.content === 'points') {
+            if (boxInfo.multiplierUsed && boxInfo.multiplierUsed > 1) {
+                contentDisplay = `<b>+${boxInfo.finalPoints} Puan</b> <span class="text-sm text-gray-400">(${boxInfo.basePoints}x${boxInfo.multiplierUsed})</span> kazandı!`;
+            } else {
+                contentDisplay = `<b>+${boxInfo.basePoints} Puan</b> kazandı!`;
+            }
+        } else if (boxInfo.content === 'iflas') {
+            contentDisplay = boxInfo.shieldUsed ? '<b>İflas</b> etti ama kalkanı tarafından korundu!' : '<b>İflas</b> etti!';
+        } else if (boxInfo.content === 'multiplier') {
+            contentDisplay = `<b>${boxInfo.value}x Çarpan</b> buldu!`;
+        } else {
+            return;
+        }
+
+        const html = `<b>${boxInfo.opener}</b>, ${boxInfo.boxId} nolu kutuyu açtı ve ${contentDisplay}`;
+
+        const modal = document.getElementById('globalOpenedBoxInfoModal');
+        const contentEl = document.getElementById('globalOpenedBoxInfoContent');
+        const countdownEl = document.getElementById('globalOpenedBoxCountdown');
+
+        contentEl.innerHTML = html;
+        modal.style.display = 'flex';
+
+        let countdown = 5;
+        countdownEl.textContent = `${countdown} saniye içinde kapanacak...`;
+        const interval = setInterval(() => {
+            countdown--;
+            if (countdown > 0) {
+                countdownEl.textContent = `${countdown} saniye içinde kapanacak...`;
+            } else {
+                clearInterval(interval);
+                modal.style.display = 'none';
+            }
+        }, 1000);
+    });
+}
+
+
+function listenForAdminNotifications() {
+    const notificationsRef = db.ref(`users/${currentUser}/notifications`);
+    notificationsRef.on('child_added', snap => {
+        const notification = snap.val();
+        if(notification) {
+            displayMessage(notification.message);
+            snap.ref.remove();
+        }
+    });
+}
+
+function listenForNewAnnouncements() {
+    const announcementsRef = db.ref('announcements');
+    announcementsRef.orderByChild('timestamp').limitToLast(1).on('value', (snap) => {
+        if (!snap.exists()) return;
+
+        const [announcementId, announcementData] = Object.entries(snap.val())[0];
+        
+        if (announcementData.timestamp > latestAnnouncementTimestamp) {
+            latestAnnouncementTimestamp = announcementData.timestamp;
+
+            if (announcementData.author === currentUser) return;
+
+            db.ref(`users/${currentUser}/lastSeenAnnouncementTimestamp`).once('value', lastSeenSnap => {
+                const lastSeenTimestamp = lastSeenSnap.val() || 0;
+                if (announcementData.timestamp > lastSeenTimestamp) {
+                    if (currentActiveSection !== 'announcements') {
+                        document.getElementById('announcementIndicator').classList.remove('hidden');
+                    }
+                    const newAnnouncementText = document.getElementById('newAnnouncementText');
+                    newAnnouncementText.innerHTML = announcementData.text.replace(/@(\w+)/g, '<span class="user-mention">@$1</span>');
+                    newAnnouncementModal.style.display = 'flex';
+                }
+            });
+        }
+    });
+}
+
+
+function closeNewAnnouncementModal() {
+    newAnnouncementModal.style.display = 'none';
+}
+
+function goToAnnouncements() {
+    closeNewAnnouncementModal();
+    showSection('announcements');
+}
+
+function loadAnnouncements() {
+    const list = document.getElementById('announcementsList');
+    list.innerHTML = "<p class='text-center text-gray-400'>Duyurular yükleniyor...</p>";
+
+    db.ref('announcements').orderByChild('timestamp').on('value', snap => {
+        if (!snap.exists()) {
+            list.innerHTML = "<p class='text-center text-gray-400'>Henüz yapılmış bir duyuru yok.</p>";
+            return;
+        }
+        
+        const announcements = [];
+        snap.forEach(childSnap => {
+            announcements.push({ id: childSnap.key, ...childSnap.val() });
+        });
+        announcements.reverse(); 
+
+        let html = '';
+        announcements.forEach(ann => {
+            const date = new Date(ann.timestamp).toLocaleString('tr-TR');
+            const likesCount = ann.likes ? Object.keys(ann.likes).length : 0;
+            const isLikedByCurrentUser = ann.likes && currentUser && ann.likes[currentUser];
+
+            const adminControls = isAdmin ? `
+                <div class="absolute top-3 right-3 flex gap-2">
+                    <button onclick="editAnnouncement('${ann.id}')" class="text-blue-400 hover:text-blue-300">Düzenle</button>
+                    <button onclick="deleteAnnouncement('${ann.id}')" class="text-red-400 hover:text-red-300">Sil</button>
+                </div>
+            ` : '';
+
+            const processedText = ann.text.replace(/@(\w+)/g, (match, username) => {
+                const highlightClass = username.toLowerCase() === currentUser.toLowerCase() ? 'highlighted' : '';
+                return `<span class="user-mention ${highlightClass}" onclick="openPublicUserDetailModal('${username.toLowerCase()}')">${match}</span>`;
+            });
+            
+            html += `
+                <div class="bg-gray-800 p-6 rounded-lg border border-gray-700 relative">
+                    ${adminControls}
+                    <div class="flex items-center mb-4">
+                        <span class="font-bold text-yellow-300 text-lg">${ann.author}</span>
+                        <span class="text-gray-400 text-sm ml-auto">${date} ${ann.edited ? '(Düzenlendi)' : ''}</span>
+                    </div>
+                    <p class="text-gray-200 mb-4 whitespace-pre-wrap">${processedText}</p>
+                    <div class="flex items-center gap-4 text-gray-400">
+                        <button onclick="toggleLikeAnnouncement('${ann.id}')" class="flex items-center gap-1 hover:text-white transition-colors">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 ${isLikedByCurrentUser ? 'text-red-500 fill-current' : ''}" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" clip-rule="evenodd" />
+                            </svg>
+                            <span>Beğen</span>
+                        </button>
+                        <span class="cursor-pointer hover:underline" onclick="showAnnouncementLikes('${ann.id}')">${likesCount} beğeni</span>
+                    </div>
+                </div>
+            `;
+        });
+        list.innerHTML = html;
+
+        if (!isAdmin) {
+            db.ref(`users/${currentUser}/lastSeenAnnouncementTimestamp`).once('value', snap => {
+                const lastSeen = snap.val() || 0;
+                if (announcements.length > 0 && announcements[0].timestamp > lastSeen) {
+                    if(currentActiveSection !== 'announcements') {
+                        document.getElementById('announcementIndicator').classList.remove('hidden');
+                    }
+                }
+            });
+        }
+        if(announcements.length > 0) {
+            latestAnnouncementTimestamp = announcements[0].timestamp;
+        }
+
+    });
+}
+function resetAnnouncementForm() {
+    document.getElementById('announcementText').value = '';
+    document.getElementById('announcementFormTitle').textContent = 'Yeni Duyuru Yap';
+    document.getElementById('postAnnouncementBtn').textContent = 'DUYURU YAP';
+    document.getElementById('cancelEditAnnouncementBtn').classList.add('hidden');
+    editingAnnouncementId = null;
+}
+
+async function postAnnouncement() {
+    const text = document.getElementById('announcementText').value.trim();
+    if (!text) {
+        displayMessage("Duyuru metni boş olamaz.");
+        return;
+    }
+
+    if (editingAnnouncementId) {
+        await db.ref(`announcements/${editingAnnouncementId}`).update({
+            text: text,
+            edited: true
+        });
+        displayMessage("Duyuru güncellendi.");
+    } else {
+        const newAnnouncement = {
+            author: currentUser,
+            text: text,
+            timestamp: firebase.database.ServerValue.TIMESTAMP,
+            likes: {}
+        };
+        await db.ref('announcements').push(newAnnouncement);
+        displayMessage("Duyuru başarıyla yapıldı.");
+    }
+    resetAnnouncementForm();
+}
+
+async function editAnnouncement(id) {
+    const annSnap = await db.ref(`announcements/${id}`).once('value');
+    const annData = annSnap.val();
+    if (annData) {
+        document.getElementById('announcementText').value = annData.text;
+        document.getElementById('announcementFormTitle').textContent = 'Duyuruyu Düzenle';
+        document.getElementById('postAnnouncementBtn').textContent = 'GÜNCELLE';
+        document.getElementById('cancelEditAnnouncementBtn').classList.remove('hidden');
+        editingAnnouncementId = id;
+        document.getElementById('announcementText').focus();
+    }
+}
+
+async function deleteAnnouncement(id) {
+    if (await customConfirm("Bu duyuruyu silmek istediğinizden emin misiniz?")) {
+        await db.ref(`announcements/${id}`).remove();
+        displayMessage("Duyuru silindi.");
+    }
+}
+
+async function toggleLikeAnnouncement(announcementId) {
+    if (isAdmin) {
+        displayMessage("Adminler beğeni yapamaz.");
+        return;
+    }
+    const likeRef = db.ref(`announcements/${announcementId}/likes/${currentUser}`);
+    const likeSnap = await likeRef.once('value');
+    if (likeSnap.exists()) {
+        await likeRef.remove();
+    } else {
+        await likeRef.set(true);
+    }
+}
+
+async function showAnnouncementLikes(announcementId) {
+    const likesSnap = await db.ref(`announcements/${announcementId}/likes`).once('value');
+    const likesList = document.getElementById('announcementLikesList');
+    if (!likesSnap.exists()) {
+        likesList.innerHTML = "<p class='text-gray-400'>Bu duyuruyu henüz kimse beğenmemiş.</p>";
+    } else {
+        const likers = Object.keys(likesSnap.val());
+        likesList.innerHTML = likers.map(user => `<div class="p-2 bg-gray-800 rounded mb-2 text-white">${user}</div>`).join('');
+    }
+    announcementLikesModal.style.display = 'flex';
+}
+
+function closeAnnouncementLikesModal() {
+    announcementLikesModal.style.display = 'none';
+}
+
+
+function openBoxStatsModal() {
+    boxStatsModal.style.display = 'flex';
+    const list = document.getElementById('boxStatsList');
+    list.innerHTML = "Yükleniyor...";
+    db.ref('gameStats/boxesOpenedByUsers').orderByValue().once('value', snap => {
+        if (!snap.exists()) {
+            list.innerHTML = "<p class='text-center text-gray-400'>Bu turda henüz kutu açılmadı.</p>";
+            return;
+        }
+        let stats = [];
+        snap.forEach(child => {
+            stats.push({ user: child.key, count: child.val() });
+        });
+        stats.reverse();
+        const html = stats.map((stat, index) => `
+            <div class="flex justify-between items-center p-3 mb-2 bg-gray-800 rounded-md">
+                <span class="font-semibold text-lg"><b class="text-yellow-300">${index + 1}.</b> ${stat.user}</span>
+                <span class="text-yellow-400 font-bold">${stat.count} Kutu</span>
+            </div>
+        `).join('');
+        list.innerHTML = html;
+    });
+}
+function closeBoxStatsModal() {
+    boxStatsModal.style.display = 'none';
+}
+
+function listenForSurpriseBox() {
+    db.ref('surprise_box_session').on('value', snap => {
+        const session = snap.val();
+        if (!session || !session.active) {
+            closeCardSelectionModal();
+            closeSpectatorModal();
+            db.ref('gameLock').set(false);
+            return;
+        }
+
+        if (currentUser !== session.user && !isAdmin) {
+            openSpectatorModal(session);
+        }
+
+        if (session.selection && !session.resultShown) {
+            const allCards = document.querySelectorAll('#cardSelectionModal .card, #spectatorModal .card');
+            allCards.forEach(cardDiv => {
+                cardDiv.classList.add('opened');
+                const cardFront = cardDiv.querySelector('.card-front');
+                cardFront.textContent = cardDiv.dataset.value;
+            });
+            
+            setTimeout(() => {
+                const selectedCardDiv = document.querySelector(`.card[data-index='${session.selection.cardIndex}']`);
+                if(selectedCardDiv) selectedCardDiv.classList.add('border-yellow-400', 'border-4');
+
+                const resultText = `<b>${session.selection.user}</b>, ${session.result.points} puan kazandı!`;
+
+                if (currentUser === session.selection.user) {
+                    displayMessage(resultText);
+                } else if (!isAdmin) {
+                    document.getElementById('spectatorResult').innerHTML = resultText;
+                }
+                
+                db.ref('surprise_box_session').update({ active: false, resultShown: true });
+                
+                setTimeout(() => {
+                     db.ref('surprise_box_session').remove();
+                }, 4000);
+
+            }, 1000);
+        }
+    });
+}
+function openSpectatorModal(session) {
+    spectatorModal.style.display = 'flex';
+    document.getElementById('spectatorInfo').textContent = `${session.user} bir kart seçiyor...`;
+    document.getElementById('spectatorResult').textContent = '';
+
+    const container = document.getElementById('spectatorCardContainer');
+    container.innerHTML = '';
+    session.cards.forEach((cardValue, index) => {
+        const cardDiv = document.createElement('div');
+        cardDiv.className = 'card bg-gray-700 border-2 border-red-700 rounded-xl w-24 h-36 flex flex-col items-center justify-center font-bold text-2xl relative';
+        cardDiv.dataset.value = cardValue;
+        cardDiv.dataset.index = index;
+        
+        const cardBack = document.createElement('div');
+        cardBack.className = 'card-back absolute inset-0 bg-gradient-to-br from-red-700 to-red-900 flex items-center justify-center text-white text-4xl';
+        cardBack.textContent = '?';
+        cardDiv.appendChild(cardBack);
+
+        const cardFront = document.createElement('div');
+        cardFront.className = 'card-front absolute inset-0 bg-gray-900 flex items-center justify-center text-yellow-400 text-2xl card-value';
+        cardDiv.appendChild(cardFront);
+
+        container.appendChild(cardDiv);
+    });
+}
+
+function closeSpectatorModal() {
+    spectatorModal.style.display = 'none';
+}
+
+
+function openUserManagementModal(username) {
+    selectedUserForManagement = username;
+    const modal = document.getElementById('userManagementModal');
+    const managedUserNameEl = document.getElementById('managedUserName');
+    managedUserNameEl.textContent = username;
+
+    db.ref('users/' + username).once('value').then(snap => {
+        const u = snap.val();
+        if (!u) {
+            closeUserManagementModal();
+            return;
+        }
+        
+        document.getElementById('managedUserBalance').textContent = u.balance || 0;
+        document.getElementById('managedUserHighestBalance').textContent = u.highestBalanceEver || 0;
+        document.getElementById('managedUserBoxRight').textContent = u.kutuHakki || 0;
+        document.getElementById('managedUserIflasShield').textContent = u.iflasShieldUses || 0;
+        
+        let multiplierText = `${u.activeMultiplier || 1}x`;
+        if(u.multiplierSource === 'store') multiplierText += ` (Mağaza)`;
+        else if(u.multiplierSource === 'box') multiplierText += ` (Kutu)`;
+        document.getElementById('managedUserMultiplier').textContent = multiplierText;
+        document.getElementById('managedUserMultiplierUses').textContent = u.multiplierRemainingUses || 0;
+        
+        const isBlocked = u.blocked && u.blockedUntil && Date.now() < u.blockedUntil;
+        document.getElementById('managedUserBlockedStatus').textContent = isBlocked ? "Evet" : "Hayır";
+        document.getElementById('managedUserBlockedStatus').className = isBlocked ? 'font-bold text-red-400' : 'font-bold text-green-400';
+        
+        const countdownContainer = document.getElementById('managedUserBlockedCountdownContainer');
+        const toggleBtn = document.getElementById('toggleBlockUserBtn');
+        toggleBtn.textContent = isBlocked ? 'Engeli Kaldır' : 'Kullanıcıyı Engelle';
+        toggleBtn.onclick = () => toggleBlockUser(username, u.blocked, u.blockedUntil);
+
+        if (isBlocked) {
+            countdownContainer.classList.remove('hidden');
+            const countdownEl = document.getElementById('managedUserBlockedCountdown');
+            const timer = setInterval(() => {
+                const timeLeft = u.blockedUntil - Date.now();
+                if (timeLeft > 0) {
+                    const minutes = Math.floor(timeLeft / 60000);
+                    const seconds = Math.floor((timeLeft % 60000) / 1000).toString().padStart(2, '0');
+                    countdownEl.textContent = `${minutes}:${seconds}`;
+                } else {
+                    clearInterval(timer);
+                    countdownEl.textContent = "Süre Doldu";
+                }
+            }, 1000);
+        } else {
+            countdownContainer.classList.add('hidden');
+        }
+
+        document.getElementById('managedUserBoxesOpened').textContent = u.boxesOpenedCount || 0;
+        document.getElementById('managedUserSurpriseBoxes').textContent = u.surpriseBoxesOpened || 0;
+        document.getElementById('managedUserBombCount').textContent = u.iflasCount || 0;
+        document.getElementById('managedUserMultiplierFoundCount').textContent = u.multiplierFoundCount || 0;
+        document.getElementById('managedUserTotalSpent').textContent = u.totalSpentPoints || 0;
+        document.getElementById('managedUserShieldUsedCount').textContent = u.iflasShieldUsedCount || 0;
+
+        const historyList = document.getElementById('managedUserPurchaseHistory');
+        historyList.innerHTML = "Yükleniyor...";
+        db.ref('purchaseHistory').orderByChild('username').equalTo(username).once('value').then(historySnap => {
+            if (!historySnap.exists()) {
+                historyList.innerHTML = "<p class='text-gray-400'>Kullanıcının satın alma geçmişi bulunmuyor.</p>";
+                return;
+            }
+            let historyHtml = '';
+            const sortedHistory = Object.values(historySnap.val()).sort((a,b) => b.timestamp - a.timestamp);
+            sortedHistory.forEach(r => {
+                historyHtml += `<div class="p-2 mb-2 bg-gray-700 rounded-md text-sm">${r.itemName} - ${new Date(r.timestamp).toLocaleDateString()}</div>`;
+            });
+            historyList.innerHTML = historyHtml;
+        });
+
+        modal.style.display = 'flex';
+    });
+}
+function closeUserManagementModal() {
+    selectedUserForManagement = null;
+    document.getElementById('userManagementModal').style.display = 'none';
+}
+
+function openPublicUserDetailModal(username) {
+    const modal = document.getElementById('publicUserDetailModal');
+    modal.style.display = 'flex';
+
+    db.ref('users').once('value').then(snap => {
+        const allUsersData = snap.val();
+        if (!allUsersData || !allUsersData[username]) {
+            closePublicUserDetailModal();
+            return;
+        }
+        
+        const u = allUsersData[username];
+        
+        let leaders = {
+            highestCurrentBalance: -1, currentBalanceUser: null, highestEverBalance: -1, highEverBalanceUser: null, maxSurpriseBoxes: -1, surpriseBoxUser: null,
+            maxBombCount: -1, bombUser: null, maxSpentPoints: -1, spentPointsUser: null, maxMultiplierFound: -1, multiplierUser: null, 
+            maxBoxesOpened: -1, boxUser: null, maxShieldUsed: -1, shieldUser: null,
+        };
+        for (const userKey in allUsersData) {
+            if (userKey === 'weizendtv') continue;
+            const userData = allUsersData[userKey];
+            if(userData.approved) {
+              if ((userData.balance || 0) > leaders.highestCurrentBalance && userData.balance > 0) { leaders.highestCurrentBalance = userData.balance; leaders.currentBalanceUser = userKey; }
+              if ((userData.highestBalanceEver || 0) > leaders.highestEverBalance && userData.highestEverBalance > 0) { leaders.highestEverBalance = userData.highestBalanceEver; leaders.highEverBalanceUser = userKey; }
+              if ((userData.surpriseBoxesOpened || 0) > leaders.maxSurpriseBoxes && userData.surpriseBoxesOpened > 0) { leaders.maxSurpriseBoxes = userData.surpriseBoxesOpened; leaders.surpriseBoxUser = userKey; }
+              if ((userData.iflasCount || 0) > leaders.maxBombCount && userData.iflasCount > 0) { leaders.maxBombCount = userData.iflasCount; leaders.bombUser = userKey; }
+              if ((userData.totalSpentPoints || 0) > leaders.maxSpentPoints && userData.totalSpentPoints > 0) { leaders.maxSpentPoints = userData.totalSpentPoints; leaders.spentPointsUser = userKey; }
+              if ((userData.multiplierFoundCount || 0) > leaders.maxMultiplierFound && userData.multiplierFoundCount > 0) { leaders.maxMultiplierFound = userData.multiplierFoundCount; leaders.multiplierUser = userKey; }
+              if ((userData.boxesOpenedCount || 0) > leaders.maxBoxesOpened && userData.boxesOpenedCount > 0) { leaders.maxBoxesOpened = userData.boxesOpenedCount; leaders.boxUser = userKey; }
+              if ((userData.iflasShieldUsedCount || 0) > leaders.maxShieldUsed && userData.iflasShieldUsedCount > 0) { leaders.maxShieldUsed = userData.iflasShieldUsedCount; leaders.shieldUser = userKey; }
+            }
+        }
+        
+        const userLeaderStatus = {
+            isCurrentLeader: username === leaders.currentBalanceUser, isHighLeader: username === leaders.highEverBalanceUser, isSurpriseLeader: username === leaders.surpriseBoxUser,
+            isBombLeader: username === leaders.bombUser, isStoreLeader: username === leaders.spentPointsUser, isMultiplierLeader: username === leaders.multiplierUser,
+            isBoxLeader: username === leaders.boxUser, isShieldLeader: username === leaders.shieldUser
+        };
+        
+        document.getElementById('publicUserName').textContent = username;
+        
+        const allLeaderBadges = Object.values(userLeaderStatus);
+        const hasKingCrown = allLeaderBadges.every(Boolean) && allLeaderBadges.length > 0;
+        document.getElementById('publicUserKingBadge').textContent = hasKingCrown ? '👑' : '';
+
+        const isBlocked = u.blocked && u.blockedUntil && Date.now() < u.blockedUntil;
+        const blockedInfoDiv = document.getElementById('publicUserBlockedInfo');
+        if (isBlocked) {
+            blockedInfoDiv.classList.remove('hidden');
+            const countdownEl = document.getElementById('publicUserBlockedCountdown');
+             const timer = setInterval(() => {
+                const timeLeft = u.blockedUntil - Date.now();
+                if (timeLeft > 0) {
+                    const minutes = Math.floor(timeLeft / 60000);
+                    const seconds = Math.floor((timeLeft % 60000) / 1000).toString().padStart(2, '0');
+                    countdownEl.textContent = `${minutes}:${seconds}`;
+                } else {
+                    clearInterval(timer);
+                    countdownEl.textContent = "Süre Doldu";
+                }
+            }, 1000);
+        } else {
+            blockedInfoDiv.classList.add('hidden');
+        }
+        
+        document.getElementById('publicBadgeCurrent').textContent = userLeaderStatus.isCurrentLeader ? '🥇' : '';
+        document.getElementById('publicUserBalance').textContent = u.balance || 0;
+        
+        document.getElementById('publicBadgeHighest').textContent = userLeaderStatus.isHighLeader ? '🏆' : '';
+        document.getElementById('publicUserHighestBalance').textContent = u.highestBalanceEver || 0;
+
+        document.getElementById('publicUserBoxRight').textContent = u.kutuHakki || 0;
+        document.getElementById('publicUserIflasShield').textContent = u.iflasShieldUses || 0;
+        
+        let multiplierText = `${u.activeMultiplier || 1}x`;
+        if (u.multiplierSource === 'store' && u.multiplierRemainingUses > 0) multiplierText += ` (${u.multiplierRemainingUses} kullanım)`;
+        else if (u.multiplierSource === 'box') multiplierText += ` (Otomatik)`;
+        document.getElementById('publicUserMultiplier').textContent = multiplierText;
+
+        document.getElementById('publicBadgeBox').textContent = userLeaderStatus.isBoxLeader ? '📦' : '';
+        document.getElementById('publicUserBoxesOpened').textContent = u.boxesOpenedCount || 0;
+        
+        document.getElementById('publicBadgeSurprise').textContent = userLeaderStatus.isSurpriseLeader ? '🎉' : ((u.surpriseBoxesOpened || 0) > 0 ? '🎁' : '');
+        document.getElementById('publicUserSurpriseBoxes').textContent = u.surpriseBoxesOpened || 0;
+        
+        document.getElementById('publicBadgeBomb').textContent = userLeaderStatus.isBombLeader ? '💣' : '';
+        document.getElementById('publicUserBombCount').textContent = u.iflasCount || 0;
+
+        document.getElementById('publicBadgeMultiplier').textContent = userLeaderStatus.isMultiplierLeader ? '✖️' : '';
+        document.getElementById('publicUserMultiplierFoundCount').textContent = u.multiplierFoundCount || 0;
+        
+        document.getElementById('publicBadgeShield').textContent = userLeaderStatus.isShieldLeader ? '🛡️' : '';
+        document.getElementById('publicUserShieldUsedCount').textContent = u.iflasShieldUsedCount || 0;
+        
+        document.getElementById('publicBadgeStore').textContent = userLeaderStatus.isStoreLeader ? '🛒' : '';
+        document.getElementById('publicUserTotalSpent').textContent = u.totalSpentPoints || 0;
+    });
+}
+function closePublicUserDetailModal() {
+    document.getElementById('publicUserDetailModal').style.display = 'none';
+}
+function openInventoryModal() {
+    inventoryModal.style.display = 'flex';
+    db.ref('users/' + currentUser).once('value').then(snap => {
+        const u = snap.val();
+        if (!u) return;
+
+        document.getElementById('inventoryBoxRights').textContent = u.kutuHakki || 0;
+        document.getElementById('inventoryIflasShields').textContent = u.iflasShieldUses || 0;
+
+        const multiplierDetails = document.getElementById('inventoryMultiplierDetails');
+        if (u.activeMultiplier > 1) {
+            let sourceText = '';
+            if (u.multiplierSource === 'box') {
+                sourceText = 'Kutudan bulunan, bir sonraki açılışta kullanılacak.';
+            } else if (u.multiplierSource === 'store') {
+                sourceText = `Mağazadan alınan, <b>${u.multiplierRemainingUses}</b> kullanım hakkı kaldı.`;
+            }
+            multiplierDetails.innerHTML = `
+                <p><b>Değer:</b> ${u.activeMultiplier}x</p>
+                <p><b>Kaynak:</b> ${sourceText}</p>
+            `;
+        } else {
+            multiplierDetails.innerHTML = '<p>Aktif bir çarpanınız bulunmuyor.</p>';
+        }
+    });
+}
+function closeInventoryModal() {
+    inventoryModal.style.display = 'none';
+}
+function openBadgeInfoModal() {
+    badgeInfoModal.style.display = 'flex';
+}
+
+function closeBadgeInfoModal() {
+    badgeInfoModal.style.display = 'none';
+}
+
+function loadPendingSpecialPurchases() {
+    const list = document.getElementById('pendingSpecialPurchasesList');
+    db.ref('pendingSpecialPurchases').on('value', snap => {
+        if (!snap.exists()) {
+            list.innerHTML = "<div class='text-center text-gray-400'>Onay bekleyen satın alım yok.</div>";
+            return;
+        }
+        let html = '';
+        snap.forEach(childSnap => {
+            const r = childSnap.val();
+            html += `
+                <div class="p-3 mb-2 bg-gray-700 rounded-md">
+                    <p class="font-bold text-yellow-300">${r.itemName}</p>
+                    <p class="text-sm text-gray-300">Kullanıcı: <b>${r.username}</b></p>
+                    <p class="text-xs text-gray-400">Tarih: ${new Date(r.timestamp).toLocaleString()}</p>
+                    <div class="flex gap-2 mt-2">
+                        <button onclick="processSpecialPurchase('${r.purchaseId}', true)" class="flex-1 py-1 bg-green-600 hover:bg-green-500 text-white text-xs font-bold rounded-md">Onayla</button>
+                        <button onclick="processSpecialPurchase('${r.purchaseId}', false)" class="flex-1 py-1 bg-red-600 hover:bg-red-500 text-white text-xs font-bold rounded-md">Reddet</button>
+                    </div>
+                </div>
+            `;
+        });
+        list.innerHTML = html;
+    });
+}
+
+async function processSpecialPurchase(purchaseId, isApproved) {
+    const pendingRef = db.ref('pendingSpecialPurchases/' + purchaseId);
+    const historyRef = db.ref('purchaseHistory/' + purchaseId);
+    const purchaseSnap = await pendingRef.once('value');
+    if (!purchaseSnap.exists()) return;
+    
+    const purchaseData = purchaseSnap.val();
+    const userRef = db.ref('users/' + purchaseData.username);
+    
+    if (isApproved) {
+        await historyRef.update({ status: 'completed' });
+        notifyUser(purchaseData.username, `'${purchaseData.itemName}' adlı özel ürün satın alımınız onaylandı!`);
+    } else {
+        await historyRef.update({ status: 'denied' });
+        const userSnap = await userRef.once('value');
+        const userData = userSnap.val();
+        if(userData) {
+            const refundedBalance = (userData.balance || 0) + purchaseData.itemCost;
+            await userRef.update({ balance: refundedBalance });
+        }
+        notifyUser(purchaseData.username, `'${purchaseData.itemName}' adlı özel ürün satın alımınız reddedildi. Ödediğiniz puan iade edildi.`);
+    }
+    
+    await pendingRef.remove();
+}
+
+
+function openDailyRewardModal() {
+    dailyRewardModal.style.display = 'flex';
+    document.getElementById('gameDiv').classList.add('modal-is-open');
+    if(isAdmin){
+       document.getElementById('adminDailyRewardManagementButtonContainer').classList.remove('hidden');
+    }
+}
+function closeDailyRewardModal() {
+    dailyRewardModal.style.display = 'none';
+     document.getElementById('gameDiv').classList.remove('modal-is-open');
+}
+
+function openNewDailyRewardForm() {
+    resetDailyRewardForm();
+    adminDailyRewardModal.style.display = 'flex';
+}
+function closeAdminDailyRewardModal() {
+    adminDailyRewardModal.style.display = 'none';
+    resetDailyRewardForm();
+}
+function resetDailyRewardForm() {
+    document.getElementById('dailyRewardName').value = '';
+    document.getElementById('dailyRewardDescription').value = '';
+    document.getElementById('dailyRewardType').value = '';
+    document.getElementById('dailyRewardValue').value = '';
+    document.getElementById('dailyRewardMultiplierUses').value = '';
+    document.getElementById('dailyRewardMultiplierUses').classList.add('hidden');
+    document.getElementById('dailyRewardCooldownDays').value = '';
+    document.getElementById('dailyRewardCooldownHours').value = '';
+    document.getElementById('dailyRewardCooldownMinutes').value = '';
+    document.getElementById('dailyRewardCooldownSeconds').value = '';
+    document.getElementById('dailyRewardImageUrl').value = '';
+    document.getElementById('saveDailyRewardBtn').textContent = 'GÜNLÜK ÖDÜL OLUŞTUR';
+    editingDailyRewardId = null;
+}
+document.getElementById('dailyRewardType').addEventListener('change', function() {
+    const multiplierUsesInput = document.getElementById('dailyRewardMultiplierUses');
+    if (this.value === 'tempMultiplier') {
+        multiplierUsesInput.classList.remove('hidden');
+    } else {
+        multiplierUsesInput.classList.add('hidden');
+    }
+});
+async function saveDailyReward() {
+    if (!isAdmin) return;
+    
+    const name = document.getElementById('dailyRewardName').value.trim();
+    const description = document.getElementById('dailyRewardDescription').value.trim();
+    const type = document.getElementById('dailyRewardType').value;
+    const value = parseInt(document.getElementById('dailyRewardValue').value);
+    const imageUrl = document.getElementById('dailyRewardImageUrl').value.trim();
+
+    const days = parseInt(document.getElementById('dailyRewardCooldownDays').value) || 0;
+    const hours = parseInt(document.getElementById('dailyRewardCooldownHours').value) || 0;
+    const minutes = parseInt(document.getElementById('dailyRewardCooldownMinutes').value) || 0;
+    const seconds = parseInt(document.getElementById('dailyRewardCooldownSeconds').value) || 0;
+    const cooldownMs = (days * 86400 + hours * 3600 + minutes * 60 + seconds) * 1000;
+
+    if (!name || !description || !type || isNaN(value) || cooldownMs <= 0) {
+        displayMessage("Lütfen tüm zorunlu alanları (İsim, Açıklama, Tip, Değer, Bekleme Süresi) doldurun.");
+        return;
+    }
+
+    const rewardData = { name, description, type, value, cooldownMs, imageUrl: imageUrl || 'https://via.placeholder.com/150' };
+
+    if (type === 'tempMultiplier') {
+        const uses = parseInt(document.getElementById('dailyRewardMultiplierUses').value);
+        if (isNaN(uses) || uses <= 0) {
+            displayMessage("Çarpan ödülü için geçerli bir 'Kullanım Hakkı' girin.");
+            return;
+        }
+        rewardData.uses = uses;
+    }
+
+    const ref = db.ref('dailyRewardOptions');
+    if (editingDailyRewardId) {
+        await ref.child(editingDailyRewardId).update(rewardData);
+        displayMessage("Ödül güncellendi.");
+    } else {
+        await ref.push(rewardData);
+        displayMessage("Yeni günlük ödül eklendi.");
+    }
+    closeAdminDailyRewardModal();
+}
+function listenForDailyRewardChanges() {
+    db.ref('dailyRewardOptions').on('value', (snap) => {
+        const rewards = snap.val();
+        renderDailyRewards(rewards);
+        if(!isAdmin) checkAvailableDailyRewards();
+    });
+}
+function renderDailyRewards(rewards) {
+    const container = document.getElementById('dailyRewardItemsContainer');
+    container.innerHTML = '';
+     if (!rewards) {
+        container.innerHTML = "<p class='text-center col-span-full text-gray-400'>Henüz tanımlanmış bir günlük ödül yok.</p>";
+        return;
+    }
+    
+    db.ref(`users/${currentUser}/dailyRewardsClaimed`).once('value', (snap) => {
+        const claimedData = snap.val() || {};
+        
+        Object.entries(rewards).forEach(([rewardId, reward]) => {
+            const lastClaimed = claimedData[rewardId] || 0;
+            const now = Date.now();
+            const canClaim = now >= lastClaimed + reward.cooldownMs;
+            
+            let timeLeftHtml = '';
+            if (!canClaim) {
+                const timeLeftMs = (lastClaimed + reward.cooldownMs) - now;
+                timeLeftHtml = `<div class="text-sm text-yellow-300 font-bold mb-2 h-5" id="daily-countdown-${rewardId}"></div>`;
+                activeDailyRewardTimers[rewardId] = { endTime: lastClaimed + reward.cooldownMs };
+            }
+
+            let adminControls = '';
+            if(isAdmin){
+                adminControls = `
+                    <div class="absolute top-2 right-2 flex gap-1 bg-gray-900 bg-opacity-70 p-1 rounded-lg">
+                        <button onclick="editDailyReward('${rewardId}')" title="Düzenle" class="text-blue-400 hover:text-blue-300 p-1"><svg class="w-4 h-4 fill-current" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M17.414 2.586a2 2 0 00-2.828 0L7 10.172V13h2.828l7.586-7.586a2 2 0 000-2.828zM5 12V7a1 1 0 011-1h2.586l-2 2H6v3h3v-1.586l2-2H13a1 1 0 011 1v5a1 1 0 01-1-1H6a1 1 0 01-1-1v-2z"/></svg></button>
+                        <button onclick="deleteDailyReward('${rewardId}')" title="Sil" class="text-red-400 hover:red-blue-300 p-1"><svg class="w-4 h-4 fill-current" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M6 2l2-2h4l2 2h4v2H2V2h4zM3 6h14l-1 14H4L3 6zm5 2v10h1V8H8zm3 0v10h1V8h-1z"/></svg></button>
+                    </div>`;
+            }
+
+            const cardHtml = `
+                <div class="relative bg-gray-900 p-6 rounded-xl shadow-lg border-2 border-yellow-700 text-center flex flex-col justify-between">
+                    ${adminControls}
+                     <div class="flex-grow">
+                        <img src="${reward.imageUrl || 'https://via.placeholder.com/150'}" alt="${reward.name}" class="w-24 h-24 mx-auto mb-4 rounded-lg object-cover">
+                        <h4 class="text-yellow-400 text-xl font-bold">${reward.name}</h4>
+                        <p class="text-gray-300 mb-2 flex-grow">${reward.description}</p>
+                    </div>
+                    <div>
+                        ${timeLeftHtml}
+                        <button onclick="claimDailyReward('${rewardId}')" ${canClaim ? '' : 'disabled'} class="w-full py-3 mt-auto ${canClaim ? 'bg-yellow-600 hover:bg-yellow-500' : 'bg-gray-600 cursor-not-allowed'} text-white font-bold rounded-lg transition duration-300">
+                            ${canClaim ? 'Ödülü Al' : 'Beklemede'}
+                        </button>
+                    </div>
+                </div>`;
+            container.innerHTML += cardHtml;
+        });
+
+        if (Object.keys(activeDailyRewardTimers).length > 0) {
+            const interval = setInterval(() => {
+                const now = Date.now();
+                let allTimersFinished = true;
+                for (const rewardId in activeDailyRewardTimers) {
+                    const { endTime } = activeDailyRewardTimers[rewardId];
+                    const countdownEl = document.getElementById(`daily-countdown-${rewardId}`);
+                    if (!countdownEl) continue;
+
+                    const timeLeft = endTime - now;
+                    if (timeLeft > 0) {
+                        allTimersFinished = false;
+                        const days = Math.floor(timeLeft / (1000 * 60 * 60 * 24));
+                        const hours = Math.floor((timeLeft % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                        const minutes = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
+                        const seconds = Math.floor((timeLeft % (1000 * 60)) / 1000);
+                        countdownEl.textContent = `${days}g ${hours}s ${minutes}d ${seconds}sn`;
+                    } else {
+                        location.reload(); 
+                    }
+                }
+                if (allTimersFinished) clearInterval(interval);
+            }, 1000);
+        }
+    });
+}
+async function editDailyReward(rewardId) {
+    const rewardSnap = await db.ref(`dailyRewardOptions/${rewardId}`).once('value');
+    const reward = rewardSnap.val();
+    if (!reward) return;
+
+    editingDailyRewardId = rewardId;
+    document.getElementById('dailyRewardName').value = reward.name;
+    document.getElementById('dailyRewardDescription').value = reward.description;
+    document.getElementById('dailyRewardType').value = reward.type;
+    document.getElementById('dailyRewardValue').value = reward.value;
+    document.getElementById('dailyRewardImageUrl').value = reward.imageUrl || '';
+    
+    const cooldownMs = reward.cooldownMs;
+    const days = Math.floor(cooldownMs / 86400000);
+    const hours = Math.floor((cooldownMs % 86400000) / 3600000);
+    const minutes = Math.floor((cooldownMs % 3600000) / 60000);
+    const seconds = Math.floor((cooldownMs % 60000) / 1000);
+
+    document.getElementById('dailyRewardCooldownDays').value = days;
+    document.getElementById('dailyRewardCooldownHours').value = hours;
+    document.getElementById('dailyRewardCooldownMinutes').value = minutes;
+    document.getElementById('dailyRewardCooldownSeconds').value = seconds;
+
+    const multiplierUsesInput = document.getElementById('dailyRewardMultiplierUses');
+    if (reward.type === 'tempMultiplier') {
+        multiplierUsesInput.classList.remove('hidden');
+        multiplierUsesInput.value = reward.uses || '';
+    } else {
+        multiplierUsesInput.classList.add('hidden');
+    }
+    
+    document.getElementById('saveDailyRewardBtn').textContent = 'ÖDÜLÜ GÜNCELLE';
+    adminDailyRewardModal.style.display = 'flex';
+}
+async function deleteDailyReward(rewardId) {
+    if (await customConfirm("Bu ödülü silmek istediğinizden emin misiniz?")) {
+        await db.ref(`dailyRewardOptions/${rewardId}`).remove();
+        displayMessage("Ödül silindi.");
+    }
+}
+async function claimDailyReward(rewardId) {
+    if (isAdmin) {
+        displayMessage("Adminler ödül alamaz.");
+        return;
+    }
+    const userRef = db.ref(`users/${currentUser}`);
+    const rewardRef = db.ref(`dailyRewardOptions/${rewardId}`);
+
+    const [userSnap, rewardSnap] = await Promise.all([userRef.once('value'), rewardRef.once('value')]);
+    const userData = userSnap.val();
+    const rewardData = rewardSnap.val();
+    
+    if (!userData || !rewardData) return;
+
+    const lastClaimed = (userData.dailyRewardsClaimed && userData.dailyRewardsClaimed[rewardId]) || 0;
+    if (Date.now() < lastClaimed + rewardData.cooldownMs) {
+        displayMessage("Bu ödülü almak için bekleme süresi henüz dolmadı.");
+        return;
+    }
+
+    const updates = {};
+    let message = `Tebrikler! Günlük ödül olarak '${rewardData.name}' kazandınız.`;
+    
+    if (rewardData.type === 'points') {
+        updates['balance'] = (userData.balance || 0) + rewardData.value;
+        if(updates['balance'] > (userData.highestBalanceEver || 0)) updates['highestBalanceEver'] = updates['balance'];
+    } else if (rewardData.type === 'boxRights') {
+        updates['kutuHakki'] = (userData.kutuHakki || 0) + rewardData.value;
+    } else if (rewardData.type === 'iflasShield') {
+        updates['iflasShieldUses'] = (userData.iflasShieldUses || 0) + rewardData.value;
+    } else if (rewardData.type === 'tempMultiplier') {
+         if (userData.activeMultiplier > 1) {
+            displayMessage("Zaten aktif bir çarpanınız varken bu ödülü alamazsınız.");
+            return;
+        }
+        updates['activeMultiplier'] = rewardData.value;
+        updates['multiplierSource'] = 'store'; // Mağaza gibi davranması için
+        updates['multiplierRemainingUses'] = rewardData.uses;
+    }
+    
+    await userRef.update(updates);
+    await userRef.child('dailyRewardsClaimed').child(rewardId).set(firebase.database.ServerValue.TIMESTAMP);
+
+    displayMessage(message);
+    closeDailyRewardModal();
+}
+
+function checkAvailableDailyRewards() {
+    const rewardsRef = db.ref('dailyRewardOptions');
+    const userClaimsRef = db.ref(`users/${currentUser}/dailyRewardsClaimed`);
+
+    rewardsRef.once('value', (rewardsSnap) => {
+        if (!rewardsSnap.exists()) {
+            document.getElementById('dailyRewardIndicator').classList.add('hidden');
+            return;
+        }
+        const rewards = rewardsSnap.val();
+
+        userClaimsRef.once('value', (claimsSnap) => {
+            const claims = claimsSnap.val() || {};
+            const now = Date.now();
+            
+            let canClaimAny = false;
+            for (const rewardId in rewards) {
+                const reward = rewards[rewardId];
+                const lastClaimed = claims[rewardId] || 0;
+                if (now >= lastClaimed + reward.cooldownMs) {
+                    canClaimAny = true;
+                    break;
+                }
+            }
+            
+            if (canClaimAny) {
+                document.getElementById('dailyRewardIndicator').classList.remove('hidden');
+            } else {
+                document.getElementById('dailyRewardIndicator').classList.add('hidden');
+            }
+        });
+    });
+}
+
+// YENİ EKLENEN KISIM: DÜELLO OYUNU FONKSİYONLARI
+
+function listenForDuelGameChanges() {
+    duelGameRef.on('value', (snap) => {
+        const gameData = snap.val();
+        
+        if (!gameData || !gameData.status) {
+            if (duelGameModal.style.display === 'flex') {
+                document.getElementById('duelWinnerInfo').classList.add('hidden');
+                document.getElementById('duelNoWinnerInfo').classList.remove('hidden');
+                showDuelScreen('result');
+            }
+            return;
+        }
+
+        switch (gameData.status) {
+            case 'lobby':
+                showDuelLobby(gameData);
+                break;
+            case 'countdown':
+                showDuelCountdown(gameData);
+                break;
+            case 'active':
+                startDuelClientGame(gameData);
+                break;
+            case 'finished':
+                showDuelResults(gameData);
+                break;
+        }
+    });
+}
+async function startDuelGame() {
+    if (!isAdmin) return;
+
+    const targetCount = parseInt(document.getElementById('duelTargetCount').value);
+    const rewardPoints = parseInt(document.getElementById('duelRewardPoints').value);
+
+    if (isNaN(targetCount) || targetCount <= 0 || isNaN(rewardPoints) || rewardPoints <= 0) {
+        displayMessage("Lütfen geçerli hedef sayısı ve ödül miktarı girin.");
+        return;
+    }
+
+    await duelGameRef.set({
+        status: 'lobby',
+        targetCount: targetCount,
+        reward: rewardPoints,
+        participants: {},
+        scores: {},
+        winner: null,
+        startTime: null,
+        finishTime: null,
+    });
+}
+async function resetDuelGame() {
+    if (!isAdmin) return;
+    await duelGameRef.remove();
+}
+function showDuelLobby(gameData) {
+    if (isAdmin) {
+        const participants = gameData.participants || {};
+        const count = Object.keys(participants).length;
+        document.getElementById('duelParticipantCount').textContent = count;
+        document.getElementById('duelParticipantList').innerHTML = count > 0 ? 
+            Object.keys(participants).map(p => `<div class="p-1 bg-gray-700 rounded text-sm mb-1">${p}</div>`).join('') :
+            'Katılımcı bekleniyor...';
+        document.getElementById('forceStartDuelBtn').disabled = count === 0;
+    } else {
+        if (duelGameModal.style.display !== 'flex') {
+           duelGameModal.style.display = 'flex';
+        }
+        showDuelScreen('lobby');
+
+        const participants = gameData.participants || {};
+        const count = Object.keys(participants).length;
+        document.getElementById('duelModalParticipantCount').textContent = count;
+        document.getElementById('duelModalParticipantList').innerHTML = count > 0 ? 
+            Object.keys(participants).map(p => `<div class="p-1 bg-gray-800 rounded text-sm mb-1">${p}</div>`).join('') :
+            '<p class="text-gray-500">Henüz katılan yok...</p>';
+        document.getElementById('duelModalReward').textContent = gameData.reward;
+
+        const joinBtn = document.getElementById('joinDuelBtn');
+        if (participants[currentUser]) {
+            joinBtn.textContent = 'Hazırsın!';
+            joinBtn.disabled = true;
+            joinBtn.classList.remove('bg-green-600', 'hover:bg-green-500');
+            joinBtn.classList.add('bg-gray-500', 'cursor-not-allowed');
+        } else {
+            joinBtn.textContent = 'Hazır Ol!';
+            joinBtn.disabled = false;
+             joinBtn.classList.add('bg-green-600', 'hover:bg-green-500');
+            joinBtn.classList.remove('bg-gray-500', 'cursor-not-allowed');
+        }
+    }
+}
+async function joinDuel() {
+    if (isAdmin) return;
+    await duelGameRef.child('participants').child(currentUser).set(true);
+}
+async function forceStartDuel() {
+    if (!isAdmin) return;
+    const gameSnap = await duelGameRef.once('value');
+    const gameData = gameSnap.val();
+    if (!gameData || gameData.status !== 'lobby') return;
+    
+    const participants = gameData.participants || {};
+    if (Object.keys(participants).length === 0) {
+        displayMessage("Oyunu başlatmak için en az 1 katılımcı olmalı.");
+        return;
+    }
+    
+    await duelGameRef.update({ status: 'countdown' });
+}
+function showDuelCountdown(gameData) {
+    if(isAdmin) return;
+
+    if (gameData.participants && gameData.participants[currentUser]) {
+        if(duelGameModal.style.display !== 'flex') duelGameModal.style.display = 'flex';
+        showDuelScreen('countdown');
+        let count = 3;
+        const countdownText = document.getElementById('duelCountdownText');
+        countdownText.textContent = count;
+        const interval = setInterval(() => {
+            count--;
+            if (count > 0) {
+                countdownText.textContent = count;
+            } else {
+                clearInterval(interval);
+                 if(isAdmin) {
+                    duelGameRef.update({ status: 'active', startTime: firebase.database.ServerValue.TIMESTAMP });
+                 }
+            }
+        }, 1000);
+    } else {
+         // Katılmayanlar için modalı kapat
+        closeDuelGameModal();
+    }
+}
+function startDuelClientGame(gameData) {
+    if (isAdmin || !gameData.participants || !gameData.participants[currentUser]) return;
+    
+    showDuelScreen('game');
+    duelGameArea.innerHTML = '';
+    document.getElementById('duelPlayerScore').textContent = '0';
+    let localScore = 0;
+
+    const createTarget = () => {
+        const target = document.createElement('div');
+        target.className = 'duel-target';
+        target.style.top = `${Math.random() * (duelGameArea.clientHeight - 40)}px`;
+        target.style.left = `${Math.random() * (duelGameArea.clientWidth - 40)}px`;
+        
+        target.onclick = async () => {
+            target.remove();
+            localScore++;
+            document.getElementById('duelPlayerScore').textContent = localScore;
+            
+            await duelGameRef.child('scores').child(currentUser).set(localScore);
+
+            if (localScore >= gameData.targetCount) {
+                // Oyun bitti
+                const gameSnap = await duelGameRef.once('value');
+                // Sadece ilk bitiren kazanır
+                if(gameSnap.val().status === 'active'){
+                    await duelGameRef.update({
+                        status: 'finished',
+                        winner: currentUser,
+                        finishTime: firebase.database.ServerValue.TIMESTAMP
+                    });
+                }
+            } else {
+                // Yeni hedef oluştur
+                createTarget();
+            }
+        };
+
+        duelGameArea.appendChild(target);
+    };
+
+    createTarget();
+}
+async function showDuelResults(gameData) {
+     if(isAdmin) {
+        if(gameData.winner) {
+            displayMessage(`Oyun bitti! Kazanan: ${gameData.winner}, Ödül: ${gameData.reward} puan.`);
+            const userRef = db.ref(`users/${gameData.winner}`);
+            const userSnap = await userRef.once('value');
+            const userData = userSnap.val();
+            if(userData){
+                const newBalance = (userData.balance || 0) + gameData.reward;
+                const updates = { balance: newBalance };
+                if (newBalance > (userData.highestBalanceEver || 0)) {
+                    updates.highestBalanceEver = newBalance;
+                }
+                await userRef.update(updates);
+            }
+        }
+        await duelGameRef.remove();
+        return;
+    }
+
+    if (!gameData.participants || !gameData.participants[currentUser]) return;
+    
+    showDuelScreen('result');
+    if (gameData.winner) {
+        document.getElementById('duelWinnerInfo').classList.remove('hidden');
+        document.getElementById('duelNoWinnerInfo').classList.add('hidden');
+        document.getElementById('duelWinnerName').textContent = gameData.winner;
+        document.getElementById('duelWinnerReward').textContent = gameData.reward;
+        document.getElementById('duelWinnerScore').textContent = gameData.scores[gameData.winner] || 'N/A';
+    } else {
+        // Bu durum genelde admin sıfırlayınca olur
+        document.getElementById('duelWinnerInfo').classList.add('hidden');
+        document.getElementById('duelNoWinnerInfo').classList.remove('hidden');
+    }
+}
+function showDuelScreen(screenName) {
+    if(isAdmin) return;
+    ['lobby', 'countdown', 'game', 'result'].forEach(s => {
+        document.getElementById(`duel${s.charAt(0).toUpperCase() + s.slice(1)}Screen`).classList.add('hidden');
+    });
+    document.getElementById(`duel${screenName.charAt(0).toUpperCase() + screenName.slice(1)}Screen`).classList.remove('hidden');
+
+    if (screenName === 'game') {
+        duelGameModalContent.classList.add('max-w-full', 'w-full', 'h-full', 'max-h-full');
+    } else {
+        duelGameModalContent.classList.remove('max-w-full', 'w-full', 'h-full', 'max-h-full');
+    }
+}
+function closeDuelGameModal() {
+    duelGameModal.style.display = 'none';
+}
+
+</script>
+</body>
+</html>
