@@ -1252,7 +1252,8 @@
         checkAvailableDailyRewards();
     }
     listenForSurpriseBox();
-
+    listenForDailyRewardChanges();
+    
     if (!isAdmin) {
         const userRef = db.ref('users/' + currentUser);
         userRef.once('value').then(snap => {
@@ -3584,7 +3585,19 @@
             openDailyRewardModal(); // YENİ EKLENEN SATIR: Silme sonrası listeyi günceller.
         }
     }
-    
+  
+    function listenForDailyRewardChanges() {
+        const rewardsRef = db.ref('dailyRewardOptions');
+        rewardsRef.on('value', snap => {
+            // Sadece günlük ödül penceresi o anda açıksa içeriği yenile
+            if (dailyRewardModal.style.display === 'flex') {
+                openDailyRewardModal();
+            }
+            // Ayrıca, ödül varsa ana ekrandaki kırmızı noktayı da kontrol et
+            checkAvailableDailyRewards();
+        });
+    }
+  
     function listenForAdminNotifications() {
       const notificationsRef = db.ref(`users/${currentUser}/notifications`);
       notificationsRef.orderByChild('timestamp').startAt(sessionStartTime).on('child_added', snap => {
@@ -3593,6 +3606,7 @@
               displayMessage(notification.message);
               snap.ref.remove();
           }
+        
       });
     }
   
