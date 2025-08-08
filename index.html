@@ -971,7 +971,48 @@
   <div class="modal-content bg-gray-800 p-8 rounded-xl shadow-2xl border border-red-700 w-11/12 max-w-2xl text-left relative max-h-[90vh] overflow-y-auto scrollable-list">
       <button class="modal-close-button" onclick="closeHelpModal()">&times;</button>
       <h3 class="text-yellow-400 text-3xl font-bold mb-6 text-center">Yardım / Nasıl Oynanır?</h3>
-      <div class="space-y-6 text-gray-300"></div>
+      <div class="space-y-6 text-gray-300">
+          <div>
+              <h4 class="text-xl font-bold text-yellow-300 mb-2">Oyunun Amacı</h4>
+              <p>Oyunun temel amacı, kutuları açarak puan toplamak, çeşitli mini oyunlarda en yüksek skoru elde etmek ve diğer kullanıcılarla liderlik sıralamasında yarışmaktır. Kazandığınız puanlarla mağazadan çeşitli oyun içi avantajlar ve kozmetik ürünler satın alabilirsiniz.</p>
+          </div>
+
+          <div>
+              <h4 class="text-xl font-bold text-yellow-300 mb-2">Nasıl Kutu Hakkı Kazanırım?</h4>
+              <p>Oyuna başlarken size hediye olarak kutu hakkı verilir. Daha fazla hak kazanmak için:</p>
+              <ul class="list-disc list-inside mt-2 space-y-1 pl-4">
+                  <li>Mağazadan puanlarınızla "Kutu Hakkı" satın alabilirsiniz.</li>
+                  <li>Günlük ödüllerinizi toplayarak kazanabilirsiniz.</li>
+                  <li>Şans Çarkı'nı çevirerek elde edebilirsiniz.</li>
+                  <li>Tıkla-Yakala oyununda özel hedefleri yakalayarak kazanabilirsiniz.</li>
+              </ul>
+          </div>
+
+          <div>
+              <h4 class="text-xl font-bold text-yellow-300 mb-2">Kutu İçerikleri</h4>
+              <ul class="list-disc list-inside mt-2 space-y-1 pl-4">
+                  <li><strong class="text-green-400">Puan:</strong> Farklı miktarlarda puanlar içerir.</li>
+                  <li><strong class="text-red-500">İflas (Bomba 💣):</strong> Tüm puanlarınızı sıfırlar! Dikkatli olun.</li>
+                  <li><strong class="text-yellow-400">Sürpriz Kutu 🎁:</strong> İçinden yüksek puanlar çıkan özel bir kart seçme oyunu başlatır. Sürpriz kutu bulunduğunda mevcut turdaki tüm kutular sıfırlanır ve karıştırılır.</li>
+                  <li><strong class="text-blue-400">Çarpan ✖️:</strong> Bir sonraki açacağınız kutudan çıkacak puanı veya eşyayı katlar.</li>
+                  <li><strong class="text-cyan-400">İflas Kalkanı 🛡️:</strong> Bomba bulduğunuzda puanlarınızı korur. Tek kullanımlıktır.</li>
+                  <li><strong class="text-pink-400">Çark Bileti 🎟️:</strong> Şans Çarkı'nı çevirmeniz için bilet verir.</li>
+              </ul>
+          </div>
+          
+           <div>
+              <h4 class="text-xl font-bold text-yellow-300 mb-2">Mini Oyunlar</h4>
+              <ul class="list-disc list-inside mt-2 space-y-1 pl-4">
+                  <li><strong class="text-yellow-200">Şans Çarkı:</strong> Biletinizle çarkı çevirerek puan, kutu hakkı, kalkan ve hatta sürpriz kutu gibi çeşitli ödüller kazanabilirsiniz.</li>
+                  <li><strong class="text-orange-300">Tıkla-Yakala:</strong> Biletinizle oyuna girerek ekrandaki hedefleri yakalayıp puan ve özel ödüller toplayabilirsiniz.</li>
+              </ul>
+          </div>
+
+          <div>
+              <h4 class="text-xl font-bold text-yellow-300 mb-2">Mağaza</h4>
+              <p>Oyun içinde kazandığınız puanları kullanarak mağazadan Kutu Hakkı, Çark Bileti, Tıkla-Yakala Bileti, İflas Kalkanı ve özel avatar gibi birçok faydalı ürün satın alabilirsiniz.</p>
+          </div>
+      </div>
   </div>
 </div>
 
@@ -982,6 +1023,23 @@
       <div id="avatarGrid" class="flex-grow grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-4 overflow-y-auto scrollable-list p-4 bg-gray-900 rounded-lg"></div>
   </div>
 </div>
+</div>
+  <div id="boxSettingsModal" class="modal-overlay fixed inset-0 bg-black bg-opacity-70 flex justify-center items-center z-[9999] hidden">
+  <div class="modal-content bg-gray-800 p-8 rounded-xl shadow-2xl border border-purple-500 w-11/12 max-w-2xl text-center relative max-h-[90vh] flex flex-col">
+    <button class="modal-close-button" onclick="closeBoxSettingsModal()">&times;</button>
+    <h3 class="text-purple-300 text-3xl font-bold mb-6">Oyun Kutusu Ayarları</h3>
+    
+    <div class="flex-grow overflow-y-auto scrollable-list pr-4 space-y-2" id="boxSettingsRowsContainer">
+      </div>
+
+    <div class="mt-6 pt-4 border-t border-gray-700">
+        <div class="text-lg text-white mb-4">Toplam Kutu Sayısı: <span id="totalBoxCountDisplay" class="font-bold text-yellow-300">0</span></div>
+        <div class="flex gap-4">
+            <button onclick="addBoxSettingRow()" class="flex-1 py-3 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-lg shadow-md">Yeni Satır Ekle</button>
+            <button onclick="saveBoxSettings()" class="flex-1 py-3 bg-green-700 hover:bg-green-600 text-white font-bold rounded-lg shadow-md">Ayarları Kaydet ve Oyunu Sıfırla</button>
+        </div>
+    </div>
+  </div>
 </div>
   <script>
   // Firebase yapılandırması
@@ -6336,6 +6394,158 @@ function closeHelpModal() {
         displayMessage("Avatar başarıyla seçildi!");
         closeAvatarSelectionModal();
     }
+
+   // YENİ: KUTU AYARLARI MODALI FONKSİYONLARI
+
+// Modalı açar, veritabanından ayarları çeker ve satırları oluşturur.
+async function openBoxSettingsModal() {
+    if (!isAdmin) return;
+
+    const container = document.getElementById('boxSettingsRowsContainer');
+    container.innerHTML = ''; // Önceki satırları temizle
+
+    const settingsRef = db.ref('gameConfig/boxContents');
+    const snapshot = await settingsRef.once('value');
+
+    // Eğer veritabanında hiç ayar yoksa kullanılacak varsayılan ayarlar.
+    const defaultSettings = [ 
+        { type: 'points', value: 100, count: 10 }, 
+        { type: 'iflas', value: 0, count: 2 }, 
+        { type: 'iflasShield', value: 1, count: 2 },
+        { type: 'surpriz', value: 0, count: 1 } 
+    ];
+    const currentConfig = snapshot.exists() ? snapshot.val() : defaultSettings;
+
+    if (currentConfig && currentConfig.length > 0) {
+        currentConfig.forEach(item => addBoxSettingRow(item));
+    } else {
+        addBoxSettingRow(); // Eğer hiç ayar yoksa boş bir satırla başlat
+    }
+    
+    updateTotalBoxCount(); // Toplam sayıyı ilk açılışta hesapla
+    boxSettingsModal.style.display = 'flex';
+}
+
+// Modalı kapatır.
+function closeBoxSettingsModal() {
+    boxSettingsModal.style.display = 'none';
+}
+
+// Yeni bir ayar satırı (Puan, Bilet vb.) oluşturup ekrana ekler.
+function addBoxSettingRow(item = {}) {
+    const container = document.getElementById('boxSettingsRowsContainer');
+    const row = document.createElement('div');
+    row.className = 'box-setting-row flex items-center gap-3 p-3 bg-gray-900 rounded-lg';
+
+    // Değerleri önceden doldurmak için (kayıtlı ayarları yüklerken kullanılır)
+    const type = item.type || 'points';
+    const value = item.value === 0 ? 0 : (item.value || ''); // 0 değerini koru
+    const count = item.count || '';
+
+    row.innerHTML = `
+        <select class="setting-type flex-grow bg-gray-700 p-2 rounded-md text-white border border-gray-600" onchange="handleRowTypeChange(this)">
+            <option value="points" ${type === 'points' ? 'selected' : ''}>Puan</option>
+            <option value="iflas" ${type === 'iflas' ? 'selected' : ''}>İflas (Bomba)</option>
+            <option value="surpriz" ${type === 'surpriz' ? 'selected' : ''}>Sürpriz Kutu</option>
+            <option value="multiplier" ${type === 'multiplier' ? 'selected' : ''}>Çarpan</option>
+            <option value="wheelTicket" ${type === 'wheelTicket' ? 'selected' : ''}>Çark Bileti</option>
+            <option value="clickCatchTicket" ${type === 'clickCatchTicket' ? 'selected' : ''}>Tıkla Yakala Bileti</option>
+            <option value="iflasShield" ${type === 'iflasShield' ? 'selected' : ''}>İflas Kalkanı</option>
+        </select>
+        <input type="number" value="${value}" class="setting-value w-28 bg-gray-700 p-2 rounded-md text-white border border-gray-600" placeholder="Değer">
+        <input type="number" value="${count}" class="setting-count w-28 bg-gray-700 p-2 rounded-md text-white border border-gray-600" placeholder="Adet" oninput="updateTotalBoxCount()">
+        <button class="bg-red-700 hover:bg-red-600 text-white p-2 rounded-md" onclick="this.parentElement.remove(); updateTotalBoxCount();">Sil</button>
+    `;
+    
+    container.appendChild(row);
+    handleRowTypeChange(row.querySelector('.setting-type')); // Satırın ilk durumunu ayarla
+    updateTotalBoxCount(); // Eklendikten sonra toplam sayıyı güncelle
+}
+
+// Bir satırda tür seçimi değiştiğinde "Değer" input'unu aktif/pasif yapar.
+function handleRowTypeChange(selectElement) {
+    const row = selectElement.parentElement;
+    const valueInput = row.querySelector('.setting-value');
+    const selectedType = selectElement.value;
+
+    const typesWithValue = ['points', 'multiplier'];
+    const typesWithAutoValue = ['wheelTicket', 'clickCatchTicket', 'iflasShield'];
+
+    if (typesWithValue.includes(selectedType)) {
+        valueInput.disabled = false;
+        valueInput.placeholder = 'Değer';
+        if(selectedType === 'multiplier') valueInput.placeholder = 'Değer (2, 3 vb.)';
+    } else {
+        valueInput.disabled = true;
+        valueInput.placeholder = 'N/A';
+        if(typesWithAutoValue.includes(selectedType)){
+             valueInput.value = 1;
+        } else {
+             valueInput.value = 0;
+        }
+    }
+}
+
+// "Adet" inputlarından biri her değiştiğinde toplam kutu sayısını hesaplar ve gösterir.
+function updateTotalBoxCount() {
+    let total = 0;
+    document.querySelectorAll('.box-setting-row .setting-count').forEach(input => {
+        const count = parseInt(input.value);
+        if (!isNaN(count) && count > 0) {
+            total += count;
+        }
+    });
+    document.getElementById('totalBoxCountDisplay').textContent = total;
+}
+
+// Tüm satırlardaki verileri okur, yeni ayarları veritabanına kaydeder ve oyunu sıfırlar.
+async function saveBoxSettings() {
+    if (!isAdmin) return;
+
+    const newConfig = [];
+    let totalBoxes = 0;
+    let hasError = false;
+
+    document.querySelectorAll('.box-setting-row').forEach(row => {
+        if (hasError) return;
+        const type = row.querySelector('.setting-type').value;
+        const valueInput = row.querySelector('.setting-value');
+        const value = parseInt(valueInput.value);
+        const count = parseInt(row.querySelector('.setting-count').value);
+
+        if (isNaN(count) || count <= 0) {
+            return; // Adet girilmemişse bu satırı atla
+        }
+        if (isNaN(value) && !valueInput.disabled) {
+            displayMessage(`Hata: '${type}' türü için geçerli bir 'Değer' girmelisiniz.`);
+            hasError = true;
+        }
+        
+        newConfig.push({ type, value, count });
+        totalBoxes += count;
+    });
+
+    if (hasError) return; // Hata varsa işlemi durdur
+
+    if (totalBoxes === 0) {
+        displayMessage("En az bir kutu türü için adet girmelisiniz!");
+        return;
+    }
+
+    const confirmed = await customConfirm(`Toplam ${totalBoxes} kutu ile yeni bir oyun başlatılacak. Mevcut oyun sıfırlanacak. Onaylıyor musunuz?`);
+    if (confirmed) {
+        await db.ref('gameConfig/boxContents').set(newConfig);
+        await resetGameBoard(); 
+        displayMessage("Kutu ayarları başarıyla kaydedildi ve oyun yeni ayarlarla yeniden başlatıldı!");
+        closeBoxSettingsModal();
+    }
+}
+function openHelpModal() {
+  helpModal.style.display = 'flex';
+}
+function closeHelpModal() {
+  helpModal.style.display = 'none';
+}
 
 </script>
 </body>
