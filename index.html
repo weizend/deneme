@@ -1856,33 +1856,42 @@ async function afterLogin() {
   function closeAdminPanelModal() { adminPanelModal.style.display = 'none'; }
 // MEVCUT logout FONKSİYONUNU SİLİP YERİNE BU KODU KOMPLE YAPIŞTIR
 
+// YERİNE BU FONKSİYONU YAPIŞTIR
 async function logout() {
     const confirmed = await customConfirm("Çıkış yapmak istediğinize emin misiniz?");
     if (!confirmed) return;
 
-    // --- YENİ: Önce tüm listener'ları kapatıyoruz ---
+    // Önce tüm listener'ları güvenli bir şekilde kapatıyoruz
     detachAllListeners();
 
     auth.signOut().then(() => {
+        // Arayüzü sıfırla
         document.getElementById("gameDiv").style.display = "none";
         document.getElementById("loginContainer").style.display = "block";
-        
         if (activityBellContainer) activityBellContainer.classList.add('hidden');
         if (activityFeedPanel) activityFeedPanel.classList.add('hidden');
-
         switchAuthTab('login');
         
+        // Kullanıcı durumunu sıfırla
         currentUser = null;
         isAdmin = false;
         
+        // --- GÜNCELLENMİŞ KISIM: TÜM ZAMANLAYICILARI TEMİZLE ---
         if (countdownInterval) clearInterval(countdownInterval);
         if (globalCountdownInterval) clearInterval(globalCountdownInterval);
         if (clickCatchTimerInterval) clearInterval(clickCatchTimerInterval);
         if (clickCatchItemInterval) clearInterval(clickCatchItemInterval);
+        if (storeCountdownInterval) clearInterval(storeCountdownInterval);
+        if (spectatorCountdownInterval) clearInterval(spectatorCountdownInterval);
+        
+        // Obje olarak tutulan zamanlayıcıları temizle
         Object.values(activeBlockedUserTimers).forEach(clearInterval);
         activeBlockedUserTimers = {};
-        
-        console.log("Kullanıcı başarıyla çıkış yaptı.");
+        Object.values(activeDailyRewardTimers).forEach(clearInterval);
+        activeDailyRewardTimers = {};
+        activeStoreCountdowns = {};
+
+        console.log("Kullanıcı başarıyla çıkış yaptı ve tüm dinleyiciler/zamanlayıcılar temizlendi.");
         
     }).catch((error) => {
         console.error("Çıkış yaparken hata oluştu: ", error);
