@@ -1950,8 +1950,7 @@ async function logout() {
     ref.on('value', callback);
   }
 
-  // YENİ FONKSİYON: Kullanıcıları arama filtresine göre ekrana çizer
-async function renderUserRankings() {
+  async function renderUserRankings() {
     const searchTerm = document.getElementById('searchUserRanking').value.trim().toLowerCase();
     
     let filteredUsers = allUsersCache;
@@ -1973,7 +1972,7 @@ async function renderUserRankings() {
     };
     allUsersCache.forEach(userData => {
         if ((userData.balance || 0) > leaders.highestCurrentBalance && userData.balance > 0) { leaders.highestCurrentBalance = userData.balance; leaders.currentBalanceUser = userData.username; }
-        if ((userData.highestBalanceEver || 0) > leaders.highestEverBalance && userData.highestBalanceEver > 0) { leaders.highestEverBalance = userData.highestBalanceEver; leaders.highEverBalanceUser = userData.username; }
+        if ((userData.highestBalanceEver || 0) > leaders.highestEverBalance && userData.highestEverBalance > 0) { leaders.highestEverBalance = userData.highestBalanceEver; leaders.highEverBalanceUser = userData.username; }
         if ((userData.surpriseBoxesOpened || 0) > leaders.maxSurpriseBoxes && userData.surpriseBoxesOpened > 0) { leaders.maxSurpriseBoxes = userData.surpriseBoxesOpened; leaders.surpriseBoxUser = userData.username; }
         if ((userData.iflasCount || 0) > leaders.maxBombCount && userData.iflasCount > 0) { leaders.maxBombCount = userData.iflasCount; leaders.bombUser = userData.username; }
         if ((userData.totalSpentPoints || 0) > leaders.maxSpentPoints && userData.totalSpentPoints > 0) { leaders.maxSpentPoints = userData.totalSpentPoints; leaders.spentPointsUser = userData.username; }
@@ -2166,10 +2165,14 @@ async function renderUserRankings() {
                 blockedStatusHtml = `<span class="text-green-400">(Engel Süresi Doldu)</span>`;
             }
 
-            html += `<div class="flex items-center justify-between p-3 mb-2 bg-gray-700 rounded-md border-l-4 border-blue-500 cursor-pointer" onclick="openUserManagementModal('${u}')">
-                <span class="text-gray-200">${u} ${blockedStatusHtml}</span>
-                <span class="text-yellow-300">Puan: ${user.balance || 0}</span>
-                </div>`;
+            const avatarUrl = user.selectedAvatar ? user.selectedAvatar.url : defaultAvatarUrl;
+html += `<div class="flex items-center justify-between p-3 mb-2 bg-gray-700 rounded-md border-l-4 border-blue-500 cursor-pointer hover:bg-gray-600 transition-colors" onclick="openUserManagementModal('${u}')">
+            <div class="flex items-center">
+              <img src="${avatarUrl}" class="w-12 h-12 rounded-md mr-3 object-contain">
+              <span class="text-gray-200">${u} ${blockedStatusHtml}</span>
+            </div>
+            <span class="text-yellow-300">Puan: ${user.balance || 0}</span>
+          </div>`;
           }
       }
       document.getElementById("allUsers").innerHTML = html || "<div class='text-center text-gray-400'>Kullanıcı yok.</div>";
