@@ -910,7 +910,7 @@
         <p><span id="managedBadgeStore" class="inline-block w-6 text-center"></span>Mağazada Harcanan Puan: <span id="managedUserTotalSpent" class="font-bold text-fuchsia-400"></span></p>
         <p><span id="managedBadgeShield" class="inline-block w-6 text-center"></span>Kullanılan Kalkan Sayısı: <span id="managedUserShieldUsedCount" class="font-bold text-fuchsia-400"></span></p>
         <p><span id="managedBadgeClickCatch" class="inline-block w-6 text-center"></span>Tıkla-Yakala Toplanan Puan: <span id="managedUserClickCatchScore" class="font-bold text-fuchsia-400"></span></p>
-      <p><span id="publicBadgeWheel" class="inline-block w-6 text-center"></span>Çevrilen Çark Sayısı: <span id="publicUserWheelSpins" class="font-bold text-fuchsia-400"></span></p>
+      <p><span id="managedBadgeWheel" class="inline-block w-6 text-center"></span>Çevrilen Çark Sayısı: <span id="managedUserWheelSpins" class="font-bold text-fuchsia-400"></span></p>
     </div>
 
     <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -3895,8 +3895,6 @@ async function buyItem(itemId) {
   function openBadgeInfoModal() { badgeInfoModal.style.display = 'flex'; }
   function closeBadgeInfoModal() { badgeInfoModal.style.display = 'none'; }
 
-
-  // YENİ VE GÜNCELLENMİŞ FONKSİYON
 async function openPublicUserDetailModal(username) {
     if (activeBlockedUserTimers[username]) {
         clearInterval(activeBlockedUserTimers[username]);
@@ -3907,41 +3905,30 @@ async function openPublicUserDetailModal(username) {
     const userData = userSnap.val(); 
     if (!userData) return;
 
-    // Tüm liderlik verilerini tek seferde çekiyoruz (performans için)
     const allUsersSnap = await db.ref('users').once('value');
-    const allUsersData = allUsersSnap.val();
-    const currentClickCatchLeader = await getClickCatchLeaderUsername();
-    let leaders = {};
-    allUsersCache.forEach(uData => {
-        if ((uData.balance || 0) > (leaders.highestCurrentBalance || -1)) { leaders.highestCurrentBalance = uData.balance; leaders.currentBalanceUser = uData.username; }
-        if ((uData.highestBalanceEver || 0) > (leaders.highestEverBalance || -1)) { leaders.highestEverBalance = uData.highestBalanceEver; leaders.highEverBalanceUser = uData.username; }
-        if ((uData.surpriseBoxesOpened || 0) > (leaders.maxSurpriseBoxes || -1)) { leaders.maxSurpriseBoxes = uData.surpriseBoxesOpened; leaders.surpriseBoxUser = uData.username; }
-        if ((uData.iflasCount || 0) > (leaders.maxBombCount || -1)) { leaders.maxBombCount = uData.iflasCount; leaders.bombUser = uData.username; }
-        if ((uData.totalSpentPoints || 0) > (leaders.maxSpentPoints || -1)) { leaders.maxSpentPoints = uData.totalSpentPoints; leaders.spentPointsUser = uData.username; }
-        if ((uData.multiplierFoundCount || 0) > (leaders.maxMultiplierFound || -1)) { leaders.maxMultiplierFound = uData.multiplierFoundCount; leaders.multiplierUser = uData.username; }
-        if ((uData.boxesOpenedCount || 0) > (leaders.maxBoxesOpened || -1)) { leaders.maxBoxesOpened = uData.boxesOpenedCount; leaders.boxUser = uData.username; }
-        if ((uData.iflasShieldUsedCount || 0) > (leaders.maxShieldUsed || -1)) { leaders.maxShieldUsed = uData.iflasShieldUsedCount; leaders.shieldUser = uData.username; }
-    });
+    const leaders = await calculateAllLeaders(allUsersSnap.val());
 
     const userLeaderStatus = {
-        isCurrentLeader: username === leaders.currentBalanceUser, isHighLeader: username === leaders.highEverBalanceUser,
-        isSurpriseLeader: username === leaders.surpriseBoxUser, isBombLeader: username === leaders.bombUser,
-        isStoreLeader: username === leaders.spentPointsUser, isMultiplierLeader: username === leaders.multiplierUser,
-        isBoxLeader: username === leaders.boxUser, isShieldLeader: username === leaders.shieldUser,
-        isClickCatchLeader: username === currentClickCatchLeader
+        isCurrentLeader: username === leaders.currentBalanceUser,
+        isHighLeader: username === leaders.highEverBalanceUser,
+        isSurpriseLeader: username === leaders.surpriseBoxUser,
+        isBombLeader: username === leaders.bombUser,
+        isStoreLeader: username === leaders.spentPointsUser,
+        isMultiplierLeader: username === leaders.multiplierUser,
+        isBoxLeader: username === leaders.boxUser,
+        isShieldLeader: username === leaders.shieldUser,
+        isClickCatchLeader: username === leaders.clickCatchLeaderUser,
+        isWheelSpinLeader: username === leaders.wheelSpinUser
     };
 
-    // Yeni HTML yapısını doldurma
     const avatarUrl = userData.selectedAvatar ? userData.selectedAvatar.url : defaultAvatarUrl;
     document.getElementById('publicUserAvatar').src = avatarUrl;
     document.getElementById('publicUserName').textContent = username;
 
-    // Rozetleri yeni getUserBadgesHtml fonksiyonu ile ayırarak yerleştirme
     const badges = getUserBadgesHtml(userData, userLeaderStatus, true);
     document.getElementById('publicUserKingBadge').innerHTML = badges.crown;
     document.getElementById('publicUserOtherBadges').innerHTML = badges.others;
 
-    // Puan & Envanter
     document.getElementById('publicUserBalance').textContent = userData.balance || 0;
     document.getElementById('publicUserHighestBalance').textContent = userData.highestBalanceEver || 0;
     document.getElementById('publicUserBoxRight').textContent = userData.kutuHakki || 0;
@@ -3957,9 +3944,8 @@ async function openPublicUserDetailModal(username) {
     }
     document.getElementById('publicUserMultiplier').textContent = multiplierText;
 
-    // Oyun İstatistikleri
     document.getElementById('publicUserBoxesOpened').textContent = userData.boxesOpenedCount || 0;
-    document.getElementById('publicUserWheelSpins').textContent = userData.wheelSpinsCount || 0; // İSTEDİĞİN YENİ ALAN
+    document.getElementById('publicUserWheelSpins').textContent = userData.wheelSpinsCount || 0;
     document.getElementById('publicUserClickCatchScore').textContent = userData.clickCatchHighestScore || 0;
     document.getElementById('publicUserSurpriseBoxes').textContent = userData.surpriseBoxesOpened || 0;
     document.getElementById('publicUserBombCount').textContent = userData.iflasCount || 0;
@@ -3967,7 +3953,6 @@ async function openPublicUserDetailModal(username) {
     document.getElementById('publicUserShieldUsedCount').textContent = userData.iflasShieldUsedCount || 0;
     document.getElementById('publicUserTotalSpent').textContent = userData.totalSpentPoints || 0;
 
-    // Engelli durumu kontrolü
     const blockedInfoDiv = document.getElementById('publicUserBlockedInfo');
     const countdownEl = document.getElementById('publicUserBlockedCountdown');
     const isCurrentlyBlocked = userData.blocked && userData.blockedUntil && Date.now() < userData.blockedUntil;
@@ -3994,13 +3979,14 @@ async function openPublicUserDetailModal(username) {
     publicUserDetailModal.style.display = 'flex';
 }
   
-  async function openUserManagementModal(username) {
+  // YENİ VE DÜZELTİLMİŞ FONKSİYON
+async function openUserManagementModal(username) {
     if (activeBlockedUserTimers[username]) {
         clearInterval(activeBlockedUserTimers[username]);
         delete activeBlockedUserTimers[username];
     }
     selectedUserForManagement = username;
-    
+
     const [userSnap, allUsersSnap] = await Promise.all([
         db.ref('users/' + username).once('value'),
         db.ref('users').once('value')
@@ -4008,9 +3994,9 @@ async function openPublicUserDetailModal(username) {
 
     const userData = userSnap.val();
     if (!userData) { displayMessage("Kullanıcı bulunamadı."); return; }
-    
+
     const leaders = await calculateAllLeaders(allUsersSnap.val());
-    
+
     const userLeaderStatus = {
         isBoxLeader: username === leaders.boxUser,
         isSurpriseLeader: username === leaders.surpriseBoxUser,
@@ -4072,10 +4058,11 @@ async function openPublicUserDetailModal(username) {
     document.getElementById('managedUserTotalSpent').textContent = userData.totalSpentPoints || 0;
     document.getElementById('managedUserShieldUsedCount').textContent = userData.iflasShieldUsedCount || 0;
     document.getElementById('managedUserClickCatchScore').textContent = userData.clickCatchHighestScore || 0;
-    document.getElementById('managedUserWheelSpins').textContent = userData.wheelSpinsCount || 0; // YENİ EKLENEN SATIR
+    document.getElementById('managedUserWheelSpins').textContent = userData.wheelSpinsCount || 0;
 
     ['managedBadgeWheel', 'managedBadgeBox', 'managedBadgeSurprise', 'managedBadgeBomb', 'managedBadgeMultiplier', 'managedBadgeStore', 'managedBadgeShield', 'managedBadgeClickCatch'].forEach(id => {
-        document.getElementById(id).innerHTML = '';
+        const el = document.getElementById(id);
+        if(el) el.innerHTML = '';
     });
 
     if (userLeaderStatus.isBoxLeader) document.getElementById('managedBadgeBox').innerHTML = '📦';
@@ -4098,11 +4085,7 @@ async function openPublicUserDetailModal(username) {
         }
         const sorted = Object.values(history).sort((a,b) => b.timestamp - a.timestamp);
         sorted.forEach(r => {
-            html += `<div class="p-2 bg-gray-900 mb-2 rounded text-sm">
-                <p><b>Ürün:</b> ${r.itemName}</p>
-                <p><b>Maliyet:</b> ${r.itemCost} Puan</p>
-                <p><b>Tarih:</b> ${new Date(r.timestamp).toLocaleString()}</p>
-            </div>`;
+            html += `<div class="p-2 bg-gray-900 mb-2 rounded text-sm"><b>Ürün:</b> ${r.itemName}, <b>Maliyet:</b> ${r.itemCost} Puan, <b>Tarih:</b> ${new Date(r.timestamp).toLocaleString()}</div>`;
         });
         historyList.innerHTML = html;
     });
@@ -4114,16 +4097,13 @@ async function openPublicUserDetailModal(username) {
             const avatar = userData.avatars[avatarId];
             const avatarCard = document.createElement('div');
             avatarCard.className = 'relative p-2 bg-gray-700 rounded-lg text-center';
-            avatarCard.innerHTML = `
-                <img src="${avatar.imageUrl}" alt="${avatar.name}" class="w-full h-auto rounded-md object-cover aspect-square">
-                <p class="text-xs mt-2 text-white truncate" title="${avatar.name}">${avatar.name}</p>
-                <button onclick="deleteUserAvatar('${username}', '${avatarId}')" class="absolute -top-2 -right-2 bg-red-600 hover:bg-red-500 text-white rounded-full h-7 w-7 flex items-center justify-center text-lg font-bold" title="Bu Avatarı Sil">&times;</button>
-            `;
+            avatarCard.innerHTML = `<img src="${avatar.imageUrl}" alt="${avatar.name}" class="w-full h-auto rounded-md object-cover aspect-square"><p class="text-xs mt-2 text-white truncate" title="${avatar.name}">${avatar.name}</p><button onclick="deleteUserAvatar('${username}', '${avatarId}')" class="absolute -top-2 -right-2 bg-red-600 hover:bg-red-500 text-white rounded-full h-7 w-7 flex items-center justify-center text-lg font-bold" title="Bu Avatarı Sil">&times;</button>`;
             avatarGrid.appendChild(avatarCard);
         }
     } else {
         avatarGrid.innerHTML = '<p class="col-span-full text-center text-gray-500">Bu kullanıcının satın alınmış avatarı yok.</p>';
     }
+
     userManagementModal.style.display = 'flex';
 }
   
