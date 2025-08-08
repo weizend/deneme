@@ -2084,29 +2084,17 @@ function getUserBadgesHtml(u, leaders, forPublicProfile = false) {
         filteredUsers = allUsersCache.filter(u => u.username.toLowerCase().includes(searchTerm));
     }
 
-    const currentClickCatchLeader = await getClickCatchLeaderUsername();
+    // YENİ: allUsersCache (array) verisini, calculateAllLeaders'ın beklediği
+    // { username: { ...data } } formatına (object) çeviriyoruz.
+    const allUsersDataObject = allUsersCache.reduce((obj, user) => {
+        obj[user.username] = user;
+        return obj;
+    }, {});
+    
+    // YENİ: Liderleri hesaplamak için artık merkezi fonksiyonu çağırıyoruz.
+    const leaders = await calculateAllLeaders(allUsersDataObject);
 
-    let leaders = {
-        highestCurrentBalance: -1, currentBalanceUser: null,
-        highestEverBalance: -1, highEverBalanceUser: null,
-        maxSurpriseBoxes: -1, surpriseBoxUser: null,
-        maxBombCount: -1, bombUser: null,
-        maxSpentPoints: -1, spentPointsUser: null,
-        maxMultiplierFound: -1, multiplierUser: null,
-        maxBoxesOpened: -1, boxUser: null,
-        maxShieldUsed: -1, shieldUser: null,
-    };
-    allUsersCache.forEach(userData => {
-        if ((userData.balance || 0) > leaders.highestCurrentBalance && userData.balance > 0) { leaders.highestCurrentBalance = userData.balance; leaders.currentBalanceUser = userData.username; }
-        if ((userData.highestBalanceEver || 0) > leaders.highestEverBalance && (userData.highestBalanceEver || 0) > 0) { leaders.highestEverBalance = userData.highestBalanceEver; leaders.highEverBalanceUser = userData.username; }
-        if ((userData.surpriseBoxesOpened || 0) > leaders.maxSurpriseBoxes && userData.surpriseBoxesOpened > 0) { leaders.maxSurpriseBoxes = userData.surpriseBoxesOpened; leaders.surpriseBoxUser = userData.username; }
-        if ((userData.iflasCount || 0) > leaders.maxBombCount && userData.iflasCount > 0) { leaders.maxBombCount = userData.iflasCount; leaders.bombUser = userData.username; }
-        if ((userData.totalSpentPoints || 0) > leaders.maxSpentPoints && userData.totalSpentPoints > 0) { leaders.maxSpentPoints = userData.totalSpentPoints; leaders.spentPointsUser = userData.username; }
-        if ((userData.multiplierFoundCount || 0) > leaders.maxMultiplierFound && userData.multiplierFoundCount > 0) { leaders.maxMultiplierFound = userData.multiplierFoundCount; leaders.multiplierUser = userData.username; }
-        if ((userData.boxesOpenedCount || 0) > leaders.maxBoxesOpened && userData.boxesOpenedCount > 0) { leaders.maxBoxesOpened = userData.boxesOpenedCount; leaders.boxUser = userData.username; }
-        if ((userData.iflasShieldUsedCount || 0) > leaders.maxShieldUsed && userData.iflasShieldUsedCount > 0) { leaders.maxShieldUsed = userData.iflasShieldUsedCount; leaders.shieldUser = userData.username; }
-    });
-
+    // Sıralama ve render etme kısmı aynı kalıyor.
     filteredUsers.sort((a, b) => (b.balance || 0) - (a.balance || 0));
 
     let html = filteredUsers.map((u, i) => {
@@ -2119,7 +2107,8 @@ function getUserBadgesHtml(u, leaders, forPublicProfile = false) {
             isMultiplierLeader: u.username === leaders.multiplierUser && leaders.maxMultiplierFound > 0,
             isBoxLeader: u.username === leaders.boxUser && leaders.maxBoxesOpened > 0,
             isShieldLeader: u.username === leaders.shieldUser && leaders.maxShieldUsed > 0,
-            isClickCatchLeader: u.username === currentClickCatchLeader
+            isClickCatchLeader: u.username === leaders.clickCatchLeaderUser, // clickCatch lideri calculateAllLeaders'dan geliyor
+            isWheelSpinLeader: u.username === leaders.wheelSpinUser // çark lideri de oradan geliyor
         };
 
         const userIcons = getUserBadgesHtml(u, userLeaderStatus);
@@ -2131,7 +2120,6 @@ function getUserBadgesHtml(u, leaders, forPublicProfile = false) {
             blockedInfo = `<div class="text-red-400 font-bold mt-2">Engelli - Kalan Süre: <span id="countdown-${u.username}">--:--</span></div>`;
         }
 
-        // ... fonksiyonun başı ...
         return `<div class="mb-3 p-3 bg-gray-800 rounded-md border border-gray-700 cursor-pointer hover:bg-gray-700" onclick="openPublicUserDetailModal('${u.username}')">
               <div class="text-center">${userIcons}</div>
               <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between mt-1 gap-2">
@@ -2144,7 +2132,6 @@ function getUserBadgesHtml(u, leaders, forPublicProfile = false) {
               </div>
               ${blockedInfo}
             </div>`;
-// ... fonksiyonun sonu ...
     }).join("");
 
     document.getElementById("allUserRankings").innerHTML = html || "<div class='text-center text-gray-400'>Aramayla eşleşen kullanıcı bulunamadı.</div>";
