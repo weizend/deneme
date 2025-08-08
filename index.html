@@ -2099,16 +2099,16 @@ function getUserBadgesHtml(u, leaders, forPublicProfile = false) {
 
     let html = filteredUsers.map((u, i) => {
         const userLeaderStatus = {
-            isCurrentLeader: u.username === leaders.currentBalanceUser && leaders.highestCurrentBalance > 0,
-            isHighLeader: u.username === leaders.highEverBalanceUser && leaders.highestEverBalance > 0,
-            isSurpriseLeader: u.username === leaders.surpriseBoxUser && leaders.maxSurpriseBoxes > 0,
-            isBombLeader: u.username === leaders.bombUser && leaders.maxBombCount > 0,
-            isStoreLeader: u.username === leaders.spentPointsUser && leaders.maxSpentPoints > 0,
-            isMultiplierLeader: u.username === leaders.multiplierUser && leaders.maxMultiplierFound > 0,
-            isBoxLeader: u.username === leaders.boxUser && leaders.maxBoxesOpened > 0,
-            isShieldLeader: u.username === leaders.shieldUser && leaders.maxShieldUsed > 0,
-            isClickCatchLeader: u.username === leaders.clickCatchLeaderUser, // clickCatch lideri calculateAllLeaders'dan geliyor
-            isWheelSpinLeader: u.username === leaders.wheelSpinUser // çark lideri de oradan geliyor
+            isCurrentLeader: u.username === leaders.currentBalanceUser,
+            isHighLeader: u.username === leaders.highEverBalanceUser,
+            isSurpriseLeader: u.username === leaders.surpriseBoxUser,
+            isBombLeader: u.username === leaders.bombUser,
+            isStoreLeader: u.username === leaders.spentPointsUser,
+            isMultiplierLeader: u.username === leaders.multiplierUser,
+            isBoxLeader: u.username === leaders.boxUser,
+            isShieldLeader: u.username === leaders.shieldUser,
+            isClickCatchLeader: u.username === leaders.clickCatchLeaderUser,
+            isWheelSpinLeader: u.username === leaders.wheelSpinUser
         };
 
         const userIcons = getUserBadgesHtml(u, userLeaderStatus);
