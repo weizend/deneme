@@ -892,9 +892,9 @@
     <h4 class="text-yellow-400 text-2xl font-bold mb-6">Kullanıcı Yönetimi: <span id="managedUserName"></span></h4>
     
     <div id="managedUserDetails" class="text-left text-gray-300 mb-6 space-y-1">
-        <p>Mevcut Puan: <span id="managedUserBalance" class="font-bold text-yellow-300"></span></p>
-        <p>Ulaşılan En Yüksek Puan: <span id="managedUserHighestBalance" class="font-bold text-green-400"></span></p>
-        <p>Kutu Hakkı: <span id="managedUserBoxRight" class="font-bold text-green-400"></span></p>
+    <p><span id="managedBadgeBalance" class="inline-block w-6 text-center"></span>Mevcut Puan: <span id="managedUserBalance" class="font-bold text-yellow-300"></span></p>
+    <p><span id="managedBadgeHighest" class="inline-block w-6 text-center"></span>Ulaşılan En Yüksek Puan: <span id="managedUserHighestBalance" class="font-bold text-green-400"></span></p>
+    <p>Kutu Hakkı: <span id="managedUserBoxRight" class="font-bold text-green-400"></span></p>
         <p>Şans Çarkı Bileti: <span id="managedUserWheelTickets" class="font-bold text-yellow-400"></span></p>
         <p>Tıkla Yakala Bileti: <span id="managedUserClickCatchTickets" class="font-bold text-fuchsia-400"></span></p>
         <p>İflas Kalkanı: <span id="managedUserIflasShield" class="font-bold text-blue-400"></span></p>
@@ -959,11 +959,11 @@
 
     <div class="grid grid-cols-1 md:grid-cols-2 gap-6 text-left">
         <div class="bg-gray-800/70 p-4 rounded-xl border border-gray-700">
-            <h5 class="font-bold text-yellow-200 text-xl mb-3 border-b border-gray-600 pb-2">Puan & Envanter</h5>
-            <div class="space-y-3 text-gray-300">
-                <p class="flex justify-between items-center"><span>🥇 Mevcut Puan:</span> <span id="publicUserBalance" class="font-bold text-yellow-300 text-lg"></span></p>
-                <p class="flex justify-between items-center"><span>🏆 Ulaşılan En Yüksek Puan:</span> <span id="publicUserHighestBalance" class="font-bold text-green-400 text-lg"></span></p>
-                <hr class="border-gray-600 !my-2">
+    <h5 class="font-bold text-yellow-200 text-xl mb-3 border-b border-gray-600 pb-2">Puan & Envanter</h5>
+    <div class="space-y-3 text-gray-300">
+        <p class="flex justify-between items-center"><span><span id="publicBadgeBalance" class="inline-block w-6 text-center"></span>Mevcut Puan:</span> <span id="publicUserBalance" class="font-bold text-yellow-300 text-lg"></span></p>
+        <p class="flex justify-between items-center"><span><span id="publicBadgeHighest" class="inline-block w-6 text-center"></span>Ulaşılan En Yüksek Puan:</span> <span id="publicUserHighestBalance" class="font-bold text-green-400 text-lg"></span></p>
+        <hr class="border-gray-600 !my-2">
                 <p class="flex justify-between items-center"><span>📦 Kutu Hakkı:</span> <span id="publicUserBoxRight" class="font-bold text-green-400 text-lg"></span></p>
                 <p class="flex justify-between items-center"><span>🎟️ Şans Çarkı Bileti:</span> <span id="publicUserWheelTickets" class="font-bold text-yellow-400 text-lg"></span></p>
                 <p class="flex justify-between items-center"><span>🎯 Tıkla Yakala Bileti:</span> <span id="publicUserClickCatchTickets" class="font-bold text-fuchsia-400 text-lg"></span></p>
@@ -2009,8 +2009,7 @@ function getUserBadgesHtml(u, leaders, forPublicProfile = false) {
           crownHtml = `<span class="text-3xl" title="Tüm Liderlik Rozetlerinin Sahibi!">👑</span>`;
       } 
 
-      // Liderlik rozetleri artık istatistiklerin yanında gösterileceği için buradan kaldırıldı.
-      // Sadece genel rozetler (varsa) burada kalır. Örn: Sürpriz kutu bulmuş ama lider değil.
+      // Sadece genel rozetler (liderlik gerektirmeyenler) burada kalır.
       if (!leaders.isSurpriseLeader && (u.surpriseBoxesOpened || 0) > 0) {
           otherBadges.push(`<span class="text-xl" title="Sürpriz Kutu Rozeti">🎁</span>`);
       }
@@ -2023,7 +2022,7 @@ function getUserBadgesHtml(u, leaders, forPublicProfile = false) {
           }
       }
 
-      // Eğer sıralama listesi için çağrıldıysa, tüm rozetleri göster
+      // Eğer sıralama listesi için çağrıldıysa, tüm liderlik rozetlerini göster
       const rankingBadges = [];
       if (leaders.isCurrentLeader) rankingBadges.push(`<span class="text-xl" title="Mevcut Puan Lideri">🥇</span>`);
       if (leaders.isHighLeader) rankingBadges.push(`<span class="text-xl" title="Ulaşılan En Yüksek Puan Lideri">🏆</span>`);
@@ -2035,12 +2034,14 @@ function getUserBadgesHtml(u, leaders, forPublicProfile = false) {
       if (leaders.isMultiplierLeader) rankingBadges.push(`<span class="text-xl" title="Çarpan Lideri">✖️</span>`);
       if (leaders.isStoreLeader) rankingBadges.push(`<span class="text-xl" title="Alışveriş Lideri">🛒</span>`);
       if (leaders.isShieldLeader) rankingBadges.push(`<span class="text-xl" title="Kalkan Lideri">🛡️</span>`);
+      
+      // Genel rozetleri de sıralama listesine ekle
       if (!leaders.isSurpriseLeader && (u.surpriseBoxesOpened || 0) > 0) {
         rankingBadges.push(`<span class="text-xl" title="Sürpriz Kutu Rozeti">🎁</span>`);
       }
 
       return (hasKingCrown ? `<div class="flex justify-center w-full mb-1">${crownHtml}</div>` : '') + `<div class="flex items-center justify-center gap-1 h-6">${rankingBadges.join('')}</div>`;
-  }
+}
 
   function loadUserRankingsAndBoxCounts() {
     const ref = db.ref('users');
@@ -2134,8 +2135,7 @@ function getUserBadgesHtml(u, leaders, forPublicProfile = false) {
     document.getElementById("totalUsers").textContent = allUsersCache.length;
 }
 
-    // YENİ YARDIMCI FONKSİYON: Tüm liderleri tek seferde hesaplar
-async function calculateAllLeaders(allUsersData) {
+    async function calculateAllLeaders(allUsersData) {
     const currentClickCatchLeader = await getClickCatchLeaderUsername();
     let leaders = {
         highestCurrentBalance: -1, currentBalanceUser: null,
@@ -2153,7 +2153,7 @@ async function calculateAllLeaders(allUsersData) {
         if (u.toLowerCase() === 'weizendtv' || !allUsersData[u].approved) continue;
         const userData = allUsersData[u];
         
-        // DÜZELTME: Lider olabilmek için istatistiğin 0'dan büyük olması şartı eklendi.
+        // Lider olabilmek için istatistiğin 0'dan büyük olması şartı eklendi.
         const userBalance = userData.balance || 0;
         if (userBalance > 0 && userBalance > leaders.highestCurrentBalance) {
             leaders.highestCurrentBalance = userBalance;
@@ -2215,8 +2215,7 @@ async function calculateAllLeaders(allUsersData) {
     return leaders;
 }
     
-  // DEĞİŞTİRİLECEK FONKSİYON
-async function loadLeaderboardRanking() {
+  async function loadLeaderboardRanking() {
     const ref = db.ref('users');
     const callback = async snap => {
         let usersData = snap.val();
@@ -2228,18 +2227,21 @@ async function loadLeaderboardRanking() {
         const leaders = await calculateAllLeaders(usersData);
         
         let leaderUsers = [];
+        // Herhangi bir liderliği olan tüm kullanıcıların listesini oluştur
         const leaderUsernames = new Set([
             leaders.currentBalanceUser, leaders.highEverBalanceUser, leaders.surpriseBoxUser,
             leaders.bombUser, leaders.spentPointsUser, leaders.multiplierUser,
             leaders.boxUser, leaders.shieldUser, leaders.clickCatchLeaderUser, leaders.wheelSpinUser
         ]);
         
-        leaderUsernames.delete(null);
+        leaderUsernames.delete(null); // Listede null değer varsa kaldır
 
         Object.entries(usersData).forEach(([username, userData]) => {
             if (username === "weizendtv" || !userData.approved) return;
-            // SADECE GERÇEK LİDERLERİ ALAN DÜZELTİLMİŞ KONTROL
+            
+            // Eğer kullanıcı herhangi bir liderlik listesindeyse
             if (leaderUsernames.has(username)) {
+                // O kullanıcı için özel liderlik durumlarını belirle
                 const userLeaderStatus = {
                     isCurrentLeader: username === leaders.currentBalanceUser,
                     isHighLeader: username === leaders.highEverBalanceUser,
@@ -2256,14 +2258,16 @@ async function loadLeaderboardRanking() {
             }
         });
 
+        // Liderleri sahip oldukları rozet sayısına göre sırala
         leaderUsers.sort((a, b) => {
             const aBadgeCount = Object.values(a).filter(val => val === true).length;
             const bBadgeCount = Object.values(b).filter(val => val === true).length;
             if (bBadgeCount !== aBadgeCount) return bBadgeCount - aBadgeCount;
-            return (b.wheelSpinsCount || 0) - (a.wheelSpinsCount || 0);
+            return (b.balance || 0) - (a.balance || 0); // Eşitlik durumunda puana göre sırala
         });
 
         let html = leaderUsers.map((u, i) => {
+            // Her kullanıcı için kendi özel liderlik durumlarına göre rozetleri oluştur
             const badgesHtml = getUserBadgesHtml(u, u);
             const avatarUrl = u.selectedAvatar ? u.selectedAvatar.url : defaultAvatarUrl;
             return `<div class="mb-3 p-3 bg-gray-800 rounded-md border border-gray-700 cursor-pointer hover:bg-gray-700" onclick="openPublicUserDetailModal('${u.username}')"><div class="text-center">${badgesHtml}</div><div class="flex items-center justify-start mt-1"><span class="font-semibold text-lg text-yellow-300 mr-3 w-8 text-left">${i + 1}.</span><img src="${avatarUrl}" class="w-12 h-12 rounded-md mr-3 object-contain"><span class="font-semibold text-lg">${u.username}</span></div></div>`;
@@ -3964,6 +3968,7 @@ async function openPublicUserDetailModal(username) {
     const allUsersSnap = await db.ref('users').once('value');
     const leaders = await calculateAllLeaders(allUsersSnap.val());
 
+    // Görüntülenen kullanıcıya özel liderlik durumlarını belirle
     const userLeaderStatus = {
         isCurrentLeader: username === leaders.currentBalanceUser,
         isHighLeader: username === leaders.highEverBalanceUser,
@@ -3980,8 +3985,11 @@ async function openPublicUserDetailModal(username) {
     const avatarUrl = userData.selectedAvatar ? userData.selectedAvatar.url : defaultAvatarUrl;
     document.getElementById('publicUserAvatar').src = avatarUrl;
     document.getElementById('publicUserName').textContent = username;
+  // YENİ EKLENEN KISIM: İlgili satırların başındaki rozetleri dinamik olarak ekler veya kaldırır.
+    document.getElementById('publicBadgeBalance').innerHTML = userLeaderStatus.isCurrentLeader ? '🥇' : '';
+    document.getElementById('publicBadgeHighest').innerHTML = userLeaderStatus.isHighLeader ? '🏆' : '';
 
-    // Sadece genel rozetler (Kral Tacı ve Sürpriz Kutu bulan) üstte gösterilir
+    // Rozetleri bu kullanıcıya özel durumlarla oluştur
     const badges = getUserBadgesHtml(userData, userLeaderStatus, true);
     document.getElementById('publicUserKingBadge').innerHTML = badges.crown;
     document.getElementById('publicUserOtherBadges').innerHTML = badges.others;
@@ -4012,7 +4020,7 @@ async function openPublicUserDetailModal(username) {
     document.getElementById('publicUserShieldUsedCount').textContent = userData.iflasShieldUsedCount || 0;
     document.getElementById('publicUserTotalSpent').textContent = userData.totalSpentPoints || 0;
     
-    // İstatistiklerin yanındaki rozetleri temizle ve yeniden doldur
+    // İstatistiklerin yanındaki liderlik rozetlerini göster
     const statBadgeIds = ['box', 'wheel', 'clickcatch', 'surprise', 'bomb', 'multiplier', 'shield', 'store'];
     statBadgeIds.forEach(id => document.getElementById(`badge-stat-${id}`).innerHTML = '');
 
@@ -4070,7 +4078,10 @@ async function openUserManagementModal(username) {
 
     const leaders = await calculateAllLeaders(allUsersSnap.val());
 
+    // Yönetilen kullanıcıya özel liderlik durumlarını belirle
     const userLeaderStatus = {
+        isCurrentLeader: username === leaders.currentBalanceUser,
+        isHighLeader: username === leaders.highEverBalanceUser,
         isBoxLeader: username === leaders.boxUser,
         isSurpriseLeader: username === leaders.surpriseBoxUser,
         isBombLeader: username === leaders.bombUser,
@@ -4080,10 +4091,12 @@ async function openUserManagementModal(username) {
         isClickCatchLeader: username === leaders.clickCatchLeaderUser,
         isWheelSpinLeader: username === leaders.wheelSpinUser
     };
+  // YENİ EKLENEN KISIM: Admin panelindeki satır başı rozetlerini de dinamik hale getirir.
+    document.getElementById('managedBadgeBalance').innerHTML = userLeaderStatus.isCurrentLeader ? '🥇' : '';
+    document.getElementById('managedBadgeHighest').innerHTML = userLeaderStatus.isHighLeader ? '🏆' : '';
 
     const avatarUrl = userData.selectedAvatar ? userData.selectedAvatar.url : defaultAvatarUrl;
     document.getElementById('managedUserAvatar').src = avatarUrl;
-
     document.getElementById('managedUserName').textContent = username;
     document.getElementById('managedUserBalance').textContent = userData.balance || 0;
     document.getElementById('managedUserHighestBalance').textContent = userData.highestBalanceEver || 0;
@@ -4133,6 +4146,7 @@ async function openUserManagementModal(username) {
     document.getElementById('managedUserClickCatchScore').textContent = userData.clickCatchHighestScore || 0;
     document.getElementById('managedUserWheelSpins').textContent = userData.wheelSpinsCount || 0;
 
+    // Yönetim panelindeki liderlik rozetlerini göster
     ['managedBadgeWheel', 'managedBadgeBox', 'managedBadgeSurprise', 'managedBadgeBomb', 'managedBadgeMultiplier', 'managedBadgeStore', 'managedBadgeShield', 'managedBadgeClickCatch'].forEach(id => {
         const el = document.getElementById(id);
         if(el) el.innerHTML = '';
