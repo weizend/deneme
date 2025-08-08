@@ -427,19 +427,31 @@
         </div>
 
         <div id="chanceWheelContent" class="w-full hidden">
-            <div class="bg-gray-800 p-6 rounded-xl shadow-lg border border-red-700 text-center">
-                <h3 class="text-yellow-400 text-3xl font-bold mb-4">Şans Çarkı</h3>
-                <p class="text-gray-300 mb-2">Çarkı çevirerek harika ödüller kazanma şansı yakala!</p>
-                <p class="text-lg font-semibold mb-4">Çevirme Bedeli: <span class="text-green-400">1 Çark Bileti</span> | Mevcut Biletlerin: <span id="wheelTicketBalance" class="text-yellow-400 font-bold">0</span></p>
-                <div id="wheelContainer">
-                    <div id="wheel"></div>
-                    <div id="wheelMarker"></div>
-                </div>
-                <button id="spinWheelBtn" onclick="spinWheel()" class="py-3 px-10 bg-red-700 hover:bg-red-600 text-white font-bold rounded-lg shadow-md hover:shadow-lg transform hover:-translate-y-1 transition duration-300">
-                    Çarkı Çevir!
-                </button>
-            </div>
+    <div class="bg-gray-800 p-6 rounded-xl shadow-lg border border-red-700 text-center">
+        <div class="flex justify-center items-center gap-4 mb-4">
+            <h3 class="text-yellow-400 text-3xl font-bold">Şans Çarkı</h3>
+            <button id="wheelSettingsButton" onclick="openWheelSettingsModal()" class="hidden py-1 px-3 text-sm bg-teal-600 hover:bg-teal-500 rounded-lg">Çark Ayarları</button>
         </div>
+        
+        <p class="text-gray-300 mb-2">Çarkı çevirerek harika ödüller kazanma şansı yakala!</p>
+        <p class="text-lg font-semibold mb-4">Çevirme Bedeli: <span class="text-green-400">1 Çark Bileti</span> | Mevcut Biletlerin: <span id="wheelTicketBalance" class="text-yellow-400 font-bold">0</span></p>
+        
+        <div id="wheelContainer">
+            <div id="wheel"></div>
+            <div id="wheelMarker"></div>
+        </div>
+
+        <button id="spinWheelBtn" onclick="spinWheel()" class="py-3 px-10 bg-red-700 hover:bg-red-600 text-white font-bold rounded-lg shadow-md hover:shadow-lg transform hover:-translate-y-1 transition duration-300">
+            Çarkı Çevir!
+        </button>
+
+        <div class="mt-8 bg-gray-900/50 p-4 rounded-lg border border-gray-700 max-w-lg mx-auto">
+            <h4 class="text-yellow-300 text-lg font-semibold mb-3">Son Kazananlar</h4>
+            <div id="wheelHistoryList" class="scrollable-list max-h-40 overflow-y-auto text-left">
+                </div>
+        </div>
+    </div>
+</div>
 
         <div id="clickCatchContent" class="w-full hidden">
     
@@ -1271,6 +1283,23 @@
         <p id="spectatorResult" class="text-2xl text-green-400 font-bold mt-6 h-8"></p>
     </div>
 </div>
+  <div id="wheelSettingsModal" class="modal-overlay fixed inset-0 bg-black bg-opacity-70 flex justify-center items-center z-[9999] hidden">
+  <div class="modal-content bg-gray-800 p-8 rounded-xl shadow-2xl border border-teal-500 w-11/12 max-w-4xl text-center relative max-h-[90vh] flex flex-col">
+    <button class="modal-close-button" onclick="closeWheelSettingsModal()">&times;</button>
+    <h3 class="text-teal-300 text-3xl font-bold mb-6">Şans Çarkı Ayarları</h3>
+    
+    <div class="flex-grow overflow-y-auto scrollable-list pr-4 space-y-2" id="wheelSettingsRowsContainer">
+      </div>
+
+    <div class="mt-6 pt-4 border-t border-gray-700">
+        <div class="flex flex-col sm:flex-row gap-4">
+            <button onclick="addWheelSettingRow()" class="flex-1 py-3 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-lg shadow-md">Yeni Dilim Ekle</button>
+            <button onclick="resetWheelSettingsToDefault()" class="flex-1 py-3 bg-yellow-600 hover:bg-yellow-500 text-white font-bold rounded-lg shadow-md">Varsayılana Döndür</button>
+            <button onclick="saveWheelSettings()" class="flex-1 py-3 bg-green-700 hover:bg-green-600 text-white font-bold rounded-lg shadow-md">Ayarları Kaydet</button>
+        </div>
+    </div>
+  </div>
+</div>
   <script>
   // Firebase yapılandırması
   const firebaseConfig = {
@@ -1404,20 +1433,21 @@
   const wheel = document.getElementById('wheel');
   const spinBtn = document.getElementById('spinWheelBtn');
   let isWheelSpinning = false;
-  const wheelSegments = [
-    { type: 'points', value: 100, label: '100 Puan', color: '#f44336' },
-    { type: 'boxRights', value: 1, label: '+1 Kutu Hakkı', color: '#4caf50' },
-    { type: 'pas', label: 'Pas', color: '#607d8b' },
-    { type: 'points', value: 250, label: '250 Puan', color: '#2196f3' },
-    { type: 'iflasShield', value: 1, label: '+1 Kalkan', color: '#ffeb3b' },
-    { type: 'pas', label: 'Pas', color: '#607d8b' },
-    { type: 'points', value: 10, label: '10 Puan', color: '#9c27b0' },
-    { type: 'boxRights', value: 3, label: '+3 Kutu Hakkı', color: '#e91e63' },
-    { type: 'pas', label: 'Pas', color: '#607d8b' },
-    { type: 'points', value: 1000, label: '1000 Puan', color: '#00bcd4' },
-    { type: 'tempMultiplier', value: 2, duration: 3, label: '2x Çarpan (3 Kutu)', color: '#ff9800' },
-    { type: 'surpriseBox', value: 1, label: 'Sürpriz Kutu!', color: '#cddc39' }
-  ];
+  let wheelSegments = []; // Bu artık veritabanından doldurulacak
+const defaultWheelSegments = [
+    { type: 'points', value: 100, label: '100 Puan', color: '#f44336', weight: 20 },
+    { type: 'boxRights', value: 1, label: '+1 Kutu Hakkı', color: '#4caf50', weight: 15 },
+    { type: 'pas', label: 'Pas', color: '#607d8b', weight: 10 },
+    { type: 'points', value: 250, label: '250 Puan', color: '#2196f3', weight: 10 },
+    { type: 'iflasShield', value: 1, label: '+1 Kalkan', color: '#ffeb3b', weight: 5 },
+    { type: 'pas', label: 'Pas', color: '#607d8b', weight: 10 },
+    { type: 'points', value: 10, label: '10 Puan', color: '#9c27b0', weight: 20 },
+    { type: 'boxRights', value: 3, label: '+3 Kutu Hakkı', color: '#e91e63', weight: 2 },
+    { type: 'pas', label: 'Pas', color: '#607d8b', weight: 10 },
+    { type: 'points', value: 1000, label: '1000 Puan', color: '#00bcd4', weight: 1 },
+    { type: 'tempMultiplier', value: 2, duration: 3, label: '2x Çarpan (3 Kutu)', color: '#ff9800', weight: 2 },
+    { type: 'surpriseBox', value: 1, label: 'Sürpriz Kutu!', color: '#cddc39', weight: 1 }
+];
   
   // Tıkla Yakala Değişkenleri
   let clickCatchGameActive = false;
@@ -1722,6 +1752,7 @@ async function afterLogin() {
     }
 
     showSection('game');
+    await loadWheelSettingsFromDB();
     renderWheel();
     
     loadBalanceAndBoxRights();
@@ -1778,6 +1809,7 @@ async function afterLogin() {
     }
   }
   function showSection(sectionId) {
+    
     document.getElementById('gameContent').classList.add('hidden');
     document.getElementById('storeSection').classList.add('hidden');
     document.getElementById('announcementsContent').classList.add('hidden');
@@ -1841,7 +1873,16 @@ async function afterLogin() {
             document.getElementById('clickCatchAdminButtonsContainer').classList.remove('hidden');
             loadSoloGameSettings(); 
         }
+    } else if (sectionId === 'chanceWheel') {
+    loadWheelHistory();
+    // YENİ EKLENEN KONTROL: Kullanıcı admin ise ayarlar butonunu göster.
+    const wheelSettingsBtn = document.getElementById('wheelSettingsButton');
+    if (isAdmin) {
+        wheelSettingsBtn.classList.remove('hidden');
+    } else {
+        wheelSettingsBtn.classList.add('hidden');
     }
+}
     
     currentActiveSection = sectionId;
   }
@@ -5123,7 +5164,6 @@ function openSpectatorModal(sessionData) {
   // spinWheel FONKSİYONUNU BUNUNLA DEĞİŞTİR
 async function spinWheel() {
     if (isWheelSpinning) return;
-    
     if (isAdmin) {
         displayMessage("Adminler çark çeviremez.");
         return;
@@ -5134,12 +5174,12 @@ async function spinWheel() {
     const userData = userSnap.val();
 
     if (!userData || (userData.carkBileti || 0) < 1) {
-        displayMessage("Çarkı çevirmek için yeterli biletiniz yok. Mağazadan satın alabilirsiniz.");
+        displayMessage("Çarkı çevirmek için yeterli biletiniz yok.");
         return;
     }
     
-    if (userData.multiplierSource === 'store' || userData.multiplierSource === 'box') {
-        const confirmSpin = await customConfirm("Zaten aktif bir çarpanınız var. Çarktan yeni bir çarpan çıkarsa, mevcut çarpanınızın üzerine yazılacaktır. Devam etmek istiyor musunuz?");
+    if (userData.multiplierSource !== 'none') {
+        const confirmSpin = await customConfirm("Aktif bir çarpanınız var. Çarktan yeni bir çarpan çıkarsa, mevcut çarpanınızın üzerine yazılır. Devam etmek istiyor musunuz?");
         if (!confirmSpin) return;
     }
 
@@ -5149,9 +5189,19 @@ async function spinWheel() {
 
     await userRef.update({ carkBileti: userData.carkBileti - 1 });
 
+    const totalWeight = wheelSegments.reduce((sum, seg) => sum + (seg.weight || 1), 0);
+    let randomWeight = Math.random() * totalWeight;
+    let winningIndex = -1;
+    for (let i = 0; i < wheelSegments.length; i++) {
+        randomWeight -= (wheelSegments[i].weight || 1);
+        if (randomWeight < 0) {
+            winningIndex = i;
+            break;
+        }
+    }
+    
     const segmentAngle = 360 / wheelSegments.length;
-    const randomIndex = Math.floor(Math.random() * wheelSegments.length);
-    const stopAngle = (randomIndex * segmentAngle) + (segmentAngle / 2);
+    const stopAngle = (winningIndex * segmentAngle) + (segmentAngle / 2);
     
     const randomSpins = 5 + Math.random() * 5;
     const finalRotation = (360 * randomSpins) + stopAngle;
@@ -5164,11 +5214,25 @@ async function spinWheel() {
         spinBtn.disabled = false;
         spinBtn.textContent = 'Çarkı Çevir!';
 
-        const winningSegment = wheelSegments[randomIndex];
+        const winningSegment = wheelSegments[winningIndex];
         let message = `Tebrikler, çarktan <b>${winningSegment.label}</b> kazandın!`;
         let updates = {};
         
-        // YENİ: Aktivite kaydı için kazananın metnini logla
+        const historyEntry = {
+            username: currentUser,
+            prize: winningSegment.label,
+            timestamp: firebase.database.ServerValue.TIMESTAMP
+        };
+        const newHistoryRef = db.ref('wheelHistory').push();
+        await newHistoryRef.set(historyEntry);
+
+        db.ref('wheelHistory').orderByChild('timestamp').limitToFirst(1).once('value', (snapshot) => {
+            if (snapshot.numChildren() > 20) {
+                const oldestKey = Object.keys(snapshot.val())[0];
+                db.ref('wheelHistory/' + oldestKey).remove();
+            }
+        });
+
         logActivity('spinWheel', currentUser, { result: winningSegment.label });
         
         const currentUserDataSnap = await userRef.once('value');
@@ -5177,9 +5241,7 @@ async function spinWheel() {
         switch(winningSegment.type) {
             case 'points':
                 updates.balance = (currentUserData.balance || 0) + winningSegment.value;
-                if(updates.balance > (currentUserData.highestBalanceEver || 0)){
-                    updates.highestBalanceEver = updates.balance;
-                }
+                if(updates.balance > (currentUserData.highestBalanceEver || 0)) updates.highestBalanceEver = updates.balance;
                 break;
             case 'boxRights':
                 updates.kutuHakki = (currentUserData.kutuHakki || 0) + winningSegment.value;
@@ -5193,25 +5255,15 @@ async function spinWheel() {
                 updates.multiplierRemainingUses = winningSegment.duration;
                 break;
             case 'surpriseBox':
-                 db.ref('surprise_box_session').set({
-                    active: true,
-                    user: currentUser,
-                    multiplier: 1, 
-                    cards: shuffleArray([...cardValues]),
-                    selection: null,
-                    result: null,
-                    timestamp: firebase.database.ServerValue.TIMESTAMP
-                });
-                openCardSelectionModal(currentUser);
-                break;
+                 db.ref('surprise_box_session').set({ active: true, user: currentUser, multiplier: 1, cards: shuffleArray([...cardValues]), selection: null, result: null, timestamp: firebase.database.ServerValue.TIMESTAMP });
+                 openCardSelectionModal(currentUser);
+                 break;
             case 'pas':
                 message = "Bu seferlik pas! Bir dahaki sefere daha şanslı olabilirsin.";
                 break;
         }
 
-        if(Object.keys(updates).length > 0) {
-            await userRef.update(updates);
-        }
+        if(Object.keys(updates).length > 0) await userRef.update(updates);
         displayMessage(message);
 
         const currentRotation = finalRotation % 360;
@@ -6583,6 +6635,165 @@ async function resetBoxSettingsToDefault() {
     });
 
     updateTotalBoxCount(); // Toplam kutu sayısını güncelle
+}
+
+    // --- YENİ: ŞANS ÇARKI YÖNETİM FONKSİYONLARI ---
+
+async function loadWheelSettingsFromDB() {
+    const settingsRef = db.ref('gameConfig/wheelSegments');
+    const snapshot = await settingsRef.once('value');
+    if (snapshot.exists()) {
+        wheelSegments = snapshot.val();
+    } else {
+        wheelSegments = defaultWheelSegments;
+    }
+    renderWheel();
+}
+
+function openWheelSettingsModal() {
+    if (!isAdmin) return;
+    const container = document.getElementById('wheelSettingsRowsContainer');
+    container.innerHTML = '';
+    wheelSegments.forEach(item => addWheelSettingRow(item));
+    wheelSettingsModal.style.display = 'flex';
+}
+
+function closeWheelSettingsModal() {
+    wheelSettingsModal.style.display = 'none';
+}
+
+function addWheelSettingRow(item = {}) {
+    const container = document.getElementById('wheelSettingsRowsContainer');
+    const row = document.createElement('div');
+    row.className = 'wheel-setting-row grid grid-cols-1 sm:grid-cols-6 items-center gap-3 p-3 bg-gray-900 rounded-lg';
+
+    const type = item.type || 'points';
+    const value = item.value || '';
+    const duration = item.duration || '';
+    const label = item.label || '';
+    const color = item.color || '#ffffff';
+    const weight = item.weight || 10;
+
+    row.innerHTML = `
+        <select class="setting-type col-span-1 sm:col-span-1 bg-gray-700 p-2 rounded-md text-white border border-gray-600" onchange="handleWheelRowTypeChange(this)">
+            <option value="points" ${type === 'points' ? 'selected' : ''}>Puan</option>
+            <option value="boxRights" ${type === 'boxRights' ? 'selected' : ''}>Kutu Hakkı</option>
+            <option value="iflasShield" ${type === 'iflasShield' ? 'selected' : ''}>Kalkan</option>
+            <option value="tempMultiplier" ${type === 'tempMultiplier' ? 'selected' : ''}>Çarpan</option>
+            <option value="surpriseBox" ${type === 'surpriseBox' ? 'selected' : ''}>Sürpriz Kutu</option>
+            <option value="pas" ${type === 'pas' ? 'selected' : ''}>Pas</option>
+        </select>
+        <input type="text" value="${label}" class="setting-label col-span-1 sm:col-span-2 bg-gray-700 p-2 rounded-md text-white" placeholder="Etiket (Örn: 100 Puan)">
+        <input type="number" value="${value}" class="setting-value bg-gray-700 p-2 rounded-md text-white" placeholder="Değer">
+        <input type="number" value="${duration}" class="setting-duration bg-gray-700 p-2 rounded-md text-white" placeholder="Süre/Kullanım">
+        <div class="col-span-1 sm:col-span-1 flex items-center gap-2">
+            <input type="color" value="${color}" class="setting-color h-10 w-10 p-1 bg-gray-700 rounded-md">
+            <input type="number" value="${weight}" class="setting-weight flex-grow bg-gray-700 p-2 rounded-md text-white" placeholder="Şans Ağırlığı">
+            <button class="bg-red-700 hover:bg-red-600 text-white p-2 rounded-md" onclick="this.parentElement.parentElement.remove();">Sil</button>
+        </div>
+    `;
+    container.appendChild(row);
+    handleWheelRowTypeChange(row.querySelector('.setting-type'));
+}
+
+function handleWheelRowTypeChange(selectElement) {
+    const row = selectElement.closest('.wheel-setting-row');
+    const valueInput = row.querySelector('.setting-value');
+    const durationInput = row.querySelector('.setting-duration');
+    const selectedType = selectElement.value;
+
+    valueInput.disabled = false;
+    durationInput.disabled = true;
+
+    if (selectedType === 'pas') {
+        valueInput.disabled = true;
+    } else if (selectedType === 'tempMultiplier') {
+        durationInput.disabled = false;
+    }
+}
+
+async function saveWheelSettings() {
+    if (!isAdmin) return;
+
+    const newConfig = [];
+    let hasError = false;
+    document.querySelectorAll('.wheel-setting-row').forEach(row => {
+        if(hasError) return;
+        
+        const type = row.querySelector('.setting-type').value;
+        const label = row.querySelector('.setting-label').value.trim();
+        const value = parseInt(row.querySelector('.setting-value').value);
+        const duration = parseInt(row.querySelector('.setting-duration').value);
+        const color = row.querySelector('.setting-color').value;
+        const weight = parseInt(row.querySelector('.setting-weight').value);
+
+        if (!label || !color || isNaN(weight) || weight <= 0) {
+            displayMessage("Her dilim için Etiket, Renk ve geçerli bir Şans Ağırlığı girmelisiniz.");
+            hasError = true;
+        }
+
+        const segment = { type, label, color, weight };
+        if (!row.querySelector('.setting-value').disabled) segment.value = value;
+        if (!row.querySelector('.setting-duration').disabled) segment.duration = duration;
+        
+        newConfig.push(segment);
+    });
+
+    if (hasError) return;
+    
+    if (newConfig.length === 0) {
+        displayMessage("Çarkta en az bir dilim olmalıdır.");
+        return;
+    }
+
+    const confirmed = await customConfirm("Yeni çark ayarları kaydedilecek. Onaylıyor musunuz?");
+    if (confirmed) {
+        await db.ref('gameConfig/wheelSegments').set(newConfig);
+        await loadWheelSettingsFromDB();
+        displayMessage("Şans Çarkı ayarları başarıyla kaydedildi.");
+        closeWheelSettingsModal();
+    }
+}
+
+async function resetWheelSettingsToDefault() {
+    if (!isAdmin) return;
+    const confirmed = await customConfirm("Mevcut ayarları silip varsayılan çark yapılandırmasına dönmek istediğinize emin misiniz? (Değişiklikleri kalıcı yapmak için kaydetmeniz gerekir.)");
+    if (!confirmed) return;
+    const container = document.getElementById('wheelSettingsRowsContainer');
+    container.innerHTML = '';
+    defaultWheelSegments.forEach(item => addWheelSettingRow(item));
+}
+
+function loadWheelHistory() {
+    const historyRef = db.ref('wheelHistory').limitToLast(10);
+    const listEl = document.getElementById('wheelHistoryList');
+    
+    const callback = (snapshot) => {
+        listEl.innerHTML = '';
+        if (!snapshot.exists()) {
+            listEl.innerHTML = '<p class="text-center text-gray-500">Henüz çark çevrilmedi.</p>';
+            return;
+        }
+        
+        const history = [];
+        snapshot.forEach(child => {
+            history.push(child.val());
+        });
+        history.reverse(); // En yeni en üstte olsun
+
+        history.forEach(item => {
+            const timeAgo = formatRelativeTime(item.timestamp);
+            listEl.innerHTML += `
+                <div class="p-2 bg-gray-800 rounded-md mb-2 text-sm flex justify-between items-center">
+                    <span><b>${item.username}:</b> <span class="text-yellow-200">${item.prize}</span></span>
+                    <span class="text-gray-500 text-xs">${timeAgo}</span>
+                </div>
+            `;
+        });
+    };
+    
+    // Bu listener'ı yönetmeye gerek yok çünkü sadece o ekranda aktif.
+    historyRef.on('value', callback);
 }
 
   function openHelpModal() {
