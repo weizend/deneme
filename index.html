@@ -887,7 +887,11 @@
       <button onclick="resetUser(selectedUserForManagement)" class="py-3 bg-orange-600 hover:bg-orange-500 text-white font-bold rounded-lg shadow-md">Kullanıcıyı Sıfırla</button>
       <button onclick="denyUser(selectedUserForManagement, false, true)" class="py-3 bg-gray-600 hover:bg-gray-500 text-white font-bold rounded-lg shadow-md lg:col-span-3">Kullanıcıyı Sil</button>
     </div>
-
+<div class="bg-gray-900 p-6 rounded-lg border border-gray-700 mt-6">
+      <h4 class="text-yellow-300 text-xl font-semibold mb-4">Avatar Yönetimi</h4>
+      <div id="managedUserAvatarGrid" class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-4 scrollable-list max-h-60 overflow-y-auto p-3 bg-gray-800 rounded-md">
+        </div>
+    </div>
     <div class="bg-gray-900 p-6 rounded-lg border border-gray-700 mt-6">
       <h4 class="text-yellow-300 text-xl font-semibold mb-4">Kullanıcının Satın Alma Geçmişi</h4>
       <div id="managedUserPurchaseHistory" class="scrollable-list max-h-60 overflow-y-auto p-3 bg-gray-800 rounded-md">
@@ -2517,6 +2521,40 @@ function adjustUserClickCatchTickets(add) {
     }
 }
 
+    // YENİ AVATAR SİLME FONKSİYONU
+async function deleteUserAvatar(username, avatarId) {
+    if (!isAdmin) return;
+
+    const confirmed = await customConfirm(`<b>${username}</b> adlı kullanıcının bu avatarını kalıcı olarak silmek istediğinize emin misiniz?`);
+    if (!confirmed) return;
+
+    try {
+        const userRef = db.ref(`users/${username}`);
+        const userSnap = await userRef.once('value');
+        const userData = userSnap.val();
+
+        // Silme işlemleri için bir güncelleme objesi hazırlıyoruz
+        const updates = {};
+        updates[`/users/${username}/avatars/${avatarId}`] = null; // Avatarı koleksiyondan sil
+
+        // Eğer silinen avatar, kullanıcının o an seçtiği avatarsa, seçili avatarı da sıfırla
+        if (userData.selectedAvatar && userData.selectedAvatar.id === avatarId) {
+            updates[`/users/${username}/selectedAvatar`] = null;
+        }
+
+        // Tüm güncellemeleri tek seferde yap
+        await db.ref().update(updates);
+
+        displayMessage("Avatar başarıyla kullanıcıdan silindi.");
+        
+        // Yönetim penceresini güncel bilgilerle yeniden açarak anında değişikliği göster
+        openUserManagementModal(username);
+
+    } catch (error) {
+        console.error("Avatar silinirken hata oluştu:", error);
+        displayMessage("Avatar silinirken bir hata meydana geldi.");
+    }
+}
   // Kutu işlemleri
   async function createBoxes() {
     // 1. Veritabanından özel kutu ayarlarını çek
@@ -4013,7 +4051,24 @@ async function buyItem(itemId) {
         });
         historyList.innerHTML = html;
     });
-
+// YENİ EKLENEN AVATAR YÜKLEME KODU
+    const avatarGrid = document.getElementById('managedUserAvatarGrid');
+    avatarGrid.innerHTML = ''; // Önceki avatarları temizle
+    if (userData.avatars && Object.keys(userData.avatars).length > 0) {
+        for (const avatarId in userData.avatars) {
+            const avatar = userData.avatars[avatarId];
+            const avatarCard = document.createElement('div');
+            avatarCard.className = 'relative p-2 bg-gray-700 rounded-lg text-center';
+            avatarCard.innerHTML = `
+                <img src="${avatar.imageUrl}" alt="${avatar.name}" class="w-full h-auto rounded-md object-cover aspect-square">
+                <p class="text-xs mt-2 text-white truncate" title="${avatar.name}">${avatar.name}</p>
+                <button onclick="deleteUserAvatar('${username}', '${avatarId}')" class="absolute -top-2 -right-2 bg-red-600 hover:bg-red-500 text-white rounded-full h-7 w-7 flex items-center justify-center text-lg font-bold" title="Bu Avatarı Sil">&times;</button>
+            `;
+            avatarGrid.appendChild(avatarCard);
+        }
+    } else {
+        avatarGrid.innerHTML = '<p class="col-span-full text-center text-gray-500">Bu kullanıcının satın alınmış avatarı yok.</p>';
+    }
     userManagementModal.style.display = 'flex';
 }
   
