@@ -3975,7 +3975,7 @@ async function openPublicUserDetailModal(username) {
     } else {
         blockedInfoDiv.classList.add('hidden');
     }
-
+publicUserDetailModal.dataset.viewingUser = username;
     publicUserDetailModal.style.display = 'flex';
 }
   
@@ -4105,6 +4105,21 @@ async function openUserManagementModal(username) {
     }
 
     userManagementModal.style.display = 'flex';
+}
+
+    function closePublicUserDetailModal() {
+  const publicUserDetailModal = document.getElementById('publicUserDetailModal');
+  
+  // Modalı gizle
+  publicUserDetailModal.style.display = 'none';
+
+  // Modal kapatıldığında, içinde çalışan zamanlayıcıyı (varsa) temizle
+  // Bu, gereksiz kaynak kullanımını önler.
+  const viewingUser = publicUserDetailModal.dataset.viewingUser;
+  if (viewingUser && activeBlockedUserTimers[viewingUser]) {
+    clearInterval(activeBlockedUserTimers[viewingUser]);
+    delete activeBlockedUserTimers[viewingUser];
+  }
 }
   
   function closeUserManagementModal() {
