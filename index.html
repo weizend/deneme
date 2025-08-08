@@ -1998,49 +1998,65 @@ async function logout() {
   
  // YENİ VE GÜNCELLENMİŞ FONKSİYON
 function getUserBadgesHtml(u, leaders, forPublicProfile = false) {
-      let crownHtml = '';
-      let otherBadges = [];
+    // 1. Kullanıcının tüm liderlik rozetlerine sahip olup olmadığını kontrol et
+    const hasKingCrown = leaders.isCurrentLeader && leaders.isHighLeader && leaders.isSurpriseLeader &&
+                         leaders.isBombLeader && leaders.isStoreLeader && leaders.isMultiplierLeader &&
+                         leaders.isBoxLeader && leaders.isShieldLeader && leaders.isClickCatchLeader && leaders.isWheelSpinLeader;
 
-      const hasKingCrown = leaders.isCurrentLeader && leaders.isHighLeader && leaders.isSurpriseLeader &&
-                           leaders.isBombLeader && leaders.isStoreLeader && leaders.isMultiplierLeader &&
-                           leaders.isBoxLeader && leaders.isShieldLeader && leaders.isClickCatchLeader && leaders.isWheelSpinLeader;
+    // 2. Eğer profil sayfası için çağrıldıysa (forPublicProfile = true)
+    if (forPublicProfile) {
+        // Eğer Kral Tacı varsa, sadece tacı göster, diğerlerini gösterme
+        if (hasKingCrown) {
+            return {
+                crown: `<span class="text-3xl" title="Tüm Liderlik Rozetlerinin Sahibi!">👑</span>`,
+                others: '' // Diğer rozetler alanı boş olacak
+            };
+        }
 
-      if (hasKingCrown) {
-          crownHtml = `<span class="text-3xl" title="Tüm Liderlik Rozetlerinin Sahibi!">👑</span>`;
-      } 
+        // Eğer Kral Tacı yoksa, sahip olduğu TÜM rozetleri topla
+        const allBadges = [];
+        if (leaders.isCurrentLeader) allBadges.push(`<span class="text-2xl" title="Mevcut Puan Lideri">🥇</span>`);
+        if (leaders.isHighLeader) allBadges.push(`<span class="text-2xl" title="Ulaşılan En Yüksek Puan Lideri">🏆</span>`);
+        if (leaders.isClickCatchLeader) allBadges.push(`<span class="text-2xl" title="Tıkla-Yakala Lideri">🎯</span>`);
+        if (leaders.isWheelSpinLeader) allBadges.push(`<span class="text-2xl" title="Çark Lideri">🎡</span>`);
+        if (leaders.isBoxLeader) allBadges.push(`<span class="text-2xl" title="Kutu Lideri">📦</span>`);
+        if (leaders.isSurpriseLeader) allBadges.push(`<span class="text-2xl" title="Sürpriz Kutu Lideri">🎉</span>`);
+        if (leaders.isBombLeader) allBadges.push(`<span class="text-2xl" title="Bomba Lideri">💣</span>`);
+        if (leaders.isMultiplierLeader) allBadges.push(`<span class="text-2xl" title="Çarpan Lideri">✖️</span>`);
+        if (leaders.isStoreLeader) allBadges.push(`<span class="text-2xl" title="Alışveriş Lideri">🛒</span>`);
+        if (leaders.isShieldLeader) allBadges.push(`<span class="text-2xl" title="Kalkan Lideri">🛡️</span>`);
+        if (!leaders.isSurpriseLeader && (u.surpriseBoxesOpened || 0) > 0) {
+            allBadges.push(`<span class="text-2xl" title="Sürpriz Kutu Rozeti">🎁</span>`);
+        }
+        
+        // Obje olarak döndür, "crown" kısmı boş, "others" kısmı dolu
+        return {
+            crown: '',
+            others: allBadges.join('')
+        };
+    }
 
-      // Sadece genel rozetler (liderlik gerektirmeyenler) burada kalır.
-      if (!leaders.isSurpriseLeader && (u.surpriseBoxesOpened || 0) > 0) {
-          otherBadges.push(`<span class="text-xl" title="Sürpriz Kutu Rozeti">🎁</span>`);
-      }
-      
-      // Eğer profil penceresi için çağrıldıysa, sadece kral tacını ve diğer genel rozetleri dön
-      if (forPublicProfile) {
-          return {
-              crown: crownHtml,
-              others: otherBadges.join('')
-          }
-      }
-
-      // Eğer sıralama listesi için çağrıldıysa, tüm liderlik rozetlerini göster
-      const rankingBadges = [];
-      if (leaders.isCurrentLeader) rankingBadges.push(`<span class="text-xl" title="Mevcut Puan Lideri">🥇</span>`);
-      if (leaders.isHighLeader) rankingBadges.push(`<span class="text-xl" title="Ulaşılan En Yüksek Puan Lideri">🏆</span>`);
-      if (leaders.isClickCatchLeader) rankingBadges.push(`<span class="text-xl" title="Tıkla-Yakala Lideri">🎯</span>`);
-      if (leaders.isWheelSpinLeader) rankingBadges.push(`<span class="text-xl" title="Çark Lideri">🎡</span>`);
-      if (leaders.isBoxLeader) rankingBadges.push(`<span class="text-xl" title="Kutu Lideri">📦</span>`);
-      if (leaders.isSurpriseLeader) rankingBadges.push(`<span class="text-xl" title="Sürpriz Kutu Lideri">🎉</span>`);
-      if (leaders.isBombLeader) rankingBadges.push(`<span class="text-xl" title="Bomba Lideri">💣</span>`);
-      if (leaders.isMultiplierLeader) rankingBadges.push(`<span class="text-xl" title="Çarpan Lideri">✖️</span>`);
-      if (leaders.isStoreLeader) rankingBadges.push(`<span class="text-xl" title="Alışveriş Lideri">🛒</span>`);
-      if (leaders.isShieldLeader) rankingBadges.push(`<span class="text-xl" title="Kalkan Lideri">🛡️</span>`);
-      
-      // Genel rozetleri de sıralama listesine ekle
-      if (!leaders.isSurpriseLeader && (u.surpriseBoxesOpened || 0) > 0) {
+    // 3. Eğer sıralama listeleri için çağrıldıysa (forPublicProfile = false)
+    const rankingBadges = [];
+    if (leaders.isCurrentLeader) rankingBadges.push(`<span class="text-xl" title="Mevcut Puan Lideri">🥇</span>`);
+    if (leaders.isHighLeader) rankingBadges.push(`<span class="text-xl" title="Ulaşılan En Yüksek Puan Lideri">🏆</span>`);
+    if (leaders.isClickCatchLeader) rankingBadges.push(`<span class="text-xl" title="Tıkla-Yakala Lideri">🎯</span>`);
+    if (leaders.isWheelSpinLeader) rankingBadges.push(`<span class="text-xl" title="Çark Lideri">🎡</span>`);
+    if (leaders.isBoxLeader) rankingBadges.push(`<span class="text-xl" title="Kutu Lideri">📦</span>`);
+    if (leaders.isSurpriseLeader) rankingBadges.push(`<span class="text-xl" title="Sürpriz Kutu Lideri">🎉</span>`);
+    if (leaders.isBombLeader) rankingBadges.push(`<span class="text-xl" title="Bomba Lideri">💣</span>`);
+    if (leaders.isMultiplierLeader) rankingBadges.push(`<span class="text-xl" title="Çarpan Lideri">✖️</span>`);
+    if (leaders.isStoreLeader) rankingBadges.push(`<span class="text-xl" title="Alışveriş Lideri">🛒</span>`);
+    if (leaders.isShieldLeader) rankingBadges.push(`<span class="text-xl" title="Kalkan Lideri">🛡️</span>`);
+    if (!leaders.isSurpriseLeader && (u.surpriseBoxesOpened || 0) > 0) {
         rankingBadges.push(`<span class="text-xl" title="Sürpriz Kutu Rozeti">🎁</span>`);
-      }
+    }
 
-      return (hasKingCrown ? `<div class="flex justify-center w-full mb-1">${crownHtml}</div>` : '') + `<div class="flex items-center justify-center gap-1 h-6">${rankingBadges.join('')}</div>`;
+    // Kral Tacı varsa, onu diğer rozetlerin üstüne ayrı bir satırda koy
+    const crownHtml = hasKingCrown ? `<div class="flex justify-center w-full mb-1"><span class="text-3xl" title="Tüm Liderlik Rozetlerinin Sahibi!">👑</span></div>` : '';
+    const otherBadgesHtml = `<div class="flex items-center justify-center gap-1 h-6">${rankingBadges.join('')}</div>`;
+
+    return crownHtml + otherBadgesHtml;
 }
 
   function loadUserRankingsAndBoxCounts() {
@@ -3954,6 +3970,7 @@ async function buyItem(itemId) {
   function openBadgeInfoModal() { badgeInfoModal.style.display = 'flex'; }
   function closeBadgeInfoModal() { badgeInfoModal.style.display = 'none'; }
 
+// YENİ VE GÜNCELLENMİŞ FONKSİYON
 async function openPublicUserDetailModal(username) {
     if (activeBlockedUserTimers[username]) {
         clearInterval(activeBlockedUserTimers[username]);
@@ -3968,7 +3985,6 @@ async function openPublicUserDetailModal(username) {
     const allUsersSnap = await db.ref('users').once('value');
     const leaders = await calculateAllLeaders(allUsersSnap.val());
 
-    // Görüntülenen kullanıcıya özel liderlik durumlarını belirle
     const userLeaderStatus = {
         isCurrentLeader: username === leaders.currentBalanceUser,
         isHighLeader: username === leaders.highEverBalanceUser,
@@ -3982,19 +3998,19 @@ async function openPublicUserDetailModal(username) {
         isWheelSpinLeader: username === leaders.wheelSpinUser
     };
 
-    const avatarUrl = userData.selectedAvatar ? userData.selectedAvatar.url : defaultAvatarUrl;
-    document.getElementById('publicUserAvatar').src = avatarUrl;
-    document.getElementById('publicUserName').textContent = username;
-  // YENİ EKLENEN KISIM: İlgili satırların başındaki rozetleri dinamik olarak ekler veya kaldırır.
-    document.getElementById('publicBadgeBalance').innerHTML = userLeaderStatus.isCurrentLeader ? '🥇' : '';
-    document.getElementById('publicBadgeHighest').innerHTML = userLeaderStatus.isHighLeader ? '🏆' : '';
-
-    // Rozetleri bu kullanıcıya özel durumlarla oluştur
+    // Fonksiyonu `forPublicProfile = true` parametresiyle çağırarak rozetleri al
     const badges = getUserBadgesHtml(userData, userLeaderStatus, true);
+    
+    // Gelen verilere göre elementleri doldur
     document.getElementById('publicUserKingBadge').innerHTML = badges.crown;
     document.getElementById('publicUserOtherBadges').innerHTML = badges.others;
 
-    // Puan ve Envanter Bilgileri
+    document.getElementById('publicBadgeBalance').innerHTML = userLeaderStatus.isCurrentLeader ? '🥇' : '';
+    document.getElementById('publicBadgeHighest').innerHTML = userLeaderStatus.isHighLeader ? '🏆' : '';
+
+    const avatarUrl = userData.selectedAvatar ? userData.selectedAvatar.url : defaultAvatarUrl;
+    document.getElementById('publicUserAvatar').src = avatarUrl;
+    document.getElementById('publicUserName').textContent = username;
     document.getElementById('publicUserBalance').textContent = userData.balance || 0;
     document.getElementById('publicUserHighestBalance').textContent = userData.highestBalanceEver || 0;
     document.getElementById('publicUserBoxRight').textContent = userData.kutuHakki || 0;
@@ -4010,7 +4026,6 @@ async function openPublicUserDetailModal(username) {
     }
     document.getElementById('publicUserMultiplier').textContent = multiplierText;
 
-    // İstatistik Bilgileri
     document.getElementById('publicUserBoxesOpened').textContent = userData.boxesOpenedCount || 0;
     document.getElementById('publicUserWheelSpins').textContent = userData.wheelSpinsCount || 0;
     document.getElementById('publicUserClickCatchScore').textContent = userData.clickCatchHighestScore || 0;
@@ -4020,7 +4035,6 @@ async function openPublicUserDetailModal(username) {
     document.getElementById('publicUserShieldUsedCount').textContent = userData.iflasShieldUsedCount || 0;
     document.getElementById('publicUserTotalSpent').textContent = userData.totalSpentPoints || 0;
     
-    // İstatistiklerin yanındaki liderlik rozetlerini göster
     const statBadgeIds = ['box', 'wheel', 'clickcatch', 'surprise', 'bomb', 'multiplier', 'shield', 'store'];
     statBadgeIds.forEach(id => document.getElementById(`badge-stat-${id}`).innerHTML = '');
 
@@ -4033,7 +4047,6 @@ async function openPublicUserDetailModal(username) {
     if (userLeaderStatus.isShieldLeader) document.getElementById('badge-stat-shield').innerHTML = '🛡️';
     if (userLeaderStatus.isStoreLeader) document.getElementById('badge-stat-store').innerHTML = '🛒';
 
-    // Engelli Durumu
     const blockedInfoDiv = document.getElementById('publicUserBlockedInfo');
     const countdownEl = document.getElementById('publicUserBlockedCountdown');
     const isCurrentlyBlocked = userData.blocked && userData.blockedUntil && Date.now() < userData.blockedUntil;
