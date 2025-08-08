@@ -775,19 +775,6 @@
     </div>
 </div>
 
-<div id="pointAdjustmentModal" class="modal-overlay fixed inset-0 bg-black bg-opacity-70 flex justify-center items-center z-[9999] hidden">
-    <div class="modal-content bg-gray-800 p-8 rounded-xl shadow-2xl border border-red-700 w-11/12 max-w-md text-center relative">
-      <button class="modal-close-button" onclick="closePointAdjustmentModal()">&times;</button>
-      <h4 class="text-yellow-400 text-2xl font-bold mb-6">Kullanıcı Puan Ayarı: <span id="adjUserName"></span></h4>
-      <p class="text-lg text-gray-300 mb-4">Mevcut Puan: <span id="adjUserBalance" class="font-bold"></span></p>
-      <input type="number" id="adjAmount" placeholder="Puan Miktarı" min="1" class="w-full p-3 mb-6 bg-gray-700 border border-gray-600 rounded-lg text-white" /><br>
-      <div class="flex gap-4 justify-center">
-        <button onclick="adjustUserPoints(true)" class="flex-1 py-3 bg-green-600 hover:bg-green-500 text-white font-bold rounded-lg">Puan Ekle</button>
-        <button onclick="adjustUserPoints(false)" class="flex-1 py-3 bg-red-600 hover:bg-red-500 text-white font-bold rounded-lg">Puan Çıkar</button>
-      </div>
-    </div>
-</div>
-
 <div id="kickVerificationModal" class="modal-overlay fixed inset-0 bg-black bg-opacity-70 flex justify-center items-center z-[9999] hidden">
   <div class="modal-content bg-gray-800 p-8 rounded-xl shadow-2xl border border-red-700 w-11/12 max-w-md text-center relative">
     <button class="modal-close-button" onclick="closeKickVerificationModal()">&times;</button>
@@ -6334,79 +6321,6 @@ function formatRelativeTime(timestamp) {
   } else {
     return `${dayDifference} gün önce, ${timeString}`;
   }
-}
-
-  // YENİ: Kutu Ayarları Modalı Fonksiyonları
-
-// Modalı açar ve mevcut ayarları veritabanından çekip inputlara doldurur.
-async function openBoxSettingsModal() {
-    if (!isAdmin) return;
-
-    const settingsRef = db.ref('gameConfig/boxContents');
-    const snapshot = await settingsRef.once('value');
-
-    // Varsayılan ayarlar, eğer veritabanında hiç ayar kaydedilmemişse kullanılır.
-    const defaultSettings = [
-        { type: 'points', value: 1000, count: 2 }, { type: 'points', value: 750, count: 4 },
-        { type: 'points', value: 500, count: 6 }, { type: 'points', value: 250, count: 8 },
-        { type: 'points', value: 100, count: 10 }, { type: 'points', value: 50, count: 15 },
-        { type: 'points', value: 10, count: 20 }, { type: 'points', value: 1, count: 30 },
-        { type: 'multiplier', value: 2, count: 1 }, { type: 'multiplier', value: 3, count: 1 },
-        { type: 'iflas', value: 0, count: 2 }, { type: 'surpriz', value: 0, count: 1 },
-        { type: 'wheelTicket', value: 1, count: 1 }, { type: 'clickCatchTicket', value: 1, count: 1 }
-    ];
-    
-    const currentConfig = snapshot.exists() ? snapshot.val() : defaultSettings;
-
-    // Önce tüm inputları temizle
-    document.querySelectorAll('.box-setting-input').forEach(input => input.value = '');
-
-    // Mevcut ayarları inputlara doldur
-    currentConfig.forEach(item => {
-        const input = document.getElementById(`${item.type}-${item.value}`);
-        if (input) {
-            input.value = item.count;
-        }
-    });
-
-    boxSettingsModal.style.display = 'flex';
-}
-
-function closeBoxSettingsModal() {
-    boxSettingsModal.style.display = 'none';
-}
-
-// Inputlardaki değerleri okur, yeni ayar listesini oluşturur, veritabanına kaydeder ve oyunu sıfırlar.
-async function saveBoxSettings() {
-    if (!isAdmin) return;
-
-    const newConfig = [];
-    let totalBoxes = 0;
-    
-    document.querySelectorAll('.box-setting-input').forEach(input => {
-        const count = parseInt(input.value);
-        if (!isNaN(count) && count > 0) {
-            newConfig.push({
-                type: input.dataset.type,
-                value: parseInt(input.dataset.value),
-                count: count
-            });
-            totalBoxes += count;
-        }
-    });
-
-    if (totalBoxes === 0) {
-        displayMessage("En az bir kutu türü için adet girmelisiniz!");
-        return;
-    }
-
-    const confirmed = await customConfirm(`Toplam ${totalBoxes} kutu ile yeni bir oyun başlatılacak. Mevcut oyun sıfırlanacak. Onaylıyor musunuz?`);
-    if (confirmed) {
-        await db.ref('gameConfig/boxContents').set(newConfig);
-        await resetGameBoard(); // Bu fonksiyon zaten createBoxes() fonksiyonunu çağırıyor.
-        displayMessage("Kutu ayarları başarıyla kaydedildi ve oyun yeni ayarlarla yeniden başlatıldı!");
-        closeBoxSettingsModal();
-    }
 }
 
 // Yeni bir ayar satırı (Puan, Bilet vb.) oluşturup ekrana ekler.
