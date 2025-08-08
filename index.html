@@ -963,7 +963,85 @@
   <div class="modal-content bg-gray-800 p-8 rounded-xl shadow-2xl border border-red-700 w-11/12 max-w-lg text-center relative max-h-[90vh] overflow-y-auto scrollable-list">
       <button class="modal-close-button" onclick="closeBadgeInfoModal()">&times;</button>
       <h4 class="text-yellow-400 text-2xl font-bold mb-6">Rozetler ve Anlamları</h4>
-      <div class="space-y-4 text-left"></div>
+      <div class="space-y-4 text-left">
+        <div class="flex items-center gap-4">
+            <span class="text-3xl w-8 text-center">👑</span>
+            <div>
+                <strong class="text-yellow-200 block text-lg">Kral Tacı</strong>
+                <p class="text-gray-400">Tüm liderlik rozetlerine (🥇, 🏆, 🎉, 💣, 🛒, ✖️, 📦, 🛡️, 🎯) aynı anda sahip olan kullanıcıya verilir. En prestijli rozettir.</p>
+            </div>
+        </div>
+        <div class="flex items-center gap-4">
+            <span class="text-3xl w-8 text-center">🥇</span>
+            <div>
+                <strong class="text-yellow-200 block text-lg">Mevcut Puan Lideri</strong>
+                <p class="text-gray-400">Anlık olarak en yüksek puana sahip olan kullanıcıya verilir.</p>
+            </div>
+        </div>
+        <div class="flex items-center gap-4">
+            <span class="text-3xl w-8 text-center">🏆</span>
+            <div>
+                <strong class="text-yellow-200 block text-lg">Ulaşılan En Yüksek Puan Lideri</strong>
+                <p class="text-gray-400">Oyun boyunca ulaşılmış en yüksek puana sahip olan kullanıcıya verilir.</p>
+            </div>
+        </div>
+         <div class="flex items-center gap-4">
+            <span class="text-3xl w-8 text-center">🎯</span>
+            <div>
+                <strong class="text-yellow-200 block text-lg">Tıkla-Yakala Lideri</strong>
+                <p class="text-gray-400">Tıkla-Yakala puan sıralamasında lider olan oyuncuya verilir.</p>
+            </div>
+        </div>
+        <div class="flex items-center gap-4">
+            <span class="text-3xl w-8 text-center">📦</span>
+            <div>
+                <strong class="text-yellow-200 block text-lg">Kutu Açma Lideri</strong>
+                <p class="text-gray-400">Tüm zamanlarda en çok kutu açan kullanıcıya verilir.</p>
+            </div>
+        </div>
+        <div class="flex items-center gap-4">
+            <span class="text-3xl w-8 text-center">🎉</span>
+            <div>
+                <strong class="text-yellow-200 block text-lg">Sürpriz Kutu Lideri</strong>
+                <p class="text-gray-400">Tüm zamanlarda en çok "Sürpriz Kutu" bulan kullanıcıya verilir.</p>
+            </div>
+        </div>
+        <div class="flex items-center gap-4">
+            <span class="text-3xl w-8 text-center">💣</span>
+            <div>
+                <strong class="text-yellow-200 block text-lg">Bomba Lideri</strong>
+                <p class="text-gray-400">Tüm zamanlarda en çok "İflas (Bomba)" kutusu bulan şanssız kullanıcıya verilir.</p>
+            </div>
+        </div>
+        <div class="flex items-center gap-4">
+            <span class="text-3xl w-8 text-center">✖️</span>
+            <div>
+                <strong class="text-yellow-200 block text-lg">Çarpan Lideri</strong>
+                <p class="text-gray-400">Tüm zamanlarda en çok "Çarpan" kutusu bulan kullanıcıya verilir.</p>
+            </div>
+        </div>
+        <div class="flex items-center gap-4">
+            <span class="text-3xl w-8 text-center">🛒</span>
+            <div>
+                <strong class="text-yellow-200 block text-lg">Alışveriş Lideri</strong>
+                <p class="text-gray-400">Mağazada en çok puan harcayan kullanıcıya verilir.</p>
+            </div>
+        </div>
+        <div class="flex items-center gap-4">
+            <span class="text-3xl w-8 text-center">🛡️</span>
+            <div>
+                <strong class="text-yellow-200 block text-lg">Kalkan Lideri</strong>
+                <p class="text-gray-400">En çok "İflas Kalkanı" kullanan kullanıcıya verilir.</p>
+            </div>
+        </div>
+        <div class="flex items-center gap-4">
+            <span class="text-3xl w-8 text-center">🎁</span>
+            <div>
+                <strong class="text-yellow-200 block text-lg">Sürpriz Kutu Rozeti</strong>
+                <p class="text-gray-400">En az bir adet "Sürpriz Kutu" bulmuş olan tüm kullanıcılara verilir (Liderlik gerektirmez).</p>
+            </div>
+        </div>
+      </div>
   </div>
 </div>
 
@@ -1040,6 +1118,124 @@
         </div>
     </div>
   </div>
+</div>
+  <div id="soloGameSettingsModal" class="modal-overlay fixed inset-0 bg-black bg-opacity-70 flex justify-center items-center z-[9999] hidden">
+    <div class="modal-content bg-gray-800 p-8 rounded-xl shadow-2xl border border-purple-500 w-11/12 max-w-3xl text-left relative max-h-[90vh] flex flex-col">
+        <button class="modal-close-button" onclick="closeSoloGameSettingsModal()">&times;</button>
+        <h3 class="text-purple-300 text-3xl font-bold mb-6 text-center">Tekli Oyun Ayarları</h3>
+        <div class="flex-grow overflow-y-auto scrollable-list pr-4">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
+                
+                <div class="bg-gray-900 p-4 rounded-lg border border-gray-700">
+                    <h4 class="text-lg font-semibold text-yellow-300 mb-3">Süre ve Görünüm</h4>
+                    <label for="soloGameDuration" class="block text-sm font-medium text-gray-300">Oyun Süresi (saniye)</label>
+                    <input type="number" id="soloGameDuration" class="box-setting-input mt-1 mb-3">
+                    
+                    <label for="soloItemInterval" class="block text-sm font-medium text-gray-300">Yeni Hedef Çıkma Sıklığı (milisaniye)</label>
+                    <input type="number" id="soloItemInterval" class="box-setting-input mt-1 mb-3">
+
+                    <label for="soloItemDisappearTime" class="block text-sm font-medium text-gray-300">Hedefin Kaybolma Süresi (milisaniye)</label>
+                    <input type="number" id="soloItemDisappearTime" class="box-setting-input mt-1">
+                </div>
+
+                <div class="bg-gray-900 p-4 rounded-lg border border-gray-700">
+                     <h4 class="text-lg font-semibold text-yellow-300 mb-3">Puan Değerleri</h4>
+                    <label for="soloNormalValue" class="block text-sm font-medium text-gray-300">Normal Hedef Puanı (🥮)</label>
+                    <input type="number" id="soloNormalValue" class="box-setting-input mt-1 mb-3">
+                    
+                    <label for="soloGoldValue" class="block text-sm font-medium text-gray-300">Altın Hedef Puanı (💰)</label>
+                    <input type="number" id="soloGoldValue" class="box-setting-input mt-1 mb-3">
+
+                    <label for="soloBombValue" class="block text-sm font-medium text-gray-300">Bomba Cezası (💣)</label>
+                    <input type="number" id="soloBombValue" class="box-setting-input mt-1 mb-3">
+                    
+                    <label for="soloTimeValue" class="block text-sm font-medium text-gray-300">Süre Bonusu (⏰ saniye)</label>
+                    <input type="number" id="soloTimeValue" class="box-setting-input mt-1">
+                </div>
+
+                <div class="bg-gray-900 p-4 rounded-lg border border-gray-700 col-span-1 md:col-span-2">
+                    <h4 class="text-lg font-semibold text-yellow-300 mb-3">Çıkma İhtimalleri (Toplamı 100 olmalı)</h4>
+                    <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
+                        <div>
+                            <label for="soloNormalChance" class="block text-sm font-medium text-gray-300">Normal (%)</label>
+                            <input type="number" id="soloNormalChance" class="box-setting-input mt-1">
+                        </div>
+                        <div>
+                            <label for="soloGoldChance" class="block text-sm font-medium text-gray-300">Altın (%)</label>
+                            <input type="number" id="soloGoldChance" class="box-setting-input mt-1">
+                        </div>
+                        <div>
+                            <label for="soloBombChance" class="block text-sm font-medium text-gray-300">Bomba (%)</label>
+                            <input type="number" id="soloBombChance" class="box-setting-input mt-1">
+                        </div>
+                        <div>
+                            <label for="soloTimeChance" class="block text-sm font-medium text-gray-300">Süre (%)</label>
+                            <input type="number" id="soloTimeChance" class="box-setting-input mt-1">
+                        </div>
+                         <div>
+                            <label for="soloSpecialChance" class="block text-sm font-medium text-gray-300">Özel (%)</label>
+                            <input type="number" id="soloSpecialChance" class="box-setting-input mt-1">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bg-gray-900 p-4 rounded-lg border border-gray-700 col-span-1 md:col-span-2">
+                    <label for="soloSpecialItemType" class="block text-sm font-medium text-gray-300 mb-2">Çıkacak Özel Hedef Türü</label>
+                    <select id="soloSpecialItemType" class="box-setting-input">
+                        <option value="boxRight">Kutu Hakkı (📦)</option>
+                        <option value="iflasShield">İflas Kalkanı (🛡️)</option>
+                        <option value="wheelTicket">Çark Bileti (🎟️)</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+        <div class="mt-6 pt-4 border-t border-gray-700">
+            <button onclick="saveSoloGameSettings()" class="w-full py-3 bg-green-700 hover:bg-green-600 text-white font-bold rounded-lg shadow-md">Ayarları Kaydet</button>
+        </div>
+    </div>
+</div>
+
+<div id="lobbySettingsModal" class="modal-overlay fixed inset-0 bg-black bg-opacity-70 flex justify-center items-center z-[9999] hidden">
+    <div class="modal-content bg-gray-800 p-8 rounded-xl shadow-2xl border border-blue-500 w-11/12 max-w-lg text-left relative">
+        <button class="modal-close-button" onclick="closeLobbySettingsModal()">&times;</button>
+        <h3 class="text-blue-300 text-3xl font-bold mb-6 text-center">Lobi Yönetim Paneli</h3>
+        
+        <div class="bg-gray-900 p-4 rounded-lg border border-gray-700 mb-4">
+            <h4 class="text-lg font-semibold text-yellow-300 mb-3">Lobi Ayarları</h4>
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <label for="lobbyEntryFee" class="block text-sm font-medium text-gray-300">Giriş Ücreti (Puan)</label>
+                    <input type="number" id="lobbyEntryFee" value="100" class="box-setting-input mt-1">
+                </div>
+                 <div>
+                    <label for="lobbyEntryTickets" class="block text-sm font-medium text-gray-300">Giriş Ücreti (Bilet)</label>
+                    <input type="number" id="lobbyEntryTickets" value="0" class="box-setting-input mt-1">
+                </div>
+                <div>
+                    <label for="lobbyTarget" class="block text-sm font-medium text-gray-300">Hedef Skor</label>
+                    <input type="number" id="lobbyTarget" value="10" class="box-setting-input mt-1">
+                </div>
+                 <div>
+                    <label for="lobbyPrize" class="block text-sm font-medium text-gray-300">Kazanan Ödülü (Puan)</label>
+                    <input type="number" id="lobbyPrize" value="1000" class="box-setting-input mt-1">
+                </div>
+                 <div class="col-span-2">
+                    <label for="lobbyItemInterval" class="block text-sm font-medium text-gray-300">Hedef Çıkma Sıklığı (ms)</label>
+                    <input type="number" id="lobbyItemInterval" value="800" class="box-setting-input mt-1">
+                </div>
+            </div>
+             <button onclick="startLobbyGame()" class="w-full mt-4 py-2 bg-green-700 hover:bg-green-600 text-white font-bold rounded-lg shadow-md">Lobi Kur ve Beklemeye Al</button>
+        </div>
+
+        <div class="bg-gray-900 p-4 rounded-lg border border-gray-700">
+            <h4 class="text-lg font-semibold text-yellow-300 mb-3">Oyun Kontrolü</h4>
+            <div class="flex gap-4">
+                <button id="lobbyStartBtn" onclick="triggerLobbyGameStart()" class="flex-1 py-3 bg-blue-700 hover:bg-blue-600 text-white font-bold rounded-lg shadow-md disabled:bg-gray-600 disabled:cursor-not-allowed" disabled>Oyunu Başlat</button>
+                <button onclick="endLobbyGame(true)" class="flex-1 py-3 bg-red-700 hover:bg-red-600 text-white font-bold rounded-lg shadow-md">Lobi İptal Et ve Ücretleri İade Et</button>
+            </div>
+            <button onclick="resetClickCatchLeaderboard()" class="w-full mt-4 py-2 bg-orange-700 hover:bg-orange-600 text-white font-bold rounded-lg shadow-md">Haftalık Sıralamayı Sıfırla</button>
+        </div>
+    </div>
 </div>
   <script>
   // Firebase yapılandırması
@@ -4905,6 +5101,21 @@ async function spinWheel() {
 }
 
   // YENİ TIKLA-YAKALA FONKSİYONLARI (Lobi ve Admin Paneli Dahil)
+    // --- YENİ EKLENEN MODAL FONKSİYONLARI ---
+
+function openSoloGameSettingsModal() {
+    soloGameSettingsModal.style.display = 'flex';
+}
+function closeSoloGameSettingsModal() {
+    soloGameSettingsModal.style.display = 'none';
+}
+function openLobbySettingsModal() {
+    lobbySettingsModal.style.display = 'flex';
+}
+function closeLobbySettingsModal() {
+    lobbySettingsModal.style.display = 'none';
+}
+// --- YENİ FONKSİYONLAR BİTİŞ ---
   let lobbyGameSettings = {};
   let lobbyListener = null;
 
