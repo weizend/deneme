@@ -6333,16 +6333,30 @@ function renderActivityFeed(activities) {
     }
 }
 
-// Panel açma/kapama fonksiyonları
+// YENİ VE GÜNCELLENMİŞ VERSİYONLAR
 function openActivityFeed() {
+    // 1. Paneli görünür yap ama hala ekran dışında tut
     activityFeedPanel.classList.remove('hidden');
-    // Sayacı sıfırla ve veritabanına kaydet
+    
+    // 2. Çok kısa bir gecikme sonrası, paneli ekranın içine kaydır
+    // Bu gecikme animasyonun düzgün çalışması için gerekli
+    setTimeout(() => {
+        activityFeedPanel.classList.remove('translate-x-full');
+    }, 10);
+
+    // 3. Sayacı sıfırla ve veritabanına kaydet
     activityCounter.classList.add('hidden');
     db.ref(`users/${currentUser}/lastCheckedFeedTimestamp`).set(Date.now());
 }
 
 function closeActivityFeed() {
-    activityFeedPanel.classList.add('hidden');
+    // 1. Paneli tekrar ekranın dışına doğru kaydır
+    activityFeedPanel.classList.add('translate-x-full');
+
+    // 2. Animasyon bittikten sonra (300ms), paneli tamamen gizle
+    setTimeout(() => {
+        activityFeedPanel.classList.add('hidden');
+    }, 300);
 }
 
 // YENİ: Paneli açıp kapatan toggle fonksiyonu
