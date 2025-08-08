@@ -933,12 +933,20 @@
      <button onclick="closePublicUserDetailModal()" class="w-full py-3 bg-red-700 hover:bg-red-600 text-white font-bold rounded-lg">Kapat</button>
   </div>
 </div>
-
-<div id="inventoryModal" class="modal-overlay fixed inset-0 bg-black bg-opacity-70 flex justify-center items-center z-50 hidden">
-  <div class="modal-content bg-gray-800 p-8 rounded-xl shadow-2xl border border-red-700 w-11/12 max-w-md text-center relative">
+  <div id="inventoryModal" class="modal-overlay fixed inset-0 bg-black bg-opacity-70 flex justify-center items-center z-50 hidden">
+  <div class="modal-content bg-gray-800 p-8 rounded-xl shadow-2xl border border-purple-700 w-11/12 max-w-md text-center relative">
       <button class="modal-close-button" onclick="closeInventoryModal()">&times;</button>
       <h4 class="text-yellow-400 text-2xl font-bold mb-6">Envanterin</h4>
-      <div id="inventoryDetails" class="text-left text-gray-300 mb-6 space-y-3 bg-gray-900 p-4 rounded-lg border border-gray-700"></div>
+      <div id="inventoryDetails" class="text-left text-gray-300 mb-6 space-y-3 bg-gray-900 p-4 rounded-lg border border-gray-700">
+          <p class="flex justify-between items-center"><span>📦 Kutu Hakkı:</span> <strong id="inventoryBoxRights" class="text-green-400 text-lg">0</strong></p>
+          <p class="flex justify-between items-center"><span>🎡 Şans Çarkı Bileti:</span> <strong id="inventoryWheelTickets" class="text-yellow-400 text-lg">0</strong></p>
+          <p class="flex justify-between items-center"><span>🎯 Tıkla Yakala Bileti:</span> <strong id="inventoryClickCatchTickets" class="text-fuchsia-400 text-lg">0</strong></p>
+          <p class="flex justify-between items-center"><span>🛡️ İflas Kalkanı:</span> <strong id="inventoryIflasShields" class="text-blue-400 text-lg">0</strong></p>
+          <hr class="border-gray-600 my-2">
+          <div id="inventoryMultiplierDetails">
+              <p>✖️ Aktif çarpan yok.</p>
+          </div>
+      </div>
       <div class="flex gap-4 mt-6">
         <button onclick="openAvatarSelectionModal()" class="w-full py-3 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-lg">Avatarlarım</button>
         <button onclick="closeInventoryModal()" class="w-full py-3 bg-red-700 hover:bg-red-600 text-white font-bold rounded-lg">Kapat</button>
