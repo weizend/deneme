@@ -1557,8 +1557,7 @@ const defaultWheelSegments = [
   }
   
   // Giriş
-  // MEVCUT login fonksiyonunu SİL ve yerine BUNU EKLE
-async function login() {
+  async function login() {
     const user = document.getElementById("loginUsername").value.trim().toLowerCase();
     const pass = document.getElementById("loginPassword").value.trim();
 
@@ -1567,48 +1566,46 @@ async function login() {
         return;
     }
 
-    try {
-        // Admin girişi (onAuthStateChanged halledecek)
-        if (user === "weizendtv") {
-            const adminEmail = "weizendtv@weizendtvoyun.com";
+    if (user === "weizendtv") {
+        const adminEmail = "weizendtv@weizendtvoyun.com";
+        try {
             await auth.signInWithEmailAndPassword(adminEmail, pass);
-            return;
+        } catch (error) {
+            displayMessage("Admin kullanıcı adı veya şifresi yanlış!");
         }
+        return;
+    }
 
-        // Normal kullanıcı girişi
-        const snap = await db.ref('users/' + user).once('value');
+    db.ref('users/' + user).once('value').then(snap => {
         if (!snap.exists()) {
-            displayMessage("Hesap bulunamadı.");
+            displayMessage("Hesap bulunamadı. Lütfen 'Kayıt Ol' sekmesinden yeni bir hesap oluşturun.");
             return;
         }
         
         const data = snap.val();
+        
+        if (data.approved && data.approvalNotified === false) {
+            displayMessage(`<b>${user}</b>, hesabınız onaylandı. Artık giriş yapabilirsiniz!`);
+            db.ref('users/' + user).update({ approvalNotified: true });
+            return;
+        }
 
         if (data.password !== pass) {
             displayMessage("Şifre yanlış!");
             return;
         }
         if (!data.approved) {
-            displayMessage("Hesabınız henüz admin tarafından onaylanmamış.");
+            displayMessage("Hesabınız henüz admin tarafından onaylanmamış. Lütfen Kick üzerinden doğrulamayı tamamladığınızdan emin olun ve bekleyin.");
             return;
         }
-        if (data.blocked && data.blockedUntil && Date.now() < data.blockedUntil) {
-            displayBlockedMessage(data.blockedUntil, user);
-            return;
-        }
+        
+        checkAndProceedLogin(user, data);
 
-        // Giriş başarılı. "Tamam" butonuna basıldığında afterLogin'i çalıştıracak şekilde mesajı göster
-        showMessage("Başarıyla giriş yapıldı!", () => {
-            currentUser = user;
-            isAdmin = false;
-            afterLogin();
-        });
-
-    } catch (error) {
-        console.error("Giriş sırasında hata: ", error);
+    }).catch(error => {
+        console.error("Firebase veritabanı okuma hatası: ", error);
         displayMessage("Giriş yaparken bir sorun oluştu.");
-    }
-}
+    });
+  }
 
   // Kayıt
   async function register() {
@@ -1948,44 +1945,49 @@ function showSection(sectionId) {
     loadPendingSpecialPurchases();
   }
   function closeAdminPanelModal() { adminPanelModal.style.display = 'none'; }
-// MEVCUT logout fonksiyonunu SİL ve yerine BUNU EKLE
+// MEVCUT logout FONKSİYONUNU SİLİP YERİNE BU KODU KOMPLE YAPIŞTIR
+
+// YERİNE BU FONKSİYONU YAPIŞTIR
 async function logout() {
     const confirmed = await customConfirm("Çıkış yapmak istediğinize emin misiniz?");
     if (!confirmed) return;
 
-    try {
-        // Önce tüm dinleyicileri kapat ve Firebase çıkışını bekle
-        detachAllListeners();
-        await auth.signOut();
+    // Önce tüm listener'ları güvenli bir şekilde kapatıyoruz
+    detachAllListeners();
 
-        // "Tamam" butonuna basıldığında giriş ekranını gösterecek şekilde mesajı göster
-        showMessage("Başarıyla çıkış yapıldı.", () => {
-            // Tüm durumları sıfırla ve arayüzü değiştir
-            currentUser = null;
-            isAdmin = false;
-            
-            // Tüm zamanlayıcıları temizle
-            if (countdownInterval) clearInterval(countdownInterval);
-            if (globalCountdownInterval) clearInterval(globalCountdownInterval);
-            if (clickCatchTimerInterval) clearInterval(clickCatchTimerInterval);
-            if (clickCatchItemInterval) clearInterval(clickCatchItemInterval);
-            if (storeCountdownInterval) clearInterval(storeCountdownInterval);
-            if (spectatorCountdownInterval) clearInterval(spectatorCountdownInterval);
-            Object.values(activeBlockedUserTimers).forEach(clearInterval);
-            activeBlockedUserTimers = {};
-            Object.values(activeDailyRewardTimers).forEach(clearInterval);
-            activeDailyRewardTimers = {};
-            activeStoreCountdowns = {};
+    auth.signOut().then(() => {
+        // Arayüzü sıfırla
+        document.getElementById("gameDiv").style.display = "none";
+        document.getElementById("loginContainer").style.display = "block";
+        if (activityBellContainer) activityBellContainer.classList.add('hidden');
+        if (activityFeedPanel) activityFeedPanel.classList.add('hidden');
+        switchAuthTab('login');
+        
+        // Kullanıcı durumunu sıfırla
+        currentUser = null;
+        isAdmin = false;
+        
+        // --- GÜNCELLENMİŞ KISIM: TÜM ZAMANLAYICILARI TEMİZLE ---
+        if (countdownInterval) clearInterval(countdownInterval);
+        if (globalCountdownInterval) clearInterval(globalCountdownInterval);
+        if (clickCatchTimerInterval) clearInterval(clickCatchTimerInterval);
+        if (clickCatchItemInterval) clearInterval(clickCatchItemInterval);
+        if (storeCountdownInterval) clearInterval(storeCountdownInterval);
+        if (spectatorCountdownInterval) clearInterval(spectatorCountdownInterval);
+        
+        // Obje olarak tutulan zamanlayıcıları temizle
+        Object.values(activeBlockedUserTimers).forEach(clearInterval);
+        activeBlockedUserTimers = {};
+        Object.values(activeDailyRewardTimers).forEach(clearInterval);
+        activeDailyRewardTimers = {};
+        activeStoreCountdowns = {};
 
-            document.getElementById("gameDiv").style.display = "none";
-            document.getElementById("loginContainer").style.display = "block";
-            switchAuthTab('login');
-        });
-
-    } catch (error) {
-        console.error("Çıkış sırasında hata oluştu: ", error);
-        displayMessage("Çıkış sırasında bir hata oluştu ama oturum sonlandırıldı.");
-    }
+        console.log("Kullanıcı başarıyla çıkış yaptı ve tüm dinleyiciler/zamanlayıcılar temizlendi.");
+        
+    }).catch((error) => {
+        console.error("Çıkış yaparken hata oluştu: ", error);
+        displayMessage("Çıkış yapılırken bir sorun oluştu.");
+    });
 }
   function loadBalanceAndBoxRights() {
     if (isAdmin) {
