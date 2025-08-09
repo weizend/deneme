@@ -1290,6 +1290,56 @@
     </div>
   </div>
 </div>
+  <div id="dailyRewardModal" class="modal-overlay fixed inset-0 bg-black bg-opacity-70 flex justify-center items-center z-50 hidden">
+  <div class="modal-content bg-gray-800 p-8 rounded-xl shadow-2xl border border-yellow-500 w-11/12 max-w-4xl text-center relative max-h-[90vh] overflow-y-auto scrollable-list">
+      <button class="modal-close-button absolute top-2 right-4 text-white text-4xl" onclick="closeDailyRewardModal()">&times;</button>
+      <h4 class="text-yellow-400 text-3xl font-bold mb-2">Günlük Ödüller</h4>
+      <p id="dailyRewardMessage" class="text-lg text-gray-300 mb-6">Aşağıdaki ödüllerden alabileceklerini topla. Bol şans!</p>
+      <div id="adminDailyRewardManagementButtonContainer" class="text-center mb-6 hidden">
+          <button onclick="openNewDailyRewardForm()" class="py-2 px-6 bg-blue-700 hover:bg-blue-600 text-white font-bold rounded-lg shadow-md">
+              Yeni Ödül Ekle
+          </button>
+      </div>
+      <div id="dailyRewardItemsContainer" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 p-4">
+      </div>
+  </div>
+</div>
+
+<div id="adminDailyRewardModal" class="modal-overlay fixed inset-0 bg-black bg-opacity-70 flex justify-center items-center z-[100] hidden">
+  <div class="modal-content bg-gray-800 p-8 rounded-xl shadow-2xl border border-red-700 w-11/12 max-w-3xl text-center relative max-h-[90vh] overflow-y-auto scrollable-list">
+      <button class="modal-close-button absolute top-2 right-4 text-white text-4xl" onclick="closeAdminDailyRewardModal()">&times;</button>
+      <h3 class="text-yellow-400 text-3xl font-bold mb-6 text-center">Günlük Ödül Yönetimi</h3>
+        <div class="bg-gray-900 p-6 rounded-lg border border-gray-700">
+          <div class="mb-4 space-y-2">
+              <input type="text" id="dailyRewardName" placeholder="Ödül Adı (Örn: 100 Puan)" class="w-full p-2 bg-gray-700 border border-gray-600 rounded-lg text-white">
+              <textarea id="dailyRewardDescription" placeholder="Ödül Açıklaması" rows="2" class="w-full p-2 bg-gray-700 border border-gray-600 rounded-lg text-white"></textarea>
+              <select id="dailyRewardType" class="w-full p-2 bg-gray-700 border border-gray-600 rounded-lg text-white">
+                  <option value="">Ödül Tipi Seçin</option>
+                  <option value="points">Puan</option>
+                  <option value="boxRights">Kutu Hakkı</option>
+                  <option value="wheelTicket">Çark Bileti</option>
+                  <option value="clickCatchTicket">Tıkla-Yakala Bileti</option>
+                  <option value="iflasShield">İflas Kalkanı</option>
+                  <option value="tempMultiplier">Çarpan</option>
+              </select>
+              <input type="number" id="dailyRewardValue" placeholder="Değer (Puan/Hak Adedi/Kalkan)" class="w-full p-2 bg-gray-700 border border-gray-600 rounded-lg text-white">
+              <input type="number" id="dailyRewardMultiplierUses" placeholder="Çarpan Kullanım Hakkı" class="w-full p-2 bg-gray-700 border border-gray-600 rounded-lg text-white hidden">
+              
+              <label class="text-gray-300 text-sm block text-left">Ödül Bekleme Süresi:</label>
+              <div class="flex gap-2">
+                  <input type="number" id="dailyRewardCooldownDays" placeholder="Gün" min="0" class="w-full p-2 bg-gray-700 border border-gray-600 rounded-lg text-white">
+                  <input type="number" id="dailyRewardCooldownHours" placeholder="Saat" min="0" class="w-full p-2 bg-gray-700 border border-gray-600 rounded-lg text-white">
+                  <input type="number" id="dailyRewardCooldownMinutes" placeholder="Dakika" min="0" class="w-full p-2 bg-gray-700 border border-gray-600 rounded-lg text-white">
+                  <input type="number" id="dailyRewardCooldownSeconds" placeholder="Saniye" min="0" class="w-full p-2 bg-gray-700 border border-gray-600 rounded-lg text-white">
+              </div>
+              
+              <input type="text" id="dailyRewardImageUrl" placeholder="Resim URL (Opsiyonel)" class="w-full p-2 bg-gray-700 border border-gray-600 rounded-lg text-white">
+          </div>
+          <button onclick="saveDailyReward()" id="saveDailyRewardBtn" class="w-full py-2 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-lg">GÜNLÜK ÖDÜL OLUŞTUR</button>
+          <button onclick="resetDailyRewardForm()" class="w-full py-2 mt-2 bg-gray-600 hover:bg-gray-500 text-white font-bold rounded-lg shadow-md hover:-translate-y-1 transition duration-300">Formu Temizle</button>
+      </div>
+  </div>
+</div>
   <script>
   // Firebase yapılandırması
   const firebaseConfig = {
@@ -4699,11 +4749,15 @@ function showGlobalOpenedBoxInfo(info) {
         adminDailyRewardModal.style.display = 'none';
     }
 
-    function closeDailyRewardModal() { 
-        Object.values(activeDailyRewardTimers).forEach(clearInterval);
-        activeDailyRewardTimers = {};
+    // DEĞİŞTİRİLECEK FONKSİYON
+function closeDailyRewardModal() { 
+    Object.values(activeDailyRewardTimers).forEach(clearInterval);
+    activeDailyRewardTimers = {};
+    const dailyRewardModal = document.getElementById('dailyRewardModal');
+    if (dailyRewardModal) {
         dailyRewardModal.style.display = 'none'; 
     }
+}
     
     async function checkAvailableDailyRewards() {
         if (isAdmin) {
@@ -4742,7 +4796,16 @@ function showGlobalOpenedBoxInfo(info) {
     }
     
     // DEĞİŞTİRİLECEK FONKSİYON
+// DEĞİŞTİRİLECEK FONKSİYON
 async function openDailyRewardModal() {
+    const dailyRewardModal = document.getElementById('dailyRewardModal');
+    // YENİ GÜVENLİK KONTROLÜ: Elementin var olduğundan emin ol
+    if (!dailyRewardModal) {
+        console.error("HATA: 'dailyRewardModal' elementi HTML'de bulunamadı!");
+        displayMessage("Günlük ödül penceresi açılamadı. Lütfen sayfayı yenileyin.");
+        return;
+    }
+
     dailyRewardModal.style.display = 'flex';
     const container = document.getElementById('dailyRewardItemsContainer');
     container.innerHTML = '<p class="text-center col-span-full text-gray-400">Ödüller yükleniyor...</p>';
@@ -4865,8 +4928,6 @@ async function openDailyRewardModal() {
         container.innerHTML = '<p class="text-center col-span-full text-red-500">Ödüller yüklenirken bir hata oluştu. Lütfen daha sonra tekrar deneyin.</p>';
     }
 }
-
-    // claimDailyReward FONKSİYONUNU BUNUNLA DEĞİŞTİR
 
 async function claimDailyReward(rewardId) {
     if (isAdmin) return;
