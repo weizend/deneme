@@ -3144,6 +3144,7 @@ async function deleteUserAvatar(username, avatarId) {
   }
 
 // BU FONKSİYONU BUL VE AŞAĞIDAKİYLE KOMPLE DEĞİŞTİR
+// openBox FONKSİYONUNU BUL VE BUNUNLA DEĞİŞTİR
 async function openBox(index) {
     if (isGameLocked) {
         displayMessage("Şu anda başka bir kullanıcı kutu açıyor veya oyun beklemede. Lütfen 5 saniye bekleyin.");
@@ -3247,11 +3248,10 @@ async function openBox(index) {
         boxOpenInfo.shieldUsed = shieldWasUsed;
         boxOpenInfo.lostPoints = shieldWasUsed ? 0 : lostPoints;
 
-        // "undefined" HATASINI GİDEREN LOGLAMA
         logActivity('iflas', currentUser, { 
             shieldUsed: shieldWasUsed, 
             lostPoints: shieldWasUsed ? 0 : lostPoints,
-            boxId: box.id // <<< BU SATIR EN ÖNEMLİSİ
+            boxId: box.id
         });
 
     } else if (box.content === 'points') {
@@ -3277,13 +3277,16 @@ async function openBox(index) {
 
     } else if (box.content === 'surpriz') {
         updates['surpriseBoxesOpened'] = (user.surpriseBoxesOpened || 0) + 1;
-        surpriseBoxMultiplier = finalMultiplier;
-        message = `Sürpriz Kutu buldunuz!`;
         
         db.ref('surprise_box_session').set({
-            active: true, user: currentUser, boxId: box.id,
-            multiplier: surpriseBoxMultiplier, cards: shuffleArray([...cardValues]),
-            selection: null, result: null, timestamp: firebase.database.ServerValue.TIMESTAMP
+            active: true, 
+            user: currentUser, 
+            boxId: box.id,
+            multiplier: finalMultiplier, // Mevcut çarpanı oturuma kaydet
+            cards: shuffleArray([...cardValues]),
+            selection: null, 
+            result: null, 
+            timestamp: firebase.database.ServerValue.TIMESTAMP
         });
         openCardSelectionModal(currentUser);
 
@@ -3346,7 +3349,6 @@ async function openBox(index) {
 
     if (box.content !== 'surpriz') {
         await db.ref('lastOpenedBox').set(boxOpenInfo);
-        // Sürpriz kutu değilse pop-up mesajı göster
         displayMessage(message);
     }
 }
@@ -5581,10 +5583,10 @@ async function reorderDailyRewardItem(rewardId, newIndex) {
 
 // MEVCUT listenForSurpriseBox FONKSİYONUNU BU BLOK İLE DEĞİŞTİRİN
 
+// listenForSurpriseBox FONKSİYONUNU TAMAMEN DEĞİŞTİRİN
 function listenForSurpriseBox() {
     const sessionRef = db.ref('surprise_box_session');
     
-    // Güvenlik için önceki dinleyiciyi kapat
     if (activeListeners.surpriseBox) {
         activeListeners.surpriseBox.ref.off(activeListeners.surpriseBox.event, activeListeners.surpriseBox.callback);
     }
@@ -5592,28 +5594,15 @@ function listenForSurpriseBox() {
     const callback = snap => {
         const sessionData = snap.val();
 
-        // 1. OTURUM SONA ERDİYSE: Tüm ilgili pencereleri kapat ve zamanlayıcıları temizle
         if (!sessionData || !sessionData.active) {
             closeCardSelectionModal();
             closeSpectatorModal();
             return;
         }
 
-        // 2. KART SEÇİMİ YAPILDIYSA VE SONUÇ GELDİYSE
         if (sessionData.result && !sessionData.logged) {
-            // Bu olayın tekrar tekrar tetiklenmemesi için loglandığını işaretle
             sessionRef.child('logged').set(true);
-            
-            // Oyunu kimin kazandığını ve ne kazandığını herkese gösteren büyük pencereyi aç
-            showGlobalSurpriseBoxNotification(sessionData);
-            
-            // Sürpriz kutuyu açan kullanıcının kendi seçim penceresini kapat
-            if (sessionData.user === currentUser) {
-                closeCardSelectionModal();
-            }
-            
-            // --- İSTEDİĞİNİZ DEĞİŞİKLİK BURADA UYGULANDI ---
-            // Eğer süre dolduysa farklı, puan kazanıldıysa farklı logla
+
             if (sessionData.result.timeout) {
                 logActivity('surpriseBoxTimeout', sessionData.user, { boxId: sessionData.boxId });
             } else {
@@ -5623,22 +5612,32 @@ function listenForSurpriseBox() {
                     multiplier: sessionData.multiplier 
                 });
             }
-            // --- DEĞİŞİKLİK SONU ---
 
-            // 4 saniye sonra oyunu temizle ve sıfırla
-            setTimeout(() => {
-                closeGlobalSurpriseBoxModal(); // Herkesteki bildirim penceresini kapat
-                if (sessionData.boxId !== 'Çark') { // Eğer çarktan gelmediyse oyun tahtasını sıfırla
+            if (sessionData.boxId !== 'Çark') {
+                showGlobalSurpriseBoxNotification(sessionData);
+                setTimeout(() => {
                     resetGameBoard();
-                }
-                sessionRef.remove(); // Veritabanından sürpriz kutu oturumunu sil
-            }, 4000);
-            
-            return; // İşlem bittiği için fonksiyonun devam etmesini engelle
+                    sessionRef.remove();
+                }, 4000); 
+            } else {
+                const multiplierText = (sessionData.multiplier > 1) ? ` (${Math.round(sessionData.result.points / sessionData.multiplier)} Puan x ${sessionData.multiplier} Çarpan)` : '';
+                const message = `<div class='text-center'>
+                                  <p class='text-2xl mb-2'>🎡 Çarktan Sürpriz! 🎡</p>
+                                  <p>${sessionData.user}, <b class='text-green-400'>+${sessionData.result.points} Puan</b> kazandı!${multiplierText}</p>
+                               </div>`;
+                displayMessage(message);
+                
+                setTimeout(() => {
+                    sessionRef.remove();
+                }, 4000);
+            }
+
+            if (sessionData.user === currentUser) {
+                closeCardSelectionModal();
+            }
+            return;
         }
 
-        // 3. KART SEÇİMİ HENÜZ YAPILMADIYSA
-        // Eğer ben sürpriz kutuyu açan kişi DEĞİLSEM, izleyici penceresini aç
         if (sessionData.user !== currentUser) {
             openSpectatorModal(sessionData);
         }
@@ -5687,36 +5686,29 @@ function openSpectatorModal(sessionData) {
     document.getElementById('spectatorResult').textContent = '';
     spectatorModal.style.display = 'flex';
 }
-  // MEVCUT showGlobalSurpriseBoxNotification FONKSİYONUNU BUNUNLA DEĞİŞTİR
+  // showGlobalSurpriseBoxNotification FONKSİYONUNU DEĞİŞTİR
 function showGlobalSurpriseBoxNotification(data) {
     document.getElementById('surpriseOpener').textContent = data.user;
     const sourceInfoEl = document.getElementById('surpriseSourceInfo');
     const pointsEl = document.getElementById('surprisePoints');
     const multiplierEl = document.getElementById('surpriseMultiplierInfo');
 
-    // 1. Oturumun süre aşımı nedeniyle bitip bitmediğini kontrol et
     if (data.result && data.result.timeout) {
         sourceInfoEl.innerHTML = `kart seçimi için verilen süreyi aştı ve <b class="text-red-400">puan kazanamadı!</b>`;
         pointsEl.textContent = 'Süre Doldu';
         multiplierEl.innerHTML = 'Oyun kısa süre içinde sıfırlanacak.';
-    } 
-    // 2. Normal şekilde puan kazanıldıysa
-    else {
-        const source = data.boxId === 'Çark' 
-            ? `<b>Şans Çarkı</b>'ndan Sürpriz Kutu elde etti ve kart seçiminden`
-            : `<span class="text-red-400 font-bold">${data.boxId}</span> numaralı kutuyu açtı ve kart seçiminden`;
-        sourceInfoEl.innerHTML = source;
-
+    } else {
+        sourceInfoEl.innerHTML = `<span class="text-red-400 font-bold">${data.boxId}</span> numaralı kutuyu açtı ve kart seçiminden`;
         pointsEl.textContent = data.result.points;
 
-        let multiplierText = 'kazandı! (Çarpan kullanılmadı)';
+        let multiplierText = 'kazandı!';
         if (data.multiplier && data.multiplier > 1) {
             const basePoints = Math.round(data.result.points / data.multiplier);
             multiplierText = `kazandı! <br><span class="text-base text-gray-400">(${basePoints} Puan x ${data.multiplier} Çarpan)</span>`;
         }
         multiplierEl.innerHTML = multiplierText;
     }
-
+    
     document.getElementById('globalSurpriseBoxModal').style.display = 'flex';
 }
   function closeGlobalSurpriseBoxModal() {
@@ -5828,6 +5820,7 @@ function renderWheel() {
 }
     
 // BU FONKSİYONU BUL VE AŞAĞIDAKİYLE KOMPLE DEĞİŞTİR
+// spinWheel FONKSİYONUNU BUL VE BUNUNLA DEĞİŞTİR
 async function spinWheel() {
     if (isWheelSpinning) return;
     if (isAdmin) {
@@ -5882,90 +5875,96 @@ async function spinWheel() {
     wheel.style.transform = `rotate(${finalRotation}deg)`;
     
     setTimeout(async () => {
-        isWheelSpinning = false;
-        spinBtn.disabled = false;
-        spinBtn.textContent = 'Çarkı Çevir!';
-
-        const currentUserDataSnap = await userRef.once('value');
-        const currentUserData = currentUserDataSnap.val();
-
-        if (!currentUserData) {
-            console.error("Çark sonucu işlenirken kullanıcı verisi bulunamadı!");
-            displayMessage("Bir hata oluştu, ödülünüz işlenemedi. Lütfen sayfayı yenileyin.");
-            return;
-        }
-
         let message = '';
-        let updates = {};
-        
-        switch(winningSegment.type) {
-            case 'points':
-                message = `Tebrikler, çarktan <b>+${winningSegment.value} Puan</b> kazandın!`;
-                updates.balance = (currentUserData.balance || 0) + winningSegment.value;
-                if(updates.balance > (currentUserData.highestBalanceEver || 0)) updates.highestBalanceEver = updates.balance;
-                break;
-            case 'boxRights':
-                message = `Tebrikler, çarktan <b>+${winningSegment.value} Kutu Hakkı</b> kazandın!`;
-                updates.kutuHakki = (currentUserData.kutuHakki || 0) + winningSegment.value;
-                break;
-            case 'iflasShield':
-                message = `Tebrikler, çarktan <b>+${winningSegment.value} İflas Kalkanı</b> kazandın!`;
-                updates.iflasShieldUses = (currentUserData.iflasShieldUses || 0) + winningSegment.value;
-                break;
-            case 'clickCatchTicket':
-                 message = `Tebrikler, çarktan <b>+${winningSegment.value} Tıkla-Yakala Bileti</b> kazandın!`;
-                updates.clickCatchTickets = (currentUserData.clickCatchTickets || 0) + winningSegment.value;
-                break;
-            case 'wheelTicket':
-                 message = `Tebrikler, çarktan <b>+${winningSegment.value} Çark Bileti</b> kazandın!`;
-                 updates.carkBileti = (currentUserData.carkBileti || 0) + winningSegment.value;
-                break;
-            case 'tempMultiplier':
-                message = `Tebrikler, çarktan <b>${winningSegment.value}X Çarpan</b> kazandın!`;
-                updates.activeMultiplier = winningSegment.value;
-                updates.multiplierSource = 'store';
-                updates.multiplierRemainingUses = winningSegment.duration;
-                break;
-            case 'surpriseBox':
-                 db.ref('surprise_box_session').set({ active: true, user: currentUser, boxId: 'Çark', multiplier: 1, cards: shuffleArray([...cardValues]), selection: null, result: null, timestamp: firebase.database.ServerValue.TIMESTAMP });
-                 openCardSelectionModal(currentUser);
-                 message = "Vay canına! Çarktan Sürpriz Kutu çıktı! Şimdi bir kart seç.";
-                 break;
-            case 'pas':
-                message = "Bu seferlik pas! Bir dahaki sefere daha şanslı olabilirsin.";
-                break;
-        }
+        try {
+            isWheelSpinning = false;
+            spinBtn.disabled = false;
+            spinBtn.textContent = 'Çarkı Çevir!';
 
-        db.ref('wheelHistory').push().set({
-            username: currentUser, 
-            prize: winningSegment.label, 
-            type: winningSegment.type,
-            // DEĞİŞEN SATIR: winningSegment.value tanımsız ise null kaydet
-            value: winningSegment.value !== undefined ? winningSegment.value : null,
-            timestamp: firebase.database.ServerValue.TIMESTAMP
-        });
+            const currentUserDataSnap = await userRef.once('value');
+            const currentUserData = currentUserDataSnap.val();
 
-        if (winningSegment.type !== 'surpriseBox') {
-             // DEĞİŞEN BLOK: logActivity'e de veriyi daha güvenli gönder
-            const logDetails = {
-                result: winningSegment.label,
+            if (!currentUserData) {
+                throw new Error("Kullanıcı verisi bulunamadı!");
+            }
+
+            let updates = {};
+            
+            switch(winningSegment.type) {
+                case 'points':
+                    message = `Tebrikler, çarktan <b>+${winningSegment.value} Puan</b> kazandın!`;
+                    updates.balance = (currentUserData.balance || 0) + winningSegment.value;
+                    if(updates.balance > (currentUserData.highestBalanceEver || 0)) updates.highestBalanceEver = updates.balance;
+                    break;
+                case 'boxRights':
+                    message = `Tebrikler, çarktan <b>+${winningSegment.value} Kutu Hakkı</b> kazandın!`;
+                    updates.kutuHakki = (currentUserData.kutuHakki || 0) + winningSegment.value;
+                    break;
+                case 'iflasShield':
+                    message = `Tebrikler, çarktan <b>+${winningSegment.value} İflas Kalkanı</b> kazandın!`;
+                    updates.iflasShieldUses = (currentUserData.iflasShieldUses || 0) + winningSegment.value;
+                    break;
+                case 'clickCatchTicket':
+                     message = `Tebrikler, çarktan <b>+${winningSegment.value} Tıkla-Yakala Bileti</b> kazandın!`;
+                    updates.clickCatchTickets = (currentUserData.clickCatchTickets || 0) + winningSegment.value;
+                    break;
+                case 'wheelTicket':
+                     message = `Tebrikler, çarktan <b>+${winningSegment.value} Çark Bileti</b> kazandın!`;
+                     updates.carkBileti = (currentUserData.carkBileti || 0) + winningSegment.value;
+                    break;
+                case 'tempMultiplier':
+                    message = `Tebrikler, çarktan <b>${winningSegment.value}X Çarpan</b> kazandın!`;
+                    updates.activeMultiplier = winningSegment.value;
+                    updates.multiplierSource = 'store';
+                    updates.multiplierRemainingUses = winningSegment.duration;
+                    break;
+                case 'surpriseBox':
+                     db.ref('surprise_box_session').set({ 
+                         active: true, 
+                         user: currentUser, 
+                         boxId: 'Çark', 
+                         multiplier: 1, 
+                         cards: shuffleArray([...cardValues]), 
+                         selection: null, 
+                         result: null, 
+                         timestamp: firebase.database.ServerValue.TIMESTAMP 
+                     });
+                     openCardSelectionModal(currentUser);
+                     message = "Vay canına! Çarktan Sürpriz Kutu çıktı! Şimdi bir kart seç.";
+                     break;
+                case 'pas':
+                    message = "Bu seferlik pas! Bir dahaki sefere daha şanslı olabilirsin.";
+                    break;
+            }
+
+            if(Object.keys(updates).length > 0) await userRef.update(updates);
+
+            db.ref('wheelHistory').push().set({
+                username: currentUser, 
+                prize: winningSegment.label, 
                 type: winningSegment.type,
-                value: winningSegment.value !== undefined ? winningSegment.value : null
-            };
-            logActivity('spinWheel', currentUser, logDetails);
-        }
-        
-        if(Object.keys(updates).length > 0) await userRef.update(updates);
-        
-        displayMessage(message);
-        
-        const normalizedRotation = finalRotation % 360;
-        wheel.style.transition = 'none';
-        wheel.style.transform = `rotate(${normalizedRotation}deg)`;
+                value: winningSegment.value !== undefined ? winningSegment.value : null,
+                timestamp: firebase.database.ServerValue.TIMESTAMP
+            });
 
+            if (winningSegment.type !== 'surpriseBox') {
+                logActivity('spinWheel', currentUser, { 
+                    result: winningSegment.label, 
+                    type: winningSegment.type, 
+                    value: winningSegment.value !== undefined ? winningSegment.value : null
+                });
+            }
+        } catch (error) {
+            console.error("Çark ödülü işlenirken hata oluştu:", error);
+            message = "Bir hata oluştu, ancak ödülünüz hesabınıza işlenmiş olabilir. Lütfen envanterinizi kontrol edin.";
+        } finally {
+            displayMessage(message);
+            const normalizedRotation = finalRotation % 360;
+            wheel.style.transition = 'none';
+            wheel.style.transform = `rotate(${normalizedRotation}deg)`;
+        }
     }, 5100);
 }
-
 function openSoloGameSettingsModal() {
     soloGameSettingsModal.style.display = 'flex';
 }
@@ -7000,7 +6999,7 @@ function formatSpinWheelPrizeHtml(details) {
     // Diğer her şey için güvenli varsayılan
     return `<span class="text-cyan-400 font-bold">${prizeResult}</span>`;
 }
-   // MEVCUT renderActivityFeed FONKSİYONUNU SİLİP BUNU YAPIŞTIR
+   // renderActivityFeed FONKSİYONUNU TAMAMEN DEĞİŞTİR
 function renderActivityFeed(activities) {
     const activityFeedList = document.getElementById('activityFeedList');
     activityFeedList.innerHTML = '';
@@ -7045,8 +7044,8 @@ function renderActivityFeed(activities) {
                 message = `${userHtml}, <b>${details.boxId}</b> numaralı kutudan <span class="text-green-400 font-bold">+${details.points} Puan</span> kazandı.`;
                 break;
             case 'surpriseBoxTimeout':
-    message = `${userHtml}, Sürpriz Kutu seçim süresini aştığı için puan kazanamadı.`;
-    break;
+                message = `${userHtml}, Sürpriz Kutu seçim süresini aştığı için puan kazanamadı.`;
+                break;
             case 'iflas':
                 if (details.shieldUsed) {
                     message = `${userHtml}, <b>${details.boxId}</b> numaralı kutudan Bomba buldu ama kalkanı tarafından korundu.`;
@@ -7061,9 +7060,13 @@ function renderActivityFeed(activities) {
                 message = `${userHtml}, <b>${details.boxId}</b> numaralı kutudan <span class="text-cyan-400 font-bold">${details.itemName}</span> buldu.`;
                 break;
             case 'surpriseBox':
-                const multiplierText = (details.multiplier || 1) > 1 ? ` (${details.multiplier}x çarpan ile)` : '';
-                const source = details.boxId === 'Çark' ? 'Şans Çarkı\'ndan' : `<b>${details.boxId}</b> numaralı kutudan`;
-                message = `${userHtml}, ${source} Sürpriz Kutu buldu ve <span class="text-green-400 font-bold">+${details.points} Puan</span> kazandı${multiplierText}!`;
+                const multiplierText = (details.multiplier || 1) > 1 
+                    ? ` (<span class="text-purple-400 font-bold">${details.multiplier}x çarpan</span> ile)` 
+                    : '';
+                const sourceText = details.boxId === 'Çark' 
+                    ? 'Şans Çarkı\'ndan' 
+                    : `<b>${details.boxId}</b> numaralı kutudan`;
+                message = `${userHtml}, ${sourceText} Sürpriz Kutu buldu ve <span class="text-green-400 font-bold">+${details.points} Puan</span> kazandı${multiplierText}!`;
                 break;
             case 'buyItem':
                 if (details.itemType === 'tempMultiplier') {
@@ -7107,7 +7110,6 @@ function renderActivityFeed(activities) {
                     message = `${userHtml}, günlük ödül olarak <span class="text-cyan-400 font-bold">+${details.rewardValue} ADET ${details.rewardName}</span> aldı.`;
                 }
                 break;
-
             default:
                 message = `${userHtml} bir eylem gerçekleştirdi.`;
         }
@@ -7178,7 +7180,8 @@ function initActivityFeed() {
     ref.on('value', callback);
 }
 
-// BU FONKSİYONU BUL VE AŞAĞIDAKİYLE KOMPLE DEĞİŞTİR
+// MEVCUT loadWheelHistory FONKSİYONUNU BU BLOK İLE DEĞİŞTİRİN
+
 function loadWheelHistory() {
     const historyRef = db.ref('wheelHistory').limitToLast(10);
     const listEl = document.getElementById('wheelHistoryList');
@@ -7203,22 +7206,31 @@ function loadWheelHistory() {
             const timeAgo = formatRelativeTime(item.timestamp);
             
             let icon = '❓';
-            let prizeText = item.prize; // Varsayılan olarak etiketi al
+            let prizeText = item.prize;
             const prizeType = item.type;
-            const prizeValue = item.value; // Veritabanından gelen değeri al
+            const prizeValue = item.value;
 
-            // Puan türü için metni özel olarak oluştur
             if (prizeType === 'points') {
                 icon = '💰';
-                // prizeValue değişkenini kullanarak metni oluştur, undefined hatasını engelle
                 prizeText = `+${prizeValue} PUAN`; 
             } else if (prizeType === 'surpriseBox') {
                 icon = '🎉';
                 prizeText = 'SÜRPRİZ KUTU';
-            } else if (prizeType === 'boxRights') {
-                icon = '📦';
+            } 
+            // --- DEĞİŞİKLİK BURADA BAŞLIYOR ---
+            else if (prizeType === 'boxRights') {
+                // Eğer kazanılan kutu hakkı 1'den fazlaysa 'hediye paketi' ikonunu kullan
+                if (prizeValue > 1) {
+                    icon = '🎁';
+                } 
+                // Eğer 1 ise normal 'kutu' ikonunu kullan
+                else {
+                    icon = '📦';
+                }
                 prizeText = `+${prizeValue} Kutu Hakkı`;
-            } else if (prizeType === 'clickCatchTicket') {
+            } 
+            // --- DEĞİŞİKLİK SONA ERİYOR ---
+            else if (prizeType === 'clickCatchTicket') {
                 icon = '🎟️';
                 prizeText = `+${prizeValue} Tıkla-Yakala Bileti`;
             } else if (prizeType === 'wheelTicket') {
@@ -8012,8 +8024,8 @@ function getIconForWheelLabel(label) {
     if (upperLabel.includes('1000 PUAN')) return '💎';
     if (upperLabel.includes('100 PUAN')) return '💰';
     if (upperLabel.includes('50 PUAN')) return '🍪';
-    if (upperLabel.includes('3 KUTU HAKKI')) return '📦';
-    if (upperLabel.includes('1 KUTU HAKKI')) return '🎁';
+    if (upperLabel.includes('3 KUTU HAKKI')) return '🎁';
+    if (upperLabel.includes('1 KUTU HAKKI')) return '📦';
     if (upperLabel.includes('TIKLA-YAKALA')) return '🎟️';
     if (upperLabel.includes('5X ÇARPAN')) return '✖️';
     if (upperLabel.includes('SÜPRİZ KUTU')) return '🎉';
