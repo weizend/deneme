@@ -7237,29 +7237,6 @@ function updateTotalBoxCount() {
     document.getElementById('totalBoxCountDisplay').textContent = total;
 }
 
-// Ayarlar modalını açar, veritabanından ayarları çeker ve satırları oluşturur.
-async function openBoxSettingsModal() {
-    if (!isAdmin) return;
-
-    const container = document.getElementById('boxSettingsRowsContainer');
-    container.innerHTML = ''; // Önceki satırları temizle
-
-    const settingsRef = db.ref('gameConfig/boxContents');
-    const snapshot = await settingsRef.once('value');
-
-    const defaultSettings = [ { type: 'points', value: 100, count: 10 }, { type: 'iflas', value: 0, count: 2 }, { type: 'iflasShield', value: 1, count: 2 } ];
-    const currentConfig = snapshot.exists() ? snapshot.val() : defaultSettings;
-
-    if (currentConfig && currentConfig.length > 0) {
-        currentConfig.forEach(item => addBoxSettingRow(item));
-    } else {
-        addBoxSettingRow(); // Eğer hiç ayar yoksa boş bir satırla başlat
-    }
-    
-    updateTotalBoxCount(); // Toplam sayıyı ilk açılışta hesapla
-    boxSettingsModal.style.display = 'flex';
-}
-
 function closeBoxSettingsModal() {
     boxSettingsModal.style.display = 'none';
 }
@@ -7615,9 +7592,6 @@ function closeHelpModal() {
         closeAvatarSelectionModal();
     }
 
-   // YENİ: KUTU AYARLARI MODALI FONKSİYONLARI
-
-// Modalı açar, veritabanından ayarları çeker ve satırları oluşturur.
 async function openBoxSettingsModal() {
     if (!isAdmin) return;
 
