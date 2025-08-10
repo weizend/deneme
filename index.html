@@ -6787,8 +6787,34 @@ function getActivityIcon(type, details = {}) {
     }
 }
 
-    // BU FONKSİYONU BUL VE AŞAĞIDAKİYLE KOMPLE DEĞİŞTİR
-// BU FONKSİYONU BUL VE AŞAĞIDAKİYLE KOMPLE DEĞİŞTİR
+    // BU YENİ FONKSİYONU OLDUĞU GİBİ EKLE
+function formatSpinWheelPrizeHtml(details) {
+    const prizeType = details.type;
+    const prizeValue = details.value;
+    const prizeResult = details.result || 'bir ödül';
+
+    const prizeUnitMap = {
+        points: { unit: 'Puan', color: 'text-green-400' },
+        boxRights: { unit: 'Kutu Hakkı', color: 'text-blue-400' },
+        iflasShield: { unit: 'İflas Kalkanı', color: 'text-sky-400' },
+        clickCatchTicket: { unit: 'Tıkla-Yakala Bileti', color: 'text-teal-400' },
+        wheelTicket: { unit: 'Çark Bileti', color: 'text-teal-400' }
+    };
+
+    if (prizeUnitMap[prizeType] && typeof prizeValue === 'number') {
+        const info = prizeUnitMap[prizeType];
+        return `<span class="${info.color} font-bold">+${prizeValue} ${info.unit}</span>`;
+    }
+
+    if (prizeType === 'tempMultiplier') {
+        return `<span class="text-purple-400 font-bold">${prizeResult}</span>`;
+    }
+
+    // Diğer her şey için güvenli varsayılan
+    return `<span class="text-cyan-400 font-bold">${prizeResult}</span>`;
+}
+
+    // MEVCUT renderActivityFeed FONKSİYONUNU SİLİP BUNU YAPIŞTIR
 function renderActivityFeed(activities) {
     const activityFeedList = document.getElementById('activityFeedList');
     activityFeedList.innerHTML = '';
@@ -6861,21 +6887,13 @@ function renderActivityFeed(activities) {
                 }
                 break;
             case 'spinWheel':
-                const prizeType = details.type;
-                const prizeValue = details.value;
-                const prizeResult = details.result || 'bir ödül';
-
-                // DÜZELTİLEN YER: "Pas" için özel bir durum ekledik.
-                if (prizeType === 'pas') {
+                if (details.type === 'pas') {
                     message = `${userHtml}, Şans Çarkı'nı çevirdi ve <span class="text-gray-400 font-bold">Pas geldi</span>.`;
-                }
-                else if (prizeType === 'points' && typeof prizeValue === 'number') {
-                    const prizeDisplayHtml = `<span class="text-green-400 font-bold">+${prizeValue} Puan</span>`;
-                    message = `${userHtml}, Şans Çarkı'nı çevirdi ve ${prizeDisplayHtml} kazandı.`;
-                }
-                else {
-                    const prizeDisplayHtml = `<span class="text-cyan-400 font-bold">${prizeResult}</span>`;
-                    message = `${userHtml}, Şans Çarkı'nı çevirdi ve ${prizeDisplayHtml} kazandı.`;
+                } else if (details.type === 'surpriseBox') {
+                    message = `${userHtml}, Şans Çarkı'nı çevirdi ve <span class="text-yellow-300 font-bold">Sürpriz Kutu</span> buldu!`;
+                } else {
+                    const prizeHtml = formatSpinWheelPrizeHtml(details);
+                    message = `${userHtml}, Şans Çarkı'nı çevirdi ve ${prizeHtml} kazandı.`;
                 }
                 break;
             case 'clickCatchSolo':
