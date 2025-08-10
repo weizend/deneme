@@ -7737,6 +7737,17 @@ function closeWheelLegendModal() {
     activeListeners.lobbySummary = { ref, event: 'value', callback };
     ref.on('value', callback);
 }
+
+    document.getElementById('dailyRewardType').addEventListener('change', function() {
+      const usesInput = document.getElementById('dailyRewardMultiplierUses');
+      // Eğer seçilen tip "Çarpan" (tempMultiplier) ise, Kullanım Hakkı alanını göster.
+      if (this.value === 'tempMultiplier') {
+          usesInput.classList.remove('hidden');
+      } else {
+      // Değilse, Kullanım Hakkı alanını gizle.
+          usesInput.classList.add('hidden');
+      }
+  });
     
 </script>
 </body>
