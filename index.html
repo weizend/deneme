@@ -4071,7 +4071,7 @@ async function reorderStoreItem(itemId, newIndex) {
       });
   }
 
-    // DEĞİŞTİRİLECEK FONKSİYON
+    // MEVCUT deletePurchase FONKSİYONUNU BUNUNLA DEĞİŞTİR
 async function deletePurchase(purchaseId) {
     if (!isAdmin) return;
 
@@ -4095,6 +4095,7 @@ async function deletePurchase(purchaseId) {
         const itemsSnap = await storeItemsRef.orderByChild('name').equalTo(itemName).once('value');
         let originalItemId = null;
         let originalItem = null;
+        // GÜVENLİK KONTROLÜ: Ürün mağazada hala var mı?
         if (itemsSnap.exists()) {
             originalItemId = Object.keys(itemsSnap.val())[0];
             originalItem = itemsSnap.val()[originalItemId];
@@ -4102,17 +4103,16 @@ async function deletePurchase(purchaseId) {
 
         const userSnap = await userRef.once('value');
         const userData = userSnap.val();
-        if (!userData) {
-            displayMessage(`Hata: ${username} adlı kullanıcı bulunamadı.`);
-            await purchaseRef.remove(); // Kullanıcı yoksa bile geçmişi sil
-            return;
-        }
-
+        
         const updates = {};
         
-        updates[`/users/${username}/balance`] = (userData.balance || 0) + itemCost;
-        updates[`/users/${username}/totalSpentPoints`] = Math.max(0, (userData.totalSpentPoints || 0) - itemCost);
-        
+        // Kullanıcı hala varsa puanını iade et
+        if (userData) {
+            updates[`/users/${username}/balance`] = (userData.balance || 0) + itemCost;
+            updates[`/users/${username}/totalSpentPoints`] = Math.max(0, (userData.totalSpentPoints || 0) - itemCost);
+        }
+
+        // Ürün mağazada hala varsa istatistiklerini güncelle
         if (originalItemId && originalItem) {
             updates[`/storeItems/${originalItemId}/purchaseCount`] = Math.max(0, (originalItem.purchaseCount || 0) - 1);
             if (originalItem.stock !== null && originalItem.stock !== undefined) {
@@ -4120,12 +4120,13 @@ async function deletePurchase(purchaseId) {
             }
         }
 
+        // Satın alma kaydını her durumda sil
         updates[`/purchaseHistory/${purchaseId}`] = null;
 
         await db.ref().update(updates);
 
         displayMessage(`'${itemName}' alımı başarıyla silindi. ${username} adlı kullanıcıya ${itemCost} puan iade edildi.`);
-        // Eğer modal açıksa, listeyi yenile
+        
         if (purchaseHistoryModal.style.display === 'flex') {
             loadPurchaseHistory();
         }
@@ -6814,7 +6815,7 @@ function formatSpinWheelPrizeHtml(details) {
     return `<span class="text-cyan-400 font-bold">${prizeResult}</span>`;
 }
 
-    // MEVCUT renderActivityFeed FONKSİYONUNU SİLİP BUNU YAPIŞTIR
+   // BU FONKSİYONU BUL VE AŞAĞIDAKİYLE KOMPLE DEĞİŞTİR
 function renderActivityFeed(activities) {
     const activityFeedList = document.getElementById('activityFeedList');
     activityFeedList.innerHTML = '';
@@ -6836,13 +6837,7 @@ function renderActivityFeed(activities) {
     }
 
     activities.forEach(activity => {
-        if (!activity || !activity.username) {
-            console.warn("Hatalı formatta aktivite verisi atlandı:", activity);
-            return; 
-        }
-        const details = activity.details || {}; 
-
-        let iconContent = getActivityIcon(activity.type, details);
+        let iconContent = getActivityIcon(activity.type, activity.details);
         let message = '';
         const timeAgo = formatRelativeTime(activity.timestamp);
         
@@ -6856,66 +6851,71 @@ function renderActivityFeed(activities) {
 
         switch (activity.type) {
             case 'openBox':
-                message = `${userHtml}, <b>${details.boxId}</b> numaralı kutudan <span class="text-green-400 font-bold">+${details.points} Puan</span> kazandı.`;
+                message = `${userHtml}, <b>${activity.details.boxId}</b> numaralı kutudan <span class="text-green-400 font-bold">+${activity.details.points} Puan</span> kazandı.`;
                 break;
             case 'iflas':
-                if (details.shieldUsed) {
-                    message = `${userHtml}, <b>${details.boxId}</b> numaralı kutudan Bomba buldu ama kalkanı tarafından korundu.`;
+                if (activity.details.shieldUsed) {
+                    message = `${userHtml}, <b>${activity.details.boxId}</b> numaralı kutudan Bomba buldu ama kalkanı tarafından korundu.`;
                 } else {
-                    message = `${userHtml}, <b>${details.boxId}</b> numaralı kutudan Bomba buldu ve <span class="text-red-500 font-bold">-${details.lostPoints} puan</span> kaybetti.`;
+                    message = `${userHtml}, <b>${activity.details.boxId}</b> numaralı kutudan Bomba buldu ve <span class="text-red-500 font-bold">-${activity.details.lostPoints} puan</span> kaybetti.`;
                 }
                 break;
             case 'multiplierFound':
-                 message = `${userHtml}, <b>${details.boxId}</b> numaralı kutudan <span class="text-purple-400 font-bold">${details.value}x Çarpan</span> buldu.`;
+                 message = `${userHtml}, <b>${activity.details.boxId}</b> numaralı kutudan <span class="text-purple-400 font-bold">${activity.details.value}x Çarpan</span> buldu.`;
                 break;
             case 'newItemFound':
-                message = `${userHtml}, <b>${details.boxId}</b> numaralı kutudan <span class="text-cyan-400 font-bold">${details.itemName}</span> buldu.`;
+                message = `${userHtml}, <b>${activity.details.boxId}</b> numaralı kutudan <span class="text-cyan-400 font-bold">${activity.details.itemName}</span> buldu.`;
                 break;
             case 'surpriseBox':
-                const multiplierText = (details.multiplier || 1) > 1 ? ` (${details.multiplier}x çarpan ile)` : '';
-                const source = details.boxId === 'Çark' ? 'Şans Çarkı\'ndan' : `<b>${details.boxId}</b> numaralı kutudan`;
-                message = `${userHtml}, ${source} Sürpriz Kutu buldu ve <span class="text-green-400 font-bold">+${details.points} Puan</span> kazandı${multiplierText}!`;
+                const multiplierText = (activity.details.multiplier || 1) > 1 ? ` (${activity.details.multiplier}x çarpan ile)` : '';
+                const source = activity.details.boxId === 'Çark' ? 'Şans Çarkı\'ndan' : `<b>${activity.details.boxId}</b> numaralı kutudan`;
+                message = `${userHtml}, ${source} Sürpriz Kutu buldu ve <span class="text-green-400 font-bold">+${activity.details.points} Puan</span> kazandı${multiplierText}!`;
                 break;
             case 'buyItem':
-                if (details.itemType === 'tempMultiplier') {
-                    const duration = details.itemDuration || 1;
-                    message = `${userHtml}, mağazadan <span class="text-red-500 font-bold">-${details.itemCost} puan</span> karşılığında <span class="text-cyan-400 font-bold">${duration} ADET ${details.itemValue}x Çarpan</span> satın aldı.`;
+                if (activity.details.itemType === 'tempMultiplier') {
+                    const duration = activity.details.itemDuration || 1;
+                    message = `${userHtml}, mağazadan <span class="text-red-500 font-bold">-${activity.details.itemCost} puan</span> karşılığında <span class="text-cyan-400 font-bold">${duration} ADET ${activity.details.itemValue}x Çarpan</span> satın aldı.`;
                 } else {
-                    const quantity = details.itemValue || 1;
-                    const itemName = details.itemName || 'bir ürün';
-                    message = `${userHtml}, mağazadan <span class="text-red-500 font-bold">-${details.itemCost} puan</span> karşılığında <span class="text-cyan-400 font-bold">+${quantity} ADET ${itemName}</span> satın aldı.`;
+                    const quantity = activity.details.itemValue || 1;
+                    const itemName = activity.details.itemName || 'bir ürün';
+                    message = `${userHtml}, mağazadan <span class="text-red-500 font-bold">-${activity.details.itemCost} puan</span> karşılığında <span class="text-cyan-400 font-bold">+${quantity} ADET ${itemName}</span> satın aldı.`;
                 }
                 break;
             case 'spinWheel':
-                if (details.type === 'pas') {
+                const prizeType = activity.details.type;
+                const prizeValue = activity.details.value;
+                const prizeResult = activity.details.result;
+
+                if (prizeType === 'pas') {
                     message = `${userHtml}, Şans Çarkı'nı çevirdi ve <span class="text-gray-400 font-bold">Pas geldi</span>.`;
-                } else if (details.type === 'surpriseBox') {
-                    message = `${userHtml}, Şans Çarkı'nı çevirdi ve <span class="text-yellow-300 font-bold">Sürpriz Kutu</span> buldu!`;
+                } else if (prizeType === 'points') {
+                    message = `${userHtml}, Şans Çarkı'nı çevirdi ve <span class="text-green-400 font-bold">+${prizeValue} Puan</span> kazandı.`;
+                } else if (prizeType === 'boxRights') {
+                    message = `${userHtml}, Şans Çarkı'nı çevirdi ve <span class="text-cyan-400 font-bold">+${prizeValue} Kutu Hakkı</span> kazandı.`;
                 } else {
-                    const prizeHtml = formatSpinWheelPrizeHtml(details);
-                    message = `${userHtml}, Şans Çarkı'nı çevirdi ve ${prizeHtml} kazandı.`;
+                    message = `${userHtml}, Şans Çarkı'nı çevirdi ve <span class="text-cyan-400 font-bold">${prizeResult}</span> kazandı.`;
                 }
                 break;
             case 'clickCatchSolo':
-                if (details.score >= 0) {
-                    message = `${userHtml}, Tıkla-Yakala (Tekli) oyun oynadı ve <span class="text-green-400 font-bold">+${details.score} Puan</span> kazandı.`;
+                if (activity.details.score >= 0) {
+                    message = `${userHtml}, Tıkla-Yakala (Tekli) oyun oynadı ve <span class="text-green-400 font-bold">+${activity.details.score} Puan</span> kazandı.`;
                 } else {
-                    message = `${userHtml}, Tıkla-Yakala (Tekli) oyununda <span class="text-red-500 font-bold">${details.score} Puan</span> kaybetti.`;
+                    message = `${userHtml}, Tıkla-Yakala (Tekli) oyununda <span class="text-red-500 font-bold">${activity.details.score} Puan</span> kaybetti.`;
                 }
-                if(details.specialItems) {
-                    message += ` Ayrıca <span class="text-cyan-400 font-bold">${details.specialItems}</span> elde etti.`
+                if(activity.details.specialItems) {
+                    message += ` Ayrıca <span class="text-cyan-400 font-bold">${activity.details.specialItems}</span> elde etti.`
                 }
                 break;
             case 'clickCatchLobby':
-                message = `${userHtml}, Tıkla-Yakala (Lobi) oyununda birinci oldu ve <span class="text-green-400 font-bold">+${details.prize} Puan</span> kazandı.`;
+                message = `${userHtml}, Tıkla-Yakala (Lobi) oyununda birinci oldu ve <span class="text-green-400 font-bold">+${activity.details.prize} Puan</span> kazandı.`;
                 break;
             case 'dailyReward':
-                if (details.rewardType === 'tempMultiplier') {
-                    message = `${userHtml}, günlük ödül olarak <span class="text-cyan-400 font-bold">${details.rewardUses} ADET ${details.rewardValue}x Çarpan</span> aldı.`;
-                } else if (details.rewardType === 'points') {
-                    message = `${userHtml}, günlük ödül olarak <span class="text-green-400 font-bold">+${details.rewardValue} Puan</span> aldı.`;
+                if (activity.details.rewardType === 'tempMultiplier') {
+                    message = `${userHtml}, günlük ödül olarak <span class="text-cyan-400 font-bold">${activity.details.rewardUses} ADET ${activity.details.rewardValue}x Çarpan</span> aldı.`;
+                } else if (activity.details.rewardType === 'points') {
+                    message = `${userHtml}, günlük ödül olarak <span class="text-green-400 font-bold">+${activity.details.rewardValue} Puan</span> aldı.`;
                 } else {
-                    message = `${userHtml}, günlük ödül olarak <span class="text-cyan-400 font-bold">+${details.rewardValue} ADET ${details.rewardName}</span> aldı.`;
+                    message = `${userHtml}, günlük ödül olarak <span class="text-cyan-400 font-bold">+${activity.details.rewardValue} ADET ${activity.details.rewardName}</span> aldı.`;
                 }
                 break;
 
@@ -6990,7 +6990,6 @@ function initActivityFeed() {
 }
 
 // BU FONKSİYONU BUL VE AŞAĞIDAKİYLE KOMPLE DEĞİŞTİR
-// BU FONKSİYONU BUL VE AŞAĞIDAKİYLE KOMPLE DEĞİŞTİR
 function loadWheelHistory() {
     const historyRef = db.ref('wheelHistory').limitToLast(10);
     const listEl = document.getElementById('wheelHistoryList');
@@ -7014,35 +7013,42 @@ function loadWheelHistory() {
         history.forEach(item => {
             const timeAgo = formatRelativeTime(item.timestamp);
             
-            // --- YENİ, BASİT VE GÜVENİLİR MANTIK ---
+            let icon = '❓';
+            let prizeText = item.prize; // Varsayılan olarak etiketi al
             const prizeType = item.type;
-            const prizeValue = item.value;
-            let prizeText = item.prize; // Güvenli varsayılan: Her zaman etiketin kendisiyle başla
-            let icon = getIconForWheelLabel(item.prize);
+            const prizeValue = item.value; // Veritabanından gelen değeri al
 
-            // Sayısal değer ve birimle formatlanacak türler için bir harita
-            const prizeUnitMap = {
-                points: 'Puan',
-                boxRights: 'Kutu Hakkı',
-                iflasShield: 'İflas Kalkanı',
-                clickCatchTicket: 'Tıkla-Yakala Bileti',
-                wheelTicket: 'Çark Bileti'
-            };
-
-            // Eğer ödül türü haritada varsa VE değeri geçerli bir sayı ise, metni oluştur
-            if (prizeUnitMap[prizeType] && typeof prizeValue === 'number') {
-                prizeText = `+${prizeValue} ${prizeUnitMap[prizeType]}`;
-            } 
-            // Çarpan için özel durum
-            else if (prizeType === 'tempMultiplier' && typeof prizeValue === 'number') {
+            // Puan türü için metni özel olarak oluştur
+            if (prizeType === 'points') {
+                icon = '💰';
+                // prizeValue değişkenini kullanarak metni oluştur, undefined hatasını engelle
+                prizeText = `+${prizeValue} PUAN`; 
+            } else if (prizeType === 'surpriseBox') {
+                icon = '🎉';
+                prizeText = 'SÜRPRİZ KUTU';
+            } else if (prizeType === 'boxRights') {
+                icon = '📦';
+                prizeText = `+${prizeValue} Kutu Hakkı`;
+            } else if (prizeType === 'clickCatchTicket') {
+                icon = '🎟️';
+                prizeText = `+${prizeValue} Tıkla-Yakala Bileti`;
+            } else if (prizeType === 'wheelTicket') {
+                icon = '🎡';
+                prizeText = `+${prizeValue} Çark Bileti`;
+            } else if (prizeType === 'tempMultiplier') {
+                icon = '✖️';
                 prizeText = `${prizeValue}X ÇARPAN`;
+            } else if (prizeType === 'iflasShield') {
+                icon = '🛡️';
+                prizeText = `+${prizeValue} İflas Kalkanı`;
+            } else if (prizeType === 'pas') {
+                icon = '☠️';
+                prizeText = 'PAS';
             }
-            // Diğer her şey için (pas, surpriseBox veya bozuk veri) varsayılan prizeText (etiket) kullanılır.
-            // --- YENİ MANTIK SONU ---
             
             const deleteButton = isAdmin 
                 ? `<button onclick="deleteWheelHistoryEntry('${item.key}')" class="ml-3 text-gray-500 hover:text-red-500 transition-colors" title="Bu Kaydı Sil">
-                       <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="http://www.w3.org/2000/svg" fill="currentColor"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1-1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" /></svg>
+                       <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1-1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" /></svg>
                    </button>` 
                 : '';
 
