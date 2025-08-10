@@ -5642,6 +5642,7 @@ function renderWheel() {
     wheelElement.style.background = `conic-gradient(${gradientParts.join(', ')})`;
 }
     
+// BU FONKSİYONU BUL VE AŞAĞIDAKİYLE KOMPLE DEĞİŞTİR
 async function spinWheel() {
     if (isWheelSpinning) return;
     if (isAdmin) {
@@ -5754,18 +5755,18 @@ async function spinWheel() {
             username: currentUser, 
             prize: winningSegment.label, 
             type: winningSegment.type,
-            value: winningSegment.value || null, // <<< YENİ EKLENEN SATIR BU
+            // DEĞİŞEN SATIR: winningSegment.value tanımsız ise null kaydet
+            value: winningSegment.value !== undefined ? winningSegment.value : null,
             timestamp: firebase.database.ServerValue.TIMESTAMP
         });
 
         if (winningSegment.type !== 'surpriseBox') {
+             // DEĞİŞEN BLOK: logActivity'e de veriyi daha güvenli gönder
             const logDetails = {
                 result: winningSegment.label,
-                type: winningSegment.type
+                type: winningSegment.type,
+                value: winningSegment.value !== undefined ? winningSegment.value : null
             };
-            if (winningSegment.value !== undefined) {
-                logDetails.value = winningSegment.value;
-            }
             logActivity('spinWheel', currentUser, logDetails);
         }
         
@@ -6786,6 +6787,148 @@ function getActivityIcon(type, details = {}) {
     }
 }
 
+    // BU FONKSİYONU BUL VE AŞAĞIDAKİYLE KOMPLE DEĞİŞTİR
+// BU FONKSİYONU BUL VE AŞAĞIDAKİYLE KOMPLE DEĞİŞTİR
+// BU FONKSİYONU BUL VE AŞAĞIDAKİYLE KOMPLE DEĞİŞTİR
+// BU FONKSİYONU BUL VE AŞAĞIDAKİYLE KOMPLE DEĞİŞTİR
+function renderActivityFeed(activities) {
+    const activityFeedList = document.getElementById('activityFeedList');
+    activityFeedList.innerHTML = '';
+    
+    if (isAdmin) {
+        const clearButtonHtml = `
+            <div class="p-1 mb-2 text-center">
+                <button onclick="clearAllActivities()" class="w-full py-2 px-4 bg-red-800 hover:bg-red-700 text-white font-bold rounded-lg shadow-md text-sm">
+                    Tüm Eylem Geçmişini Temizle
+                </button>
+            </div>
+        `;
+        activityFeedList.innerHTML += clearButtonHtml;
+    }
+
+    if (!activities || activities.length === 0) {
+        activityFeedList.innerHTML += '<p class="text-center text-gray-400 p-4">Gösterilecek eylem bulunamadı.</p>';
+        return;
+    }
+
+    activities.forEach(activity => {
+        if (!activity || !activity.username) {
+            console.warn("Hatalı formatta aktivite verisi atlandı:", activity);
+            return; 
+        }
+        const details = activity.details || {}; 
+
+        let iconContent = getActivityIcon(activity.type, details);
+        let message = '';
+        const timeAgo = formatRelativeTime(activity.timestamp);
+        
+        const deleteButtonHtml = isAdmin ? `
+            <button onclick="deleteActivity('${activity.id}')" class="ml-2 text-gray-500 hover:text-red-500 transition-colors" title="Bu Eylemi Sil">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1-1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" /></svg>
+            </button>
+        ` : '';
+
+        const userHtml = `<b class="cursor-pointer hover:underline" onclick="openPublicUserDetailModal('${activity.username}')">${activity.username}</b>`;
+
+        switch (activity.type) {
+            case 'openBox':
+                message = `${userHtml}, <b>${details.boxId}</b> numaralı kutudan <span class="text-green-400 font-bold">+${details.points} Puan</span> kazandı.`;
+                break;
+            case 'iflas':
+                if (details.shieldUsed) {
+                    message = `${userHtml}, <b>${details.boxId}</b> numaralı kutudan Bomba buldu ama kalkanı tarafından korundu.`;
+                } else {
+                    message = `${userHtml}, <b>${details.boxId}</b> numaralı kutudan Bomba buldu ve <span class="text-red-500 font-bold">-${details.lostPoints} puan</span> kaybetti.`;
+                }
+                break;
+            case 'multiplierFound':
+                 message = `${userHtml}, <b>${details.boxId}</b> numaralı kutudan <span class="text-purple-400 font-bold">${details.value}x Çarpan</span> buldu.`;
+                break;
+            case 'newItemFound':
+                message = `${userHtml}, <b>${details.boxId}</b> numaralı kutudan <span class="text-cyan-400 font-bold">${details.itemName}</span> buldu.`;
+                break;
+            case 'surpriseBox':
+                const multiplierText = (details.multiplier || 1) > 1 ? ` (${details.multiplier}x çarpan ile)` : '';
+                const source = details.boxId === 'Çark' ? 'Şans Çarkı\'ndan' : `<b>${details.boxId}</b> numaralı kutudan`;
+                message = `${userHtml}, ${source} Sürpriz Kutu buldu ve <span class="text-green-400 font-bold">+${details.points} Puan</span> kazandı${multiplierText}!`;
+                break;
+            case 'buyItem':
+                if (details.itemType === 'tempMultiplier') {
+                    const duration = details.itemDuration || 1;
+                    message = `${userHtml}, mağazadan <span class="text-red-500 font-bold">-${details.itemCost} puan</span> karşılığında <span class="text-cyan-400 font-bold">${duration} ADET ${details.itemValue}x Çarpan</span> satın aldı.`;
+                } else {
+                    const quantity = details.itemValue || 1;
+                    const itemName = details.itemName || 'bir ürün';
+                    message = `${userHtml}, mağazadan <span class="text-red-500 font-bold">-${details.itemCost} puan</span> karşılığında <span class="text-cyan-400 font-bold">+${quantity} ADET ${itemName}</span> satın aldı.`;
+                }
+                break;
+            case 'spinWheel':
+                const prizeType = details.type;
+                const prizeResult = details.result || 'bir ödül'; // Etiket metni, ör: "100 Puan"
+
+                let prizeDisplayHtml;
+
+                // YENİ VE KESİN MANTIK:
+                if (prizeType === 'points') {
+                    // Etiketin içinden sayıyı bulmaya çalış (örn: "100 Puan" içinden 100'ü al)
+                    const match = prizeResult.match(/\d+/);
+                    if (match && match[0]) {
+                        // Sayıyı bulabildiysek, istediğin formatta yaz
+                        const extractedValue = parseInt(match[0], 10);
+                        prizeDisplayHtml = `<span class="text-green-400 font-bold">+${extractedValue} Puan</span>`;
+                    } else {
+                        // Sayıyı bulamazsak, etikette ne yazıyorsa onu göster (örn: 💰)
+                        prizeDisplayHtml = `<span class="text-cyan-400 font-bold">${prizeResult}</span>`;
+                    }
+                } else {
+                    // Ödül "points" değilse, direkt etiketi göster
+                    prizeDisplayHtml = `<span class="text-cyan-400 font-bold">${prizeResult}</span>`;
+                }
+
+                message = `${userHtml}, Şans Çarkı'nı çevirdi ve ${prizeDisplayHtml} kazandı.`;
+                break;
+            case 'clickCatchSolo':
+                if (details.score >= 0) {
+                    message = `${userHtml}, Tıkla-Yakala (Tekli) oyun oynadı ve <span class="text-green-400 font-bold">+${details.score} Puan</span> kazandı.`;
+                } else {
+                    message = `${userHtml}, Tıkla-Yakala (Tekli) oyununda <span class="text-red-500 font-bold">${details.score} Puan</span> kaybetti.`;
+                }
+                if(details.specialItems) {
+                    message += ` Ayrıca <span class="text-cyan-400 font-bold">${details.specialItems}</span> elde etti.`
+                }
+                break;
+            case 'clickCatchLobby':
+                message = `${userHtml}, Tıkla-Yakala (Lobi) oyununda birinci oldu ve <span class="text-green-400 font-bold">+${details.prize} Puan</span> kazandı.`;
+                break;
+            case 'dailyReward':
+                if (details.rewardType === 'tempMultiplier') {
+                    message = `${userHtml}, günlük ödül olarak <span class="text-cyan-400 font-bold">${details.rewardUses} ADET ${details.rewardValue}x Çarpan</span> aldı.`;
+                } else if (details.rewardType === 'points') {
+                    message = `${userHtml}, günlük ödül olarak <span class="text-green-400 font-bold">+${details.rewardValue} Puan</span> aldı.`;
+                } else {
+                    message = `${userHtml}, günlük ödül olarak <span class="text-cyan-400 font-bold">+${details.rewardValue} ADET ${details.rewardName}</span> aldı.`;
+                }
+                break;
+
+            default:
+                message = `${userHtml} bir eylem gerçekleştirdi.`;
+        }
+
+        const activityHtml = `
+            <div class="flex items-start gap-4 p-3 mb-2 bg-gray-900/50 rounded-lg border-l-2 border-gray-700">
+                <div class="text-2xl mt-1">${iconContent}</div>
+                <div class="flex-1">
+                    <p class="text-white text-sm">${message}</p>
+                    <div class="flex justify-between items-center mt-1">
+                        <span class="text-xs text-gray-500">${timeAgo}</span>
+                        ${deleteButtonHtml}
+                    </div>
+                </div>
+            </div>
+        `;
+        activityFeedList.innerHTML += activityHtml;
+    });
+}
 // YUKARIDAKİ FONKSİYONU BULUP BUNUNLA DEĞİŞTİR
 function initActivityFeed() {
     const activityBellContainer = document.getElementById('activityBellContainer');
@@ -6837,127 +6980,83 @@ function initActivityFeed() {
     ref.on('value', callback);
 }
 
-function renderActivityFeed(activities) {
-    const activityFeedList = document.getElementById('activityFeedList');
-    activityFeedList.innerHTML = '';
+// BU FONKSİYONU BUL VE AŞAĞIDAKİYLE KOMPLE DEĞİŞTİR
+function loadWheelHistory() {
+    const historyRef = db.ref('wheelHistory').limitToLast(10);
+    const listEl = document.getElementById('wheelHistoryList');
     
-    if (isAdmin) {
-        const clearButtonHtml = `
-            <div class="p-1 mb-2 text-center">
-                <button onclick="clearAllActivities()" class="w-full py-2 px-4 bg-red-800 hover:bg-red-700 text-white font-bold rounded-lg shadow-md text-sm">
-                    Tüm Eylem Geçmişini Temizle
-                </button>
-            </div>
-        `;
-        activityFeedList.innerHTML += clearButtonHtml;
-    }
+    const callback = (snapshot) => {
+        listEl.innerHTML = ''; 
 
-    if (!activities || activities.length === 0) {
-        activityFeedList.innerHTML += '<p class="text-center text-gray-400 p-4">Gösterilecek eylem bulunamadı.</p>';
-        return;
-    }
-
-    activities.forEach(activity => {
-        let iconContent = getActivityIcon(activity.type, activity.details);
-        let message = '';
-        const timeAgo = formatRelativeTime(activity.timestamp);
-        
-        const deleteButtonHtml = isAdmin ? `
-            <button onclick="deleteActivity('${activity.id}')" class="ml-2 text-gray-500 hover:text-red-500 transition-colors" title="Bu Eylemi Sil">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1-1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" /></svg>
-            </button>
-        ` : '';
-
-        const userHtml = `<b class="cursor-pointer hover:underline" onclick="openPublicUserDetailModal('${activity.username}')">${activity.username}</b>`;
-
-        switch (activity.type) {
-            case 'openBox':
-                message = `${userHtml}, <b>${activity.details.boxId}</b> numaralı kutudan <span class="text-green-400 font-bold">+${activity.details.points} Puan</span> kazandı.`;
-                break;
-            case 'iflas':
-                if (activity.details.shieldUsed) {
-                    message = `${userHtml}, <b>${activity.details.boxId}</b> numaralı kutudan Bomba buldu ama kalkanı tarafından korundu.`;
-                } else {
-                    message = `${userHtml}, <b>${activity.details.boxId}</b> numaralı kutudan Bomba buldu ve <span class="text-red-500 font-bold">-${activity.details.lostPoints} puan</span> kaybetti.`;
-                }
-                break;
-            case 'multiplierFound':
-                 message = `${userHtml}, <b>${activity.details.boxId}</b> numaralı kutudan <span class="text-purple-400 font-bold">${activity.details.value}x Çarpan</span> buldu.`;
-                break;
-            case 'newItemFound':
-                message = `${userHtml}, <b>${activity.details.boxId}</b> numaralı kutudan <span class="text-cyan-400 font-bold">${activity.details.itemName}</span> buldu.`;
-                break;
-            case 'surpriseBox':
-                const multiplierText = (activity.details.multiplier || 1) > 1 ? ` (${activity.details.multiplier}x çarpan ile)` : '';
-                const source = activity.details.boxId === 'Çark' ? 'Şans Çarkı\'ndan' : `<b>${activity.details.boxId}</b> numaralı kutudan`;
-                message = `${userHtml}, ${source} Sürpriz Kutu buldu ve <span class="text-green-400 font-bold">+${activity.details.points} Puan</span> kazandı${multiplierText}!`;
-                break;
-            case 'buyItem':
-                if (activity.details.itemType === 'tempMultiplier') {
-                    const duration = activity.details.itemDuration || 1;
-                    message = `${userHtml}, mağazadan <span class="text-red-500 font-bold">-${activity.details.itemCost} puan</span> karşılığında <span class="text-cyan-400 font-bold">${duration} ADET ${activity.details.itemValue}x Çarpan</span> satın aldı.`;
-                } else {
-                    const quantity = activity.details.itemValue || 1;
-                    const itemName = activity.details.itemName || 'bir ürün';
-                    message = `${userHtml}, mağazadan <span class="text-red-500 font-bold">-${activity.details.itemCost} puan</span> karşılığında <span class="text-cyan-400 font-bold">+${quantity} ADET ${itemName}</span> satın aldı.`;
-                }
-                break;
-            case 'spinWheel':
-                const prizeType = activity.details.type;
-                const prizeValue = activity.details.value;
-                const prizeResult = activity.details.result;
-
-                if (prizeType === 'pas') {
-                    message = `${userHtml}, Şans Çarkı'nı çevirdi ve <span class="text-gray-400 font-bold">Pas geldi</span>.`;
-                } else if (prizeType === 'points') {
-                    message = `${userHtml}, Şans Çarkı'nı çevirdi ve <span class="text-green-400 font-bold">+${prizeValue} Puan</span> kazandı.`;
-                } else if (prizeType === 'boxRights') {
-                    message = `${userHtml}, Şans Çarkı'nı çevirdi ve <span class="text-cyan-400 font-bold">+${prizeValue} Kutu Hakkı</span> kazandı.`;
-                } else {
-                    message = `${userHtml}, Şans Çarkı'nı çevirdi ve <span class="text-cyan-400 font-bold">${prizeResult}</span> kazandı.`;
-                }
-                break;
-            case 'clickCatchSolo':
-                if (activity.details.score >= 0) {
-                    message = `${userHtml}, Tıkla-Yakala (Tekli) oyun oynadı ve <span class="text-green-400 font-bold">+${activity.details.score} Puan</span> kazandı.`;
-                } else {
-                    message = `${userHtml}, Tıkla-Yakala (Tekli) oyununda <span class="text-red-500 font-bold">${activity.details.score} Puan</span> kaybetti.`;
-                }
-                if(activity.details.specialItems) {
-                    message += ` Ayrıca <span class="text-cyan-400 font-bold">${activity.details.specialItems}</span> elde etti.`
-                }
-                break;
-            case 'clickCatchLobby':
-                message = `${userHtml}, Tıkla-Yakala (Lobi) oyununda birinci oldu ve <span class="text-green-400 font-bold">+${activity.details.prize} Puan</span> kazandı.`;
-                break;
-            case 'dailyReward':
-                if (activity.details.rewardType === 'tempMultiplier') {
-                    message = `${userHtml}, günlük ödül olarak <span class="text-cyan-400 font-bold">${activity.details.rewardUses} ADET ${activity.details.rewardValue}x Çarpan</span> aldı.`;
-                } else if (activity.details.rewardType === 'points') {
-                    message = `${userHtml}, günlük ödül olarak <span class="text-green-400 font-bold">+${activity.details.rewardValue} Puan</span> aldı.`;
-                } else {
-                    message = `${userHtml}, günlük ödül olarak <span class="text-cyan-400 font-bold">+${activity.details.rewardValue} ADET ${activity.details.rewardName}</span> aldı.`;
-                }
-                break;
-
-            default:
-                message = `${userHtml} bir eylem gerçekleştirdi.`;
+        if (isAdmin) {
+            listEl.innerHTML += `<div class="p-1 mb-2 text-center"><button onclick="clearWheelHistory()" class="w-full py-2 px-4 bg-red-800 hover:bg-red-700 text-white font-bold rounded-lg shadow-md text-sm">Tüm Kazanan Geçmişini Temizle</button></div>`;
         }
 
-        const activityHtml = `
-            <div class="flex items-start gap-4 p-3 mb-2 bg-gray-900/50 rounded-lg border-l-2 border-gray-700">
-                <div class="text-2xl mt-1">${iconContent}</div>
-                <div class="flex-1">
-                    <p class="text-white text-sm">${message}</p>
-                    <div class="flex justify-between items-center mt-1">
-                        <span class="text-xs text-gray-500">${timeAgo}</span>
-                        ${deleteButtonHtml}
+        if (!snapshot.exists()) {
+            listEl.innerHTML += '<p class="text-center text-gray-500">Henüz çark çevrilmedi.</p>';
+            return;
+        }
+        
+        const history = [];
+        snapshot.forEach(child => { history.push({ key: child.key, ...child.val() }); });
+        history.reverse();
+
+        history.forEach(item => {
+            const timeAgo = formatRelativeTime(item.timestamp);
+            
+            // --- YENİ VE DAHA GÜVENLİ MANTIK BAŞLANGICI ---
+            let icon = getIconForWheelLabel(item.prize); // Etikete göre ikonu al
+            let prizeText = item.prize; // Varsayılan olarak etiketi göster (güvenli fallback)
+            
+            const prizeType = item.type;
+            const prizeValue = item.value;
+
+            // Sadece 'value' alanı dolu ve bir sayı ise metni istediğimiz formata çevir
+            if (prizeType === 'points' && typeof prizeValue === 'number' && prizeValue !== null) {
+                prizeText = `+${prizeValue} PUAN`;
+            } else if (prizeType === 'boxRights' && typeof prizeValue === 'number' && prizeValue !== null) {
+                prizeText = `+${prizeValue} Kutu Hakkı`;
+            } else if (prizeType === 'iflasShield' && typeof prizeValue === 'number' && prizeValue !== null) {
+                prizeText = `+${prizeValue} İflas Kalkanı`;
+            } else if (prizeType === 'clickCatchTicket' && typeof prizeValue === 'number' && prizeValue !== null) {
+                prizeText = `+${prizeValue} Tıkla-Yakala Bileti`;
+            } else if (prizeType === 'wheelTicket' && typeof prizeValue === 'number' && prizeValue !== null) {
+                prizeText = `+${prizeValue} Çark Bileti`;
+            } else if (prizeType === 'tempMultiplier' && typeof prizeValue === 'number' && prizeValue !== null) {
+                prizeText = `${prizeValue}X ÇARPAN`;
+            }
+            // --- YENİ VE DAHA GÜVENLİ MANTIK SONU ---
+            
+            const deleteButton = isAdmin 
+                ? `<button onclick="deleteWheelHistoryEntry('${item.key}')" class="ml-3 text-gray-500 hover:text-red-500 transition-colors" title="Bu Kaydı Sil">
+                       <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1-1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" /></svg>
+                   </button>` 
+                : '';
+
+            listEl.innerHTML += `
+                <div class="p-2 bg-gray-800 rounded-md mb-2 text-sm flex justify-between items-center">
+                    <span class="flex items-center">
+                        <b>${item.username}:</b> 
+                        <span class="text-yellow-200 ml-2 flex items-center gap-2">
+                            <span class="text-lg">${icon}</span>
+                            <span>${prizeText}</span>
+                        </span>
+                    </span>
+                    <div class="flex items-center">
+                        <span class="text-gray-500 text-xs">${timeAgo}</span>
+                        ${deleteButton}
                     </div>
                 </div>
-            </div>
-        `;
-        activityFeedList.innerHTML += activityHtml;
-    });
+            `;
+        });
+    };
+
+    // Listener'ı tekrar tekrar eklememek için kontrol
+    if (activeListeners.wheelHistory) {
+      historyRef.off('value', activeListeners.wheelHistory.callback);
+    }
+    activeListeners.wheelHistory = { ref: historyRef, event: 'value', callback };
+    historyRef.on('value', callback);
 }
 
 // YENİ VE GÜNCELLENMİŞ VERSİYONLAR
@@ -7352,6 +7451,7 @@ async function resetWheelSettingsToDefault() {
     defaultWheelSegments.forEach(item => addWheelSettingRow(item));
 }
 
+// BU FONKSİYONU BUL VE AŞAĞIDAKİYLE KOMPLE DEĞİŞTİR
 function loadWheelHistory() {
     const historyRef = db.ref('wheelHistory').limitToLast(10);
     const listEl = document.getElementById('wheelHistoryList');
@@ -7376,29 +7476,15 @@ function loadWheelHistory() {
             const timeAgo = formatRelativeTime(item.timestamp);
             
             let icon = '❓';
-            let prizeText = item.prize;
+            let prizeText = item.prize; // Varsayılan olarak etiketi al
             const prizeType = item.type;
+            const prizeValue = item.value; // Veritabanından gelen değeri al
 
-            // --- GÜNCELLENEN MANTIK BLOGU ---
-            // Adet bilgisi (item.value) eksikse, varsayılan olarak 1 kullan (|| 1)
-            const prizeValue = item.value || 1; 
-
+            // Puan türü için metni özel olarak oluştur
             if (prizeType === 'points') {
-                // Puanlar için kendi değeri kullanılır, varsayılan gerekmez.
-                const pointValue = item.value; 
-                if (pointValue === 1000) {
-                    icon = '💎';
-                    prizeText = '+1000 PUAN';
-                } else if (pointValue === 100) {
-                    icon = '💰';
-                    prizeText = '+100 PUAN';
-                } else if (pointValue === 50) {
-                    icon = '🍪';
-                    prizeText = '+50 PUAN';
-                } else {
-                    icon = '💰';
-                    prizeText = `+${pointValue} PUAN`;
-                }
+                icon = '💰';
+                // prizeValue değişkenini kullanarak metni oluştur, undefined hatasını engelle
+                prizeText = `+${prizeValue} PUAN`; 
             } else if (prizeType === 'surpriseBox') {
                 icon = '🎉';
                 prizeText = 'SÜRPRİZ KUTU';
@@ -7408,10 +7494,12 @@ function loadWheelHistory() {
             } else if (prizeType === 'clickCatchTicket') {
                 icon = '🎟️';
                 prizeText = `+${prizeValue} Tıkla-Yakala Bileti`;
+            } else if (prizeType === 'wheelTicket') {
+                icon = '🎡';
+                prizeText = `+${prizeValue} Çark Bileti`;
             } else if (prizeType === 'tempMultiplier') {
                 icon = '✖️';
-                // Çarpanın değeri etiketinden farklı olabilir, bu yüzden item.value'yu önceliklendir.
-                prizeText = item.value ? `${item.value}X ÇARPAN` : item.prize;
+                prizeText = `${prizeValue}X ÇARPAN`;
             } else if (prizeType === 'iflasShield') {
                 icon = '🛡️';
                 prizeText = `+${prizeValue} İflas Kalkanı`;
@@ -7419,7 +7507,6 @@ function loadWheelHistory() {
                 icon = '☠️';
                 prizeText = 'PAS';
             }
-            // --- GÜNCELLENEN MANTIK BLOGU SONU ---
             
             const deleteButton = isAdmin 
                 ? `<button onclick="deleteWheelHistoryEntry('${item.key}')" class="ml-3 text-gray-500 hover:text-red-500 transition-colors" title="Bu Kaydı Sil">
@@ -7444,6 +7531,11 @@ function loadWheelHistory() {
             `;
         });
     };
+
+    if (activeListeners.wheelHistory) {
+      historyRef.off('value', activeListeners.wheelHistory.callback);
+    }
+    activeListeners.wheelHistory = { ref: historyRef, event: 'value', callback };
     historyRef.on('value', callback);
 }
 
