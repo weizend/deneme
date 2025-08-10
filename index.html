@@ -3503,7 +3503,22 @@ function showOpenedBoxInfo(box) {
   
   function closeOpenedBoxInfoModal() { openedBoxInfoModal.style.display = 'none'; }
   function shuffleArray(array) { for (let i = array.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [array[i], array[j]] = [array[j], array[i]]; } return array; }
-  
+  // YENİ EKLENECEK FONKSİYON
+async function handleSurpriseBoxTimeout() {
+    // Sürenin dolduğunu ve puan kazanılamadığını belirtmek için
+    // veritabanındaki oturum verisini özel bir "sonuç" ile güncelliyoruz.
+    // Bu güncelleme, `listenForSurpriseBox` dinleyicisini tetikleyerek
+    // tüm kullanıcılara oyunun bittiğini bildirecek.
+    const sessionRef = db.ref('surprise_box_session');
+    const sessionSnap = await sessionRef.once('value');
+
+    // Eğer oturum hala aktifse ve sonuçlanmamışsa güncelle
+    if (sessionSnap.exists() && sessionSnap.val().active && !sessionSnap.val().result) {
+        await sessionRef.update({
+            result: { points: 0, timeout: true } // timeout: true bayrağı ekliyoruz
+        });
+    }
+}
   function openCardSelectionModal(userId) {
       if(countdownInterval) clearInterval(countdownInterval); // Önceki sayacı temizle
       cardContainer.innerHTML = '';
@@ -5564,9 +5579,7 @@ async function reorderDailyRewardItem(rewardId, newIndex) {
     let surpriseSessionListener = null;
     // listenForSurpriseBox FONKSİYONUNU BU YENİ HALİYLE DEĞİŞTİR
 
-// MEVCUT listenForSurpriseBox FONKSİYONUNU SİLİP BUNU YAPIŞTIR
-
-// MEVCUT listenForSurpriseBox FONKSİYONUNU SİLİP BUNU YAPIŞTIR
+// MEVCUT listenForSurpriseBox FONKSİYONUNU BU BLOK İLE DEĞİŞTİRİN
 
 function listenForSurpriseBox() {
     const sessionRef = db.ref('surprise_box_session');
@@ -5599,12 +5612,18 @@ function listenForSurpriseBox() {
                 closeCardSelectionModal();
             }
             
-            // Olayı aktivite akışına kaydet
-            logActivity('surpriseBox', sessionData.user, { 
-                boxId: sessionData.boxId,
-                points: sessionData.result.points, 
-                multiplier: sessionData.multiplier 
-            });
+            // --- İSTEDİĞİNİZ DEĞİŞİKLİK BURADA UYGULANDI ---
+            // Eğer süre dolduysa farklı, puan kazanıldıysa farklı logla
+            if (sessionData.result.timeout) {
+                logActivity('surpriseBoxTimeout', sessionData.user, { boxId: sessionData.boxId });
+            } else {
+                logActivity('surpriseBox', sessionData.user, { 
+                    boxId: sessionData.boxId,
+                    points: sessionData.result.points, 
+                    multiplier: sessionData.multiplier 
+                });
+            }
+            // --- DEĞİŞİKLİK SONU ---
 
             // 4 saniye sonra oyunu temizle ve sıfırla
             setTimeout(() => {
@@ -5628,6 +5647,7 @@ function listenForSurpriseBox() {
     activeListeners.surpriseBox = { ref: sessionRef, event: 'value', callback };
     sessionRef.on('value', callback);
 }
+    
 function openSpectatorModal(sessionData) {
     // Önceki zamanlayıcı varsa temizle
     if (spectatorCountdownInterval) clearInterval(spectatorCountdownInterval);
@@ -5667,31 +5687,38 @@ function openSpectatorModal(sessionData) {
     document.getElementById('spectatorResult').textContent = '';
     spectatorModal.style.display = 'flex';
 }
-  // MEVCUT showGlobalSurpriseBoxNotification FONKSİYONUNU SİLİP BUNU YAPIŞTIR
-
+  // MEVCUT showGlobalSurpriseBoxNotification FONKSİYONUNU BUNUNLA DEĞİŞTİR
 function showGlobalSurpriseBoxNotification(data) {
     document.getElementById('surpriseOpener').textContent = data.user;
-    
     const sourceInfoEl = document.getElementById('surpriseSourceInfo');
-    // Sürpriz kutunun nereden geldiğine göre farklı metin göster
-    if (data.boxId === 'Çark') {
-        sourceInfoEl.innerHTML = `<b>Şans Çarkı</b>'ndan Sürpriz Kutu elde etti ve kart seçiminden`;
-    } else {
-        sourceInfoEl.innerHTML = `<span class="text-red-400 font-bold">${data.boxId}</span> numaralı kutuyu açtı ve kart seçiminden`;
-    }
+    const pointsEl = document.getElementById('surprisePoints');
+    const multiplierEl = document.getElementById('surpriseMultiplierInfo');
 
-    document.getElementById('surprisePoints').textContent = data.result.points;
-    
-    let multiplierText = 'kazandı! (Çarpan kullanılmadı)';
-    if (data.multiplier && data.multiplier > 1) {
-        const basePoints = Math.round(data.result.points / data.multiplier);
-        multiplierText = `kazandı! <br><span class="text-base text-gray-400">(${basePoints} Puan x ${data.multiplier} Çarpan)</span>`;
+    // 1. Oturumun süre aşımı nedeniyle bitip bitmediğini kontrol et
+    if (data.result && data.result.timeout) {
+        sourceInfoEl.innerHTML = `kart seçimi için verilen süreyi aştı ve <b class="text-red-400">puan kazanamadı!</b>`;
+        pointsEl.textContent = 'Süre Doldu';
+        multiplierEl.innerHTML = 'Oyun kısa süre içinde sıfırlanacak.';
+    } 
+    // 2. Normal şekilde puan kazanıldıysa
+    else {
+        const source = data.boxId === 'Çark' 
+            ? `<b>Şans Çarkı</b>'ndan Sürpriz Kutu elde etti ve kart seçiminden`
+            : `<span class="text-red-400 font-bold">${data.boxId}</span> numaralı kutuyu açtı ve kart seçiminden`;
+        sourceInfoEl.innerHTML = source;
+
+        pointsEl.textContent = data.result.points;
+
+        let multiplierText = 'kazandı! (Çarpan kullanılmadı)';
+        if (data.multiplier && data.multiplier > 1) {
+            const basePoints = Math.round(data.result.points / data.multiplier);
+            multiplierText = `kazandı! <br><span class="text-base text-gray-400">(${basePoints} Puan x ${data.multiplier} Çarpan)</span>`;
+        }
+        multiplierEl.innerHTML = multiplierText;
     }
-    document.getElementById('surpriseMultiplierInfo').innerHTML = multiplierText;
 
     document.getElementById('globalSurpriseBoxModal').style.display = 'flex';
 }
-
   function closeGlobalSurpriseBoxModal() {
       document.getElementById('globalSurpriseBoxModal').style.display = 'none';
   }
@@ -6918,6 +6945,8 @@ function getActivityIcon(type, details = {}) {
     switch (type) {
         case 'openBox':
             return '💰'; // Puan için
+        case 'surpriseBoxTimeout':
+    return '⏰'; // Süre doldu için
         case 'surpriseBox':
             return '🎉'; // Sürpriz Kutu için
         case 'iflas':
@@ -7015,6 +7044,9 @@ function renderActivityFeed(activities) {
             case 'openBox':
                 message = `${userHtml}, <b>${details.boxId}</b> numaralı kutudan <span class="text-green-400 font-bold">+${details.points} Puan</span> kazandı.`;
                 break;
+            case 'surpriseBoxTimeout':
+    message = `${userHtml}, Sürpriz Kutu seçim süresini aştığı için puan kazanamadı.`;
+    break;
             case 'iflas':
                 if (details.shieldUsed) {
                     message = `${userHtml}, <b>${details.boxId}</b> numaralı kutudan Bomba buldu ama kalkanı tarafından korundu.`;
