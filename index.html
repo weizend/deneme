@@ -6789,8 +6789,6 @@ function getActivityIcon(type, details = {}) {
 
     // BU FONKSİYONU BUL VE AŞAĞIDAKİYLE KOMPLE DEĞİŞTİR
 // BU FONKSİYONU BUL VE AŞAĞIDAKİYLE KOMPLE DEĞİŞTİR
-// BU FONKSİYONU BUL VE AŞAĞIDAKİYLE KOMPLE DEĞİŞTİR
-// BU FONKSİYONU BUL VE AŞAĞIDAKİYLE KOMPLE DEĞİŞTİR
 function renderActivityFeed(activities) {
     const activityFeedList = document.getElementById('activityFeedList');
     activityFeedList.innerHTML = '';
@@ -6864,28 +6862,21 @@ function renderActivityFeed(activities) {
                 break;
             case 'spinWheel':
                 const prizeType = details.type;
-                const prizeResult = details.result || 'bir ödül'; // Etiket metni, ör: "100 Puan"
+                const prizeValue = details.value;
+                const prizeResult = details.result || 'bir ödül';
 
-                let prizeDisplayHtml;
-
-                // YENİ VE KESİN MANTIK:
-                if (prizeType === 'points') {
-                    // Etiketin içinden sayıyı bulmaya çalış (örn: "100 Puan" içinden 100'ü al)
-                    const match = prizeResult.match(/\d+/);
-                    if (match && match[0]) {
-                        // Sayıyı bulabildiysek, istediğin formatta yaz
-                        const extractedValue = parseInt(match[0], 10);
-                        prizeDisplayHtml = `<span class="text-green-400 font-bold">+${extractedValue} Puan</span>`;
-                    } else {
-                        // Sayıyı bulamazsak, etikette ne yazıyorsa onu göster (örn: 💰)
-                        prizeDisplayHtml = `<span class="text-cyan-400 font-bold">${prizeResult}</span>`;
-                    }
-                } else {
-                    // Ödül "points" değilse, direkt etiketi göster
-                    prizeDisplayHtml = `<span class="text-cyan-400 font-bold">${prizeResult}</span>`;
+                // DÜZELTİLEN YER: "Pas" için özel bir durum ekledik.
+                if (prizeType === 'pas') {
+                    message = `${userHtml}, Şans Çarkı'nı çevirdi ve <span class="text-gray-400 font-bold">Pas geldi</span>.`;
                 }
-
-                message = `${userHtml}, Şans Çarkı'nı çevirdi ve ${prizeDisplayHtml} kazandı.`;
+                else if (prizeType === 'points' && typeof prizeValue === 'number') {
+                    const prizeDisplayHtml = `<span class="text-green-400 font-bold">+${prizeValue} Puan</span>`;
+                    message = `${userHtml}, Şans Çarkı'nı çevirdi ve ${prizeDisplayHtml} kazandı.`;
+                }
+                else {
+                    const prizeDisplayHtml = `<span class="text-cyan-400 font-bold">${prizeResult}</span>`;
+                    message = `${userHtml}, Şans Çarkı'nı çevirdi ve ${prizeDisplayHtml} kazandı.`;
+                }
                 break;
             case 'clickCatchSolo':
                 if (details.score >= 0) {
@@ -6981,6 +6972,7 @@ function initActivityFeed() {
 }
 
 // BU FONKSİYONU BUL VE AŞAĞIDAKİYLE KOMPLE DEĞİŞTİR
+// BU FONKSİYONU BUL VE AŞAĞIDAKİYLE KOMPLE DEĞİŞTİR
 function loadWheelHistory() {
     const historyRef = db.ref('wheelHistory').limitToLast(10);
     const listEl = document.getElementById('wheelHistoryList');
@@ -7004,32 +6996,35 @@ function loadWheelHistory() {
         history.forEach(item => {
             const timeAgo = formatRelativeTime(item.timestamp);
             
-            // --- YENİ VE DAHA GÜVENLİ MANTIK BAŞLANGICI ---
-            let icon = getIconForWheelLabel(item.prize); // Etikete göre ikonu al
-            let prizeText = item.prize; // Varsayılan olarak etiketi göster (güvenli fallback)
-            
+            // --- YENİ, BASİT VE GÜVENİLİR MANTIK ---
             const prizeType = item.type;
             const prizeValue = item.value;
+            let prizeText = item.prize; // Güvenli varsayılan: Her zaman etiketin kendisiyle başla
+            let icon = getIconForWheelLabel(item.prize);
 
-            // Sadece 'value' alanı dolu ve bir sayı ise metni istediğimiz formata çevir
-            if (prizeType === 'points' && typeof prizeValue === 'number' && prizeValue !== null) {
-                prizeText = `+${prizeValue} PUAN`;
-            } else if (prizeType === 'boxRights' && typeof prizeValue === 'number' && prizeValue !== null) {
-                prizeText = `+${prizeValue} Kutu Hakkı`;
-            } else if (prizeType === 'iflasShield' && typeof prizeValue === 'number' && prizeValue !== null) {
-                prizeText = `+${prizeValue} İflas Kalkanı`;
-            } else if (prizeType === 'clickCatchTicket' && typeof prizeValue === 'number' && prizeValue !== null) {
-                prizeText = `+${prizeValue} Tıkla-Yakala Bileti`;
-            } else if (prizeType === 'wheelTicket' && typeof prizeValue === 'number' && prizeValue !== null) {
-                prizeText = `+${prizeValue} Çark Bileti`;
-            } else if (prizeType === 'tempMultiplier' && typeof prizeValue === 'number' && prizeValue !== null) {
+            // Sayısal değer ve birimle formatlanacak türler için bir harita
+            const prizeUnitMap = {
+                points: 'Puan',
+                boxRights: 'Kutu Hakkı',
+                iflasShield: 'İflas Kalkanı',
+                clickCatchTicket: 'Tıkla-Yakala Bileti',
+                wheelTicket: 'Çark Bileti'
+            };
+
+            // Eğer ödül türü haritada varsa VE değeri geçerli bir sayı ise, metni oluştur
+            if (prizeUnitMap[prizeType] && typeof prizeValue === 'number') {
+                prizeText = `+${prizeValue} ${prizeUnitMap[prizeType]}`;
+            } 
+            // Çarpan için özel durum
+            else if (prizeType === 'tempMultiplier' && typeof prizeValue === 'number') {
                 prizeText = `${prizeValue}X ÇARPAN`;
             }
-            // --- YENİ VE DAHA GÜVENLİ MANTIK SONU ---
+            // Diğer her şey için (pas, surpriseBox veya bozuk veri) varsayılan prizeText (etiket) kullanılır.
+            // --- YENİ MANTIK SONU ---
             
             const deleteButton = isAdmin 
                 ? `<button onclick="deleteWheelHistoryEntry('${item.key}')" class="ml-3 text-gray-500 hover:text-red-500 transition-colors" title="Bu Kaydı Sil">
-                       <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1-1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" /></svg>
+                       <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="http://www.w3.org/2000/svg" fill="currentColor"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1-1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" /></svg>
                    </button>` 
                 : '';
 
@@ -7051,14 +7046,12 @@ function loadWheelHistory() {
         });
     };
 
-    // Listener'ı tekrar tekrar eklememek için kontrol
     if (activeListeners.wheelHistory) {
       historyRef.off('value', activeListeners.wheelHistory.callback);
     }
     activeListeners.wheelHistory = { ref: historyRef, event: 'value', callback };
     historyRef.on('value', callback);
 }
-
 // YENİ VE GÜNCELLENMİŞ VERSİYONLAR
 function openActivityFeed() {
     // 1. Paneli görünür yap ama hala ekran dışında tut
