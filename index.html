@@ -5750,22 +5750,24 @@ async function spinWheel() {
                 break;
         }
 
-        db.ref('wheelHistory').push().set({
+        // --- EN ÖNEMLİ DÜZELTME BURADA ---
+        const historyData = {
             username: currentUser, 
             prize: winningSegment.label, 
             type: winningSegment.type,
-            value: winningSegment.value || null, // <<< YENİ EKLENEN SATIR BU
+            // Değeri (value) her zaman winningSegment objesinden alıyoruz, etiketten değil.
+            value: winningSegment.value || null,
             timestamp: firebase.database.ServerValue.TIMESTAMP
-        });
+        };
+        db.ref('wheelHistory').push().set(historyData);
 
         if (winningSegment.type !== 'surpriseBox') {
             const logDetails = {
                 result: winningSegment.label,
-                type: winningSegment.type
+                type: winningSegment.type,
+                // Loglama yaparken de değeri doğrudan segment'ten alıyoruz.
+                value: winningSegment.value
             };
-            if (winningSegment.value !== undefined) {
-                logDetails.value = winningSegment.value;
-            }
             logActivity('spinWheel', currentUser, logDetails);
         }
         
@@ -5779,7 +5781,6 @@ async function spinWheel() {
 
     }, 5100);
 }
-
 function openSoloGameSettingsModal() {
     soloGameSettingsModal.style.display = 'flex';
 }
@@ -6907,13 +6908,12 @@ function renderActivityFeed(activities) {
                 const prizeValue = activity.details.value;
                 const prizeResult = activity.details.result;
 
-                if (prizeType === 'pas') {
-                    message = `${userHtml}, Şans Çarkı'nı çevirdi ve <span class="text-gray-400 font-bold">Pas geldi</span>.`;
-                } else if (prizeType === 'points') {
+                if (prizeType === 'points') {
                     message = `${userHtml}, Şans Çarkı'nı çevirdi ve <span class="text-green-400 font-bold">+${prizeValue} Puan</span> kazandı.`;
-                } else if (prizeType === 'boxRights') {
-                    message = `${userHtml}, Şans Çarkı'nı çevirdi ve <span class="text-cyan-400 font-bold">+${prizeValue} Kutu Hakkı</span> kazandı.`;
+                } else if (prizeType === 'pas') {
+                    message = `${userHtml}, Şans Çarkı'nı çevirdi ve <span class="text-gray-400 font-bold">Pas geldi</span>.`;
                 } else {
+                    // Diğer tüm ödüller için (Kutu Hakkı, Bilet, Çarpan vb.) etiketi kullan
                     message = `${userHtml}, Şans Çarkı'nı çevirdi ve <span class="text-cyan-400 font-bold">${prizeResult}</span> kazandı.`;
                 }
                 break;
@@ -7378,27 +7378,13 @@ function loadWheelHistory() {
             let icon = '❓';
             let prizeText = item.prize;
             const prizeType = item.type;
+            const prizeValue = item.value; // Artık item.value her zaman doğru olacak
 
             // --- GÜNCELLENEN MANTIK BLOGU ---
-            // Adet bilgisi (item.value) eksikse, varsayılan olarak 1 kullan (|| 1)
-            const prizeValue = item.value || 1; 
-
             if (prizeType === 'points') {
-                // Puanlar için kendi değeri kullanılır, varsayılan gerekmez.
-                const pointValue = item.value; 
-                if (pointValue === 1000) {
-                    icon = '💎';
-                    prizeText = '+1000 PUAN';
-                } else if (pointValue === 100) {
-                    icon = '💰';
-                    prizeText = '+100 PUAN';
-                } else if (pointValue === 50) {
-                    icon = '🍪';
-                    prizeText = '+50 PUAN';
-                } else {
-                    icon = '💰';
-                    prizeText = `+${pointValue} PUAN`;
-                }
+                icon = '💰';
+                // Değeri doğrudan item.value'dan alıp metni kendimiz oluşturuyoruz.
+                prizeText = `+${prizeValue} PUAN`; 
             } else if (prizeType === 'surpriseBox') {
                 icon = '🎉';
                 prizeText = 'SÜRPRİZ KUTU';
@@ -7410,8 +7396,7 @@ function loadWheelHistory() {
                 prizeText = `+${prizeValue} Tıkla-Yakala Bileti`;
             } else if (prizeType === 'tempMultiplier') {
                 icon = '✖️';
-                // Çarpanın değeri etiketinden farklı olabilir, bu yüzden item.value'yu önceliklendir.
-                prizeText = item.value ? `${item.value}X ÇARPAN` : item.prize;
+                prizeText = `${prizeValue}X ÇARPAN`;
             } else if (prizeType === 'iflasShield') {
                 icon = '🛡️';
                 prizeText = `+${prizeValue} İflas Kalkanı`;
