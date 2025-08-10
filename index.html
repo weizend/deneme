@@ -3145,6 +3145,7 @@ async function deleteUserAvatar(username, avatarId) {
 
 // BU FONKSİYONU BUL VE AŞAĞIDAKİYLE KOMPLE DEĞİŞTİR
 // openBox FONKSİYONUNU BUL VE BUNUNLA DEĞİŞTİR
+// --- 2. DEĞİŞTİRİLECEK FONKSİYON ---
 async function openBox(index) {
     if (isGameLocked) {
         displayMessage("Şu anda başka bir kullanıcı kutu açıyor veya oyun beklemede. Lütfen 5 saniye bekleyin.");
@@ -3282,13 +3283,13 @@ async function openBox(index) {
             active: true, 
             user: currentUser, 
             boxId: box.id,
-            multiplier: finalMultiplier, // Mevcut çarpanı oturuma kaydet
+            multiplier: finalMultiplier,
             cards: shuffleArray([...cardValues]),
             selection: null, 
             result: null, 
             timestamp: firebase.database.ServerValue.TIMESTAMP
         });
-        openCardSelectionModal(currentUser);
+        // BU FONKSİYON ARTIK BURADA ÇAĞIRILMIYOR. GÖREVİ LİSTENER'A DEVRETTİ.
 
     } else if (box.content === 'multiplier') {
         updates['multiplierFoundCount'] = (user.multiplierFoundCount || 0) + 1;
@@ -3352,7 +3353,6 @@ async function openBox(index) {
         displayMessage(message);
     }
 }
-
   async function revealAll() { const confirmed = await customConfirm("Tüm kutuları açmak istiyor musunuz?"); if(confirmed) { boxes.forEach(b => { if (!b.opened) { b.opened = true; b.opener = 'Admin'; } }); db.ref('boxes').set(boxes).then(() => displayMessage("Tüm kutular başarıyla açıldı.")) } }
   
   async function resetGameBoard() {
@@ -5580,13 +5580,11 @@ async function reorderDailyRewardItem(rewardId, newIndex) {
 
     let surpriseSessionListener = null;
     // listenForSurpriseBox FONKSİYONUNU BU YENİ HALİYLE DEĞİŞTİR
-
-// MEVCUT listenForSurpriseBox FONKSİYONUNU BU BLOK İLE DEĞİŞTİRİN
-
-// listenForSurpriseBox FONKSİYONUNU TAMAMEN DEĞİŞTİRİN
+// --- 1. DEĞİŞTİRİLECEK FONKSİYON ---
 function listenForSurpriseBox() {
     const sessionRef = db.ref('surprise_box_session');
     
+    // Önceki dinleyiciyi temizle (güvenlik için)
     if (activeListeners.surpriseBox) {
         activeListeners.surpriseBox.ref.off(activeListeners.surpriseBox.event, activeListeners.surpriseBox.callback);
     }
@@ -5594,52 +5592,48 @@ function listenForSurpriseBox() {
     const callback = snap => {
         const sessionData = snap.val();
 
+        // 1. Oturum bittiyse tüm pencereleri kapat
         if (!sessionData || !sessionData.active) {
             closeCardSelectionModal();
             closeSpectatorModal();
             return;
         }
 
+        // 2. Kart seçimi yapılmışsa sonucu işle ve oyunu sıfırla
         if (sessionData.result && !sessionData.logged) {
-            sessionRef.child('logged').set(true);
+            sessionRef.child('logged').set(true); // Tekrar tekrar tetiklenmesin diye işaretle
 
-            if (sessionData.result.timeout) {
-                logActivity('surpriseBoxTimeout', sessionData.user, { boxId: sessionData.boxId });
-            } else {
-                logActivity('surpriseBox', sessionData.user, { 
-                    boxId: sessionData.boxId,
-                    points: sessionData.result.points, 
-                    multiplier: sessionData.multiplier 
-                });
-            }
+            logActivity('surpriseBox', sessionData.user, { 
+                boxId: sessionData.boxId,
+                points: sessionData.result.points, 
+                multiplier: sessionData.multiplier 
+            });
 
-            if (sessionData.boxId !== 'Çark') {
-                showGlobalSurpriseBoxNotification(sessionData);
-                setTimeout(() => {
-                    resetGameBoard();
-                    sessionRef.remove();
-                }, 4000); 
-            } else {
-                const multiplierText = (sessionData.multiplier > 1) ? ` (${Math.round(sessionData.result.points / sessionData.multiplier)} Puan x ${sessionData.multiplier} Çarpan)` : '';
-                const message = `<div class='text-center'>
-                                  <p class='text-2xl mb-2'>🎡 Çarktan Sürpriz! 🎡</p>
-                                  <p>${sessionData.user}, <b class='text-green-400'>+${sessionData.result.points} Puan</b> kazandı!${multiplierText}</p>
-                               </div>`;
-                displayMessage(message);
-                
-                setTimeout(() => {
-                    sessionRef.remove();
-                }, 4000);
-            }
+            showGlobalSurpriseBoxNotification(sessionData); // Kazananı herkese göster
+            
+            // 4 saniye sonra kutuları ve oturumu sıfırla
+            setTimeout(() => {
+                resetGameBoard(); // SADECE KUTU OYUNUNU SIFIRLAR
+                sessionRef.remove();
+            }, 4000); 
 
+            // Kart seçimi yapan kişinin ekranını kapat
             if (sessionData.user === currentUser) {
                 closeCardSelectionModal();
             }
-            return;
+            return; // İşlem bitti, devam etme
         }
 
-        if (sessionData.user !== currentUser) {
-            openSpectatorModal(sessionData);
+        // --- GÜVENİLİR MANTIK BURADA ---
+        // 3. Henüz kart seçilmemişse, kimin hangi ekranı göreceğini belirle
+        if (!sessionData.result) {
+            if (sessionData.user === currentUser) {
+                // Sürpriz kutuyu bulan BENİM -> KART SEÇİM EKRANINI AÇ
+                openCardSelectionModal(currentUser);
+            } else {
+                // Sürpriz kutuyu BAŞKASI buldu -> İZLEYİCİ EKRANINI AÇ
+                openSpectatorModal(sessionData);
+            }
         }
     };
 
