@@ -5566,9 +5566,12 @@ async function reorderDailyRewardItem(rewardId, newIndex) {
 
 // MEVCUT listenForSurpriseBox FONKSİYONUNU SİLİP BUNU YAPIŞTIR
 
+// MEVCUT listenForSurpriseBox FONKSİYONUNU SİLİP BUNU YAPIŞTIR
+
 function listenForSurpriseBox() {
     const sessionRef = db.ref('surprise_box_session');
     
+    // Güvenlik için önceki dinleyiciyi kapat
     if (activeListeners.surpriseBox) {
         activeListeners.surpriseBox.ref.off(activeListeners.surpriseBox.event, activeListeners.surpriseBox.callback);
     }
@@ -5576,58 +5579,64 @@ function listenForSurpriseBox() {
     const callback = snap => {
         const sessionData = snap.val();
 
-        if (sessionData && sessionData.active) {
-            if (sessionData.user !== currentUser && !sessionData.result) {
-                openSpectatorModal(sessionData);
-            }
-
-            // *** ÇİFT BİLDİRİM ENGELLEME KONTROLÜ ***
-            // Sadece sonuç belli olduğunda VE bu olay daha önce loglanmadıysa işlem yap
-            if (sessionData.result && !sessionData.logged) {
-                
-                // Olayı logla ve tekrar loglanmaması için veritabanında işaretle
-                logActivity('surpriseBox', sessionData.user, { 
-                    boxId: sessionData.boxId,
-                    points: sessionData.result.points, 
-                    multiplier: sessionData.multiplier 
-                });
-                sessionRef.child('logged').set(true);
-                
-                if (sessionData.user === currentUser) {
-                    closeCardSelectionModal();
-                    let message = `Sürpriz kutudan tebrikler! Toplam ${sessionData.result.points} puan kazandınız!`;
-                    if (sessionData.boxId !== 'Çark') {
-                        message += " Oyun 4 saniye içinde sıfırlanacak.";
-                    }
-                    displayMessage(message);
-                }
-                
-                showGlobalSurpriseBoxNotification(sessionData);
-                
-                setTimeout(() => {
-                    closeSpectatorModal();
-                    if (sessionData.boxId !== 'Çark') {
-                        resetGameBoard();
-                    }
-                    sessionRef.remove();
-                }, 4000);
-            }
-        } else {
+        // 1. OTURUM SONA ERDİYSE: Tüm ilgili pencereleri kapat ve zamanlayıcıları temizle
+        if (!sessionData || !sessionData.active) {
+            closeCardSelectionModal();
             closeSpectatorModal();
+            return;
+        }
+
+        // 2. KART SEÇİMİ YAPILDIYSA VE SONUÇ GELDİYSE
+        if (sessionData.result && !sessionData.logged) {
+            // Bu olayın tekrar tekrar tetiklenmemesi için loglandığını işaretle
+            sessionRef.child('logged').set(true);
+            
+            // Oyunu kimin kazandığını ve ne kazandığını herkese gösteren büyük pencereyi aç
+            showGlobalSurpriseBoxNotification(sessionData);
+            
+            // Sürpriz kutuyu açan kullanıcının kendi seçim penceresini kapat
+            if (sessionData.user === currentUser) {
+                closeCardSelectionModal();
+            }
+            
+            // Olayı aktivite akışına kaydet
+            logActivity('surpriseBox', sessionData.user, { 
+                boxId: sessionData.boxId,
+                points: sessionData.result.points, 
+                multiplier: sessionData.multiplier 
+            });
+
+            // 4 saniye sonra oyunu temizle ve sıfırla
+            setTimeout(() => {
+                closeGlobalSurpriseBoxModal(); // Herkesteki bildirim penceresini kapat
+                if (sessionData.boxId !== 'Çark') { // Eğer çarktan gelmediyse oyun tahtasını sıfırla
+                    resetGameBoard();
+                }
+                sessionRef.remove(); // Veritabanından sürpriz kutu oturumunu sil
+            }, 4000);
+            
+            return; // İşlem bittiği için fonksiyonun devam etmesini engelle
+        }
+
+        // 3. KART SEÇİMİ HENÜZ YAPILMADIYSA
+        // Eğer ben sürpriz kutuyu açan kişi DEĞİLSEM, izleyici penceresini aç
+        if (sessionData.user !== currentUser) {
+            openSpectatorModal(sessionData);
         }
     };
 
     activeListeners.surpriseBox = { ref: sessionRef, event: 'value', callback };
     sessionRef.on('value', callback);
 }
-
 function openSpectatorModal(sessionData) {
+    // Önceki zamanlayıcı varsa temizle
     if (spectatorCountdownInterval) clearInterval(spectatorCountdownInterval);
 
     document.getElementById('spectatorTitle').innerHTML = `<span class="text-green-400 font-bold">${sessionData.user}</span> Sürpriz Kutu buldu!`;
     const cardContainer = document.getElementById('spectatorCardContainer');
-    cardContainer.innerHTML = '';
+    cardContainer.innerHTML = ''; // Kartları temizle
 
+    // Kartları oluştur
     sessionData.cards.forEach((cardValue, index) => {
         const cardDiv = document.createElement('div');
         cardDiv.className = 'card bg-gray-700 border-2 border-red-700 rounded-xl w-28 h-40 flex flex-col items-center justify-center font-bold text-2xl relative';
@@ -5643,6 +5652,7 @@ function openSpectatorModal(sessionData) {
     const countdownEl = document.getElementById('spectatorCountdown');
     let timeLeft = 60;
     countdownEl.textContent = timeLeft;
+
     spectatorCountdownInterval = setInterval(() => {
         timeLeft--;
         if (timeLeft >= 0) {
@@ -5650,13 +5660,13 @@ function openSpectatorModal(sessionData) {
         } else {
             countdownEl.textContent = 'Süre Doldu!';
             clearInterval(spectatorCountdownInterval);
+            spectatorCountdownInterval = null; // Zamanlayıcıyı sıfırla
         }
     }, 1000);
     
     document.getElementById('spectatorResult').textContent = '';
     spectatorModal.style.display = 'flex';
 }
-
   // MEVCUT showGlobalSurpriseBoxNotification FONKSİYONUNU SİLİP BUNU YAPIŞTIR
 
 function showGlobalSurpriseBoxNotification(data) {
@@ -5724,8 +5734,13 @@ function showGlobalSurpriseBoxNotification(data) {
   }
 
   function closeSpectatorModal() {
-      spectatorModal.style.display = 'none';
-  }
+    // Kapatırken zamanlayıcıyı kesin olarak durdur
+    if (spectatorCountdownInterval) {
+        clearInterval(spectatorCountdownInterval);
+        spectatorCountdownInterval = null;
+    }
+    spectatorModal.style.display = 'none';
+}
     
 // Çarkın GÖRSELİNİ (dilimleri ve yazıları) oluşturan fonksiyon
 function renderWheel() {
@@ -8095,8 +8110,7 @@ function closeWheelLegendModal() {
           usesInput.classList.add('hidden');
       }
   });
-  // YENİ EKLENECEK KOD SONU
-    
+
 </script>
 </body>
 </html>
