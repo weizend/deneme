@@ -3712,13 +3712,12 @@ async function buyItem(itemId) {
     const confirmed = await customConfirm(`${item.name} ürününü ${item.cost} puana almak istiyor musunuz?`);
     if (confirmed) {
       
-        // *** DEĞİŞEN KISIM BURASI: logActivity'e daha fazla detay gönderiyoruz ***
         logActivity('buyItem', currentUser, { 
             itemName: item.name, 
             itemCost: item.cost,
-            itemType: item.type, // Ürünün tipini ekledik
-            itemValue: item.value, // Ürünün değerini/adedini ekledik
-            itemDuration: item.duration // Çarpan ise kullanım hakkını ekledik
+            itemType: item.type,
+            itemValue: item.value || null,
+            itemDuration: item.duration || null
         });
         
         let updates = {
@@ -3728,19 +3727,29 @@ async function buyItem(itemId) {
         };
         let message = 'Satın alma başarılı!';
         
+        // --- GÜVENLİK KONTROLLERİ EKLENDİ ---
+        const itemValue = parseInt(item.value) || 0;
+        const itemDuration = parseInt(item.duration) || 0;
+
         if (item.type === 'boxRights') {
-            updates.kutuHakki = (user.kutuHakki || 0) + item.value;
+            if (itemValue <= 0) { displayMessage("Ürün hatası: Geçersiz Kutu Hakkı değeri."); return; }
+            updates.kutuHakki = (user.kutuHakki || 0) + itemValue;
         } else if (item.type === 'wheelTicket') {
-            updates.carkBileti = (user.carkBileti || 0) + item.value;
+            if (itemValue <= 0) { displayMessage("Ürün hatası: Geçersiz Bilet değeri."); return; }
+            updates.carkBileti = (user.carkBileti || 0) + itemValue;
         } else if (item.type === 'clickCatchTicket') {
-            updates.clickCatchTickets = (user.clickCatchTickets || 0) + item.value;
+            if (itemValue <= 0) { displayMessage("Ürün hatası: Geçersiz Bilet değeri."); return; }
+            updates.clickCatchTickets = (user.clickCatchTickets || 0) + itemValue;
         } else if (item.type === 'tempMultiplier') {
-            updates.activeMultiplier = item.value;
+            if (itemValue <= 1) { displayMessage("Ürün hatası: Geçersiz Çarpan değeri (1'den büyük olmalı)."); return; }
+            if (itemDuration <= 0) { displayMessage("Ürün hatası: Geçersiz Çarpan kullanım hakkı."); return; }
+            updates.activeMultiplier = itemValue;
             updates.multiplierSource = 'store';
-            updates.multiplierRemainingUses = item.duration;
+            updates.multiplierRemainingUses = itemDuration;
             updates.activeStoreMultiplierItemId = itemId; 
         } else if (item.type === 'iflasShield') {
-            updates.iflasShieldUses = (user.iflasShieldUses || 0) + item.value;
+            if (itemValue <= 0) { displayMessage("Ürün hatası: Geçersiz Kalkan değeri."); return; }
+            updates.iflasShieldUses = (user.iflasShieldUses || 0) + itemValue;
         } 
         else if (item.type === 'avatar') {
             const newAvatar = {
@@ -5441,36 +5450,51 @@ function listenForSurpriseBox() {
                 openSpectatorModal(sessionData);
             }
 
-            // *** ÇİFT BİLDİRİM ENGELLEME KONTROLÜ ***
-            // Sadece sonuç belli olduğunda VE bu olay daha önce loglanmadıysa işlem yap
-            if (sessionData.result && !sessionData.logged) {
-                
-                // Olayı logla ve tekrar loglanmaması için veritabanında işaretle
-                logActivity('surpriseBox', sessionData.user, { 
-                    boxId: sessionData.boxId,
-                    points: sessionData.result.points, 
-                    multiplier: sessionData.multiplier 
+            // Eğer sonuç belli olduysa, işlemi SADECE BİR KERE yapmak için transaction başlat.
+            if (sessionData.result) {
+                sessionRef.child('logged').transaction(currentData => {
+                    if (currentData === true) {
+                        return; // Başka bir istemci zaten loglamış, işlemi durdur.
+                    }
+                    return true; // Bu istemci logluyor, işareti true yap.
+                }, (error, committed, snapshot) => {
+                    if (error) {
+                        console.error('Sürpriz kutu loglama işlemi başarısız: ', error);
+                    } else if (committed) {
+                        // İşlem bu istemci tarafından başarıyla yapıldı.
+                        // Bütün bildirim ve oyun sıfırlama mantığı artık burada.
+                        
+                        // 1. Aktiviteyi logla
+                        logActivity('surpriseBox', sessionData.user, { 
+                            boxId: sessionData.boxId,
+                            points: sessionData.result.points, 
+                            multiplier: sessionData.multiplier 
+                        });
+                        
+                        // 2. Oyuncuya özel mesajı göster
+                        if (sessionData.user === currentUser) {
+                            closeCardSelectionModal();
+                            let message = `Sürpriz kutudan tebrikler! Toplam ${sessionData.result.points} puan kazandınız!`;
+                            if (sessionData.boxId !== 'Çark') {
+                                message += " Oyun 4 saniye içinde sıfırlanacak.";
+                            }
+                            displayMessage(message);
+                        }
+                        
+                        // 3. Herkese genel bildirimi göster
+                        showGlobalSurpriseBoxNotification(sessionData);
+                        
+                        // 4. Oturumu ve oyunu temizle
+                        setTimeout(() => {
+                            closeSpectatorModal();
+                            if (sessionData.boxId !== 'Çark') {
+                                resetGameBoard();
+                            }
+                            sessionRef.remove();
+                        }, 4000);
+                    }
+                    // Eğer 'committed' değilse, hiçbir şey yapma. Başka bir istemci halletti.
                 });
-                sessionRef.child('logged').set(true);
-                
-                if (sessionData.user === currentUser) {
-                    closeCardSelectionModal();
-                    let message = `Sürpriz kutudan tebrikler! Toplam ${sessionData.result.points} puan kazandınız!`;
-                    if (sessionData.boxId !== 'Çark') {
-                        message += " Oyun 4 saniye içinde sıfırlanacak.";
-                    }
-                    displayMessage(message);
-                }
-                
-                showGlobalSurpriseBoxNotification(sessionData);
-                
-                setTimeout(() => {
-                    closeSpectatorModal();
-                    if (sessionData.boxId !== 'Çark') {
-                        resetGameBoard();
-                    }
-                    sessionRef.remove();
-                }, 4000);
             }
         } else {
             closeSpectatorModal();
