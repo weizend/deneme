@@ -1148,8 +1148,8 @@ body.modal-open .modal-content {
             <li><strong class="text-yellow-400">Sürpriz Kutu 🎁:</strong> İçinden yüksek puanlar çıkan özel bir kart seçme oyunu başlatır. Sürpriz kutu bulunduğunda mevcut turdaki tüm kutular sıfırlanır ve karıştırılır.</li>
             <li><strong class="text-blue-400">Çarpan ✖️:</strong> Bir sonraki açacağınız kutudan çıkacak puanı veya eşyayı katlar. <b class="text-yellow-200">ÖNEMLİ:</b> Eğer mağazadan alınmış aktif bir çarpanla kutu açar ve kutudan yeni bir çarpan bulursanız, mağaza çarpanınız size iade edilir ve yeni bulduğunuz çarpan aktif olur!</li>
             <li><strong class="text-cyan-400">İflas Kalkanı 🛡️:</strong> Bomba bulduğunuzda puanlarınızı korur. Tek kullanımlıktır.</li>
-            <li><strong class="text-pink-400">Çark Bileti 🎟️:</strong> Şans Çarkı'nı çevirmeniz için bilet verir.</li>
-            <li><strong class="text-orange-400">Tıkla-Yakala Bileti 🎫:</strong> Tıkla-Yakala oyununu oynamanız için bilet verir.</li>
+            <li><strong class="text-pink-400">Çark Bileti 🎫:</strong> Şans Çarkı'nı çevirmeniz için bilet verir.</li>
+            <li><strong class="text-orange-400">Tıkla-Yakala Bileti 🎟️:</strong> Tıkla-Yakala oyununu oynamanız için bilet verir.</li>
         </ul>
     </div>
     
@@ -2960,10 +2960,10 @@ async function deleteUserAvatar(username, avatarId) {
               } 
               // YENİ EKLENECEK KOD BAŞLANGICI
               else if (box.content === 'wheelTicket') {
-                  displayContent = `<span class="text-pink-400 text-2xl">🎟️</span>`; 
+                  displayContent = `<span class="text-pink-400 text-2xl">🎫</span>`; 
                   div.classList.add('bg-pink-700', 'border-pink-500', 'animate-pulse'); 
               } else if (box.content === 'clickCatchTicket') {
-                  displayContent = `<span class="text-orange-400 text-2xl">🎫</span>`; 
+                  displayContent = `<span class="text-orange-400 text-2xl">🎟️</span>`; 
                   div.classList.add('bg-orange-700', 'border-orange-500', 'animate-pulse');
               }
               else if (box.content === 'iflasShield') {
@@ -4870,8 +4870,8 @@ function showGlobalOpenedBoxInfo(info) {
                     case 'surpriz': label = 'Sürpriz Kutu'; icon = '🎁'; break;
                     case 'multiplier': label = `${value}x Çarpan`; icon = '✖️'; break;
                     case 'iflasShield': label = 'İflas Kalkanı'; icon = '🛡️'; break;
-                    case 'wheelTicket': label = 'Çark Bileti'; icon = '🎟️'; break;
-                    case 'clickCatchTicket': label = 'Tıkla-Yakala Bileti'; icon = '🎫'; break;
+                    case 'wheelTicket': label = 'Çark Bileti'; icon = '🎫'; break;
+                    case 'clickCatchTicket': label = 'Tıkla-Yakala Bileti'; icon = '🎟️'; break;
                 }
                 html += `<p class="flex justify-between items-center p-2 bg-gray-800 rounded mb-2 text-white"><span>${icon} ${label}</span> <span class="font-bold text-yellow-300">${count} Adet</span></p>`;
             }
@@ -5828,7 +5828,7 @@ async function startSoloClickCatchGame() {
     const specialItemMapping = {
       'boxRight': { type: 'boxRight', value: 1, emoji: '📦' },
       'iflasShield': { type: 'iflasShield', value: 1, emoji: '🛡️' },
-      'wheelTicket': { type: 'wheelTicket', value: 1, emoji: '🎟️' }
+      'wheelTicket': { type: 'wheelTicket', value: 1, emoji: '🎫' }
     };
     specialItemForThisRound = specialItemMapping[soloGameSettings.specialItemType] || specialItemMapping['boxRight'];
     clickCatchGameActive = true;
