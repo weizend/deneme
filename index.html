@@ -3666,9 +3666,6 @@ function renderStoreItems(items) {
     }
 }
 
-
-  // MEVCUT buyItem FONKSİYONUNU BUNUNLA DEĞİŞTİR
-
 async function buyItem(itemId) {
     if (isAdmin) {
         displayMessage("Adminler alışveriş yapamaz.");
@@ -3703,13 +3700,12 @@ async function buyItem(itemId) {
     const confirmed = await customConfirm(`${item.name} ürününü ${item.cost} puana almak istiyor musunuz?`);
     if (confirmed) {
       
-        // *** DEĞİŞEN KISIM BURASI: logActivity'e daha fazla detay gönderiyoruz ***
         logActivity('buyItem', currentUser, { 
             itemName: item.name, 
             itemCost: item.cost,
-            itemType: item.type, // Ürünün tipini ekledik
-            itemValue: item.value, // Ürünün değerini/adedini ekledik
-            itemDuration: item.duration // Çarpan ise kullanım hakkını ekledik
+            itemType: item.type,
+            itemValue: item.value || null,
+            itemDuration: item.duration || null
         });
         
         let updates = {
@@ -3719,19 +3715,29 @@ async function buyItem(itemId) {
         };
         let message = 'Satın alma başarılı!';
         
+        // --- GÜVENLİK KONTROLLERİ EKLENDİ ---
+        const itemValue = parseInt(item.value) || 0;
+        const itemDuration = parseInt(item.duration) || 0;
+
         if (item.type === 'boxRights') {
-            updates.kutuHakki = (user.kutuHakki || 0) + item.value;
+            if (itemValue <= 0) { displayMessage("Ürün hatası: Geçersiz Kutu Hakkı değeri."); return; }
+            updates.kutuHakki = (user.kutuHakki || 0) + itemValue;
         } else if (item.type === 'wheelTicket') {
-            updates.carkBileti = (user.carkBileti || 0) + item.value;
+            if (itemValue <= 0) { displayMessage("Ürün hatası: Geçersiz Bilet değeri."); return; }
+            updates.carkBileti = (user.carkBileti || 0) + itemValue;
         } else if (item.type === 'clickCatchTicket') {
-            updates.clickCatchTickets = (user.clickCatchTickets || 0) + item.value;
+            if (itemValue <= 0) { displayMessage("Ürün hatası: Geçersiz Bilet değeri."); return; }
+            updates.clickCatchTickets = (user.clickCatchTickets || 0) + itemValue;
         } else if (item.type === 'tempMultiplier') {
-            updates.activeMultiplier = item.value;
+            if (itemValue <= 1) { displayMessage("Ürün hatası: Geçersiz Çarpan değeri (1'den büyük olmalı)."); return; }
+            if (itemDuration <= 0) { displayMessage("Ürün hatası: Geçersiz Çarpan kullanım hakkı."); return; }
+            updates.activeMultiplier = itemValue;
             updates.multiplierSource = 'store';
-            updates.multiplierRemainingUses = item.duration;
+            updates.multiplierRemainingUses = itemDuration;
             updates.activeStoreMultiplierItemId = itemId; 
         } else if (item.type === 'iflasShield') {
-            updates.iflasShieldUses = (user.iflasShieldUses || 0) + item.value;
+            if (itemValue <= 0) { displayMessage("Ürün hatası: Geçersiz Kalkan değeri."); return; }
+            updates.iflasShieldUses = (user.iflasShieldUses || 0) + itemValue;
         } 
         else if (item.type === 'avatar') {
             const newAvatar = {
@@ -7851,6 +7857,20 @@ function closeWheelLegendModal() {
     activeListeners.lobbySummary = { ref, event: 'value', callback };
     ref.on('value', callback);
 }
+
+    // YENİ EKLENECEK KOD BAŞLANGICI
+  // Günlük Ödül modalındaki "Ödül Tipi" dropdown'ını dinler.
+  document.getElementById('dailyRewardType').addEventListener('change', function() {
+      const usesInput = document.getElementById('dailyRewardMultiplierUses');
+      // Eğer seçilen tip "Çarpan" (tempMultiplier) ise, Kullanım Hakkı alanını göster.
+      if (this.value === 'tempMultiplier') {
+          usesInput.classList.remove('hidden');
+      } else {
+      // Değilse, Kullanım Hakkı alanını gizle.
+          usesInput.classList.add('hidden');
+      }
+  });
+  // YENİ EKLENECEK KOD SONU
     
 </script>
 </body>
