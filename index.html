@@ -6913,7 +6913,7 @@ function renderActivityFeed(activities) {
                 break;
             case 'clickCatchSolo':
                 if (activity.details.score >= 0) {
-                    message = `${userHtml}, Tıkla-Yakala (Tekli) oyununda <span class="text-green-400 font-bold">+${activity.details.score} Puan</span> kazandı.`;
+                    message = `${userHtml}, Tıkla-Yakala (Tekli) oyun oynadı ve <span class="text-green-400 font-bold">+${activity.details.score} Puan</span> kazandı.`;
                 } else {
                     message = `${userHtml}, Tıkla-Yakala (Tekli) oyununda <span class="text-red-500 font-bold">${activity.details.score} Puan</span> kaybetti.`;
                 }
@@ -6922,7 +6922,7 @@ function renderActivityFeed(activities) {
                 }
                 break;
             case 'clickCatchLobby':
-                message = `${userHtml}, Tıkla-Yakala (Lobi) oyununu kazandı ve <span class="text-green-400 font-bold">+${activity.details.prize} Puan</span> elde etti!`;
+                message = `${userHtml}, Tıkla-Yakala (Lobi) oyununda birinci oldu ve <span class="text-green-400 font-bold">+${activity.details.prize} Puan</span> kazandı.`;
                 break;
             case 'dailyReward':
                 if (activity.details.rewardType === 'tempMultiplier') {
@@ -7374,36 +7374,41 @@ function loadWheelHistory() {
             const prizeType = item.type;
 
             // --- GÜNCELLENEN MANTIK BLOGU ---
+            // Adet bilgisi (item.value) eksikse, varsayılan olarak 1 kullan (|| 1)
+            const prizeValue = item.value || 1; 
+
             if (prizeType === 'points') {
-                const prizeValue = item.value;
-                if (prizeValue === 1000) {
+                // Puanlar için kendi değeri kullanılır, varsayılan gerekmez.
+                const pointValue = item.value; 
+                if (pointValue === 1000) {
                     icon = '💎';
                     prizeText = '+1000 PUAN';
-                } else if (prizeValue === 100) {
+                } else if (pointValue === 100) {
                     icon = '💰';
                     prizeText = '+100 PUAN';
-                } else if (prizeValue === 50) {
+                } else if (pointValue === 50) {
                     icon = '🍪';
                     prizeText = '+50 PUAN';
                 } else {
                     icon = '💰';
-                    prizeText = `+${prizeValue} PUAN`; // Diğer tüm puan türleri için
+                    prizeText = `+${pointValue} PUAN`;
                 }
             } else if (prizeType === 'surpriseBox') {
                 icon = '🎉';
                 prizeText = 'SÜRPRİZ KUTU';
             } else if (prizeType === 'boxRights') {
                 icon = '📦';
-                prizeText = `+${item.value} Kutu Hakkı`;
+                prizeText = `+${prizeValue} Kutu Hakkı`;
             } else if (prizeType === 'clickCatchTicket') {
                 icon = '🎟️';
-                prizeText = `+${item.value} Tıkla-Yakala Bileti`;
+                prizeText = `+${prizeValue} Tıkla-Yakala Bileti`;
             } else if (prizeType === 'tempMultiplier') {
                 icon = '✖️';
-                prizeText = `${item.value}X ÇARPAN`;
+                // Çarpanın değeri etiketinden farklı olabilir, bu yüzden item.value'yu önceliklendir.
+                prizeText = item.value ? `${item.value}X ÇARPAN` : item.prize;
             } else if (prizeType === 'iflasShield') {
                 icon = '🛡️';
-                prizeText = `+${item.value} İflas Kalkanı`;
+                prizeText = `+${prizeValue} İflas Kalkanı`;
             } else if (prizeType === 'pas') {
                 icon = '☠️';
                 prizeText = 'PAS';
