@@ -3505,7 +3505,7 @@ function showOpenedBoxInfo(box) {
   
   function closeOpenedBoxInfoModal() { openedBoxInfoModal.style.display = 'none'; }
   function shuffleArray(array) { for (let i = array.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [array[i], array[j]] = [array[j], array[i]]; } return array; }
-  // YENİ EKLENECEK FONKSİYON
+
 async function handleSurpriseBoxTimeout() {
     // Sürenin dolduğunu ve puan kazanılamadığını belirtmek için
     // veritabanındaki oturum verisini özel bir "sonuç" ile güncelliyoruz.
@@ -3555,7 +3555,7 @@ async function handleSurpriseBoxTimeout() {
               countdownEl.textContent = timeLeft;
               if (timeLeft <= 0) {
                   clearInterval(countdownInterval);
-                  closeCardSelectionModal();
+                  handleSurpriseBoxTimeout(); // Sadece bu satır değişti
               }
           }, 1000);
       });
@@ -5680,7 +5680,7 @@ function openSpectatorModal(sessionData) {
     document.getElementById('spectatorResult').textContent = '';
     spectatorModal.style.display = 'flex';
 }
-  // showGlobalSurpriseBoxNotification FONKSİYONUNU DEĞİŞTİR
+  // MEVCUT FONKSİYONUN TAMAMINI BUNUNLA DEĞİŞTİR
 function showGlobalSurpriseBoxNotification(data) {
     document.getElementById('surpriseOpener').textContent = data.user;
     const sourceInfoEl = document.getElementById('surpriseSourceInfo');
