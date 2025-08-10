@@ -683,24 +683,57 @@ body.modal-open .modal-content {
       <div class="bg-gray-800/80 p-6 rounded-xl border border-gray-700">
         <h4 class="text-yellow-200 text-xl font-semibold mb-4 border-b border-gray-600 pb-2">Toplu Kullanıcı İşlemleri</h4>
         <div class="space-y-6">
-          <div>
-            <label for="globalPoint" class="block text-gray-300 mb-1">Toplu Puan İşlemi</label>
-            <input type="number" id="globalPoint" placeholder="Puan Miktarı" min="1" class="w-full p-3 mb-2 bg-gray-700 border border-gray-600 rounded-lg text-white">
-            <div class="flex gap-2">
-              <button onclick="changeAllPoints(true)" class="flex-1 py-2 bg-green-700 hover:bg-green-600 text-white font-bold rounded-lg text-sm">Ekle</button>
-              <button onclick="changeAllPoints(false)" class="flex-1 py-2 bg-red-700 hover:bg-red-600 text-white font-bold rounded-lg text-sm">Sil</button>
-            </div>
-          </div>
-          <div>
-            <label for="globalBoxRight" class="block text-gray-300 mb-1">Toplu Kutu Hakkı İşlemi</label>
-            <input type="number" id="globalBoxRight" placeholder="Kutu Hakkı Miktarı" min="1" class="w-full p-3 mb-2 bg-gray-700 border border-gray-600 rounded-lg text-white">
-            <div class="flex gap-2">
-              <button onclick="changeAllBoxRights(true)" class="flex-1 py-2 bg-green-700 hover:bg-green-600 text-white font-bold rounded-lg text-sm">Ekle</button>
-              <button onclick="changeAllBoxRights(false)" class="flex-1 py-2 bg-red-700 hover:bg-red-600 text-white font-bold rounded-lg text-sm">Sil</button>
-            </div>
-          </div>
-        </div>
-      </div>
+  <div>
+    <label for="globalPoint" class="block text-gray-300 mb-1">Toplu Puan İşlemi</label>
+    <input type="number" id="globalPoint" placeholder="Puan Miktarı" min="1" class="w-full p-3 mb-2 bg-gray-700 border border-gray-600 rounded-lg text-white">
+    <div class="flex gap-2">
+      <button onclick="changeAllPoints(true)" class="flex-1 py-2 bg-green-700 hover:bg-green-600 text-white font-bold rounded-lg text-sm">Ekle</button>
+      <button onclick="changeAllPoints(false)" class="flex-1 py-2 bg-red-700 hover:bg-red-600 text-white font-bold rounded-lg text-sm">Sil</button>
+    </div>
+  </div>
+  <div>
+    <label for="globalBoxRight" class="block text-gray-300 mb-1">Toplu Kutu Hakkı İşlemi</label>
+    <input type="number" id="globalBoxRight" placeholder="Kutu Hakkı Miktarı" min="1" class="w-full p-3 mb-2 bg-gray-700 border border-gray-600 rounded-lg text-white">
+    <div class="flex gap-2">
+      <button onclick="changeAllBoxRights(true)" class="flex-1 py-2 bg-green-700 hover:bg-green-600 text-white font-bold rounded-lg text-sm">Ekle</button>
+      <button onclick="changeAllBoxRights(false)" class="flex-1 py-2 bg-red-700 hover:bg-red-600 text-white font-bold rounded-lg text-sm">Sil</button>
+    </div>
+  </div>
+  
+  <div>
+    <label for="globalWheelTicket" class="block text-gray-300 mb-1">Toplu Çark Bileti İşlemi</label>
+    <input type="number" id="globalWheelTicket" placeholder="Bilet Miktarı" min="1" class="w-full p-3 mb-2 bg-gray-700 border border-gray-600 rounded-lg text-white">
+    <div class="flex gap-2">
+      <button onclick="changeAllWheelTickets(true)" class="flex-1 py-2 bg-green-700 hover:bg-green-600 text-white font-bold rounded-lg text-sm">Ekle</button>
+      <button onclick="changeAllWheelTickets(false)" class="flex-1 py-2 bg-red-700 hover:bg-red-600 text-white font-bold rounded-lg text-sm">Sil</button>
+    </div>
+  </div>
+
+  <div>
+    <label for="globalClickCatchTicket" class="block text-gray-300 mb-1">Toplu Tıkla-Yakala Bileti İşlemi</label>
+    <input type="number" id="globalClickCatchTicket" placeholder="Bilet Miktarı" min="1" class="w-full p-3 mb-2 bg-gray-700 border border-gray-600 rounded-lg text-white">
+    <div class="flex gap-2">
+      <button onclick="changeAllClickCatchTickets(true)" class="flex-1 py-2 bg-green-700 hover:bg-green-600 text-white font-bold rounded-lg text-sm">Ekle</button>
+      <button onclick="changeAllClickCatchTickets(false)" class="flex-1 py-2 bg-red-700 hover:bg-red-600 text-white font-bold rounded-lg text-sm">Sil</button>
+    </div>
+  </div>
+
+  <div>
+    <label for="globalIflasShield" class="block text-gray-300 mb-1">Toplu İflas Kalkanı İşlemi</label>
+    <input type="number" id="globalIflasShield" placeholder="Kalkan Miktarı" min="1" class="w-full p-3 mb-2 bg-gray-700 border border-gray-600 rounded-lg text-white">
+    <div class="flex gap-2">
+      <button onclick="changeAllIflasShields(true)" class="flex-1 py-2 bg-green-700 hover:bg-green-600 text-white font-bold rounded-lg text-sm">Ekle</button>
+      <button onclick="changeAllIflasShields(false)" class="flex-1 py-2 bg-red-700 hover:bg-red-600 text-white font-bold rounded-lg text-sm">Sil</button>
+    </div>
+  </div>
+
+  <div>
+    <label class="block text-gray-300 mb-1">Toplu Çarpan Ekleme</label>
+    <input type="number" id="globalMultiplierValue" placeholder="Çarpan Değeri (örn: 2, 5)" min="2" class="w-full p-3 mb-2 bg-gray-700 border border-gray-600 rounded-lg text-white">
+    <input type="number" id="globalMultiplierUses" placeholder="Kullanım Adedi" min="1" class="w-full p-3 mb-2 bg-gray-700 border border-gray-600 rounded-lg text-white">
+    <button onclick="addAllMultiplier()" class="w-full py-2 bg-green-700 hover:bg-green-600 text-white font-bold rounded-lg text-sm">Tüm Kullanıcılara Çarpan Ekle</button>
+  </div>
+  </div>
       
         <div class="flex flex-wrap gap-2 justify-center mt-4">
           <button onclick="revealAll()" class="py-2 px-4 bg-red-700 hover:bg-red-600 text-white font-bold rounded-lg">Tüm Kutuları Aç</button>
@@ -2803,7 +2836,116 @@ function adjustUserClickCatchTickets(add) {
 }
   async function changeAllPoints(add) { const amount = parseInt(document.getElementById("globalPoint").value); if (isNaN(amount) || amount <= 0) { displayMessage("Geçerli miktar girin."); return; } const confirmed = await customConfirm(`Tüm kullanıcılara ${add ? 'eklemek' : 'silmek'} istediğinizden emin misiniz?`); if (confirmed) { db.ref('users').once('value').then(snap => { const updates = {}; snap.forEach(child => { if (child.val().approved && !child.val().blocked && child.key !== "weizendtv") { let balance = child.val().balance || 0; let highestBalanceEver = child.val().highestBalanceEver || 0; balance = add ? balance + amount : Math.max(balance - amount, 0); if (balance > highestBalanceEver) highestBalanceEver = balance; updates['users/' + child.key + '/balance'] = balance; updates['users/' + child.key + '/highestBalanceEver'] = highestBalanceEver; } }); db.ref().update(updates).then(() => displayMessage("Tüm kullanıcılara puan işlemi başarıyla uygulandı.")) }); } }
   async function changeAllBoxRights(add) { const amount = parseInt(document.getElementById("globalBoxRight").value); if (isNaN(amount) || amount <= 0) { displayMessage("Geçerli miktar girin."); return; } const confirmed = await customConfirm(`Tüm kullanıcılara ${add ? 'eklemek' : 'silmek'} istediğinizden emin misiniz?`); if (confirmed) { db.ref('users').once('value').then(snap => { const updates = {}; snap.forEach(child => { if (child.val().approved && !child.val().blocked && child.key !== "weizendtv") { let kutuHakki = child.val().kutuHakki || 0; kutuHakki = add ? kutuHakki + amount : Math.max(kutuHakki - amount, 0); updates['users/' + child.key + '/kutuHakki'] = kutuHakki; } }); db.ref().update(updates).then(() => displayMessage("Tüm kullanıcılara kutu hakkı işlemi başarıyla uygulandı.")) }); } }
-  
+
+    // BU YENİ FONKSİYONLARI KODUNUN UYGUN BİR YERİNE EKLE
+
+async function changeAllWheelTickets(add) {
+    const amount = parseInt(document.getElementById("globalWheelTicket").value);
+    if (isNaN(amount) || amount <= 0) {
+        displayMessage("Geçerli bir bilet miktarı girin.");
+        return;
+    }
+    const confirmed = await customConfirm(`Tüm uygun kullanıcılara ${amount} adet Çark Bileti ${add ? 'eklemek' : 'silmek'} istediğinizden emin misiniz?`);
+    if (confirmed) {
+        db.ref('users').once('value').then(snap => {
+            const updates = {};
+            snap.forEach(child => {
+                const user = child.val();
+                if (user.approved && !user.blocked && child.key !== "weizendtv") {
+                    let currentTickets = user.carkBileti || 0;
+                    currentTickets = add ? currentTickets + amount : Math.max(0, currentTickets - amount);
+                    updates['users/' + child.key + '/carkBileti'] = currentTickets;
+                }
+            });
+            db.ref().update(updates).then(() => displayMessage("Tüm kullanıcılara Çark Bileti işlemi başarıyla uygulandı."));
+        });
+    }
+}
+
+async function changeAllClickCatchTickets(add) {
+    const amount = parseInt(document.getElementById("globalClickCatchTicket").value);
+    if (isNaN(amount) || amount <= 0) {
+        displayMessage("Geçerli bir bilet miktarı girin.");
+        return;
+    }
+    const confirmed = await customConfirm(`Tüm uygun kullanıcılara ${amount} adet Tıkla-Yakala Bileti ${add ? 'eklemek' : 'silmek'} istediğinizden emin misiniz?`);
+    if (confirmed) {
+        db.ref('users').once('value').then(snap => {
+            const updates = {};
+            snap.forEach(child => {
+                const user = child.val();
+                if (user.approved && !user.blocked && child.key !== "weizendtv") {
+                    let currentTickets = user.clickCatchTickets || 0;
+                    currentTickets = add ? currentTickets + amount : Math.max(0, currentTickets - amount);
+                    updates['users/' + child.key + '/clickCatchTickets'] = currentTickets;
+                }
+            });
+            db.ref().update(updates).then(() => displayMessage("Tüm kullanıcılara Tıkla-Yakala Bileti işlemi başarıyla uygulandı."));
+        });
+    }
+}
+
+async function changeAllIflasShields(add) {
+    const amount = parseInt(document.getElementById("globalIflasShield").value);
+    if (isNaN(amount) || amount <= 0) {
+        displayMessage("Geçerli bir kalkan miktarı girin.");
+        return;
+    }
+    const confirmed = await customConfirm(`Tüm uygun kullanıcılara ${amount} adet İflas Kalkanı ${add ? 'eklemek' : 'silmek'} istediğinizden emin misiniz?`);
+    if (confirmed) {
+        db.ref('users').once('value').then(snap => {
+            const updates = {};
+            snap.forEach(child => {
+                const user = child.val();
+                if (user.approved && !user.blocked && child.key !== "weizendtv") {
+                    let currentShields = user.iflasShieldUses || 0;
+                    currentShields = add ? currentShields + amount : Math.max(0, currentShields - amount);
+                    updates['users/' + child.key + '/iflasShieldUses'] = currentShields;
+                }
+            });
+            db.ref().update(updates).then(() => displayMessage("Tüm kullanıcılara İflas Kalkanı işlemi başarıyla uygulandı."));
+        });
+    }
+}
+
+async function addAllMultiplier() {
+    const multiplierValue = parseInt(document.getElementById("globalMultiplierValue").value);
+    const multiplierUses = parseInt(document.getElementById("globalMultiplierUses").value);
+
+    if (isNaN(multiplierValue) || multiplierValue <= 1) {
+        displayMessage("Çarpan değeri 1'den büyük bir sayı olmalıdır.");
+        return;
+    }
+    if (isNaN(multiplierUses) || multiplierUses <= 0) {
+        displayMessage("Geçerli bir kullanım adedi girin.");
+        return;
+    }
+
+    const confirmed = await customConfirm(`Tüm uygun kullanıcılara ${multiplierUses} adet ${multiplierValue}x Çarpan eklemek istediğinize emin misiniz? <br><small>(Not: Zaten aktif bir çarpanı olan kullanıcılar bu işlemden etkilenmeyecektir.)</small>`);
+    if (confirmed) {
+        db.ref('users').once('value').then(snap => {
+            const updates = {};
+            let affectedUsersCount = 0;
+            snap.forEach(child => {
+                const user = child.val();
+                // Sadece çarpanı olmayan, onaylı ve engelli olmayan kullanıcılara ekle
+                if (user.approved && !user.blocked && child.key !== "weizendtv" && user.multiplierSource === 'none') {
+                    updates['users/' + child.key + '/activeMultiplier'] = multiplierValue;
+                    updates['users/' + child.key + '/multiplierRemainingUses'] = multiplierUses;
+                    updates['users/' + child.key + '/multiplierSource'] = 'store'; // Mağazadan alınmış gibi davranır
+                    affectedUsersCount++;
+                }
+            });
+            
+            if (affectedUsersCount > 0) {
+                db.ref().update(updates).then(() => displayMessage(`${affectedUsersCount} kullanıcıya başarıyla çarpan eklendi.`));
+            } else {
+                displayMessage("Hiçbir uygun kullanıcıya çarpan eklenemedi (muhtemelen hepsinin zaten bir çarpanı var).");
+            }
+        });
+    }
+}
+    
   async function resetUser(username) {
     const confirmed = await customConfirm(`<b>${username}</b> kullanıcısını sıfırlamak istediğinize emin misiniz? Bu işlem kullanıcının puanlarını, biletlerini ve istatistiklerini sıfırlar!`);
     if (!confirmed) return;
