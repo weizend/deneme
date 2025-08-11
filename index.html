@@ -3202,6 +3202,24 @@ async function openBox(index) {
       await db.ref('gameLock').set(false);
   }
 
+    // BU YENİ FONKSİYONU OLDUĞU GİBİ KODUNUZA EKLEYİN
+
+async function handleSurpriseBoxCleanup(sessionData) {
+    // Bu fonksiyon, sürpriz kutu sonrası tüm temizlik ve sıfırlama işlemlerinin merkezidir.
+    if (!sessionData) return;
+    
+    // Güvenlik için konsola log basalım, çalıştığını görelim.
+    console.log("handleSurpriseBoxCleanup fonksiyonu çalıştırıldı. Kutu ID:", sessionData.boxId);
+    
+    // Oyun sıfırlama kuralı: Sadece Çark'tan gelmediyse sıfırla.
+    if (sessionData.boxId !== 'Çark') {
+        await resetGameBoard();
+    }
+    
+    // Her durumda oturumu veritabanından kaldır.
+    await db.ref('surprise_box_session').remove();
+}
+
   async function resetGame() {
       const confirmed = await customConfirm("Oyunu sıfırlamak istiyor musunuz? (Tüm kutular kapatılır, karıştırılır ve kutu açma istatistikleri sıfırlanır)");
       if (confirmed) {
@@ -3348,6 +3366,8 @@ function showOpenedBoxInfo(box) {
   
   // MEVCUT openCardSelectionModal FONKSİYONUNU BU BLOK İLE DEĞİŞTİRİN
 
+// MEVCUT openCardSelectionModal FONKSİYONUNU BU BLOK İLE DEĞİŞTİRİN
+
 function openCardSelectionModal(userId) {
     if (countdownInterval) clearInterval(countdownInterval);
     cardContainer.innerHTML = '';
@@ -3376,23 +3396,23 @@ function openCardSelectionModal(userId) {
         cardSelectionModal.style.display = 'flex';
 
         const countdownEl = document.getElementById('cardSelectionCountdown');
-        
         let timeLeft = Math.round((sessionData.expirationTimestamp - getSyncedTime()) / 1000);
 
-        if (timeLeft <= 0) {
-            countdownEl.textContent = '0';
+        const handleTimeout = () => {
             clearInterval(countdownInterval);
             closeCardSelectionModal();
             if (sessionData) {
                 logActivity('surpriseBoxTimeout', sessionData.user, { boxId: sessionData.boxId });
-                // *** İSTEĞİNİZE GÖRE EKLENEN KISIM BAŞLANGICI ***
-                // Eğer Sürpriz Kutu, Çark'tan gelmediyse oyun tahtasını sıfırla.
-                if (sessionData.boxId !== 'Çark') {
-                    resetGameBoard();
-                }
-                // *** EKLENEN KISIM SONU ***
+                // *** DÜZENLENEN KISIM: Süre dolduğunda da yeni ana fonksiyonu çağırıyoruz. ***
+                handleSurpriseBoxCleanup(sessionData);
+            } else {
+                sessionRef.remove();
             }
-            sessionRef.remove();
+        };
+
+        if (timeLeft <= 0) {
+            countdownEl.textContent = '0';
+            handleTimeout();
             return;
         }
 
@@ -3401,23 +3421,11 @@ function openCardSelectionModal(userId) {
             timeLeft--;
             countdownEl.textContent = timeLeft;
             if (timeLeft <= 0) {
-                clearInterval(countdownInterval);
-                closeCardSelectionModal();
-                if (sessionData) {
-                    logActivity('surpriseBoxTimeout', sessionData.user, { boxId: sessionData.boxId });
-                    // *** İSTEĞİNİZE GÖRE EKLENEN KISIM BAŞLANGICI ***
-                    // Eğer Sürpriz Kutu, Çark'tan gelmediyse oyun tahtasını sıfırla.
-                    if (sessionData.boxId !== 'Çark') {
-                        resetGameBoard();
-                    }
-                    // *** EKLENEN KISIM SONU ***
-                }
-                sessionRef.remove();
+                handleTimeout();
             }
         }, 1000);
     });
 }
-
 async function selectCard(selectedCardDiv, userId) { 
     // *** İSTEĞİNİZE GÖRE EKLENEN SATIR BAŞLANGICI ***
     // Kart seçildiği anda 60 saniyelik zaman aşımı sayacını anında durdur.
@@ -5413,8 +5421,6 @@ let spectatorViewingResult = false;
 
 // MEVCUT listenForSurpriseBox FONKSİYONUNU BU BLOK İLE DEĞİŞTİRİN
 
-// MEVCUT listenForSurpriseBox FONKSİYONUNU BU BLOK İLE DEĞİŞTİRİN
-
 function listenForSurpriseBox() {
     const sessionRef = db.ref('surprise_box_session');
     
@@ -5426,7 +5432,7 @@ function listenForSurpriseBox() {
         const sessionData = snap.val();
 
         if (sessionData && sessionData.active && !sessionData.result) {
-            const sessionAge = Date.now() + serverTimeOffset - sessionData.timestamp;
+            const sessionAge = getSyncedTime() - sessionData.timestamp;
             if (sessionAge > 70000) {
                 console.log("Zaman aşımına uğramış Sürpriz Kutu oturumu tespit edildi ve temizleniyor...");
                 sessionRef.remove();
@@ -5437,7 +5443,6 @@ function listenForSurpriseBox() {
         if (sessionData && sessionData.active) {
             
             if (sessionData.user === currentUser && !sessionData.result && cardSelectionModal.style.display !== 'flex') {
-                console.log("Mevcut Sürpriz Kutu oturumu algılandı, seçim ekranı yeniden açılıyor...");
                 openCardSelectionModal(currentUser);
             }
             
@@ -5482,17 +5487,10 @@ function listenForSurpriseBox() {
                             showGlobalSurpriseBoxNotification(finalSessionData);
                         }
                         
-                        // *** BURAYA TEST KODLARI EKLENDİ ***
                         setTimeout(() => {
-                            console.log("Sürpriz Kutu zamanlayıcısı çalıştı. Gelen ID:", finalSessionData.boxId); // TEST 1
                             closeGlobalSurpriseBoxModal(); 
-                            if (finalSessionData.boxId !== 'Çark') {
-                                console.log("Koşul DOĞRU (ID 'Çark' değil). resetGameBoard fonksiyonu çağrılıyor..."); // TEST 2
-                                resetGameBoard();
-                            } else {
-                                console.log("Koşul YANLIŞ (ID 'Çark'). Oyun sıfırlanmayacak."); // TEST 3
-                            }
-                            sessionRef.remove();
+                            // *** DÜZENLENEN KISIM: Artık yeni ana fonksiyonu çağırıyoruz. ***
+                            handleSurpriseBoxCleanup(finalSessionData);
                             isProcessingSurpriseResult = false;
                         }, 4000);
                     } else {
