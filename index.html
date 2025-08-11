@@ -1447,7 +1447,18 @@ body.modal-open .modal-content {
     }
   }
 
-  const db = firebase.database();
+  const db = firebase.database()
+  // BU YENİ KOD BLOĞUNU OLDUĞU GİBİ EKLE
+
+let serverTimeOffset = 0;
+db.ref(".info/serverTimeOffset").on("value", function(snapshot) {
+    serverTimeOffset = snapshot.val();
+});
+
+function getSyncedTime() {
+    return Date.now() + serverTimeOffset;
+};
+  
   
   // --- YENİ: Listener (Dinleyici) Yönetimi ---
   let activeListeners = {};
@@ -3378,10 +3389,8 @@ function openCardSelectionModal(userId) {
         const sessionData = snap.val();
         if (!sessionData || !sessionData.active || sessionData.result) return;
         
-        // Kartları oluştur
         sessionData.cards.forEach((cardValue, index) => {
             const cardDiv = document.createElement('div');
-            // ... (kart oluşturma kodları aynı kalıyor) ...
             cardDiv.className = 'card bg-gray-700 border-2 border-red-700 rounded-xl w-28 h-40 flex flex-col items-center justify-center font-bold text-2xl cursor-pointer relative';
             cardDiv.dataset.value = cardValue;
             cardDiv.dataset.index = index;
@@ -3398,14 +3407,12 @@ function openCardSelectionModal(userId) {
         });
         cardSelectionModal.style.display = 'flex';
 
-        // *** DÜZENLENEN KISIM: Sayaç artık bitiş zamanına göre çalışıyor ***
         const countdownEl = document.getElementById('cardSelectionCountdown');
         
-        // Sunucudaki bitiş zamanından şimdiki zamanı çıkararak kalan süreyi hesapla
-        let timeLeft = Math.round((sessionData.expirationTimestamp - Date.now()) / 1000);
+        // DÜZELTİLEN KISIM: Sayaç artık senkronize zamana göre çalışıyor
+        let timeLeft = Math.round((sessionData.expirationTimestamp - getSyncedTime()) / 1000);
 
         if (timeLeft <= 0) {
-            // Eğer süre zaten dolmuşsa, doğrudan zaman aşımı işlemini yap
             countdownEl.textContent = '0';
             clearInterval(countdownInterval);
             closeCardSelectionModal();
@@ -5540,7 +5547,9 @@ function openSpectatorModal(sessionData) {
     resultContainer.innerHTML = '<p id="spectatorResult" class="text-2xl text-green-400 font-bold h-8"></p>';
 
     const countdownEl = document.getElementById('spectatorCountdown');
-    let timeLeft = Math.round((sessionData.expirationTimestamp - Date.now()) / 1000);
+    
+    // DÜZELTİLEN KISIM: Sayaç artık senkronize zamana göre çalışıyor
+    let timeLeft = Math.round((sessionData.expirationTimestamp - getSyncedTime()) / 1000);
 
     if (timeLeft <= 0) {
         countdownEl.textContent = 'Süre Doldu!';
