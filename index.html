@@ -3003,7 +3003,8 @@ async function deleteUserAvatar(username, avatarId) {
       }); 
   }
 
-// BU FONKSİYONU BUL VE AŞAĞIDAKİYLE KOMPLE DEĞİŞTİR
+// MEVCUT openBox FONKSİYONUNU BU BLOK İLE DEĞİŞTİRİN
+
 async function openBox(index) {
     if (isGameLocked) {
         displayMessage("Şu anda başka bir kullanıcı kutu açıyor veya oyun beklemede. Lütfen 5 saniye bekleyin.");
@@ -3107,11 +3108,10 @@ async function openBox(index) {
         boxOpenInfo.shieldUsed = shieldWasUsed;
         boxOpenInfo.lostPoints = shieldWasUsed ? 0 : lostPoints;
 
-        // "undefined" HATASINI GİDEREN LOGLAMA
         logActivity('iflas', currentUser, { 
             shieldUsed: shieldWasUsed, 
             lostPoints: shieldWasUsed ? 0 : lostPoints,
-            boxId: box.id // <<< BU SATIR EN ÖNEMLİSİ
+            boxId: box.id
         });
 
     } else if (box.content === 'points') {
@@ -3137,13 +3137,18 @@ async function openBox(index) {
 
     } else if (box.content === 'surpriz') {
         updates['surpriseBoxesOpened'] = (user.surpriseBoxesOpened || 0) + 1;
-        surpriseBoxMultiplier = finalMultiplier;
+        
+        // DİKKAT: Global değişken yerine doğrudan finalMultiplier'ı kullanıyoruz
         message = `Sürpriz Kutu buldunuz!`;
         
+        const now = firebase.database.ServerValue.TIMESTAMP;
         db.ref('surprise_box_session').set({
             active: true, user: currentUser, boxId: box.id,
-            multiplier: surpriseBoxMultiplier, cards: shuffleArray([...cardValues]),
-            selection: null, result: null, timestamp: firebase.database.ServerValue.TIMESTAMP
+            multiplier: finalMultiplier, // Çarpanı buraya doğru şekilde kaydediyoruz
+            cards: shuffleArray([...cardValues]),
+            selection: null, result: null, 
+            timestamp: now,
+            expirationTimestamp: now + 60000 
         });
         openCardSelectionModal(currentUser);
 
@@ -3206,7 +3211,6 @@ async function openBox(index) {
 
     if (box.content !== 'surpriz') {
         await db.ref('lastOpenedBox').set(boxOpenInfo);
-        // Sürpriz kutu değilse pop-up mesajı göster
         displayMessage(message);
     }
 }
@@ -3364,62 +3368,70 @@ function showOpenedBoxInfo(box) {
   function closeOpenedBoxInfoModal() { openedBoxInfoModal.style.display = 'none'; }
   function shuffleArray(array) { for (let i = array.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [array[i], array[j]] = [array[j], array[i]]; } return array; }
   
-  // openCardSelectionModal fonksiyonunu bul ve setInterval içini güncelle
+  // MEVCUT openCardSelectionModal FONKSİYONUNU BU BLOK İLE DEĞİŞTİRİN
 
 function openCardSelectionModal(userId) {
-      if(countdownInterval) clearInterval(countdownInterval); 
-      cardContainer.innerHTML = '';
-      // *** GÜNCELLEME BAŞLANGICI: Session verisini başta alalım ***
-      const sessionRef = db.ref('surprise_box_session');
-      sessionRef.once('value').then(snap => {
-      // *** GÜNCELLEME SONU ***
-          const sessionData = snap.val();
-          if (!sessionData || !sessionData.active) return;
-          
-          sessionData.cards.forEach((cardValue, index) => {
-              const cardDiv = document.createElement('div');
-              cardDiv.className = 'card bg-gray-700 border-2 border-red-700 rounded-xl w-28 h-40 flex flex-col items-center justify-center font-bold text-2xl cursor-pointer relative';
-              cardDiv.dataset.value = cardValue;
-              cardDiv.dataset.index = index;
-              const cardBack = document.createElement('div');
-              cardBack.className = 'card-back absolute inset-0 bg-gradient-to-br from-red-700 to-red-900 flex items-center justify-center text-white text-5xl';
-              cardBack.textContent = '?';
-              cardDiv.appendChild(cardBack);
-              const cardFront = document.createElement('div');
-              cardFront.className = 'card-front absolute inset-0 bg-gray-900 flex items-center justify-center text-yellow-400 text-3xl';
-              cardFront.classList.add('card-value');
-              cardDiv.appendChild(cardFront);
-              cardDiv.onclick = () => selectCard(cardDiv, userId);
-              cardContainer.appendChild(cardDiv);
-          });
-          cardSelectionModal.style.display = 'flex';
+    if (countdownInterval) clearInterval(countdownInterval);
+    cardContainer.innerHTML = '';
+    const sessionRef = db.ref('surprise_box_session');
 
-          const countdownEl = document.getElementById('cardSelectionCountdown');
-          let timeLeft = 60;
-          countdownEl.textContent = timeLeft;
-          countdownInterval = setInterval(() => {
-              timeLeft--;
-              countdownEl.textContent = timeLeft;
-              if (timeLeft <= 0) {
-                  clearInterval(countdownInterval);
-                  closeCardSelectionModal();
-                  
-                  // *** İSTEĞİNİZE GÖRE EKLENEN BÖLÜM BAŞLANGICI ***
-                  // Süre dolduğunda "zaman aşımı" eylemini logla
-                  if (sessionData) {
-                      logActivity('surpriseBoxTimeout', sessionData.user, { 
-                          boxId: sessionData.boxId 
-                      });
-                  }
-                  // Logladıktan sonra oturumu temizle
-                  sessionRef.remove();
-                  // *** EKLENEN BÖLÜM SONU ***
-              }
-          }, 1000);
-      });
+    sessionRef.once('value').then(snap => {
+        const sessionData = snap.val();
+        if (!sessionData || !sessionData.active || sessionData.result) return;
+        
+        // Kartları oluştur
+        sessionData.cards.forEach((cardValue, index) => {
+            const cardDiv = document.createElement('div');
+            // ... (kart oluşturma kodları aynı kalıyor) ...
+            cardDiv.className = 'card bg-gray-700 border-2 border-red-700 rounded-xl w-28 h-40 flex flex-col items-center justify-center font-bold text-2xl cursor-pointer relative';
+            cardDiv.dataset.value = cardValue;
+            cardDiv.dataset.index = index;
+            const cardBack = document.createElement('div');
+            cardBack.className = 'card-back absolute inset-0 bg-gradient-to-br from-red-700 to-red-900 flex items-center justify-center text-white text-5xl';
+            cardBack.textContent = '?';
+            cardDiv.appendChild(cardBack);
+            const cardFront = document.createElement('div');
+            cardFront.className = 'card-front absolute inset-0 bg-gray-900 flex items-center justify-center text-yellow-400 text-3xl';
+            cardFront.classList.add('card-value');
+            cardDiv.appendChild(cardFront);
+            cardDiv.onclick = () => selectCard(cardDiv, userId);
+            cardContainer.appendChild(cardDiv);
+        });
+        cardSelectionModal.style.display = 'flex';
+
+        // *** DÜZENLENEN KISIM: Sayaç artık bitiş zamanına göre çalışıyor ***
+        const countdownEl = document.getElementById('cardSelectionCountdown');
+        
+        // Sunucudaki bitiş zamanından şimdiki zamanı çıkararak kalan süreyi hesapla
+        let timeLeft = Math.round((sessionData.expirationTimestamp - Date.now()) / 1000);
+
+        if (timeLeft <= 0) {
+            // Eğer süre zaten dolmuşsa, doğrudan zaman aşımı işlemini yap
+            countdownEl.textContent = '0';
+            clearInterval(countdownInterval);
+            closeCardSelectionModal();
+            if (sessionData) {
+                logActivity('surpriseBoxTimeout', sessionData.user, { boxId: sessionData.boxId });
+            }
+            sessionRef.remove();
+            return;
+        }
+
+        countdownEl.textContent = timeLeft;
+        countdownInterval = setInterval(() => {
+            timeLeft--;
+            countdownEl.textContent = timeLeft;
+            if (timeLeft <= 0) {
+                clearInterval(countdownInterval);
+                closeCardSelectionModal();
+                if (sessionData) {
+                    logActivity('surpriseBoxTimeout', sessionData.user, { boxId: sessionData.boxId });
+                }
+                sessionRef.remove();
+            }
+        }, 1000);
+    });
 }
-
-  // MEVCUT selectCard FONKSİYONUNU BU BLOK İLE DEĞİŞTİRİN
 
 async function selectCard(selectedCardDiv, userId) { 
     // *** İSTEĞİNİZE GÖRE EKLENEN SATIR BAŞLANGICI ***
@@ -5412,7 +5424,9 @@ async function reorderDailyRewardItem(rewardId, newIndex) {
 // MEVCUT listenForSurpriseBox FONKSİYONUNU BU BLOK İLE DEĞİŞTİRİN
 
 let isProcessingSurpriseResult = false;
-let spectatorViewingResult = false; // Bu değişkeni script'in başında eklediğinden emin ol
+let spectatorViewingResult = false;
+
+// MEVCUT listenForSurpriseBox FONKSİYONUNU BU BLOK İLE DEĞİŞTİRİN
 
 function listenForSurpriseBox() {
     const sessionRef = db.ref('surprise_box_session');
@@ -5434,6 +5448,10 @@ function listenForSurpriseBox() {
         }
 
         if (sessionData && sessionData.active) {
+            if (sessionData.user === currentUser && !sessionData.result && cardSelectionModal.style.display !== 'flex') {
+                console.log("Mevcut Sürpriz Kutu oturumu algılandı, seçim ekranı yeniden açılıyor...");
+                openCardSelectionModal(currentUser);
+            }
             
             if (sessionData.selection && sessionData.result && spectatorModal.style.display === 'flex') {
                 updateSpectatorView(sessionData);
@@ -5472,10 +5490,14 @@ function listenForSurpriseBox() {
                                 message += " Oyun 4 saniye içinde sıfırlanacak.";
                             }
                             displayMessage(message);
+                        } else {
+                            showGlobalSurpriseBoxNotification(finalSessionData);
                         }
                         
+                        // OYUN SIFIRLAMA VE OTURUM TEMİZLEME KISMI
                         setTimeout(() => {
                             closeGlobalSurpriseBoxModal(); 
+                            // EĞER SÜRPRİZ KUTU ÇARKTAN GELMEDİYSE OYUNU SIFIRLA
                             if (finalSessionData.boxId !== 'Çark') {
                                 resetGameBoard();
                             }
@@ -5488,8 +5510,6 @@ function listenForSurpriseBox() {
                 });
             }
         } else {
-            // *** İSTEĞİNİZE GÖRE DÜZENLENEN KISIM ***
-            // Pencereyi sadece izleyici sonuca bakmıyorsa otomatik kapat
             if (!spectatorViewingResult) {
                 closeSpectatorModal();
             }
@@ -5499,8 +5519,6 @@ function listenForSurpriseBox() {
     activeListeners.surpriseBox = { ref: sessionRef, event: 'value', callback };
     sessionRef.on('value', callback);
 }
-
-// MEVCUT openSpectatorModal FONKSİYONUNU BU BLOK İLE DEĞİŞTİRİN
 
 function openSpectatorModal(sessionData) {
     if (spectatorCountdownInterval) clearInterval(spectatorCountdownInterval);
@@ -5513,43 +5531,38 @@ function openSpectatorModal(sessionData) {
         const cardDiv = document.createElement('div');
         cardDiv.className = 'card bg-gray-700 border-2 border-red-700 rounded-xl w-28 h-40 flex flex-col items-center justify-center font-bold text-2xl relative';
         cardDiv.id = `spectator-card-${index}`;
-        cardDiv.innerHTML = `
-            <div class="card-back absolute inset-0 bg-gradient-to-br from-red-700 to-red-900 flex items-center justify-center text-white text-5xl">?</div>
-            <div class="card-front absolute inset-0 bg-gray-900 flex items-center justify-center text-yellow-400 text-3xl"></div>
-        `;
+        cardDiv.innerHTML = `<div class="card-back absolute inset-0 bg-gradient-to-br from-red-700 to-red-900 flex items-center justify-center text-white text-5xl">?</div><div class="card-front absolute inset-0 bg-gray-900 flex items-center justify-center text-yellow-400 text-3xl"></div>`;
         cardContainer.appendChild(cardDiv);
     });
     
-    // Buton ve sonuç alanını temizle
     const resultContainer = document.getElementById('spectatorResultContainer');
     resultContainer.innerHTML = '<p id="spectatorResult" class="text-2xl text-green-400 font-bold h-8"></p>';
 
-    // Geri sayımı başlat
+    // *** DÜZENLENEN KISIM: Sayaç artık bitiş zamanına göre çalışıyor ***
     const countdownEl = document.getElementById('spectatorCountdown');
-    let timeLeft = 60;
+    let timeLeft = Math.round((sessionData.expirationTimestamp - Date.now()) / 1000);
+
+    if (timeLeft <= 0) {
+        countdownEl.textContent = 'Süre Doldu!';
+        resultContainer.innerHTML = `<button onclick="closeSpectatorModal()" class="mt-4 py-3 px-8 bg-red-700 hover:bg-red-600 text-white font-bold rounded-lg transition-colors">Oyuna Dön</button>`;
+        spectatorModal.style.display = 'flex';
+        return;
+    }
+
     countdownEl.textContent = timeLeft;
     spectatorCountdownInterval = setInterval(() => {
         timeLeft--;
         if (timeLeft >= 0) {
             countdownEl.textContent = timeLeft;
         } else {
-            // *** İSTEĞİNİZE GÖRE DÜZENLENEN KISIM ***
             countdownEl.textContent = 'Süre Doldu!';
             clearInterval(spectatorCountdownInterval);
-            
-            // Sonuç alanına "Oyuna Dön" butonunu ekle
-            resultContainer.innerHTML = `
-                <button onclick="closeSpectatorModal()" class="mt-4 py-3 px-8 bg-red-700 hover:bg-red-600 text-white font-bold rounded-lg transition-colors">
-                    Oyuna Dön
-                </button>
-            `;
+            resultContainer.innerHTML = `<button onclick="closeSpectatorModal()" class="mt-4 py-3 px-8 bg-red-700 hover:bg-red-600 text-white font-bold rounded-lg transition-colors">Oyuna Dön</button>`;
         }
     }, 1000);
     
     spectatorModal.style.display = 'flex';
 }
-
-// MEVCUT updateSpectatorView FONKSİYONUNU BU BLOK İLE DEĞİŞTİRİN
 
 function updateSpectatorView(sessionData) {
     // *** YENİ EKLENEN SATIR ***
@@ -5709,7 +5722,8 @@ function renderWheel() {
     wheelElement.style.background = `conic-gradient(${gradientParts.join(', ')})`;
 }
     
-// BU FONKSİYONU BUL VE AŞAĞIDAKİYLE KOMPLE DEĞİŞTİR
+// MEVCUT spinWheel FONKSİYONUNU BU BLOK İLE DEĞİŞTİRİN
+
 async function spinWheel() {
     if (isWheelSpinning) return;
     if (isAdmin) {
@@ -5809,7 +5823,15 @@ async function spinWheel() {
                 updates.multiplierRemainingUses = winningSegment.duration;
                 break;
             case 'surpriseBox':
-                 db.ref('surprise_box_session').set({ active: true, user: currentUser, boxId: 'Çark', multiplier: 1, cards: shuffleArray([...cardValues]), selection: null, result: null, timestamp: firebase.database.ServerValue.TIMESTAMP });
+                 // *** DÜZENLENEN KISIM: expirationTimestamp EKLENDİ ***
+                 const now = firebase.database.ServerValue.TIMESTAMP;
+                 db.ref('surprise_box_session').set({ 
+                     active: true, user: currentUser, boxId: 'Çark', 
+                     multiplier: 1, cards: shuffleArray([...cardValues]), 
+                     selection: null, result: null, 
+                     timestamp: now,
+                     expirationTimestamp: now + 60000 // Sunucu saatine 60 saniye ekle
+                 });
                  openCardSelectionModal(currentUser);
                  message = "Vay canına! Çarktan Sürpriz Kutu çıktı! Şimdi bir kart seç.";
                  break;
@@ -5822,13 +5844,11 @@ async function spinWheel() {
             username: currentUser, 
             prize: winningSegment.label, 
             type: winningSegment.type,
-            // DEĞİŞEN SATIR: winningSegment.value tanımsız ise null kaydet
             value: winningSegment.value !== undefined ? winningSegment.value : null,
             timestamp: firebase.database.ServerValue.TIMESTAMP
         });
 
         if (winningSegment.type !== 'surpriseBox') {
-             // DEĞİŞEN BLOK: logActivity'e de veriyi daha güvenli gönder
             const logDetails = {
                 result: winningSegment.label,
                 type: winningSegment.type,
@@ -6822,7 +6842,7 @@ function logActivity(type, username, details = {}) {
     });
 }
 
-// getActivityIcon fonksiyonuna yeni bir case ekle
+// MEVCUT getActivityIcon FONKSİYONUNU BU BLOK İLE DEĞİŞTİRİN
 
 function getActivityIcon(type, details = {}) {
     switch (type) {
@@ -6836,11 +6856,16 @@ function getActivityIcon(type, details = {}) {
         case 'multiplierRefund':
             return '✖️'; 
         case 'newItemFound':
+            // ÖNCELİKLE TÜR KONTROLÜ YAPIYORUZ, DAHA GÜVENİLİR
+            if (details.itemType === 'wheelTicket') return '🎫';
+            if (details.itemType === 'clickCatchTicket') return '🎟️';
+            if (details.itemType === 'iflasShield') return '🛡️';
+            // Eğer tür belirtilmemişse, eski yöntemle metin kontrolü yap
             const itemName = (details.itemName || '').toLowerCase();
             if (itemName.includes('kalkan')) return '🛡️';
             if (itemName.includes('çark bileti')) return '🎫';
-            if (itemName.includes('yakala bileti')) return '🎯';
-            return '📦';
+            if (itemName.includes('yakala bileti')) return '🎟️';
+            return '📦'; // Hiçbiri değilse varsayılan kutu ikonu
         case 'buyItem':
             return '🛒';
         case 'spinWheel':
@@ -6850,15 +6875,12 @@ function getActivityIcon(type, details = {}) {
             return '🎯';
         case 'dailyReward':
             return '📅';
-        // *** YENİ EKLENEN CASE ***
         case 'surpriseBoxTimeout':
             return '⏰';
         default:
             return '🔔';
     }
 }
-
-// MEVCUT renderActivityFeed FONKSİYONUNU BU BLOK İLE DEĞİŞTİRİN
 
 function renderActivityFeed(activities) {
     const activityFeedList = document.getElementById('activityFeedList');
@@ -7219,33 +7241,6 @@ function updateTotalBoxCount() {
         }
     });
     document.getElementById('totalBoxCountDisplay').textContent = total;
-}
-
-// Ayarlar modalını açar, veritabanından ayarları çeker ve satırları oluşturur.
-async function openBoxSettingsModal() {
-    if (!isAdmin) return;
-
-    const container = document.getElementById('boxSettingsRowsContainer');
-    container.innerHTML = ''; // Önceki satırları temizle
-
-    const settingsRef = db.ref('gameConfig/boxContents');
-    const snapshot = await settingsRef.once('value');
-
-    const defaultSettings = [ { type: 'points', value: 100, count: 10 }, { type: 'iflas', value: 0, count: 2 }, { type: 'iflasShield', value: 1, count: 2 } ];
-    const currentConfig = snapshot.exists() ? snapshot.val() : defaultSettings;
-
-    if (currentConfig && currentConfig.length > 0) {
-        currentConfig.forEach(item => addBoxSettingRow(item));
-    } else {
-        addBoxSettingRow(); // Eğer hiç ayar yoksa boş bir satırla başlat
-    }
-    
-    updateTotalBoxCount(); // Toplam sayıyı ilk açılışta hesapla
-    boxSettingsModal.style.display = 'flex';
-}
-
-function closeBoxSettingsModal() {
-    boxSettingsModal.style.display = 'none';
 }
 
 // Tüm satırlardaki verileri okur, yeni ayarları veritabanına kaydeder ve oyunu sıfırlar.
