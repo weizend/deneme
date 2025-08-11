@@ -3409,7 +3409,6 @@ function openCardSelectionModal(userId) {
 
         const countdownEl = document.getElementById('cardSelectionCountdown');
         
-        // DÜZELTİLEN KISIM: Sayaç artık senkronize zamana göre çalışıyor
         let timeLeft = Math.round((sessionData.expirationTimestamp - getSyncedTime()) / 1000);
 
         if (timeLeft <= 0) {
@@ -3418,6 +3417,12 @@ function openCardSelectionModal(userId) {
             closeCardSelectionModal();
             if (sessionData) {
                 logActivity('surpriseBoxTimeout', sessionData.user, { boxId: sessionData.boxId });
+                // *** İSTEĞİNİZE GÖRE EKLENEN KISIM BAŞLANGICI ***
+                // Eğer Sürpriz Kutu, Çark'tan gelmediyse oyun tahtasını sıfırla.
+                if (sessionData.boxId !== 'Çark') {
+                    resetGameBoard();
+                }
+                // *** EKLENEN KISIM SONU ***
             }
             sessionRef.remove();
             return;
@@ -3432,6 +3437,12 @@ function openCardSelectionModal(userId) {
                 closeCardSelectionModal();
                 if (sessionData) {
                     logActivity('surpriseBoxTimeout', sessionData.user, { boxId: sessionData.boxId });
+                    // *** İSTEĞİNİZE GÖRE EKLENEN KISIM BAŞLANGICI ***
+                    // Eğer Sürpriz Kutu, Çark'tan gelmediyse oyun tahtasını sıfırla.
+                    if (sessionData.boxId !== 'Çark') {
+                        resetGameBoard();
+                    }
+                    // *** EKLENEN KISIM SONU ***
                 }
                 sessionRef.remove();
             }
