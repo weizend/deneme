@@ -3014,8 +3014,6 @@ async function deleteUserAvatar(username, avatarId) {
       }); 
   }
 
-// MEVCUT openBox FONKSİYONUNU BU BLOK İLE DEĞİŞTİRİN
-
 async function openBox(index) {
     if (isGameLocked) {
         displayMessage("Şu anda başka bir kullanıcı kutu açıyor veya oyun beklemede. Lütfen 5 saniye bekleyin.");
@@ -3149,7 +3147,6 @@ async function openBox(index) {
             boxOpenInfo.shieldUsed = shieldWasUsed;
             boxOpenInfo.lostPoints = shieldWasUsed ? 0 : lostPoints;
 
-            // *** DÜZENLENEN KISIM: Çarpan bilgisi log'a ekleniyor ***
             logActivity('iflas', currentUser, { 
                 shieldUsed: shieldWasUsed, 
                 lostPoints: shieldWasUsed ? 0 : lostPoints, 
@@ -3158,6 +3155,9 @@ async function openBox(index) {
             });
         } 
         else if (box.content === 'surpriz') {
+            // ----- DEBUG İÇİN EKLENDİ -----
+            console.log("1. ADIM: Sürpriz kutu bulundu! Firebase'e session yazılıyor...");
+            // -----------------------------
             const sessionRef = db.ref('surprise_box_session');
             await sessionRef.set({
                 active: true, user: currentUser, boxId: box.id, multiplier: finalMultiplier,
@@ -3196,23 +3196,34 @@ async function openBox(index) {
   async function revealAll() { const confirmed = await customConfirm("Tüm kutuları açmak istiyor musunuz?"); if(confirmed) { boxes.forEach(b => { if (!b.opened) { b.opened = true; b.opener = 'Admin'; } }); db.ref('boxes').set(boxes).then(() => displayMessage("Tüm kutular başarıyla açıldı.")) } }
   
   async function resetGameBoard() {
+      // ----- DEBUG İÇİN EKLENDİ -----
+      console.log("6. ADIM: resetGameBoard fonksiyonu başarıyla çalıştı! Kutular oluşturuluyor...");
+      // -----------------------------
       await createBoxes();
       await db.ref('gameStats/boxesOpenedByUsers').remove();
       await db.ref('lastOpenedBox').remove();
       await db.ref('gameLock').set(false);
-  }
+}
 
-    async function handleSurpriseBoxCleanup(sessionData) {
-    // Bu fonksiyon, sürpriz kutu sonrası tüm temizlik ve sıfırlama işlemlerinin merkezidir.
+async function handleSurpriseBoxCleanup(sessionData) {
     if (!sessionData) return;
     
-    // Güvenlik için konsola log basalım, çalıştığını görelim.
-    console.log("handleSurpriseBoxCleanup fonksiyonu çalıştırıldı. Kutu ID:", sessionData.boxId);
+    // ----- DEBUG İÇİN EKLENDİ -----
+    console.log("4. ADIM: TEMİZLİK FONKSİYONU ÇAĞRILDI!");
+    console.log("Sıfırlama kontrolü yapılıyor. Kutu ID: ", sessionData.boxId);
+    // -----------------------------
     
-    // DEĞİŞİKLİK: 'if' kontrolü kaldırıldı. Artık kutu nereden gelirse gelsin oyun sıfırlanacak.
-    await resetGameBoard();
+    if (sessionData.boxId !== 'Çark') {
+        // ----- DEBUG İÇİN EKLENDİ -----
+        console.log("5. ADIM: Kutu ID'si 'Çark' olmadığı için OYUN SIFIRLAMA FONKSİYONU ÇAĞRILACAK!");
+        // -----------------------------
+        await resetGameBoard();
+    } else {
+        // ----- DEBUG İÇİN EKLENDİ -----
+        console.log("5. ADIM (ALTERNATİF): Kutu 'Çark'tan geldiği için oyun sıfırlanmayacak.");
+        // -----------------------------
+    }
     
-    // Her durumda oturumu veritabanından kaldır.
     await db.ref('surprise_box_session').remove();
 }
 
@@ -3423,12 +3434,12 @@ function openCardSelectionModal(userId) {
     });
 }
 async function selectCard(selectedCardDiv, userId) { 
-    // *** İSTEĞİNİZE GÖRE EKLENEN SATIR BAŞLANGICI ***
-    // Kart seçildiği anda 60 saniyelik zaman aşımı sayacını anında durdur.
     if (countdownInterval) clearInterval(countdownInterval);
-    // *** EKLENEN SATIR SONU ***
-
     if (selectedCardDiv.classList.contains('opened')) return; 
+
+    // ----- DEBUG İÇİN EKLENDİ -----
+    console.log("2. ADIM: Kart seçildi! Firebase'e sonuç yazılıyor...");
+    // -----------------------------
 
     const cardIndex = selectedCardDiv.dataset.index;
     const sessionRef = db.ref('surprise_box_session');
@@ -3448,7 +3459,7 @@ async function selectCard(selectedCardDiv, userId) {
       if (user.balance > (user.highestBalanceEver || 0)) user.highestBalanceEver = user.balance; 
       await userRef.update({ balance: user.balance, highestBalanceEver: user.highestBalanceEver }); 
     } 
-  }
+}
 
   function closeCardSelectionModal() { 
     cardSelectionModal.style.display = 'none'; 
@@ -5415,8 +5426,6 @@ async function reorderDailyRewardItem(rewardId, newIndex) {
 let isProcessingSurpriseResult = false;
 let spectatorViewingResult = false;
 
-// MEVCUT listenForSurpriseBox FONKSİYONUNU BU BLOK İLE DEĞİŞTİRİN
-
 function listenForSurpriseBox() {
     const sessionRef = db.ref('surprise_box_session');
     
@@ -5451,6 +5460,9 @@ function listenForSurpriseBox() {
             }
 
             if (sessionData.result && !sessionData.logged && !isProcessingSurpriseResult) {
+                // ----- DEBUG İÇİN EKLENDİ -----
+                console.log("3. ADIM: Dinleyici, sonucun yazıldığını gördü! Temizlik fonksiyonu çağrılacak.");
+                // -----------------------------
                 isProcessingSurpriseResult = true; 
 
                 sessionRef.transaction(currentData => {
@@ -5485,7 +5497,6 @@ function listenForSurpriseBox() {
                         
                         setTimeout(() => {
                             closeGlobalSurpriseBoxModal(); 
-                            // *** DÜZENLENEN KISIM: Artık yeni ana fonksiyonu çağırıyoruz. ***
                             handleSurpriseBoxCleanup(finalSessionData);
                             isProcessingSurpriseResult = false;
                         }, 4000);
