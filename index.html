@@ -3364,11 +3364,15 @@ function showOpenedBoxInfo(box) {
   function closeOpenedBoxInfoModal() { openedBoxInfoModal.style.display = 'none'; }
   function shuffleArray(array) { for (let i = array.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [array[i], array[j]] = [array[j], array[i]]; } return array; }
   
-  // openCardSelectionModal fonksiyonunu bulun ve güncelleyin
+  // openCardSelectionModal fonksiyonunu bul ve setInterval içini güncelle
+
 function openCardSelectionModal(userId) {
-      if(countdownInterval) clearInterval(countdownInterval); // Önceki sayacı temizle
+      if(countdownInterval) clearInterval(countdownInterval); 
       cardContainer.innerHTML = '';
-      db.ref('surprise_box_session').once('value').then(snap => {
+      // *** GÜNCELLEME BAŞLANGICI: Session verisini başta alalım ***
+      const sessionRef = db.ref('surprise_box_session');
+      sessionRef.once('value').then(snap => {
+      // *** GÜNCELLEME SONU ***
           const sessionData = snap.val();
           if (!sessionData || !sessionData.active) return;
           
@@ -3399,8 +3403,17 @@ function openCardSelectionModal(userId) {
               if (timeLeft <= 0) {
                   clearInterval(countdownInterval);
                   closeCardSelectionModal();
-                  // *** BURASI ÖNEMLİ: SÜRE DOLDUĞUNDA OTURUMU TEMİZLE ***
-                  db.ref('surprise_box_session').remove(); 
+                  
+                  // *** İSTEĞİNİZE GÖRE EKLENEN BÖLÜM BAŞLANGICI ***
+                  // Süre dolduğunda "zaman aşımı" eylemini logla
+                  if (sessionData) {
+                      logActivity('surpriseBoxTimeout', sessionData.user, { 
+                          boxId: sessionData.boxId 
+                      });
+                  }
+                  // Logladıktan sonra oturumu temizle
+                  sessionRef.remove();
+                  // *** EKLENEN BÖLÜM SONU ***
               }
           }, 1000);
       });
@@ -5391,7 +5404,6 @@ async function reorderDailyRewardItem(rewardId, newIndex) {
 
 // MEVCUT listenForSurpriseBox FONKSİYONUNU BU BLOK İLE DEĞİŞTİRİN
 
-// *** YENİ EKLENEN KORUMA DEĞİŞKENİ ***
 let isProcessingSurpriseResult = false;
 
 function listenForSurpriseBox() {
@@ -5404,20 +5416,30 @@ function listenForSurpriseBox() {
     const callback = snap => {
         const sessionData = snap.val();
 
-        if (sessionData && sessionData.active) {
+        // *** YENİ EKLENEN OTOMATİK TEMİZLEME MEKANİZMASI BAŞLANGICI ***
+        // Aktif, sonuçlanmamış bir oturum var mı diye kontrol et
+        if (sessionData && sessionData.active && !sessionData.result) {
+            // Oturumun ne kadar eski olduğunu hesapla (milisaniye cinsinden)
+            const sessionAge = Date.now() - sessionData.timestamp;
+            
+            // Eğer oturum 70 saniyeden eskiyse (60sn sayaç + 10sn tolerans), onu zaman aşımına uğramış kabul et
+            if (sessionAge > 70000) {
+                console.log("Zaman aşımına uğramış Sürpriz Kutu oturumu tespit edildi ve temizleniyor...");
+                // Oturumu veritabanından kaldır ve fonksiyonun geri kalanının çalışmasını engelle
+                sessionRef.remove();
+                return; 
+            }
+        }
+        // *** OTOMATİK TEMİZLEME MEKANİZMASI SONU ***
 
-            // *** 3. SORUNUN ÇÖZÜMÜ (SAYAÇ SIFIRLAMA ENGELİ) ***
-            // İzleyici ekranı (spectatorModal) zaten açık değilse ve bir sonuç işlenmiyorsa aç.
-            // Bu, sayacın sürekli sıfırlanmasını engeller.
+
+        if (sessionData && sessionData.active) {
             if (sessionData.user !== currentUser && !sessionData.result && spectatorModal.style.display !== 'flex' && !isProcessingSurpriseResult) {
                 openSpectatorModal(sessionData);
             }
 
-            // *** 2. SORUNUN ÇÖZÜMÜ (TEKRAR BİLDİRİM ENGELİ) ***
-            // Sadece sonuç varsa, loglanmadıysa ve şu anda başka bir işlem yoksa çalıştır.
             if (sessionData.result && !sessionData.logged && !isProcessingSurpriseResult) {
-                
-                isProcessingSurpriseResult = true; // İşlemi başlat ve tekrar girilmesini engelle
+                isProcessingSurpriseResult = true; 
 
                 sessionRef.transaction(currentData => {
                     if (currentData && currentData.result && !currentData.logged) {
@@ -5428,7 +5450,7 @@ function listenForSurpriseBox() {
                 }, (error, committed, snapshot) => {
                     if (error) {
                         console.error('Sürpriz kutu işlemi sırasında transaction hatası: ', error);
-                        isProcessingSurpriseResult = false; // Hata durumunda kilidi aç
+                        isProcessingSurpriseResult = false;
                     } else if (committed) {
                         const finalSessionData = snapshot.val();
 
@@ -5456,10 +5478,10 @@ function listenForSurpriseBox() {
                                 resetGameBoard();
                             }
                             sessionRef.remove();
-                            isProcessingSurpriseResult = false; // Her şey bitince kilidi aç
+                            isProcessingSurpriseResult = false;
                         }, 4000);
                     } else {
-                        isProcessingSurpriseResult = false; // Başka bir istemci işlemi yaptıysa kilidi aç
+                        isProcessingSurpriseResult = false;
                     }
                 });
             }
@@ -6745,24 +6767,25 @@ function logActivity(type, username, details = {}) {
     });
 }
 
-// BU FONKSİYONU BUL VE AŞAĞIDAKİYLE KOMPLE DEĞİŞTİR
+// getActivityIcon fonksiyonuna yeni bir case ekle
+
 function getActivityIcon(type, details = {}) {
     switch (type) {
         case 'openBox':
-            return '💰'; // Puan için
+            return '💰'; 
         case 'surpriseBox':
-            return '🎉'; // Sürpriz Kutu için
+            return '🎉'; 
         case 'iflas':
-            return details.shieldUsed ? '🛡️' : '💣'; // Kalkan kullanıldıysa kalkan, yoksa bomba
+            return details.shieldUsed ? '🛡️' : '💣';
         case 'multiplierFound':
         case 'multiplierRefund':
-            return '✖️'; // Çarpan için
+            return '✖️'; 
         case 'newItemFound':
             const itemName = (details.itemName || '').toLowerCase();
-            if (itemName.includes('kalkan')) return '🛡️'; // Kalkan için
-            if (itemName.includes('çark bileti')) return '🎫'; // Çark Bileti için
-            if (itemName.includes('yakala bileti')) return '🎯'; // Tıkla-Yakala Bileti için
-            return '📦'; // Diğer eşyalar için
+            if (itemName.includes('kalkan')) return '🛡️';
+            if (itemName.includes('çark bileti')) return '🎫';
+            if (itemName.includes('yakala bileti')) return '🎯';
+            return '📦';
         case 'buyItem':
             return '🛒';
         case 'spinWheel':
@@ -6772,6 +6795,9 @@ function getActivityIcon(type, details = {}) {
             return '🎯';
         case 'dailyReward':
             return '📅';
+        // *** YENİ EKLENEN CASE ***
+        case 'surpriseBoxTimeout':
+            return '⏰';
         default:
             return '🔔';
     }
@@ -6899,6 +6925,12 @@ function renderActivityFeed(activities) {
                 } else {
                     message = `${userHtml}, günlük ödül olarak <span class="text-cyan-400 font-bold">+${details.rewardValue} ADET ${details.rewardName}</span> aldı.`;
                 }
+                break;
+            case 'surpriseBoxTimeout':
+                const sourceText = details.boxId === 'Çark' 
+                    ? "Şans Çarkı'ndan gelen" 
+                    : `<b>${details.boxId}</b> numaralı kutudan gelen`;
+                message = `${userHtml}, 60 saniye içinde kart seçimi yapmadığı için ${sourceText} Sürpriz Kutu şansını kaçırdı.`;
                 break;
             default:
                 message = `${userHtml} bir eylem gerçekleştirdi.`;
