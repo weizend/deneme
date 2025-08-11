@@ -5666,20 +5666,30 @@ async function spinWheel() {
                 updates.multiplierRemainingUses = winningSegment.duration;
                 break;
             case 'surpriseBox':
-                 db.ref('surprise_box_session').set({ 
-             active: true, 
-             user: currentUser, 
-             boxId: 'Çark', 
-             multiplier: 1, 
-             cards: shuffleArray([...cardValues]), 
-             selection: null, 
-             result: null, 
-             timestamp: firebase.database.ServerValue.TIMESTAMP,
-             expiresAt: Date.now() + 60000 // DÜZELTME: Sayaç için bitiş zamanını ekledik.
-         });
-            case 'pas':
-                message = "Bu seferlik pas! Bir dahaki sefere daha şanslı olabilirsin.";
-                break;
+                 // spinWheel fonksiyonu içinde bu kısmı bul:
+case 'surpriseBox':
+     db.ref('surprise_box_session').set({ 
+         active: true, 
+         user: currentUser, 
+         boxId: 'Çark', 
+         multiplier: 1, 
+         cards: shuffleArray([...cardValues]), 
+         selection: null, 
+         result: null, 
+         timestamp: firebase.database.ServerValue.TIMESTAMP,
+         expiresAt: Date.now() + 60000
+     });
+     // BU SATIRI DEĞİŞTİRME, AYNI KALSIN
+     openCardSelectionModal(currentUser);
+     
+     // BU SATIRI YENİ EKLE
+     break; 
+     
+     // Bu satır normalde yoktu, ekleyince sorun düzelecek.
+     
+case 'pas':
+     message = "Bu seferlik pas! Bir dahaki sefere daha şanslı olabilirsin.";
+     break;
         }
 
         db.ref('wheelHistory').push().set({
@@ -7053,45 +7063,6 @@ function handleRowTypeChange(selectElement) {
     }
 }
 
-// "Adet" inputlarından biri her değiştiğinde toplam kutu sayısını hesaplar ve gösterir.
-function updateTotalBoxCount() {
-    let total = 0;
-    document.querySelectorAll('.box-setting-row .setting-count').forEach(input => {
-        const count = parseInt(input.value);
-        if (!isNaN(count) && count > 0) {
-            total += count;
-        }
-    });
-    document.getElementById('totalBoxCountDisplay').textContent = total;
-}
-
-// Ayarlar modalını açar, veritabanından ayarları çeker ve satırları oluşturur.
-async function openBoxSettingsModal() {
-    if (!isAdmin) return;
-
-    const container = document.getElementById('boxSettingsRowsContainer');
-    container.innerHTML = ''; // Önceki satırları temizle
-
-    const settingsRef = db.ref('gameConfig/boxContents');
-    const snapshot = await settingsRef.once('value');
-
-    const defaultSettings = [ { type: 'points', value: 100, count: 10 }, { type: 'iflas', value: 0, count: 2 }, { type: 'iflasShield', value: 1, count: 2 } ];
-    const currentConfig = snapshot.exists() ? snapshot.val() : defaultSettings;
-
-    if (currentConfig && currentConfig.length > 0) {
-        currentConfig.forEach(item => addBoxSettingRow(item));
-    } else {
-        addBoxSettingRow(); // Eğer hiç ayar yoksa boş bir satırla başlat
-    }
-    
-    updateTotalBoxCount(); // Toplam sayıyı ilk açılışta hesapla
-    boxSettingsModal.style.display = 'flex';
-}
-
-function closeBoxSettingsModal() {
-    boxSettingsModal.style.display = 'none';
-}
-
 // Tüm satırlardaki verileri okur, yeni ayarları veritabanına kaydeder ve oyunu sıfırlar.
 async function saveBoxSettings() {
     if (!isAdmin) return;
@@ -7511,30 +7482,6 @@ function addBoxSettingRow(item = {}) {
     updateTotalBoxCount(); // Eklendikten sonra toplam sayıyı güncelle
 }
 
-// Bir satırda tür seçimi değiştiğinde "Değer" input'unu aktif/pasif yapar.
-function handleRowTypeChange(selectElement) {
-    const row = selectElement.parentElement;
-    const valueInput = row.querySelector('.setting-value');
-    const selectedType = selectElement.value;
-
-    const typesWithValue = ['points', 'multiplier'];
-    const typesWithAutoValue = ['wheelTicket', 'clickCatchTicket', 'iflasShield'];
-
-    if (typesWithValue.includes(selectedType)) {
-        valueInput.disabled = false;
-        valueInput.placeholder = 'Değer';
-        if(selectedType === 'multiplier') valueInput.placeholder = 'Değer (2, 3 vb.)';
-    } else {
-        valueInput.disabled = true;
-        valueInput.placeholder = 'N/A';
-        if(typesWithAutoValue.includes(selectedType)){
-             valueInput.value = 1;
-        } else {
-             valueInput.value = 0;
-        }
-    }
-}
-
 // "Adet" inputlarından biri her değiştiğinde toplam kutu sayısını hesaplar ve gösterir.
 function updateTotalBoxCount() {
     let total = 0;
@@ -7545,55 +7492,6 @@ function updateTotalBoxCount() {
         }
     });
     document.getElementById('totalBoxCountDisplay').textContent = total;
-}
-
-// Tüm satırlardaki verileri okur, yeni ayarları veritabanına kaydeder ve oyunu sıfırlar.
-async function saveBoxSettings() {
-    if (!isAdmin) return;
-
-    const newConfig = [];
-    let totalBoxes = 0;
-    let hasError = false;
-
-    document.querySelectorAll('.box-setting-row').forEach(row => {
-        if (hasError) return;
-        const type = row.querySelector('.setting-type').value;
-        const valueInput = row.querySelector('.setting-value');
-        const value = parseInt(valueInput.value);
-        const count = parseInt(row.querySelector('.setting-count').value);
-
-        if (isNaN(count) || count <= 0) {
-            return; // Adet girilmemişse bu satırı atla
-        }
-        if (isNaN(value) && !valueInput.disabled) {
-            displayMessage(`Hata: '${type}' türü için geçerli bir 'Değer' girmelisiniz.`);
-            hasError = true;
-        }
-        
-        newConfig.push({ type, value, count });
-        totalBoxes += count;
-    });
-
-    if (hasError) return; // Hata varsa işlemi durdur
-
-    if (totalBoxes === 0) {
-        displayMessage("En az bir kutu türü için adet girmelisiniz!");
-        return;
-    }
-
-    const confirmed = await customConfirm(`Toplam ${totalBoxes} kutu ile yeni bir oyun başlatılacak. Mevcut oyun sıfırlanacak. Onaylıyor musunuz?`);
-    if (confirmed) {
-        await db.ref('gameConfig/boxContents').set(newConfig);
-        await resetGameBoard(); 
-        displayMessage("Kutu ayarları başarıyla kaydedildi ve oyun yeni ayarlarla yeniden başlatıldı!");
-        closeBoxSettingsModal();
-    }
-}
-function openHelpModal() {
-  helpModal.style.display = 'flex';
-}
-function closeHelpModal() {
-  helpModal.style.display = 'none';
 }
 
     // YENİ EKLENEN FONKSİYON: DIŞARIYA TIKLAYINCA KAPATIR
