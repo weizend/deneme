@@ -3202,19 +3202,15 @@ async function openBox(index) {
       await db.ref('gameLock').set(false);
   }
 
-    // BU YENİ FONKSİYONU OLDUĞU GİBİ KODUNUZA EKLEYİN
-
-async function handleSurpriseBoxCleanup(sessionData) {
+    async function handleSurpriseBoxCleanup(sessionData) {
     // Bu fonksiyon, sürpriz kutu sonrası tüm temizlik ve sıfırlama işlemlerinin merkezidir.
     if (!sessionData) return;
     
     // Güvenlik için konsola log basalım, çalıştığını görelim.
     console.log("handleSurpriseBoxCleanup fonksiyonu çalıştırıldı. Kutu ID:", sessionData.boxId);
     
-    // Oyun sıfırlama kuralı: Sadece Çark'tan gelmediyse sıfırla.
-    if (sessionData.boxId !== 'Çark') {
-        await resetGameBoard();
-    }
+    // DEĞİŞİKLİK: 'if' kontrolü kaldırıldı. Artık kutu nereden gelirse gelsin oyun sıfırlanacak.
+    await resetGameBoard();
     
     // Her durumda oturumu veritabanından kaldır.
     await db.ref('surprise_box_session').remove();
