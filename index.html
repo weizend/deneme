@@ -1320,7 +1320,9 @@ body.modal-open .modal-content {
         <div class="text-2xl font-bold text-red-500 mb-6" id="spectatorCountdown">60</div>
         <div id="spectatorCardContainer" class="card-container grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4 justify-center items-center">
             </div>
-        <p id="spectatorResult" class="text-2xl text-green-400 font-bold mt-6 h-8"></p>
+        <div id="spectatorResultContainer" class="mt-6 min-h-[60px]">
+    <p id="spectatorResult" class="text-2xl text-green-400 font-bold h-8"></p>
+</div>
     </div>
 </div>
   <div id="wheelSettingsModal" class="modal-overlay fixed inset-0 bg-black bg-opacity-70 flex justify-center items-center z-[9999] hidden">
@@ -3362,7 +3364,8 @@ function showOpenedBoxInfo(box) {
   function closeOpenedBoxInfoModal() { openedBoxInfoModal.style.display = 'none'; }
   function shuffleArray(array) { for (let i = array.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [array[i], array[j]] = [array[j], array[i]]; } return array; }
   
-  function openCardSelectionModal(userId) {
+  // openCardSelectionModal fonksiyonunu bulun ve güncelleyin
+function openCardSelectionModal(userId) {
       if(countdownInterval) clearInterval(countdownInterval); // Önceki sayacı temizle
       cardContainer.innerHTML = '';
       db.ref('surprise_box_session').once('value').then(snap => {
@@ -3387,7 +3390,6 @@ function showOpenedBoxInfo(box) {
           });
           cardSelectionModal.style.display = 'flex';
 
-          // Geri Sayımı Başlat
           const countdownEl = document.getElementById('cardSelectionCountdown');
           let timeLeft = 60;
           countdownEl.textContent = timeLeft;
@@ -3397,45 +3399,11 @@ function showOpenedBoxInfo(box) {
               if (timeLeft <= 0) {
                   clearInterval(countdownInterval);
                   closeCardSelectionModal();
+                  // *** BURASI ÖNEMLİ: SÜRE DOLDUĞUNDA OTURUMU TEMİZLE ***
+                  db.ref('surprise_box_session').remove(); 
               }
           }, 1000);
       });
-}
-
-function openSpectatorModal(sessionData) {
-    if (spectatorCountdownInterval) clearInterval(spectatorCountdownInterval);
-
-    document.getElementById('spectatorTitle').innerHTML = `<span class="text-green-400 font-bold">${sessionData.user}</span> Sürpriz Kutu buldu!`;
-    const cardContainer = document.getElementById('spectatorCardContainer');
-    cardContainer.innerHTML = '';
-
-    sessionData.cards.forEach((cardValue, index) => {
-        const cardDiv = document.createElement('div');
-        cardDiv.className = 'card bg-gray-700 border-2 border-red-700 rounded-xl w-28 h-40 flex flex-col items-center justify-center font-bold text-2xl relative';
-        cardDiv.id = `spectator-card-${index}`;
-        cardDiv.innerHTML = `
-            <div class="card-back absolute inset-0 bg-gradient-to-br from-red-700 to-red-900 flex items-center justify-center text-white text-5xl">?</div>
-            <div class="card-front absolute inset-0 bg-gray-900 flex items-center justify-center text-yellow-400 text-3xl"></div>
-        `;
-        cardContainer.appendChild(cardDiv);
-    });
-    
-    // Geri sayımı başlat
-    const countdownEl = document.getElementById('spectatorCountdown');
-    let timeLeft = 60;
-    countdownEl.textContent = timeLeft;
-    spectatorCountdownInterval = setInterval(() => {
-        timeLeft--;
-        if (timeLeft >= 0) {
-            countdownEl.textContent = timeLeft;
-        } else {
-            countdownEl.textContent = 'Süre Doldu!';
-            clearInterval(spectatorCountdownInterval);
-        }
-    }, 1000);
-    
-    document.getElementById('spectatorResult').textContent = '';
-    spectatorModal.style.display = 'flex';
 }
 
   async function selectCard(selectedCardDiv, userId) { 
@@ -5504,6 +5472,8 @@ function listenForSurpriseBox() {
     sessionRef.on('value', callback);
 }
 
+// MEVCUT openSpectatorModal FONKSİYONUNU BU BLOK İLE DEĞİŞTİRİN
+
 function openSpectatorModal(sessionData) {
     if (spectatorCountdownInterval) clearInterval(spectatorCountdownInterval);
 
@@ -5522,6 +5492,10 @@ function openSpectatorModal(sessionData) {
         cardContainer.appendChild(cardDiv);
     });
     
+    // Buton ve sonuç alanını temizle
+    const resultContainer = document.getElementById('spectatorResultContainer');
+    resultContainer.innerHTML = '<p id="spectatorResult" class="text-2xl text-green-400 font-bold h-8"></p>';
+
     // Geri sayımı başlat
     const countdownEl = document.getElementById('spectatorCountdown');
     let timeLeft = 60;
@@ -5531,12 +5505,19 @@ function openSpectatorModal(sessionData) {
         if (timeLeft >= 0) {
             countdownEl.textContent = timeLeft;
         } else {
+            // *** İSTEĞİNİZE GÖRE DÜZENLENEN KISIM ***
             countdownEl.textContent = 'Süre Doldu!';
             clearInterval(spectatorCountdownInterval);
+            
+            // Sonuç alanına "Oyuna Dön" butonunu ekle
+            resultContainer.innerHTML = `
+                <button onclick="closeSpectatorModal()" class="mt-4 py-3 px-8 bg-red-700 hover:bg-red-600 text-white font-bold rounded-lg transition-colors">
+                    Oyuna Dön
+                </button>
+            `;
         }
     }, 1000);
     
-    document.getElementById('spectatorResult').textContent = '';
     spectatorModal.style.display = 'flex';
 }
 
@@ -5575,9 +5556,23 @@ function showGlobalSurpriseBoxNotification(data) {
     document.getElementById('globalSurpriseBoxModal').style.display = 'flex';
 }
 
-  function closeSpectatorModal() {
-      spectatorModal.style.display = 'none';
-  }
+  // MEVCUT closeSpectatorModal FONKSİYONUNU BU BLOK İLE DEĞİŞTİRİN
+
+function closeSpectatorModal() {
+    // Çalışan bir sayaç varsa durdur
+    if (spectatorCountdownInterval) {
+        clearInterval(spectatorCountdownInterval);
+        spectatorCountdownInterval = null;
+    }
+    const spectatorModal = document.getElementById('spectatorModal');
+    spectatorModal.style.display = 'none';
+
+    // İçindeki sonuç ve buton alanını bir sonraki sefer için temizle
+    const resultContainer = document.getElementById('spectatorResultContainer');
+    if (resultContainer) {
+        resultContainer.innerHTML = '<p id="spectatorResult" class="text-2xl text-green-400 font-bold h-8"></p>';
+    }
+}
     
 // Çarkın GÖRSELİNİ (dilimleri ve yazıları) oluşturan fonksiyon
 function renderWheel() {
