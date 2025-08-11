@@ -3014,7 +3014,7 @@ async function deleteUserAvatar(username, avatarId) {
       }); 
   }
 
-// MEVCUT openBox FONKSİYONUNU BU BLOK İLE DEĞİŞTİRİN
+// MEVCUT openBox FONKSİYONUNU BU TEK VE TAM BLOK İLE DEĞİŞTİR
 
 async function openBox(index) {
     if (isGameLocked) {
@@ -3084,7 +3084,12 @@ async function openBox(index) {
     updates['boxesOpenedCount'] = (user.boxesOpenedCount || 0) + 1;
     
     const boxUpdate = { opened: true, opener: currentUser, id: box.id, content: box.content, value: box.value };
-    if (finalMultiplier > 1) boxUpdate.multiplierApplied = finalMultiplier;
+    const boxOpenInfo = { boxId: box.id, opener: currentUser, content: box.content, value: box.value, timestamp: firebase.database.ServerValue.TIMESTAMP };
+
+    if (finalMultiplier > 1) {
+        boxUpdate.multiplierApplied = finalMultiplier;
+        boxOpenInfo.multiplierUsed = finalMultiplier;
+    }
     
     if (box.content === 'multiplier') {
         updates['multiplierFoundCount'] = (user.multiplierFoundCount || 0) + 1;
@@ -3119,10 +3124,13 @@ async function openBox(index) {
             if (updates['balance'] > (user.highestBalanceEver || 0)) updates['highestBalanceEver'] = updates['balance'];
             message = `+${pointsGained} puan kazandınız!`;
             
-            // *** UNDEFINED HATASINI ÇÖZEN SATIRLAR ***
             boxUpdate.basePoints = box.value;
             boxUpdate.finalPoints = pointsGained;
             boxUpdate.multiplierUsed = finalMultiplier;
+
+            // *** BİLDİRİM VERİSİNE EKSİK BİLGİLER EKLENİYOR ***
+            boxOpenInfo.basePoints = box.value;
+            boxOpenInfo.finalPoints = pointsGained;
 
             logActivity('openBox', currentUser, { boxId: box.id, points: pointsGained, multiplier: finalMultiplier });
         } 
@@ -3138,9 +3146,12 @@ async function openBox(index) {
                 message = `İflas! Tüm puanların (${lostPoints} puan) silindi.`;
             }
 
-            // *** UNDEFINED HATASINI ÇÖZEN SATIRLAR ***
             boxUpdate.shieldUsed = shieldWasUsed;
             boxUpdate.lostPoints = shieldWasUsed ? 0 : lostPoints;
+            
+            // *** BİLDİRİM VERİSİNE EKSİK BİLGİLER EKLENİYOR ***
+            boxOpenInfo.shieldUsed = shieldWasUsed;
+            boxOpenInfo.lostPoints = shieldWasUsed ? 0 : lostPoints;
 
             logActivity('iflas', currentUser, { shieldUsed: shieldWasUsed, lostPoints: shieldWasUsed ? 0 : lostPoints, boxId: box.id });
         } 
@@ -3162,10 +3173,13 @@ async function openBox(index) {
             updates[dbKeys[box.content]] = (user[dbKeys[box.content]] || 0) + itemsGained;
             message = `Kutudan <b>+${itemsGained} ${itemNames[box.content]}</b> kazandın!`;
 
-            // *** UNDEFINED HATASINI ÇÖZEN SATIRLAR ***
             boxUpdate.baseValue = box.value;
             boxUpdate.finalValue = itemsGained;
             boxUpdate.multiplierUsed = finalMultiplier;
+
+            // *** BİLDİRİM VERİSİNE EKSİK BİLGİLER EKLENİYOR ***
+            boxOpenInfo.baseValue = box.value;
+            boxOpenInfo.finalValue = itemsGained;
 
             logActivity('newItemFound', currentUser, { itemName: `+${itemsGained} ${itemNames[box.content]}`, itemType: box.content, boxId: box.id, multiplier: finalMultiplier });
         }
@@ -3175,11 +3189,10 @@ async function openBox(index) {
     await boxRef.update(boxUpdate);
 
     if (box.content !== 'surpriz') {
-        await db.ref('lastOpenedBox').set({ boxId: box.id, opener: currentUser, content: box.content, value: box.value, timestamp: firebase.database.ServerValue.TIMESTAMP });
+        await db.ref('lastOpenedBox').set(boxOpenInfo);
         displayMessage(message);
     }
 }
-
   async function revealAll() { const confirmed = await customConfirm("Tüm kutuları açmak istiyor musunuz?"); if(confirmed) { boxes.forEach(b => { if (!b.opened) { b.opened = true; b.opener = 'Admin'; } }); db.ref('boxes').set(boxes).then(() => displayMessage("Tüm kutular başarıyla açıldı.")) } }
   
   async function resetGameBoard() {
