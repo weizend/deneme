@@ -6971,87 +6971,7 @@ function initActivityFeed() {
     ref.on('value', callback);
 }
 
-// BU FONKSİYONU BUL VE AŞAĞIDAKİYLE KOMPLE DEĞİŞTİR
-// BU FONKSİYONU BUL VE AŞAĞIDAKİYLE KOMPLE DEĞİŞTİR
-function loadWheelHistory() {
-    const historyRef = db.ref('wheelHistory').limitToLast(10);
-    const listEl = document.getElementById('wheelHistoryList');
-    
-    const callback = (snapshot) => {
-        listEl.innerHTML = ''; 
 
-        if (isAdmin) {
-            listEl.innerHTML += `<div class="p-1 mb-2 text-center"><button onclick="clearWheelHistory()" class="w-full py-2 px-4 bg-red-800 hover:bg-red-700 text-white font-bold rounded-lg shadow-md text-sm">Tüm Kazanan Geçmişini Temizle</button></div>`;
-        }
-
-        if (!snapshot.exists()) {
-            listEl.innerHTML += '<p class="text-center text-gray-500">Henüz çark çevrilmedi.</p>';
-            return;
-        }
-        
-        const history = [];
-        snapshot.forEach(child => { history.push({ key: child.key, ...child.val() }); });
-        history.reverse();
-
-        history.forEach(item => {
-            const timeAgo = formatRelativeTime(item.timestamp);
-            
-            // --- YENİ, BASİT VE GÜVENİLİR MANTIK ---
-            const prizeType = item.type;
-            const prizeValue = item.value;
-            let prizeText = item.prize; // Güvenli varsayılan: Her zaman etiketin kendisiyle başla
-            let icon = getIconForWheelLabel(item.prize);
-
-            // Sayısal değer ve birimle formatlanacak türler için bir harita
-            const prizeUnitMap = {
-                points: 'Puan',
-                boxRights: 'Kutu Hakkı',
-                iflasShield: 'İflas Kalkanı',
-                clickCatchTicket: 'Tıkla-Yakala Bileti',
-                wheelTicket: 'Çark Bileti'
-            };
-
-            // Eğer ödül türü haritada varsa VE değeri geçerli bir sayı ise, metni oluştur
-            if (prizeUnitMap[prizeType] && typeof prizeValue === 'number') {
-                prizeText = `+${prizeValue} ${prizeUnitMap[prizeType]}`;
-            } 
-            // Çarpan için özel durum
-            else if (prizeType === 'tempMultiplier' && typeof prizeValue === 'number') {
-                prizeText = `${prizeValue}X ÇARPAN`;
-            }
-            // Diğer her şey için (pas, surpriseBox veya bozuk veri) varsayılan prizeText (etiket) kullanılır.
-            // --- YENİ MANTIK SONU ---
-            
-            const deleteButton = isAdmin 
-                ? `<button onclick="deleteWheelHistoryEntry('${item.key}')" class="ml-3 text-gray-500 hover:text-red-500 transition-colors" title="Bu Kaydı Sil">
-                       <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="http://www.w3.org/2000/svg" fill="currentColor"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1-1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" /></svg>
-                   </button>` 
-                : '';
-
-            listEl.innerHTML += `
-                <div class="p-2 bg-gray-800 rounded-md mb-2 text-sm flex justify-between items-center">
-                    <span class="flex items-center">
-                        <b>${item.username}:</b> 
-                        <span class="text-yellow-200 ml-2 flex items-center gap-2">
-                            <span class="text-lg">${icon}</span>
-                            <span>${prizeText}</span>
-                        </span>
-                    </span>
-                    <div class="flex items-center">
-                        <span class="text-gray-500 text-xs">${timeAgo}</span>
-                        ${deleteButton}
-                    </div>
-                </div>
-            `;
-        });
-    };
-
-    if (activeListeners.wheelHistory) {
-      historyRef.off('value', activeListeners.wheelHistory.callback);
-    }
-    activeListeners.wheelHistory = { ref: historyRef, event: 'value', callback };
-    historyRef.on('value', callback);
-}
 // YENİ VE GÜNCELLENMİŞ VERSİYONLAR
 function openActivityFeed() {
     // 1. Paneli görünür yap ama hala ekran dışında tut
@@ -7444,7 +7364,8 @@ async function resetWheelSettingsToDefault() {
     defaultWheelSegments.forEach(item => addWheelSettingRow(item));
 }
 
-// BU FONKSİYONU BUL VE AŞAĞIDAKİYLE KOMPLE DEĞİŞTİR
+// MEVCUT loadWheelHistory FONKSİYONUNU BU BLOK İLE DEĞİŞTİRİN
+
 function loadWheelHistory() {
     const historyRef = db.ref('wheelHistory').limitToLast(10);
     const listEl = document.getElementById('wheelHistoryList');
@@ -7469,22 +7390,31 @@ function loadWheelHistory() {
             const timeAgo = formatRelativeTime(item.timestamp);
             
             let icon = '❓';
-            let prizeText = item.prize; // Varsayılan olarak etiketi al
+            let prizeText = item.prize;
             const prizeType = item.type;
-            const prizeValue = item.value; // Veritabanından gelen değeri al
+            const prizeValue = item.value;
 
-            // Puan türü için metni özel olarak oluştur
             if (prizeType === 'points') {
                 icon = '💰';
-                // prizeValue değişkenini kullanarak metni oluştur, undefined hatasını engelle
                 prizeText = `+${prizeValue} PUAN`; 
             } else if (prizeType === 'surpriseBox') {
                 icon = '🎉';
                 prizeText = 'SÜRPRİZ KUTU';
-            } else if (prizeType === 'boxRights') {
-                icon = '📦';
+            } 
+            // --- DEĞİŞİKLİK BURADA BAŞLIYOR ---
+            else if (prizeType === 'boxRights') {
+                // Eğer kazanılan kutu hakkı 1'den fazlaysa 'hediye paketi' ikonunu kullan
+                if (prizeValue > 1) {
+                    icon = '🎁';
+                } 
+                // Eğer 1 ise normal 'kutu' ikonunu kullan
+                else {
+                    icon = '📦';
+                }
                 prizeText = `+${prizeValue} Kutu Hakkı`;
-            } else if (prizeType === 'clickCatchTicket') {
+            } 
+            // --- DEĞİŞİKLİK SONA ERİYOR ---
+            else if (prizeType === 'clickCatchTicket') {
                 icon = '🎟️';
                 prizeText = `+${prizeValue} Tıkla-Yakala Bileti`;
             } else if (prizeType === 'wheelTicket') {
@@ -7826,7 +7756,7 @@ function getIconForWheelLabel(label) {
     if (upperLabel.includes('100 PUAN')) return '💰';
     if (upperLabel.includes('50 PUAN')) return '🍪';
     if (upperLabel.includes('3 KUTU HAKKI')) return '📦';
-    if (upperLabel.includes('1 KUTU HAKKI')) return '🎁';
+    if (upperLabel.includes('1 KUTU HAKKI')) return '📦';
     if (upperLabel.includes('TIKLA-YAKALA')) return '🎟️';
     if (upperLabel.includes('5X ÇARPAN')) return '✖️';
     if (upperLabel.includes('SÜPRİZ KUTU')) return '🎉';
