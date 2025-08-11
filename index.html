@@ -1383,6 +1383,14 @@ body.modal-open .modal-content {
       </div>
   </div>
 </div>
+  <div id="announcementLikesModal" class="modal-overlay fixed inset-0 bg-black bg-opacity-70 flex justify-center items-center z-[99999] hidden">
+  <div class="modal-content bg-gray-800 p-8 rounded-xl shadow-2xl border border-red-700 w-11/12 max-w-md text-center relative max-h-[90vh]">
+    <button class="modal-close-button" onclick="closeAnnouncementLikesModal()">&times;</button>
+    <h4 class="text-yellow-400 text-2xl font-bold mb-6">Beğenen Kullanıcılar</h4>
+    <div id="announcementLikesList" class="scrollable-list max-h-[60vh] overflow-y-auto bg-gray-900 p-4 rounded-lg text-left">
+      </div>
+  </div>
+</div>
 
 <div id="adminDailyRewardModal" class="modal-overlay fixed inset-0 bg-black bg-opacity-70 flex justify-center items-center z-[100] hidden">
   <div class="modal-content bg-gray-800 p-8 rounded-xl shadow-2xl border border-red-700 w-11/12 max-w-3xl text-center relative max-h-[90vh] overflow-y-auto scrollable-list">
@@ -3075,6 +3083,14 @@ async function openBox(index) {
 
     await db.ref('gameLock').set(true);
 
+    // ----- YENİ EKLENEN KISIM BAŞLANGICI -----
+    // "Açanlar Detay" listesi için istatistiği güvenli bir şekilde artırıyoruz.
+    const statsRef = db.ref(`gameStats/boxesOpenedByUsers/${currentUser}`);
+    await statsRef.transaction(currentValue => {
+        return (currentValue || 0) + 1;
+    });
+    // ----- YENİ EKLENEN KISIM SONU -----
+
     const box = boxes[index];
     let message = '';
     const updates = {};
@@ -3155,9 +3171,6 @@ async function openBox(index) {
             });
         } 
         else if (box.content === 'surpriz') {
-            // ----- DEBUG İÇİN EKLENDİ -----
-            console.log("1. ADIM: Sürpriz kutu bulundu! Firebase'e session yazılıyor...");
-            // -----------------------------
             const sessionRef = db.ref('surprise_box_session');
             await sessionRef.set({
                 active: true, user: currentUser, boxId: box.id, multiplier: finalMultiplier,
@@ -3196,11 +3209,12 @@ async function openBox(index) {
   async function revealAll() { const confirmed = await customConfirm("Tüm kutuları açmak istiyor musunuz?"); if(confirmed) { boxes.forEach(b => { if (!b.opened) { b.opened = true; b.opener = 'Admin'; } }); db.ref('boxes').set(boxes).then(() => displayMessage("Tüm kutular başarıyla açıldı.")) } }
   
   async function resetGameBoard() {
-      // ----- DEBUG İÇİN EKLENDİ -----
-      console.log("6. ADIM: resetGameBoard fonksiyonu başarıyla çalıştı! Kutular oluşturuluyor...");
-      // -----------------------------
+      console.log("resetGameBoard fonksiyonu çalıştı! Oyun sıfırlanıyor...");
       await createBoxes();
-      await db.ref('gameStats/boxesOpenedByUsers').remove();
+      // ----- EKLENEN SATIR BURASI -----
+      // Oyunu sıfırlarken, "kim kaç kutu açtı" istatistiklerini de temizliyoruz.
+      await db.ref('gameStats/boxesOpenedByUsers').remove(); 
+      // ---------------------------------
       await db.ref('lastOpenedBox').remove();
       await db.ref('gameLock').set(false);
 }
