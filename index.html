@@ -5519,6 +5519,8 @@ function listenForSurpriseBox() {
     sessionRef.on('value', callback);
 }
 
+// MEVCUT openSpectatorModal FONKSİYONUNU BU BLOK İLE DEĞİŞTİRİN
+
 function openSpectatorModal(sessionData) {
     if (spectatorCountdownInterval) clearInterval(spectatorCountdownInterval);
 
@@ -5537,7 +5539,6 @@ function openSpectatorModal(sessionData) {
     const resultContainer = document.getElementById('spectatorResultContainer');
     resultContainer.innerHTML = '<p id="spectatorResult" class="text-2xl text-green-400 font-bold h-8"></p>';
 
-    // *** DÜZENLENEN KISIM: Sayaç artık bitiş zamanına göre çalışıyor ***
     const countdownEl = document.getElementById('spectatorCountdown');
     let timeLeft = Math.round((sessionData.expirationTimestamp - Date.now()) / 1000);
 
@@ -6879,6 +6880,8 @@ function getActivityIcon(type, details = {}) {
             return '🔔';
     }
 }
+
+// MEVCUT renderActivityFeed FONKSİYONUNU BU BLOK İLE DEĞİŞTİRİN
 
 function renderActivityFeed(activities) {
     const activityFeedList = document.getElementById('activityFeedList');
