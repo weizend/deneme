@@ -3419,7 +3419,14 @@ function openCardSelectionModal(userId) {
       });
 }
 
-  async function selectCard(selectedCardDiv, userId) { 
+  // MEVCUT selectCard FONKSİYONUNU BU BLOK İLE DEĞİŞTİRİN
+
+async function selectCard(selectedCardDiv, userId) { 
+    // *** İSTEĞİNİZE GÖRE EKLENEN SATIR BAŞLANGICI ***
+    // Kart seçildiği anda 60 saniyelik zaman aşımı sayacını anında durdur.
+    if (countdownInterval) clearInterval(countdownInterval);
+    // *** EKLENEN SATIR SONU ***
+
     if (selectedCardDiv.classList.contains('opened')) return; 
 
     const cardIndex = selectedCardDiv.dataset.index;
@@ -5405,6 +5412,7 @@ async function reorderDailyRewardItem(rewardId, newIndex) {
 // MEVCUT listenForSurpriseBox FONKSİYONUNU BU BLOK İLE DEĞİŞTİRİN
 
 let isProcessingSurpriseResult = false;
+let spectatorViewingResult = false; // Bu değişkeni script'in başında eklediğinden emin ol
 
 function listenForSurpriseBox() {
     const sessionRef = db.ref('surprise_box_session');
@@ -5466,9 +5474,7 @@ function listenForSurpriseBox() {
                             displayMessage(message);
                         }
                         
-                        // *** İSTEĞİNİZE GÖRE DÜZENLENEN BÖLÜM BAŞLANGICI ***
                         setTimeout(() => {
-                            // closeSpectatorModal(); // BU SATIR SİLİNDİ. Artık izleyici kendi kapatacak.
                             closeGlobalSurpriseBoxModal(); 
                             if (finalSessionData.boxId !== 'Çark') {
                                 resetGameBoard();
@@ -5476,15 +5482,17 @@ function listenForSurpriseBox() {
                             sessionRef.remove();
                             isProcessingSurpriseResult = false;
                         }, 4000);
-                        // *** DÜZENLENEN BÖLÜM SONU ***
-
                     } else {
                         isProcessingSurpriseResult = false;
                     }
                 });
             }
         } else {
-            closeSpectatorModal();
+            // *** İSTEĞİNİZE GÖRE DÜZENLENEN KISIM ***
+            // Pencereyi sadece izleyici sonuca bakmıyorsa otomatik kapat
+            if (!spectatorViewingResult) {
+                closeSpectatorModal();
+            }
         }
     };
 
@@ -5544,21 +5552,21 @@ function openSpectatorModal(sessionData) {
 // MEVCUT updateSpectatorView FONKSİYONUNU BU BLOK İLE DEĞİŞTİRİN
 
 function updateSpectatorView(sessionData) {
-    // Kart seçildiği anda sayacı durdur ve metni güncelle
+    // *** YENİ EKLENEN SATIR ***
+    // İzleyicinin artık sonucu gördüğünü ve pencerenin kapanmaması gerektiğini işaretle
+    spectatorViewingResult = true;
+
     if (spectatorCountdownInterval) {
         clearInterval(spectatorCountdownInterval);
         spectatorCountdownInterval = null;
     }
     document.getElementById('spectatorCountdown').textContent = 'Seçim Yapıldı!';
 
-    // Gerekli verileri al
     const selectedCardIndex = sessionData.selection.cardIndex;
     const pointsGained = sessionData.result.points;
 
-    // İzleyicinin ekranındaki tüm kartları bul
     const allCards = document.querySelectorAll('#spectatorCardContainer .card');
     
-    // Tüm kartları açarak diğer seçeneklerin de ne olduğunu göster
     sessionData.cards.forEach((cardValue, index) => {
         const cardEl = allCards[index];
         if (cardEl) {
@@ -5575,11 +5583,8 @@ function updateSpectatorView(sessionData) {
         }
     });
 
-    // *** İSTEĞİNİZE GÖRE DÜZENLENEN BÖLÜM BAŞLANGICI ***
-    // Sonuç ve buton alanını bul
     const resultContainer = document.getElementById('spectatorResultContainer');
     if (resultContainer) {
-         // İçeriği, hem sonucu hem de butonu gösterecek şekilde güncelle
          resultContainer.innerHTML = `
             <p id="spectatorResult" class="text-2xl text-green-400 font-bold h-8">
                 ${sessionData.user}, ${pointsGained} puan kazandı!
@@ -5589,7 +5594,6 @@ function updateSpectatorView(sessionData) {
             </button>
         `;
     }
-    // *** DÜZENLENEN BÖLÜM SONU ***
 }
 
 // MEVCUT showGlobalSurpriseBoxNotification FONKSİYONUNU BU BLOK İLE DEĞİŞTİRİN
@@ -5627,10 +5631,9 @@ function showGlobalSurpriseBoxNotification(data) {
     document.getElementById('globalSurpriseBoxModal').style.display = 'flex';
 }
 
-  // MEVCUT closeSpectatorModal FONKSİYONUNU BU BLOK İLE DEĞİŞTİRİN
+// MEVCUT closeSpectatorModal FONKSİYONUNU BU BLOK İLE DEĞİŞTİRİN
 
 function closeSpectatorModal() {
-    // Çalışan bir sayaç varsa durdur
     if (spectatorCountdownInterval) {
         clearInterval(spectatorCountdownInterval);
         spectatorCountdownInterval = null;
@@ -5638,11 +5641,14 @@ function closeSpectatorModal() {
     const spectatorModal = document.getElementById('spectatorModal');
     spectatorModal.style.display = 'none';
 
-    // İçindeki sonuç ve buton alanını bir sonraki sefer için temizle
     const resultContainer = document.getElementById('spectatorResultContainer');
     if (resultContainer) {
         resultContainer.innerHTML = '<p id="spectatorResult" class="text-2xl text-green-400 font-bold h-8"></p>';
     }
+
+    // *** YENİ EKLENEN SATIR ***
+    // İzleyici pencereyi kapattığı için bayrağı sıfırla
+    spectatorViewingResult = false;
 }
     
 // Çarkın GÖRSELİNİ (dilimleri ve yazıları) oluşturan fonksiyon
