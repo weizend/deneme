@@ -6885,6 +6885,8 @@ function getActivityIcon(type, details = {}) {
     }
 }
 
+// MEVCUT renderActivityFeed FONKSİYONUNU BU BLOK İLE DEĞİŞTİRİN
+
 function renderActivityFeed(activities) {
     const activityFeedList = document.getElementById('activityFeedList');
     activityFeedList.innerHTML = '';
@@ -6925,8 +6927,13 @@ function renderActivityFeed(activities) {
         const userHtml = `<b class="cursor-pointer hover:underline" onclick="openPublicUserDetailModal('${activity.username}')">${activity.username}</b>`;
 
         switch (activity.type) {
+            // *** DÜZENLENEN KISIM BAŞLANGICI ***
             case 'openBox':
-                message = `${userHtml}, <b>${details.boxId}</b> numaralı kutudan <span class="text-green-400 font-bold">+${details.points} Puan</span> kazandı.`;
+                let openBoxMultiplierText = '';
+                if (details.multiplier && details.multiplier > 1) {
+                    openBoxMultiplierText = ` <span class="text-xs text-purple-400">(${details.multiplier}x Çarpan ile)</span>`;
+                }
+                message = `${userHtml}, <b>${details.boxId}</b> numaralı kutudan <span class="text-green-400 font-bold">+${details.points} Puan</span> kazandı${openBoxMultiplierText}.`;
                 break;
             case 'iflas':
                 if (details.shieldUsed) {
@@ -6939,8 +6946,13 @@ function renderActivityFeed(activities) {
                  message = `${userHtml}, <b>${details.boxId}</b> numaralı kutudan <span class="text-purple-400 font-bold">${details.value}x Çarpan</span> buldu.`;
                 break;
             case 'newItemFound':
-                message = `${userHtml}, <b>${details.boxId}</b> numaralı kutudan <span class="text-cyan-400 font-bold">${details.itemName}</span> buldu.`;
+                let newItemMultiplierText = '';
+                if (details.multiplier && details.multiplier > 1) {
+                    newItemMultiplierText = ` <span class="text-xs text-purple-400">(${details.multiplier}x Çarpan ile)</span>`;
+                }
+                message = `${userHtml}, <b>${details.boxId}</b> numaralı kutudan <span class="text-cyan-400 font-bold">${details.itemName}</span> buldu${newItemMultiplierText}.`;
                 break;
+            // *** DÜZENLENEN KISIM SONU ***
             case 'surpriseBox':
                 const multiplierText = (details.multiplier || 1) > 1 ? ` (${details.multiplier}x çarpan ile)` : '';
                 const source = details.boxId === 'Çark' ? 'Şans Çarkı\'ndan' : `<b>${details.boxId}</b> numaralı kutudan`;
@@ -6956,10 +6968,8 @@ function renderActivityFeed(activities) {
                     message = `${userHtml}, mağazadan <span class="text-red-500 font-bold">-${details.itemCost} puan</span> karşılığında <span class="text-cyan-400 font-bold">+${quantity} ADET ${itemName}</span> satın aldı.`;
                 }
                 break;
-
-            // *** İSTEĞİNİZE GÖRE DÜZENLENEN BÖLÜM BAŞLANGICI ***
             case 'spinWheel':
-                let prizeText = ''; // Ödül metnini burada oluşturacağız
+                let prizeText = ''; 
                 const prizeType = details.type;
                 const prizeValue = details.value;
 
@@ -6982,8 +6992,6 @@ function renderActivityFeed(activities) {
                     message = `${userHtml}, Şans Çarkı'nı çevirerek ${prizeDisplayHtml} kazandı.`;
                 }
                 break;
-            // *** DÜZENLENEN BÖLÜM SONU ***
-
             case 'clickCatchSolo':
                 if (details.score >= 0) {
                     message = `${userHtml}, Tıkla-Yakala (Tekli) oyun oynadı ve <span class="text-green-400 font-bold">+${details.score} Puan</span> kazandı.`;
