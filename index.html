@@ -3003,8 +3003,6 @@ async function deleteUserAvatar(username, avatarId) {
       }); 
   }
 
-// MEVCUT openBox FONKSİYONUNU BU BLOK İLE DEĞİŞTİRİN
-
 async function openBox(index) {
     if (isGameLocked) {
         displayMessage("Şu anda başka bir kullanıcı kutu açıyor veya oyun beklemede. Lütfen 5 saniye bekleyin.");
@@ -3137,19 +3135,20 @@ async function openBox(index) {
 
     } else if (box.content === 'surpriz') {
         updates['surpriseBoxesOpened'] = (user.surpriseBoxesOpened || 0) + 1;
-        
-        // DİKKAT: Global değişken yerine doğrudan finalMultiplier'ı kullanıyoruz
         message = `Sürpriz Kutu buldunuz!`;
         
-        const now = firebase.database.ServerValue.TIMESTAMP;
-        db.ref('surprise_box_session').set({
+        const sessionRef = db.ref('surprise_box_session');
+        await sessionRef.set({
             active: true, user: currentUser, boxId: box.id,
-            multiplier: finalMultiplier, // Çarpanı buraya doğru şekilde kaydediyoruz
+            multiplier: finalMultiplier,
             cards: shuffleArray([...cardValues]),
-            selection: null, result: null, 
-            timestamp: now,
-            expirationTimestamp: now + 60000 
+            selection: null, result: null,
+            timestamp: firebase.database.ServerValue.TIMESTAMP
         });
+        const snap = await sessionRef.once('value');
+        const serverTimestamp = snap.val().timestamp;
+        await sessionRef.update({ expirationTimestamp: serverTimestamp + 60000 });
+
         openCardSelectionModal(currentUser);
 
     } else if (box.content === 'multiplier') {
@@ -5722,8 +5721,6 @@ function renderWheel() {
     wheelElement.style.background = `conic-gradient(${gradientParts.join(', ')})`;
 }
     
-// MEVCUT spinWheel FONKSİYONUNU BU BLOK İLE DEĞİŞTİRİN
-
 async function spinWheel() {
     if (isWheelSpinning) return;
     if (isAdmin) {
@@ -5823,7 +5820,6 @@ async function spinWheel() {
                 updates.multiplierRemainingUses = winningSegment.duration;
                 break;
             case 'surpriseBox':
-                 // *** DÜZELTİLEN BÖLÜM BAŞLANGICI ***
                  const sessionRef = db.ref('surprise_box_session');
                  await sessionRef.set({ 
                      active: true, user: currentUser, boxId: 'Çark', 
@@ -5834,7 +5830,6 @@ async function spinWheel() {
                  const snap = await sessionRef.once('value');
                  const serverTimestamp = snap.val().timestamp;
                  await sessionRef.update({ expirationTimestamp: serverTimestamp + 60000 });
-                 // *** DÜZELTİLEN BÖLÜM SONU ***
                  openCardSelectionModal(currentUser);
                  message = "Vay canına! Çarktan Sürpriz Kutu çıktı! Şimdi bir kart seç.";
                  break;
@@ -6885,8 +6880,6 @@ function getActivityIcon(type, details = {}) {
     }
 }
 
-// MEVCUT renderActivityFeed FONKSİYONUNU BU BLOK İLE DEĞİŞTİRİN
-
 function renderActivityFeed(activities) {
     const activityFeedList = document.getElementById('activityFeedList');
     activityFeedList.innerHTML = '';
@@ -6927,7 +6920,6 @@ function renderActivityFeed(activities) {
         const userHtml = `<b class="cursor-pointer hover:underline" onclick="openPublicUserDetailModal('${activity.username}')">${activity.username}</b>`;
 
         switch (activity.type) {
-            // *** DÜZENLENEN KISIM BAŞLANGICI ***
             case 'openBox':
                 let openBoxMultiplierText = '';
                 if (details.multiplier && details.multiplier > 1) {
@@ -6952,7 +6944,6 @@ function renderActivityFeed(activities) {
                 }
                 message = `${userHtml}, <b>${details.boxId}</b> numaralı kutudan <span class="text-cyan-400 font-bold">${details.itemName}</span> buldu${newItemMultiplierText}.`;
                 break;
-            // *** DÜZENLENEN KISIM SONU ***
             case 'surpriseBox':
                 const multiplierText = (details.multiplier || 1) > 1 ? ` (${details.multiplier}x çarpan ile)` : '';
                 const source = details.boxId === 'Çark' ? 'Şans Çarkı\'ndan' : `<b>${details.boxId}</b> numaralı kutudan`;
