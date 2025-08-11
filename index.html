@@ -6728,6 +6728,8 @@ function getActivityIcon(type, details = {}) {
     }
 }
 
+// MEVCUT renderActivityFeed FONKSİYONUNU KOMPLE SİLİP BUNU YAPIŞTIR
+
 function renderActivityFeed(activities) {
     const activityFeedList = document.getElementById('activityFeedList');
     activityFeedList.innerHTML = '';
@@ -6767,7 +6769,6 @@ function renderActivityFeed(activities) {
 
         const userHtml = `<b class="cursor-pointer hover:underline" onclick="openPublicUserDetailModal('${activity.username}')">${activity.username}</b>`;
         
-        // DÜZELTME: Tüm metinler daha detaylı hale getirildi.
         switch (activity.type) {
             case 'openBox':
                 const multiplierTextPoints = (details.multiplier || 1) > 1 ? ` (${details.multiplier}x çarpan ile)` : '';
@@ -6804,21 +6805,44 @@ function renderActivityFeed(activities) {
                     message = `${userHtml}, mağazadan <span class="text-red-500 font-bold">-${details.itemCost} puan</span> karşılığında <span class="text-cyan-400 font-bold">+${quantity} ADET ${itemName}</span> satın aldı.`;
                 }
                 break;
+            
+            // DÜZELTME: Bu 'case' bloğu tamamen güncellendi.
             case 'spinWheel':
                 const prizeType = details.type;
                 const prizeValue = details.value;
-                const prizeResult = details.result || 'bir ödül';
+                const prizeResult = details.result || 'bir ödül'; // Fallback
+                let prizeDisplayHtml = '';
 
                 if (prizeType === 'pas') {
                     message = `${userHtml}, Şans Çarkı'nı çevirdi ve <span class="text-gray-400 font-bold">Pas geldi</span>.`;
-                } else if (prizeType === 'points' && typeof prizeValue === 'number') {
-                    const prizeDisplayHtml = `<span class="text-green-400 font-bold">+${prizeValue} Puan</span>`;
+                } else if (prizeType === 'points') {
+                    prizeDisplayHtml = `<span class="text-green-400 font-bold">+${prizeValue} Puan</span>`;
                     message = `${userHtml}, Şans Çarkı'nı çevirdi ve ${prizeDisplayHtml} kazandı.`;
+                } else if (prizeType === 'boxRights') {
+                    prizeDisplayHtml = `<span class="text-cyan-400 font-bold">+${prizeValue} Kutu Hakkı</span>`;
+                    message = `${userHtml}, Şans Çarkı'nı çevirdi ve ${prizeDisplayHtml} kazandı.`;
+                } else if (prizeType === 'iflasShield') {
+                    prizeDisplayHtml = `<span class="text-cyan-400 font-bold">+${prizeValue} İflas Kalkanı</span>`;
+                    message = `${userHtml}, Şans Çarkı'nı çevirdi ve ${prizeDisplayHtml} kazandı.`;
+                } else if (prizeType === 'clickCatchTicket') {
+                    prizeDisplayHtml = `<span class="text-cyan-400 font-bold">+${prizeValue} Tıkla-Yakala Bileti</span>`;
+                    message = `${userHtml}, Şans Çarkı'nı çevirdi ve ${prizeDisplayHtml} kazandı.`;
+                } else if (prizeType === 'wheelTicket') {
+                    prizeDisplayHtml = `<span class="text-cyan-400 font-bold">+${prizeValue} Çark Bileti</span>`;
+                    message = `${userHtml}, Şans Çarkı'nı çevirdi ve ${prizeDisplayHtml} kazandı.`;
+                } else if (prizeType === 'tempMultiplier') {
+                    prizeDisplayHtml = `<span class="text-purple-400 font-bold">${prizeValue}x Çarpan</span>`;
+                    message = `${userHtml}, Şans Çarkı'nı çevirdi ve ${prizeDisplayHtml} kazandı.`;
+                } else if (prizeType === 'surpriseBox') {
+                    prizeDisplayHtml = `<span class="text-yellow-400 font-bold">Sürpriz Kutu</span>`;
+                    message = `${userHtml}, Şans Çarkı'nı çevirdi ve ${prizeDisplayHtml} kazandı!`;
                 } else {
-                    const prizeDisplayHtml = `<span class="text-cyan-400 font-bold">${prizeResult}</span>`;
+                    // Bu kısım artık sadece beklenmedik bir durum olursa çalışır
+                    prizeDisplayHtml = `<span class="text-white font-bold">${prizeResult}</span>`;
                     message = `${userHtml}, Şans Çarkı'nı çevirdi ve ${prizeDisplayHtml} kazandı.`;
                 }
                 break;
+
             case 'clickCatchSolo':
                 if (details.score >= 0) {
                     message = `${userHtml}, Tıkla-Yakala (Tekli) oyun oynadı ve <span class="text-green-400 font-bold">+${details.score} Puan</span> kazandı.`;
