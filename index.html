@@ -5445,7 +5445,7 @@ function listenForSurpriseBox() {
         const sessionData = snap.val();
 
         if (sessionData && sessionData.active && !sessionData.result) {
-            const sessionAge = Date.now() - sessionData.timestamp;
+            const sessionAge = Date.now() + serverTimeOffset - sessionData.timestamp; // Senkronize zaman kullan
             if (sessionAge > 70000) {
                 console.log("Zaman aşımına uğramış Sürpriz Kutu oturumu tespit edildi ve temizleniyor...");
                 sessionRef.remove();
@@ -5454,6 +5454,7 @@ function listenForSurpriseBox() {
         }
 
         if (sessionData && sessionData.active) {
+            
             if (sessionData.user === currentUser && !sessionData.result && cardSelectionModal.style.display !== 'flex') {
                 console.log("Mevcut Sürpriz Kutu oturumu algılandı, seçim ekranı yeniden açılıyor...");
                 openCardSelectionModal(currentUser);
@@ -5463,9 +5464,12 @@ function listenForSurpriseBox() {
                 updateSpectatorView(sessionData);
             }
 
-            if (sessionData.user !== currentUser && !sessionData.result && spectatorModal.style.display !== 'flex' && !isProcessingSurpriseResult) {
+            // *** DÜZELTİLEN KISIM BAŞLANGICI ***
+            // İzleyici modalını AÇMADAN ÖNCE, bitiş zamanının veritabanına eklendiğinden emin ol.
+            if (sessionData.user !== currentUser && !sessionData.result && sessionData.expirationTimestamp && spectatorModal.style.display !== 'flex' && !isProcessingSurpriseResult) {
                 openSpectatorModal(sessionData);
             }
+            // *** DÜZELTİLEN KISIM SONU ***
 
             if (sessionData.result && !sessionData.logged && !isProcessingSurpriseResult) {
                 isProcessingSurpriseResult = true; 
@@ -5500,10 +5504,8 @@ function listenForSurpriseBox() {
                             showGlobalSurpriseBoxNotification(finalSessionData);
                         }
                         
-                        // OYUN SIFIRLAMA VE OTURUM TEMİZLEME KISMI
                         setTimeout(() => {
                             closeGlobalSurpriseBoxModal(); 
-                            // EĞER SÜRPRİZ KUTU ÇARKTAN GELMEDİYSE OYUNU SIFIRLA
                             if (finalSessionData.boxId !== 'Çark') {
                                 resetGameBoard();
                             }
