@@ -3083,13 +3083,13 @@ async function openBox(index) {
 
     await db.ref('gameLock').set(true);
 
-    // ----- YENİ EKLENEN KISIM BAŞLANGICI -----
-    // "Açanlar Detay" listesi için istatistiği güvenli bir şekilde artırıyoruz.
+    // ----- "AÇANLAR DETAY" İÇİN EN ÖNEMLİ KISIM BURASI -----
+    // Bir oyuncu kutu açtığında, onun istatistiğini veritabanına kaydediyoruz.
     const statsRef = db.ref(`gameStats/boxesOpenedByUsers/${currentUser}`);
     await statsRef.transaction(currentValue => {
         return (currentValue || 0) + 1;
     });
-    // ----- YENİ EKLENEN KISIM SONU -----
+    // ----------------------------------------------------
 
     const box = boxes[index];
     let message = '';
