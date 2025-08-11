@@ -3014,7 +3014,7 @@ async function deleteUserAvatar(username, avatarId) {
       }); 
   }
 
-// MEVCUT openBox FONKSİYONUNU BU TEK VE TAM BLOK İLE DEĞİŞTİR
+// MEVCUT openBox FONKSİYONUNU BU BLOK İLE DEĞİŞTİRİN
 
 async function openBox(index) {
     if (isGameLocked) {
@@ -3127,8 +3127,6 @@ async function openBox(index) {
             boxUpdate.basePoints = box.value;
             boxUpdate.finalPoints = pointsGained;
             boxUpdate.multiplierUsed = finalMultiplier;
-
-            // *** BİLDİRİM VERİSİNE EKSİK BİLGİLER EKLENİYOR ***
             boxOpenInfo.basePoints = box.value;
             boxOpenInfo.finalPoints = pointsGained;
 
@@ -3148,12 +3146,16 @@ async function openBox(index) {
 
             boxUpdate.shieldUsed = shieldWasUsed;
             boxUpdate.lostPoints = shieldWasUsed ? 0 : lostPoints;
-            
-            // *** BİLDİRİM VERİSİNE EKSİK BİLGİLER EKLENİYOR ***
             boxOpenInfo.shieldUsed = shieldWasUsed;
             boxOpenInfo.lostPoints = shieldWasUsed ? 0 : lostPoints;
 
-            logActivity('iflas', currentUser, { shieldUsed: shieldWasUsed, lostPoints: shieldWasUsed ? 0 : lostPoints, boxId: box.id });
+            // *** DÜZENLENEN KISIM: Çarpan bilgisi log'a ekleniyor ***
+            logActivity('iflas', currentUser, { 
+                shieldUsed: shieldWasUsed, 
+                lostPoints: shieldWasUsed ? 0 : lostPoints, 
+                boxId: box.id,
+                multiplier: finalMultiplier 
+            });
         } 
         else if (box.content === 'surpriz') {
             const sessionRef = db.ref('surprise_box_session');
@@ -3176,8 +3178,6 @@ async function openBox(index) {
             boxUpdate.baseValue = box.value;
             boxUpdate.finalValue = itemsGained;
             boxUpdate.multiplierUsed = finalMultiplier;
-
-            // *** BİLDİRİM VERİSİNE EKSİK BİLGİLER EKLENİYOR ***
             boxOpenInfo.baseValue = box.value;
             boxOpenInfo.finalValue = itemsGained;
 
@@ -5413,6 +5413,8 @@ let spectatorViewingResult = false;
 
 // MEVCUT listenForSurpriseBox FONKSİYONUNU BU BLOK İLE DEĞİŞTİRİN
 
+// MEVCUT listenForSurpriseBox FONKSİYONUNU BU BLOK İLE DEĞİŞTİRİN
+
 function listenForSurpriseBox() {
     const sessionRef = db.ref('surprise_box_session');
     
@@ -5424,7 +5426,7 @@ function listenForSurpriseBox() {
         const sessionData = snap.val();
 
         if (sessionData && sessionData.active && !sessionData.result) {
-            const sessionAge = Date.now() + serverTimeOffset - sessionData.timestamp; // Senkronize zaman kullan
+            const sessionAge = Date.now() + serverTimeOffset - sessionData.timestamp;
             if (sessionAge > 70000) {
                 console.log("Zaman aşımına uğramış Sürpriz Kutu oturumu tespit edildi ve temizleniyor...");
                 sessionRef.remove();
@@ -5443,12 +5445,9 @@ function listenForSurpriseBox() {
                 updateSpectatorView(sessionData);
             }
 
-            // *** DÜZELTİLEN KISIM BAŞLANGICI ***
-            // İzleyici modalını AÇMADAN ÖNCE, bitiş zamanının veritabanına eklendiğinden emin ol.
             if (sessionData.user !== currentUser && !sessionData.result && sessionData.expirationTimestamp && spectatorModal.style.display !== 'flex' && !isProcessingSurpriseResult) {
                 openSpectatorModal(sessionData);
             }
-            // *** DÜZELTİLEN KISIM SONU ***
 
             if (sessionData.result && !sessionData.logged && !isProcessingSurpriseResult) {
                 isProcessingSurpriseResult = true; 
@@ -5483,10 +5482,15 @@ function listenForSurpriseBox() {
                             showGlobalSurpriseBoxNotification(finalSessionData);
                         }
                         
+                        // *** BURAYA TEST KODLARI EKLENDİ ***
                         setTimeout(() => {
+                            console.log("Sürpriz Kutu zamanlayıcısı çalıştı. Gelen ID:", finalSessionData.boxId); // TEST 1
                             closeGlobalSurpriseBoxModal(); 
                             if (finalSessionData.boxId !== 'Çark') {
+                                console.log("Koşul DOĞRU (ID 'Çark' değil). resetGameBoard fonksiyonu çağrılıyor..."); // TEST 2
                                 resetGameBoard();
+                            } else {
+                                console.log("Koşul YANLIŞ (ID 'Çark'). Oyun sıfırlanmayacak."); // TEST 3
                             }
                             sessionRef.remove();
                             isProcessingSurpriseResult = false;
@@ -5506,9 +5510,6 @@ function listenForSurpriseBox() {
     activeListeners.surpriseBox = { ref: sessionRef, event: 'value', callback };
     sessionRef.on('value', callback);
 }
-
-// MEVCUT openSpectatorModal FONKSİYONUNU BU BLOK İLE DEĞİŞTİRİN
-
 function openSpectatorModal(sessionData) {
     if (spectatorCountdownInterval) clearInterval(spectatorCountdownInterval);
 
@@ -6839,12 +6840,18 @@ function getActivityIcon(type, details = {}) {
             return '💰'; 
         case 'surpriseBox':
             return '🎉'; 
+        
+        // *** DÜZENLENEN KISIM: Çarpanla bomba bulma ikonu eklendi ***
         case 'iflas':
-            return details.shieldUsed ? '🛡️' : '💣';
+            if (details.shieldUsed) return '🛡️';
+            if (details.multiplier && details.multiplier > 1) return '❌';
+            return '💣';
+
         case 'multiplierFound':
             return '✖️';
-        case 'multiplierRefund': // YENİ EKLENDİ
-            return ' M';
+        case 'multiplierRefund':
+            return '✖️'; // M harfi ✖️ ile değiştirildi
+
         case 'newItemFound':
             if (details.itemType === 'wheelTicket') return '🎫';
             if (details.itemType === 'clickCatchTicket') return '🎟️';
@@ -6919,22 +6926,26 @@ function renderActivityFeed(activities) {
                 }
                 message = `${userHtml}, <b>${details.boxId}</b> numaralı kutudan <span class="text-green-400 font-bold">+${details.points} Puan</span> kazandı${openBoxMultiplierText}.`;
                 break;
+
+            // *** DÜZENLENEN KISIM BAŞLANGICI ***
             case 'iflas':
+                let iflasMultiplierText = '';
+                if (details.multiplier && details.multiplier > 1) {
+                    iflasMultiplierText = ` <span class="text-xs text-purple-400">(${details.multiplier}x Çarpan ile)</span>`;
+                }
                 if (details.shieldUsed) {
-                    message = `${userHtml}, <b>${details.boxId}</b> numaralı kutudan Bomba buldu ama kalkanı tarafından korundu.`;
+                    message = `${userHtml}, <b>${details.boxId}</b> numaralı kutudan Bomba buldu ama kalkanı tarafından korundu${iflasMultiplierText}.`;
                 } else {
-                    message = `${userHtml}, <b>${details.boxId}</b> numaralı kutudan Bomba buldu ve <span class="text-red-500 font-bold">-${details.lostPoints} puan</span> kaybetti.`;
+                    message = `${userHtml}, <b>${details.boxId}</b> numaralı kutudan Bomba buldu ve <span class="text-red-500 font-bold">-${details.lostPoints} puan</span> kaybetti${iflasMultiplierText}.`;
                 }
                 break;
-            
-            // *** DÜZELTİLEN BÖLÜM BAŞLANGICI ***
             case 'multiplierFound':
                  message = `${userHtml}, <b>${details.boxId}</b> numaralı kutudan <span class="text-purple-400 font-bold">${details.value}x Çarpan</span> buldu.`;
                 break;
             case 'multiplierRefund':
                 message = `${userHtml}, <b>${details.boxId}</b> numaralı kutudan <span class="text-purple-400 font-bold">${details.newMultiplier}x Çarpan</span> buldu. Mevcut ${details.refundedMultiplier}x mağaza çarpanı iade edildi.`;
                 break;
-            // *** DÜZELTİLEN BÖLÜM SONU ***
+            // *** DÜZENLENEN KISIM SONU ***
 
             case 'newItemFound':
                 let newItemMultiplierText = '';
@@ -7030,7 +7041,6 @@ function renderActivityFeed(activities) {
         activityFeedList.innerHTML += activityHtml;
     });
 }
-
 // YUKARIDAKİ FONKSİYONU BULUP BUNUNLA DEĞİŞTİR
 function initActivityFeed() {
     const activityBellContainer = document.getElementById('activityBellContainer');
