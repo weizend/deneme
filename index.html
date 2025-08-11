@@ -5427,12 +5427,9 @@ function listenForSurpriseBox() {
 
         if (sessionData && sessionData.active) {
             
-            // *** İSTEĞİNİZE GÖRE EKLENEN BÖLÜM BAŞLANGICI ***
-            // Eğer bir kart seçilmişse ve izleyici ekranı açıksa, EKRANI GÜNCELLE
             if (sessionData.selection && sessionData.result && spectatorModal.style.display === 'flex') {
                 updateSpectatorView(sessionData);
             }
-            // *** EKLENEN BÖLÜM SONU ***
 
             if (sessionData.user !== currentUser && !sessionData.result && spectatorModal.style.display !== 'flex' && !isProcessingSurpriseResult) {
                 openSpectatorModal(sessionData);
@@ -5467,14 +5464,11 @@ function listenForSurpriseBox() {
                                 message += " Oyun 4 saniye içinde sıfırlanacak.";
                             }
                             displayMessage(message);
-                        } else {
-                            // Güncelleme zaten yapıldığı için global bildirim burada çağrılabilir.
-                            // Ancak anlık güncelleme daha iyi olduğu için bu fonksiyonun rolü azaldı.
-                            // showGlobalSurpriseBoxNotification(finalSessionData);
                         }
                         
+                        // *** İSTEĞİNİZE GÖRE DÜZENLENEN BÖLÜM BAŞLANGICI ***
                         setTimeout(() => {
-                            closeSpectatorModal();
+                            // closeSpectatorModal(); // BU SATIR SİLİNDİ. Artık izleyici kendi kapatacak.
                             closeGlobalSurpriseBoxModal(); 
                             if (finalSessionData.boxId !== 'Çark') {
                                 resetGameBoard();
@@ -5482,6 +5476,8 @@ function listenForSurpriseBox() {
                             sessionRef.remove();
                             isProcessingSurpriseResult = false;
                         }, 4000);
+                        // *** DÜZENLENEN BÖLÜM SONU ***
+
                     } else {
                         isProcessingSurpriseResult = false;
                     }
@@ -5545,7 +5541,7 @@ function openSpectatorModal(sessionData) {
     spectatorModal.style.display = 'flex';
 }
 
-// BU FONKSİYONU YENİ OLARAK EKLEYİN
+// MEVCUT updateSpectatorView FONKSİYONUNU BU BLOK İLE DEĞİŞTİRİN
 
 function updateSpectatorView(sessionData) {
     // Kart seçildiği anda sayacı durdur ve metni güncelle
@@ -5567,14 +5563,11 @@ function updateSpectatorView(sessionData) {
         const cardEl = allCards[index];
         if (cardEl) {
             const cardFront = cardEl.querySelector('.card-front');
-            // Çarpanı da hesaba katarak gerçek puanı göster
             const realPoints = cardValue * (sessionData.multiplier || 1);
             cardFront.textContent = `+${realPoints}`;
 
-            // Kısa bir gecikmeyle kartları çevir (animasyonun düzgün çalışması için)
             setTimeout(() => {
                 cardEl.classList.add('opened');
-                // Oyuncunun seçtiği kartı parlama efektiyle vurgula
                 if (index == selectedCardIndex) {
                     cardEl.classList.add('glowing-border');
                 }
@@ -5582,11 +5575,21 @@ function updateSpectatorView(sessionData) {
         }
     });
 
-    // En alttaki sonuç metnini güncelle
-    const resultTextEl = document.getElementById('spectatorResult');
-    if (resultTextEl) {
-         resultTextEl.textContent = `${sessionData.user}, ${pointsGained} puan kazandı!`;
+    // *** İSTEĞİNİZE GÖRE DÜZENLENEN BÖLÜM BAŞLANGICI ***
+    // Sonuç ve buton alanını bul
+    const resultContainer = document.getElementById('spectatorResultContainer');
+    if (resultContainer) {
+         // İçeriği, hem sonucu hem de butonu gösterecek şekilde güncelle
+         resultContainer.innerHTML = `
+            <p id="spectatorResult" class="text-2xl text-green-400 font-bold h-8">
+                ${sessionData.user}, ${pointsGained} puan kazandı!
+            </p>
+            <button onclick="closeSpectatorModal()" class="mt-4 py-3 px-8 bg-red-700 hover:bg-red-600 text-white font-bold rounded-lg transition-colors">
+                Oyuna Devam Et
+            </button>
+        `;
     }
+    // *** DÜZENLENEN BÖLÜM SONU ***
 }
 
 // MEVCUT showGlobalSurpriseBoxNotification FONKSİYONUNU BU BLOK İLE DEĞİŞTİRİN
