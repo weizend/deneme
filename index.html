@@ -5823,15 +5823,18 @@ async function spinWheel() {
                 updates.multiplierRemainingUses = winningSegment.duration;
                 break;
             case 'surpriseBox':
-                 // *** DÜZENLENEN KISIM: expirationTimestamp EKLENDİ ***
-                 const now = firebase.database.ServerValue.TIMESTAMP;
-                 db.ref('surprise_box_session').set({ 
+                 // *** DÜZELTİLEN BÖLÜM BAŞLANGICI ***
+                 const sessionRef = db.ref('surprise_box_session');
+                 await sessionRef.set({ 
                      active: true, user: currentUser, boxId: 'Çark', 
                      multiplier: 1, cards: shuffleArray([...cardValues]), 
                      selection: null, result: null, 
-                     timestamp: now,
-                     expirationTimestamp: now + 60000 // Sunucu saatine 60 saniye ekle
+                     timestamp: firebase.database.ServerValue.TIMESTAMP
                  });
+                 const snap = await sessionRef.once('value');
+                 const serverTimestamp = snap.val().timestamp;
+                 await sessionRef.update({ expirationTimestamp: serverTimestamp + 60000 });
+                 // *** DÜZELTİLEN BÖLÜM SONU ***
                  openCardSelectionModal(currentUser);
                  message = "Vay canına! Çarktan Sürpriz Kutu çıktı! Şimdi bir kart seç.";
                  break;
