@@ -3014,6 +3014,8 @@ async function deleteUserAvatar(username, avatarId) {
       }); 
   }
 
+// MEVCUT openBox FONKSİYONUNU BU BLOK İLE DEĞİŞTİRİN
+
 async function openBox(index) {
     if (isGameLocked) {
         displayMessage("Şu anda başka bir kullanıcı kutu açıyor veya oyun beklemede. Lütfen 5 saniye bekleyin.");
@@ -3029,198 +3031,143 @@ async function openBox(index) {
     let userSnap = await userRef.once('value');
     let user = userSnap.val();
 
+    if (!user) { displayMessage("Kullanıcı verisi bulunamadı."); return; }
+    
     const isCurrentlyBlocked = user.blocked && user.blockedUntil && Date.now() < user.blockedUntil;
     if (isCurrentlyBlocked) {
         displayBlockedMessage(user.blockedUntil, currentUser);
         return;
     }
-    if (!user || (user.kutuHakki || 0) < BOX_RIGHTS_COST_PER_BOX) {
-        displayMessage(user ? "Yetersiz kutu hakkı." : "Kullanıcı bulunamadı.");
+    if ((user.kutuHakki || 0) < BOX_RIGHTS_COST_PER_BOX) {
+        displayMessage("Yetersiz kutu hakkı.");
         return;
     }
 
     const initialConfirm = await customConfirm(`<b>${boxes[index].id}</b> numaralı kutuyu açmak istediğinize emin misiniz?`);
     if (!initialConfirm) return;
 
+    // Yarış durumlarını engellemek için son kontroller
     const boxRef = db.ref('boxes/' + index);
-
     let latestBoxSnap = await boxRef.once('value');
-    let latestBox = latestBoxSnap.val();
-    if (latestBox.opened) {
-        displayMessage(`Seçtiğiniz kutu <b>${latestBox.opener}</b> tarafından açıldı. Geç kaldınız!`);
+    if (latestBoxSnap.val().opened) {
+        displayMessage(`Seçtiğiniz kutu <b>${latestBoxSnap.val().opener}</b> tarafından açıldı. Geç kaldınız!`);
         return;
     }
-    
     userSnap = await userRef.once('value');
     user = userSnap.val();
+    
+    // --- YENİ VE DAHA TEMİZ ÇARPAN MANTIĞI ---
     let finalMultiplier = 1;
-    let multiplierUsedThisTurn = false;
-    let updates = {};
-
+    let useMultiplier = false;
+    const originalMultiplierSource = user.multiplierSource || 'none';
+    
     if (user.multiplierSource === 'box') {
         finalMultiplier = user.activeMultiplier;
-        multiplierUsedThisTurn = true;
-        updates['activeMultiplier'] = 1;
-        updates['multiplierSource'] = 'none';
-    } else if (user.multiplierSource === 'store' && user.multiplierRemainingUses > 0) {
-        const confirmedMultiplier = await customConfirm(`Mevcut <b>${user.activeMultiplier}x</b> çarpanınızı kullanmak ister misiniz?`);
-        
-        latestBoxSnap = await boxRef.once('value');
-        latestBox = latestBoxSnap.val();
-        if (latestBox.opened) {
-            displayMessage(`Siz çarpanı onaylayana kadar bu kutu <b>${latestBox.opener}</b> tarafından açıldı. Haklarınız ve çarpanınız kullanılmadı.`);
-            return;
-        }
-        
-        if (confirmedMultiplier) {
+        useMultiplier = true;
+    } else if (user.multiplierSource === 'store' && (user.multiplierRemainingUses || 0) > 0) {
+        const confirmed = await customConfirm(`Mevcut <b>${user.activeMultiplier}x</b> çarpanınızı kullanmak ister misiniz?`);
+        if (confirmed) {
+            // Tekrar kontrol
+            latestBoxSnap = await boxRef.once('value');
+            if (latestBoxSnap.val().opened) {
+                displayMessage(`Siz çarpanı onaylayana kadar bu kutu <b>${latestBoxSnap.val().opener}</b> tarafından açıldı. Haklarınız ve çarpanınız kullanılmadı.`);
+                return;
+            }
             finalMultiplier = user.activeMultiplier;
-            multiplierUsedThisTurn = true;
-            updates['multiplierRemainingUses'] = user.multiplierRemainingUses - 1;
+            useMultiplier = true;
         }
     }
+    // --- YENİ ÇARPAN MANTIĞI SONU ---
 
     await db.ref('gameLock').set(true);
 
+    const box = boxes[index];
+    let message = '';
+    const updates = {};
     updates['kutuHakki'] = (user.kutuHakki || 0) - BOX_RIGHTS_COST_PER_BOX;
     updates['boxesOpenedCount'] = (user.boxesOpenedCount || 0) + 1;
     
-    const gameStatsRef = db.ref(`gameStats/boxesOpenedByUsers/${currentUser}`);
-    gameStatsRef.transaction(currentCount => (currentCount || 0) + 1);
-
-    let message = '';
-    const box = boxes[index];
-
     const boxUpdate = { opened: true, opener: currentUser, id: box.id, content: box.content, value: box.value };
-    const boxOpenInfo = { boxId: box.id, opener: currentUser, content: box.content, value: box.value, timestamp: firebase.database.ServerValue.TIMESTAMP };
-
-    if (finalMultiplier > 1) {
-        boxUpdate.multiplierApplied = finalMultiplier;
-    }
-
-    if (box.content === 'iflas') {
-        updates['iflasCount'] = (user.iflasCount || 0) + 1;
-        let shieldWasUsed = false;
-        const lostPoints = user.balance || 0;
-
-        if ((user.iflasShieldUses || 0) > 0) {
-            updates['iflasShieldUses'] = (user.iflasShieldUses || 0) - 1;
-            updates['iflasShieldUsedCount'] = (user.iflasShieldUsedCount || 0) + 1;
-            message = `İflas! 🛡️ Kalkanın zırh gibi durdu ve seni korudu! Kalan kalkan: ${updates['iflasShieldUses']}.`;
-            shieldWasUsed = true;
-        } else {
-            updates['balance'] = 0;
-            message = `İflas! Tüm puanların (${lostPoints} puan) silindi.`;
-        }
-        
-        boxUpdate.shieldUsed = shieldWasUsed;
-        boxUpdate.lostPoints = shieldWasUsed ? 0 : lostPoints;
-        boxOpenInfo.shieldUsed = shieldWasUsed;
-        boxOpenInfo.lostPoints = shieldWasUsed ? 0 : lostPoints;
-
-        logActivity('iflas', currentUser, { 
-            shieldUsed: shieldWasUsed, 
-            lostPoints: shieldWasUsed ? 0 : lostPoints,
-            boxId: box.id
-        });
-
-    } else if (box.content === 'points') {
-        const pointsGained = box.value * finalMultiplier;
-        updates['balance'] = (user.balance || 0) + pointsGained;
-        if (updates['balance'] > (user.highestBalanceEver || 0)) {
-            updates['highestBalanceEver'] = updates['balance'];
-        }
-        message = `+${pointsGained} puan kazandınız!`;
-        
-        boxUpdate.basePoints = box.value;
-        boxUpdate.finalPoints = pointsGained;
-        boxUpdate.multiplierUsed = finalMultiplier;
-        boxOpenInfo.basePoints = box.value;
-        boxOpenInfo.finalPoints = pointsGained;
-        boxOpenInfo.multiplierUsed = finalMultiplier;
-
-        logActivity('openBox', currentUser, { 
-            boxId: box.id, 
-            points: pointsGained,
-            multiplier: finalMultiplier
-        });
-
-    } else if (box.content === 'surpriz') {
-        updates['surpriseBoxesOpened'] = (user.surpriseBoxesOpened || 0) + 1;
-        message = `Sürpriz Kutu buldunuz!`;
-        
-        const sessionRef = db.ref('surprise_box_session');
-        await sessionRef.set({
-            active: true, user: currentUser, boxId: box.id,
-            multiplier: finalMultiplier,
-            cards: shuffleArray([...cardValues]),
-            selection: null, result: null,
-            timestamp: firebase.database.ServerValue.TIMESTAMP
-        });
-        const snap = await sessionRef.once('value');
-        const serverTimestamp = snap.val().timestamp;
-        await sessionRef.update({ expirationTimestamp: serverTimestamp + 60000 });
-
-        openCardSelectionModal(currentUser);
-
-    } else if (box.content === 'multiplier') {
+    if (finalMultiplier > 1) boxUpdate.multiplierApplied = finalMultiplier;
+    
+    // KUTU İÇERİĞİ İŞLEME
+    if (box.content === 'multiplier') {
         updates['multiplierFoundCount'] = (user.multiplierFoundCount || 0) + 1;
         
-        if (multiplierUsedThisTurn && user.multiplierSource === 'store') {
-            updates['multiplierRemainingUses'] = user.multiplierRemainingUses;
-            message = `VAY CANINA! 🤩<br>Çarpanla açtığın kutudan <b>yeni bir ${box.value}x Çarpan</b> buldun! <br>Mağazadan aldığın çarpan hakkın iade edildi. Yeni çarpanın bir sonraki kutu açılışında otomatik olarak kullanılacak.`;
+        if (useMultiplier && originalMultiplierSource === 'store') {
+            // *** İADE SENARYOSU BURADA İŞLENİYOR ***
+            // Kullanım hakkı iade ediliyor, yani azaltmıyoruz. Mevcut mağaza çarpanı korunuyor.
+            message = `VAY CANINA! 🤩<br>Mağaza çarpanıyla açtığın kutudan <b>yeni bir ${box.value}x Çarpan</b> daha buldun! <br>Bu tur harcadığın kullanım hakkın iade edildi ve mağaza çarpanını korudun.`;
             logActivity('multiplierRefund', currentUser, { boxId: box.id, newMultiplier: box.value, refundedMultiplier: user.activeMultiplier });
         } else {
+            // Normal çarpan bulma senaryosu
             message = `Tebrikler! <b>${box.value}x Çarpan</b> buldun! Bu çarpan, bir sonraki kutu açılışında otomatik olarak kullanılacak.`;
+            updates['activeMultiplier'] = box.value;
+            updates['multiplierSource'] = 'box';
             logActivity('multiplierFound', currentUser, { boxId: box.id, value: box.value });
         }
-        
-        updates['activeMultiplier'] = box.value;
-        updates['multiplierSource'] = 'box';
-        boxOpenInfo.value = box.value;
-        
-    } else if (box.content === 'wheelTicket' || box.content === 'clickCatchTicket' || box.content === 'iflasShield') {
-        const itemsGained = box.value * finalMultiplier;
-        const itemNames = {
-            wheelTicket: 'Şans Çarkı Bileti',
-            clickCatchTicket: 'Tıkla-Yakala Bileti',
-            iflasShield: 'İflas Kalkanı'
-        };
-        const dbKeys = {
-            wheelTicket: 'carkBileti',
-            clickCatchTicket: 'clickCatchTickets',
-            iflasShield: 'iflasShieldUses'
-        };
+    } 
+    else {
+        // Puan, eşya, bomba gibi diğer tüm durumlar
+        if (useMultiplier) {
+            if (originalMultiplierSource === 'box') {
+                updates['activeMultiplier'] = 1;
+                updates['multiplierSource'] = 'none';
+            } else if (originalMultiplierSource === 'store') {
+                updates['multiplierRemainingUses'] = (user.multiplierRemainingUses || 0) - 1;
+                if (updates['multiplierRemainingUses'] <= 0) {
+                    updates['multiplierSource'] = 'none';
+                    updates['activeStoreMultiplierItemId'] = null;
+                }
+            }
+        }
 
-        updates[dbKeys[box.content]] = (user[dbKeys[box.content]] || 0) + itemsGained;
-        
-        message = finalMultiplier > 1 
-            ? `Çarpan Etkisi! Kutudan <b>+${itemsGained} ${itemNames[box.content]}</b> kazandın! <br><span class='text-sm text-gray-400'>(${box.value} Adet x ${finalMultiplier} Çarpan)</span>`
-            : `Tebrikler! Kutudan <b>+${itemsGained} ${itemNames[box.content]}</b> kazandın!`;
-        
-        boxUpdate.baseValue = box.value;
-        boxUpdate.finalValue = itemsGained;
-        boxOpenInfo.baseValue = box.value;
-        boxOpenInfo.finalValue = itemsGained;
-        boxOpenInfo.multiplierUsed = finalMultiplier;
-
-        logActivity('newItemFound', currentUser, { 
-            itemName: `+${itemsGained} ${itemNames[box.content]}`,
-            itemType: box.content, 
-            boxId: box.id, 
-            multiplier: finalMultiplier 
-        });
-    }
-
-    if (user.multiplierSource === 'store' && updates['multiplierRemainingUses'] !== undefined && updates['multiplierRemainingUses'] <= 0) {
-        updates['multiplierSource'] = 'none';
-        updates['activeStoreMultiplierItemId'] = null;
+        if (box.content === 'points') {
+            const pointsGained = box.value * finalMultiplier;
+            updates['balance'] = (user.balance || 0) + pointsGained;
+            if (updates['balance'] > (user.highestBalanceEver || 0)) updates['highestBalanceEver'] = updates['balance'];
+            message = `+${pointsGained} puan kazandınız!`;
+            logActivity('openBox', currentUser, { boxId: box.id, points: pointsGained, multiplier: finalMultiplier });
+        } 
+        else if (box.content === 'iflas') {
+            let shieldWasUsed = false;
+            const lostPoints = user.balance || 0;
+            if ((user.iflasShieldUses || 0) > 0) {
+                updates['iflasShieldUses'] = (user.iflasShieldUses || 0) - 1;
+                shieldWasUsed = true;
+                message = `İflas! 🛡️ Kalkanın seni korudu!`;
+            } else {
+                updates['balance'] = 0;
+                message = `İflas! Tüm puanların (${lostPoints} puan) silindi.`;
+            }
+            logActivity('iflas', currentUser, { shieldUsed: shieldWasUsed, lostPoints: shieldWasUsed ? 0 : lostPoints, boxId: box.id });
+        } 
+        else if (box.content === 'surpriz') {
+            const sessionRef = db.ref('surprise_box_session');
+            await sessionRef.set({
+                active: true, user: currentUser, boxId: box.id, multiplier: finalMultiplier,
+                cards: shuffleArray([...cardValues]), selection: null, result: null,
+                timestamp: firebase.database.ServerValue.TIMESTAMP
+            });
+            const snap = await sessionRef.once('value');
+            await sessionRef.update({ expirationTimestamp: snap.val().timestamp + 60000 });
+            openCardSelectionModal(currentUser);
+        }
+        else { // Diğer tüm eşyalar (Bilet, Kalkan vb.)
+            const itemsGained = box.value * finalMultiplier;
+            const itemNames = { wheelTicket: 'Şans Çarkı Bileti', clickCatchTicket: 'Tıkla-Yakala Bileti', iflasShield: 'İflas Kalkanı' };
+            const dbKeys = { wheelTicket: 'carkBileti', clickCatchTicket: 'clickCatchTickets', iflasShield: 'iflasShieldUses' };
+            updates[dbKeys[box.content]] = (user[dbKeys[box.content]] || 0) + itemsGained;
+            message = `Kutudan <b>+${itemsGained} ${itemNames[box.content]}</b> kazandın!`;
+            logActivity('newItemFound', currentUser, { itemName: `+${itemsGained} ${itemNames[box.content]}`, itemType: box.content, boxId: box.id, multiplier: finalMultiplier });
+        }
     }
 
     await userRef.update(updates);
     await boxRef.update(boxUpdate);
 
     if (box.content !== 'surpriz') {
-        await db.ref('lastOpenedBox').set(boxOpenInfo);
+        await db.ref('lastOpenedBox').set({ boxId: box.id, opener: currentUser, content: box.content, value: box.value, timestamp: firebase.database.ServerValue.TIMESTAMP });
         displayMessage(message);
     }
 }
