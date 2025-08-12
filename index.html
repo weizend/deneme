@@ -7385,29 +7385,31 @@ function renderActivityFeed(activities) {
 function initActivityFeed() {
     const activityBellContainer = document.getElementById('activityBellContainer');
     const activityCounter = document.getElementById('activityCounter');
-    const activityFeedPanel = document.getElementById('activityFeedPanel');
     const activityFeedList = document.getElementById('activityFeedList');
 
     activityBellContainer.classList.remove('hidden');
 
     const userFeedStatusRef = db.ref(`users/${currentUser}/lastCheckedFeedTimestamp`);
-    //... fonksiyonun devamı
     const ref = db.ref('activityFeed').orderByChild('timestamp');
 
-    const callback = async (snapshot) => {
-        const feedData = snapshot.val();
-        
-        if (!feedData) {
-            renderActivityFeed([]); 
-            activityCounter.classList.add('hidden'); 
-            return;
-        }
+    // Önceki dinleyiciyi temizle
+    if (activeListeners.activityFeed && activeListeners.activityFeed.ref) {
+        activeListeners.activityFeed.ref.off();
+    }
+    
+    // Dinleyiciyi kaydet
+    activeListeners.activityFeed = { ref: ref };
 
+    let initialLoadComplete = false;
+
+    // Sadece ilk başta son 50 eylemi yükle
+    ref.limitToLast(50).once('value', async (snapshot) => {
+        const feedData = snapshot.val() || {};
+        
         const userStatusSnap = await userFeedStatusRef.once('value');
         const lastChecked = userStatusSnap.val() || 0;
-        
         let unreadCount = 0;
-        
+
         const sortedActivities = Object.keys(feedData).map(key => {
             return { id: key, ...feedData[key] };
         }).sort((a, b) => b.timestamp - a.timestamp);
@@ -7417,19 +7419,22 @@ function initActivityFeed() {
                 unreadCount++;
             }
         });
-
-        if (unreadCount > 0) {
-            activityCounter.textContent = unreadCount > 9 ? '9+' : unreadCount;
-            activityCounter.classList.remove('hidden');
-        } else {
-            activityCounter.classList.add('hidden');
-        }
         
-        renderActivityFeed(sortedActivities);
-    };
+        updateUnreadCounter(unreadCount);
+        renderActivityFeed(sortedActivities); // Mevcut eylemleri ekrana çiz
+        initialLoadComplete = true;
 
-    activeListeners.activityFeed = { ref, event: 'value', callback };
-    ref.on('value', callback);
+        // Sadece yeni eylemleri dinlemeye başla
+        ref.startAt(Date.now()).on('child_added', (childSnapshot) => {
+            if (!initialLoadComplete) return;
+            
+            const newActivity = { id: childSnapshot.key, ...childSnapshot.val() };
+            addActivityToTop(newActivity); // Yeni eylemi listenin başına ekle
+            
+            const currentCount = parseInt(activityCounter.textContent) || 0;
+            updateUnreadCounter(currentCount + 1);
+        });
+    });
 }
 
 
@@ -8280,8 +8285,165 @@ function closeWheelLegendModal() {
           usesInput.classList.add('hidden');
       }
   });
-  // YENİ EKLENECEK KOD SONU
+
+    function updateUnreadCounter(count) {
+    const activityCounter = document.getElementById('activityCounter');
+    if (count > 0) {
+        activityCounter.textContent = count > 9 ? '9+' : count;
+        activityCounter.classList.remove('hidden');
+    } else {
+        activityCounter.classList.add('hidden');
+    }
+}
+
+    // YENİ YARDIMCI FONKSİYON: Sadece yeni gelen eylemi listenin başına ekler
+function addActivityToTop(activity) {
+    const activityFeedList = document.getElementById('activityFeedList');
+    const placeholder = activityFeedList.querySelector('p');
+    if (placeholder) placeholder.remove();
+
+    const newElement = document.createElement('div');
+    // renderActivityFeed fonksiyonundan kopyalanan render mantığı
+    const details = activity.details || {};
+    let iconContent = getActivityIcon(activity.type, details);
+    let message = '';
+    const timeAgo = formatRelativeTime(activity.timestamp);
+    const userHtml = `<b class="cursor-pointer hover:underline" onclick="openPublicUserDetailModal('${activity.username}')">${activity.username}</b>`;
     
+    // Mesaj oluşturma mantığı (renderActivityFeed'den alınabilir veya basitleştirilebilir)
+    message = `${userHtml} yeni bir eylem gerçekleştirdi.`; // Basit bir mesaj
+    
+    // (Detaylı mesajlar için renderActivityFeed içindeki switch-case yapısı buraya kopyalanabilir)
+    
+     newElement.innerHTML = `
+        <div class="flex items-start gap-4 p-3 mb-2 bg-gray-900/50 rounded-lg border-l-2 border-yellow-500 animate-pulse">
+            <div class="text-2xl mt-1">${iconContent}</div>
+            <div class="flex-1">
+                <p class="text-white text-sm">${getActivityMessage(activity)}</p>
+                <div class="flex justify-between items-center mt-1">
+                    <span class="text-xs text-gray-500">${timeAgo}</span>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    const adminClearButton = activityFeedList.querySelector('.p-1.mb-2.text-center');
+    if (adminClearButton) {
+        adminClearButton.after(newElement.firstChild);
+    } else {
+        activityFeedList.prepend(newElement.firstChild);
+    }
+    
+    setTimeout(() => newElement.querySelector('.animate-pulse')?.classList.remove('animate-pulse'), 1000);
+}
+
+    // YENİ YARDIMCI FONKSİYON: Aktivite mesajını oluşturur (renderActivityFeed'den taşındı)
+function getActivityMessage(activity) {
+    const details = activity.details || {};
+    const userHtml = `<b class="cursor-pointer hover:underline" onclick="openPublicUserDetailModal('${activity.username}')">${activity.username}</b>`;
+    let message = `${userHtml} bir eylem gerçekleştirdi.`; // Varsayılan
+
+    switch (activity.type) {
+         case 'openBox':
+            let openBoxMultiplierText = '';
+            if (details.multiplier && details.multiplier > 1) {
+                openBoxMultiplierText = ` <span class="text-xs text-purple-400">(${details.multiplier}x Çarpan ile)</span>`;
+            }
+            message = `${userHtml}, <b>${details.boxId}</b> numaralı kutudan <span class="text-green-400 font-bold">+${details.points} Puan</span> kazandı${openBoxMultiplierText}.`;
+            break;
+        case 'iflas':
+            let iflasMultiplierText = '';
+            if (details.multiplier && details.multiplier > 1) {
+                iflasMultiplierText = ` <span class="text-xs text-purple-400">(${details.multiplier}x Çarpan ile)</span>`;
+            }
+            if (details.shieldUsed) {
+                message = `${userHtml}, <b>${details.boxId}</b> numaralı kutudan Bomba buldu ama kalkanı tarafından korundu${iflasMultiplierText}.`;
+            } else {
+                message = `${userHtml}, <b>${details.boxId}</b> numaralı kutudan Bomba buldu ve <span class="text-red-500 font-bold">-${details.lostPoints} puan</span> kaybetti${iflasMultiplierText}.`;
+            }
+            break;
+        case 'multiplierFound':
+             message = `${userHtml}, <b>${details.boxId}</b> numaralı kutudan <span class="text-purple-400 font-bold">${details.value}x Çarpan</span> buldu.`;
+            break;
+        case 'multiplierRefund':
+            message = `${userHtml}, <b>${details.boxId}</b> numaralı kutudan <span class="text-purple-400 font-bold">${details.newMultiplier}x Çarpan</span> buldu. Mevcut ${details.refundedMultiplier}x mağaza çarpanı iade edildi.`;
+            break;
+        case 'newItemFound':
+            let newItemMultiplierText = '';
+            if (details.multiplier && details.multiplier > 1) {
+                newItemMultiplierText = ` <span class="text-xs text-purple-400">(${details.multiplier}x Çarpan ile)</span>`;
+            }
+            message = `${userHtml}, <b>${details.boxId}</b> numaralı kutudan <span class="text-cyan-400 font-bold">${details.itemName}</span> buldu${newItemMultiplierText}.`;
+            break;
+        case 'surpriseBox':
+            const multiplierText = (details.multiplier || 1) > 1 ? ` (${details.multiplier}x çarpan ile)` : '';
+            const source = details.boxId === 'Çark' ? 'Şans Çarkı\'ndan' : `<b>${details.boxId}</b> numaralı kutudan`;
+            message = `${userHtml}, ${source} Sürpriz Kutu buldu ve <span class="text-green-400 font-bold">+${details.points} Puan</span> kazandı${multiplierText}!`;
+            break;
+        case 'buyItem':
+            if (details.itemType === 'tempMultiplier') {
+                const duration = details.itemDuration || 1;
+                message = `${userHtml}, mağazadan <span class="text-red-500 font-bold">-${details.itemCost} puan</span> karşılığında <span class="text-cyan-400 font-bold">${duration} ADET ${details.itemValue}x Çarpan</span> satın aldı.`;
+            } else {
+                const quantity = details.itemValue || 1;
+                const itemName = details.itemName || 'bir ürün';
+                message = `${userHtml}, mağazadan <span class="text-red-500 font-bold">-${details.itemCost} puan</span> karşılığında <span class="text-cyan-400 font-bold">+${quantity} ADET ${itemName}</span> satın aldı.`;
+            }
+            break;
+        case 'spinWheel':
+            let prizeText = ''; 
+            const prizeType = details.type;
+            const prizeValue = details.value;
+            switch(prizeType) {
+                case 'points': prizeText = `+${prizeValue} Puan`; break;
+                case 'boxRights': prizeText = `+${prizeValue} Kutu Hakkı`; break;
+                case 'iflasShield': prizeText = `+${prizeValue} İflas Kalkanı`; break;
+                case 'tempMultiplier': prizeText = `${prizeValue}x Çarpan`; break;
+                case 'surpriseBox': prizeText = `Sürpriz Kutu`; break;
+                case 'clickCatchTicket': prizeText = `+${prizeValue} Tıkla-Yakala Bileti`; break;
+                case 'wheelTicket': prizeText = `+${prizeValue} Çark Bileti`; break;
+                case 'pas': prizeText = `Pas`; break;
+                default: prizeText = details.result || 'bir ödül'; break;
+            }
+            if (prizeType === 'pas') {
+                message = `${userHtml}, Şans Çarkı'nı çevirdi ve <span class="text-gray-400 font-bold">Pas geldi</span>.`;
+            } else {
+                const prizeDisplayHtml = `<span class="text-cyan-400 font-bold">${prizeText}</span>`;
+                message = `${userHtml}, Şans Çarkı'nı çevirerek ${prizeDisplayHtml} kazandı.`;
+            }
+            break;
+        case 'clickCatchSolo':
+            if (details.score >= 0) {
+                message = `${userHtml}, Tıkla-Yakala (Tekli) oyun oynadı ve <span class="text-green-400 font-bold">+${details.score} Puan</span> kazandı.`;
+            } else {
+                message = `${userHtml}, Tıkla-Yakala (Tekli) oyununda <span class="text-red-500 font-bold">${details.score} Puan</span> kaybetti.`;
+            }
+            if(details.specialItems) {
+                message += ` Ayrıca <span class="text-cyan-400 font-bold">${details.specialItems}</span> elde etti.`
+            }
+            break;
+        case 'clickCatchLobby':
+            message = `${userHtml}, Tıkla-Yakala (Lobi) oyununda birinci oldu ve <span class="text-green-400 font-bold">+${details.prize} Puan</span> kazandı.`;
+            break;
+        case 'dailyReward':
+            if (details.rewardType === 'tempMultiplier') {
+                message = `${userHtml}, günlük ödül olarak <span class="text-cyan-400 font-bold">${details.rewardUses} ADET ${details.rewardValue}x Çarpan</span> aldı.`;
+            } else if (details.rewardType === 'points') {
+                message = `${userHtml}, günlük ödül olarak <span class="text-green-400 font-bold">+${details.rewardValue} Puan</span> aldı.`;
+            } else {
+                message = `${userHtml}, günlük ödül olarak <span class="text-cyan-400 font-bold">+${details.rewardValue} ADET ${details.rewardName}</span> aldı.`;
+            }
+            break;
+        case 'surpriseBoxTimeout':
+            const sourceText = details.boxId === 'Çark' 
+                ? "Şans Çarkı'ndan gelen" 
+                : `<b>${details.boxId}</b> numaralı kutudan gelen`;
+            message = `${userHtml}, 60 saniye içinde kart seçimi yapmadığı için ${sourceText} Sürpriz Kutu şansını kaçırdı.`;
+            break;
+    }
+    return message;
+}
+  
 </script>
 </body>
 </html>
