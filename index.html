@@ -3082,6 +3082,17 @@ async function openBox(index) {
     }
 
     await db.ref('gameLock').set(true);
+    
+    // Kilit için bir süre aşımı mekanizması
+    // Eğer 3 saniye içinde kilit açılmazsa, otomatik olarak kaldır.
+    setTimeout(async () => {
+        const gameLockRef = db.ref('gameLock');
+        const lockSnap = await gameLockRef.once('value');
+        if (lockSnap.val() === true) {
+            await gameLockRef.set(false);
+            console.log("Oyun kilidi süre aşımı nedeniyle kaldırıldı.");
+        }
+    }, 30000); // 10 saniye sonra kontrol et
 
     // ----- "AÇANLAR DETAY" İÇİN EN ÖNEMLİ KISIM BURASI -----
     // Bir oyuncu kutu açtığında, onun istatistiğini veritabanına kaydediyoruz.
