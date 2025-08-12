@@ -374,11 +374,13 @@ body.modal-open .modal-content {
         <span>Toplam Açılan: <b id="totalOpenedBoxesCount" class="font-bold text-yellow-400">0</b></span>
         <button onclick="openBoxStatsModal()" class="py-1 px-3 text-sm bg-blue-600 hover:bg-blue-500 rounded-lg">Açanlar Detay</button>
         <button onclick="openUnopenedBoxContentsModal()" class="py-1 px-3 text-sm bg-green-600 hover:bg-green-500 rounded-lg">Kalan İçerikler</button>
+        <button onclick="openSolveProblemsModal()" class="py-1 px-3 text-sm bg-orange-600 hover:bg-orange-500 rounded-lg">Sorunları Çöz</button>
       </div>
 
       <div id="boxContainer" class="grid grid-cols-[repeat(auto-fill,minmax(80px,1fr))] gap-2 w-full mx-auto mb-8 p-2">
       </div>
-
+      <div id="lastSurpriseInfoContainer" class="hidden w-full max-w-2xl mx-auto mt-6 bg-gray-800 p-4 rounded-xl shadow-lg border-2 border-yellow-500 glowing-border text-center">
+    </div>
       <div id="tablesWrapper" class="flex flex-wrap justify-center gap-6 mb-8">
         <div class="tableBox bg-gray-800 p-6 rounded-xl shadow-lg border border-red-700 w-full md:flex-1 min-w-[280px] md:max-w-md">
             <h3 class="text-yellow-400 text-xl font-bold border-b border-gray-600 pb-3 mb-4">KULLANICI PUAN SIRALAMASI 🥇</h3>
@@ -406,6 +408,21 @@ body.modal-open .modal-content {
     <button onclick="openWheelLegendModal()" class="text-blue-400 hover:text-blue-300 transition-colors" title="Simge Anlamları">
         <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
     </button>
+    <div id="solveProblemsModal" class="modal-overlay fixed inset-0 bg-black bg-opacity-70 flex justify-center items-center z-[9999] hidden">
+  <div class="modal-content bg-gray-800 p-8 rounded-xl shadow-2xl border border-orange-500 w-11/12 max-w-lg text-center relative">
+    <button class="modal-close-button" onclick="closeSolveProblemsModal()">&times;</button>
+    <h4 class="text-orange-300 text-2xl font-bold mb-6">Sorun Giderme Menüsü</h4>
+    <p class="text-gray-400 mb-6">Buradaki araçları kullanarak oyunda oluşabilecek genel sorunları çözebilirsiniz.</p>
+    <div class="space-y-4">
+        <button onclick="manualUnlockGame()" class="w-full py-3 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-lg shadow-md">
+            Oyun Kilidini Manuel Aç
+        </button>
+        <button onclick="manualResetAfterSurprise()" class="w-full py-3 bg-green-700 hover:bg-green-600 text-white font-bold rounded-lg shadow-md">
+            Oyunu Manuel Sıfırla (Sürpriz Sonrası)
+        </button>
+    </div>
+  </div>
+</div>
     
     <button id="wheelSettingsButton" onclick="openWheelSettingsModal()" class="hidden py-1 px-3 text-sm bg-teal-600 hover:bg-teal-500 rounded-lg">Çark Ayarları</button>
 </div>
@@ -663,15 +680,13 @@ body.modal-open .modal-content {
         <div class="bg-gray-800/80 p-6 rounded-xl border border-gray-700">
           <h4 class="text-red-400 text-xl font-semibold mb-4 border-b border-gray-600 pb-2">Tehlikeli Bölge</h4>
           <div class="flex flex-wrap gap-3 justify-center">
-            <button onclick="revealAll()" class="flex-1 py-2 px-3 bg-blue-800 hover:bg-blue-700 text-white font-bold rounded-lg text-sm">Tüm Kutuları Aç</button>
-            <button onclick="resetGame()" class="flex-1 py-2 px-3 bg-orange-700 hover:bg-orange-600 text-white font-bold rounded-lg text-sm">Oyunu Sıfırla</button>
             <button onclick="restartSystem()" class="flex-1 py-2 px-3 bg-red-800 hover:bg-red-700 text-white font-bold rounded-lg text-sm">Sistemi Sıfırla</button>
             <button onclick="clearAllTotalSpentPoints()" class="flex-1 py-2 px-3 bg-purple-800 hover:bg-purple-700 text-white font-bold rounded-lg text-sm">Harcanan Puanları Temizle</button>
             <button onclick="clearPurchaseHistory()" class="flex-1 py-2 px-3 bg-pink-800 hover:bg-pink-700 text-white font-bold rounded-lg text-sm">Satın Alma Geçmişini Sil</button>
           </div>
         </div>
       </div>
-
+      
       <div class="bg-gray-800/80 p-6 rounded-xl border border-gray-700 flex flex-col">
         <h4 class="text-yellow-200 text-xl font-semibold mb-4 border-b border-gray-600 pb-2 flex-shrink-0">Kullanıcı Yönetimi</h4>
         <div class="flex-shrink-0 mb-4">
@@ -679,7 +694,7 @@ body.modal-open .modal-content {
         </div>
         <div id="allUsers" class="flex-grow scrollable-list overflow-y-auto bg-gray-900/50 p-2 rounded-md">Yükleniyor...</div>
       </div>
-
+      
       <div class="bg-gray-800/80 p-6 rounded-xl border border-gray-700">
         <h4 class="text-yellow-200 text-xl font-semibold mb-4 border-b border-gray-600 pb-2">Toplu Kullanıcı İşlemleri</h4>
         <div class="space-y-6">
@@ -699,18 +714,43 @@ body.modal-open .modal-content {
               <button onclick="changeAllBoxRights(false)" class="flex-1 py-2 bg-red-700 hover:bg-red-600 text-white font-bold rounded-lg text-sm">Sil</button>
             </div>
           </div>
+          <div>
+            <label for="globalShield" class="block text-gray-300 mb-1">Toplu İflas Kalkanı İşlemi</label>
+            <input type="number" id="globalShield" placeholder="Kalkan Miktarı" min="1" class="w-full p-3 mb-2 bg-gray-700 border border-gray-600 rounded-lg text-white">
+            <div class="flex gap-2">
+              <button onclick="changeAllShields(true)" class="flex-1 py-2 bg-green-700 hover:bg-green-600 text-white font-bold rounded-lg text-sm">Ekle</button>
+              <button onclick="changeAllShields(false)" class="flex-1 py-2 bg-red-700 hover:bg-red-600 text-white font-bold rounded-lg text-sm">Sil</button>
+            </div>
+          </div>
+          <div>
+            <label for="globalWheelTicket" class="block text-gray-300 mb-1">Toplu Çark Bileti İşlemi</label>
+            <input type="number" id="globalWheelTicket" placeholder="Bilet Miktarı" min="1" class="w-full p-3 mb-2 bg-gray-700 border border-gray-600 rounded-lg text-white">
+            <div class="flex gap-2">
+              <button onclick="changeAllWheelTickets(true)" class="flex-1 py-2 bg-green-700 hover:bg-green-600 text-white font-bold rounded-lg text-sm">Ekle</button>
+              <button onclick="changeAllWheelTickets(false)" class="flex-1 py-2 bg-red-700 hover:bg-red-600 text-white font-bold rounded-lg text-sm">Sil</button>
+            </div>
+          </div>
+          <div>
+            <label for="globalClickCatchTicket" class="block text-gray-300 mb-1">Toplu Tıkla-Yakala Bileti İşlemi</label>
+            <input type="number" id="globalClickCatchTicket" placeholder="Bilet Miktarı" min="1" class="w-full p-3 mb-2 bg-gray-700 border border-gray-600 rounded-lg text-white">
+            <div class="flex gap-2">
+              <button onclick="changeAllClickCatchTickets(true)" class="flex-1 py-2 bg-green-700 hover:bg-green-600 text-white font-bold rounded-lg text-sm">Ekle</button>
+              <button onclick="changeAllClickCatchTickets(false)" class="flex-1 py-2 bg-red-700 hover:bg-red-600 text-white font-bold rounded-lg text-sm">Sil</button>
+            </div>
+          </div>
+          <div>
+            <label for="globalMultiplier" class="block text-gray-300 mb-1">Toplu Çarpan İşlemi</label>
+            <input type="number" id="globalMultiplier" placeholder="Çarpan Değeri (örn: 2, 3)" min="2" class="w-full p-3 mb-2 bg-gray-700 border border-gray-600 rounded-lg text-white">
+            <input type="number" id="globalMultiplierUses" placeholder="Kullanım Sayısı" min="1" class="w-full p-3 mb-2 bg-gray-700 border border-gray-600 rounded-lg text-white">
+            <div class="flex gap-2">
+              <button onclick="setAllMultipliers()" class="flex-1 py-2 bg-green-700 hover:bg-green-600 text-white font-bold rounded-lg text-sm">Uygula</button>
+              <button onclick="clearAllMultipliers()" class="flex-1 py-2 bg-red-700 hover:bg-red-600 text-white font-bold rounded-lg text-sm">Sıfırla</button>
+            </div>
+          </div>
         </div>
       </div>
-      
-        <div class="flex flex-wrap gap-2 justify-center mt-4">
-          <button onclick="revealAll()" class="py-2 px-4 bg-red-700 hover:bg-red-600 text-white font-bold rounded-lg">Tüm Kutuları Aç</button>
-          <button onclick="resetGame()" class="py-2 px-4 bg-red-700 hover:bg-red-600 text-white font-bold rounded-lg">Oyunu Baştan Başlat</button>
-          <button onclick="restartSystem()" class="py-2 px-4 bg-red-700 hover:bg-red-600 text-white font-bold rounded-lg">Sistemi Yeniden Başlat</button>
-          <button onclick="clearAllTotalSpentPoints()" class="py-2 px-4 bg-orange-700 hover:bg-orange-600 text-white font-bold rounded-lg">Harcanan Puanları Sıfırla</button>
-          <button onclick="clearPurchaseHistory()" class="py-2 px-4 bg-orange-700 hover:bg-orange-600 text-white font-bold rounded-lg">Satın Alma Geçmişini Temizle</button>
-        </div>
     </div>
-   </div>
+  </div>
 </div>
   <div id="pointAdjustmentModal" class="modal-overlay fixed inset-0 bg-black bg-opacity-70 flex justify-center items-center z-[9999] hidden">
     <div class="modal-content bg-gray-800 p-8 rounded-xl shadow-2xl border border-red-700 w-11/12 max-w-md text-center relative">
@@ -1187,11 +1227,16 @@ body.modal-open .modal-content {
 
     <div class="mt-6 pt-4 border-t border-gray-700">
         <div class="text-lg text-white mb-4">Toplam Kutu Sayısı: <span id="totalBoxCountDisplay" class="font-bold text-yellow-300">0</span></div>
-        <div class="flex gap-4">
-            <button onclick="addBoxSettingRow()" class="flex-1 py-3 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-lg shadow-md">Yeni Satır Ekle</button>
-            <button onclick="resetBoxSettingsToDefault()" class="flex-1 py-3 bg-yellow-600 hover:bg-yellow-500 text-white font-bold rounded-lg shadow-md">Varsayılana Döndür</button>
-            <button onclick="saveBoxSettings()" class="flex-1 py-3 bg-green-700 hover:bg-green-600 text-white font-bold rounded-lg shadow-md">Ayarları Kaydet ve Oyunu Sıfırla</button>
-        </div>
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+    <button onclick="addBoxSettingRow()" class="py-3 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-lg shadow-md">Yeni Satır Ekle</button>
+    <button onclick="resetBoxSettingsToDefault()" class="py-3 bg-yellow-600 hover:bg-yellow-500 text-white font-bold rounded-lg shadow-md">Varsayılana Döndür</button>
+    <button onclick="saveBoxSettings()" class="py-3 bg-green-700 hover:bg-green-600 text-white font-bold rounded-lg shadow-md">Kaydet ve Sıfırla</button>
+</div>
+<div class="mt-4 pt-4 border-t border-gray-600 grid grid-cols-1 sm:grid-cols-3 gap-4">
+    <button id="toggleGameLockBtn" onclick="toggleGameLock()" class="py-3 bg-gray-600 hover:bg-gray-500 text-white font-bold rounded-lg shadow-md">Oyunu Kilitle</button>
+    <button onclick="revealAll()" class="py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-lg shadow-md">Tüm Kutuları Aç</button>
+    <button onclick="resetGame()" class="py-3 bg-orange-700 hover:bg-orange-600 text-white font-bold rounded-lg shadow-md">Oyunu Sıfırla</button>
+</div>
     </div>
   </div>
 </div>
@@ -3218,8 +3263,6 @@ async function handleSurpriseBoxCleanup(sessionData) {
 
     // --- SÜRPRİZ KUTU DÜZELTMESİ: Kutunun nereden geldiğini kontrol et ---
     if (sessionData.boxId !== 'Çark') {
-        // Eğer Şans Çarkı'ndan gelmediyse, oyun tahtasını sıfırla.
-        await resetGameBoard();
     }
     
     // Her durumda, sürpriz kutu oturumunu veritabanından temizle.
@@ -3371,9 +3414,6 @@ function showOpenedBoxInfo(box) {
   function shuffleArray(array) { for (let i = array.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [array[i], array[j]] = [array[j], array[i]]; } return array; }
   
   // MEVCUT openCardSelectionModal FONKSİYONUNU BU BLOK İLE DEĞİŞTİRİN
-
-// MEVCUT openCardSelectionModal FONKSİYONUNU BU BLOK İLE DEĞİŞTİRİN
-
 function openCardSelectionModal(userId) {
     if (countdownInterval) clearInterval(countdownInterval);
     cardContainer.innerHTML = '';
@@ -3409,7 +3449,20 @@ function openCardSelectionModal(userId) {
             closeCardSelectionModal();
             if (sessionData) {
                 logActivity('surpriseBoxTimeout', sessionData.user, { boxId: sessionData.boxId });
-                // *** DÜZENLENEN KISIM: Süre dolduğunda da yeni ana fonksiyonu çağırıyoruz. ***
+
+                // --- YENİ EKLENEN KISIM BAŞLANGICI ---
+                // Kullanıcı kart seçmedi, bu bilgiyi veritabanına yazıyoruz.
+                const surpriseInfoOnTimeout = {
+                    finder: sessionData.user,
+                    boxId: sessionData.boxId,
+                    points: 0,
+                    multiplier: sessionData.multiplier,
+                    timedOut: true, // Zaman aşımına uğradı
+                    timestamp: firebase.database.ServerValue.TIMESTAMP
+                };
+                db.ref('gameStats/lastSurpriseInfo').set(surpriseInfoOnTimeout);
+                // --- YENİ EKLENEN KISIM SONU ---
+
                 handleSurpriseBoxCleanup(sessionData);
             } else {
                 sessionRef.remove();
@@ -3432,6 +3485,41 @@ function openCardSelectionModal(userId) {
         }, 1000);
     });
 }
+
+// YEPYENİ FONKSİYON - BU KOD BLOĞUNU OLDUĞU GİBİ EKLE
+function updateLastSurpriseInfoDisplay(info) {
+    const container = document.getElementById('lastSurpriseInfoContainer');
+    if (!info) {
+        container.classList.add('hidden');
+        return;
+    }
+
+    let multiplierText = '';
+    if (info.timedOut) {
+        multiplierText = '<span class="text-red-400 font-bold">Süre doldu, kart seçilmedi.</span>';
+    } else if (info.multiplier && info.multiplier > 1) {
+        multiplierText = `Çarpan: <b class="text-white">${info.multiplier}x</b>`;
+    } else {
+        multiplierText = `Çarpan: <b class="text-white">Kullanılmadı</b>`;
+    }
+
+    const sourceText = info.boxId === 'Çark' ? 'Şans Çarkı' : `${info.boxId} No'lu Kutu`;
+
+    container.innerHTML = `
+        <h4 class="text-yellow-300 text-xl font-bold mb-3">👑 Son Sürpriz Kutu Bulan 👑</h4>
+        <div class="flex flex-wrap justify-center items-center gap-x-4 gap-y-2 text-gray-300">
+            <span>Bulan: <b class="text-white">${info.finder}</b></span>
+            <span>Kaynak: <b class="text-white">${sourceText}</b></span>
+            <span>Kazanç: <b class="text-white">${info.points} Puan</b></span>
+            <span>${multiplierText}</span>
+        </div>
+        <p class="mt-3 text-sm text-yellow-500 bg-gray-900/50 p-2 rounded-md">
+            Oyunun sıfırlanması için bir oyuncunun <b>"Sorunları Çöz"</b> menüsünden oyunu manuel olarak sıfırlaması gerekiyor.
+        </p>
+    `;
+    container.classList.remove('hidden');
+}
+
 async function selectCard(selectedCardDiv, userId) { 
     if (countdownInterval) clearInterval(countdownInterval);
     if (selectedCardDiv.classList.contains('opened')) return; 
@@ -4521,14 +4609,30 @@ async function openUserManagementModal(username) {
   let globalCountdownInterval = null;
     let spectatorCountdownInterval = null;
 
-  function listenForGameChanges() {
+  // MEVCUT listenForGameChanges FONKSİYONUNU BU BLOK İLE DEĞİŞTİRİN
+function listenForGameChanges() {
+    // gameLock dinleyicisi aynı kalıyor
     const gameLockRef = db.ref('gameLock');
     const gameLockCallback = snap => {
         isGameLocked = snap.val() === true;
+        // YENİ EKLENEN SATIR: Kilit butonunun metnini günceller
+        const toggleBtn = document.getElementById('toggleGameLockBtn');
+        if (toggleBtn) {
+            if (isGameLocked) {
+                toggleBtn.textContent = 'Oyun Kilidini Aç';
+                toggleBtn.classList.remove('bg-gray-600', 'hover:bg-gray-500');
+                toggleBtn.classList.add('bg-green-600', 'hover:bg-green-500');
+            } else {
+                toggleBtn.textContent = 'Oyunu Kilitle';
+                toggleBtn.classList.remove('bg-green-600', 'hover:bg-green-500');
+                toggleBtn.classList.add('bg-gray-600', 'hover:bg-gray-500');
+            }
+        }
     };
     activeListeners.gameLock = { ref: gameLockRef, event: 'value', callback: gameLockCallback };
     gameLockRef.on('value', gameLockCallback);
 
+    // lastOpenedBox dinleyicisi aynı kalıyor
     const lastOpenedBoxRef = db.ref('lastOpenedBox');
     const lastOpenedBoxCallback = snap => {
         const info = snap.val();
@@ -4540,7 +4644,60 @@ async function openUserManagementModal(username) {
     };
     activeListeners.lastOpenedBox = { ref: lastOpenedBoxRef, event: 'value', callback: lastOpenedBoxCallback };
     lastOpenedBoxRef.on('value', lastOpenedBoxCallback);
-  }
+
+    // --- YENİ EKLENEN DİNLEYİCİ ---
+    const lastSurpriseRef = db.ref('gameStats/lastSurpriseInfo');
+    const lastSurpriseCallback = snap => {
+        updateLastSurpriseInfoDisplay(snap.val());
+    };
+    activeListeners.lastSurprise = { ref: lastSurpriseRef, event: 'value', callback: lastSurpriseCallback };
+    lastSurpriseRef.on('value', lastSurpriseCallback);
+}
+
+// --- SORUNLARI ÇÖZ MODALI İÇİN YENİ FONKSİYONLAR ---
+
+function openSolveProblemsModal() {
+    document.getElementById('solveProblemsModal').style.display = 'flex';
+}
+
+function closeSolveProblemsModal() {
+    document.getElementById('solveProblemsModal').style.display = 'none';
+}
+
+async function manualUnlockGame() {
+    const gameLockRef = db.ref('gameLock');
+    const lockSnap = await gameLockRef.once('value');
+    if (lockSnap.val() === true) {
+        await gameLockRef.set(false);
+        displayMessage("Oyun kilidi başarıyla kaldırıldı. Artık kutu açabilirsiniz.");
+    } else {
+        displayMessage("Oyun zaten kilitli değil, kutular şu anda açılabilir durumda.");
+    }
+    closeSolveProblemsModal();
+}
+
+async function manualResetAfterSurprise() {
+    const surpriseInfoRef = db.ref('gameStats/lastSurpriseInfo');
+    const surpriseSnap = await surpriseInfoRef.once('value');
+    if (surpriseSnap.exists()) {
+        await resetGameBoard(); // Oyunu sıfırlayan ana fonksiyon
+        await surpriseInfoRef.remove(); // Sıfırlama hakkını tek kullanımlık yapmak için bilgiyi sil
+        displayMessage("Sürpriz kutu bulunduğu için oyun başarıyla sıfırlandı!");
+    } else {
+        displayMessage("Bu özellik sadece bir sürpriz kutu bulunduktan sonra kullanılabilir.");
+    }
+    closeSolveProblemsModal();
+}
+
+// YEPYENİ FONKSİYON - BU KOD BLOĞUNU OLDUĞU GİBİ EKLE
+async function toggleGameLock() {
+    if (!isAdmin) return;
+    const gameLockRef = db.ref('gameLock');
+    const lockSnap = await gameLockRef.once('value');
+    const isCurrentlyLocked = lockSnap.val() === true;
+    await gameLockRef.set(!isCurrentlyLocked);
+    displayMessage(`Oyun kilidi başarıyla ${!isCurrentlyLocked ? 'aktif edildi' : 'kaldırıldı'}.`);
+}
 
   function showGlobalOpenedBoxInfo(info) {
     const isPlayingClickCatch = clickCatchGameActive || (lobbyGameSettings && lobbyGameSettings.state === 'active');
@@ -5423,7 +5580,6 @@ async function reorderDailyRewardItem(rewardId, newIndex) {
     // listenForSurpriseBox FONKSİYONUNU BU YENİ HALİYLE DEĞİŞTİR
 
 // MEVCUT listenForSurpriseBox FONKSİYONUNU BU BLOK İLE DEĞİŞTİRİN
-
 let isProcessingSurpriseResult = false;
 let spectatorViewingResult = false;
 
@@ -5447,7 +5603,6 @@ function listenForSurpriseBox() {
         }
 
         if (sessionData && sessionData.active) {
-            
             if (sessionData.user === currentUser && !sessionData.result && cardSelectionModal.style.display !== 'flex') {
                 openCardSelectionModal(currentUser);
             }
@@ -5461,9 +5616,6 @@ function listenForSurpriseBox() {
             }
 
             if (sessionData.result && !sessionData.logged && !isProcessingSurpriseResult) {
-                // ----- DEBUG İÇİN EKLENDİ -----
-                console.log("3. ADIM: Dinleyici, sonucun yazıldığını gördü! Temizlik fonksiyonu çağrılacak.");
-                // -----------------------------
                 isProcessingSurpriseResult = true; 
 
                 sessionRef.transaction(currentData => {
@@ -5479,6 +5631,18 @@ function listenForSurpriseBox() {
                     } else if (committed) {
                         const finalSessionData = snapshot.val();
 
+                        // --- YENİ EKLENEN KISIM BAŞLANGICI ---
+                        const surpriseInfo = {
+                            finder: finalSessionData.user,
+                            boxId: finalSessionData.boxId,
+                            points: finalSessionData.result.points,
+                            multiplier: finalSessionData.multiplier,
+                            timedOut: false, // Kart seçtiği için zaman aşımı false
+                            timestamp: firebase.database.ServerValue.TIMESTAMP
+                        };
+                        db.ref('gameStats/lastSurpriseInfo').set(surpriseInfo);
+                        // --- YENİ EKLENEN KISIM SONU ---
+
                         logActivity('surpriseBox', finalSessionData.user, { 
                             boxId: finalSessionData.boxId,
                             points: finalSessionData.result.points, 
@@ -5487,11 +5651,7 @@ function listenForSurpriseBox() {
                         
                         if (finalSessionData.user === currentUser) {
                             closeCardSelectionModal();
-                            let message = `Sürpriz kutudan tebrikler! Toplam ${finalSessionData.result.points} puan kazandınız!`;
-                            if (finalSessionData.boxId !== 'Çark') {
-                                message += " Oyun 4 saniye içinde sıfırlanacak.";
-                            }
-                            displayMessage(message);
+                            displayMessage(`Sürpriz kutudan tebrikler! Toplam ${finalSessionData.result.points} puan kazandınız!`);
                         } else {
                             showGlobalSurpriseBoxNotification(finalSessionData);
                         }
@@ -5516,6 +5676,8 @@ function listenForSurpriseBox() {
     activeListeners.surpriseBox = { ref: sessionRef, event: 'value', callback };
     sessionRef.on('value', callback);
 }
+
+// MEVCUT openSpectatorModal FONKSİYONUNU BU BLOK İLE DEĞİŞTİRİN
 function openSpectatorModal(sessionData) {
     if (spectatorCountdownInterval) clearInterval(spectatorCountdownInterval);
 
@@ -5535,13 +5697,22 @@ function openSpectatorModal(sessionData) {
     resultContainer.innerHTML = '<p id="spectatorResult" class="text-2xl text-green-400 font-bold h-8"></p>';
 
     const countdownEl = document.getElementById('spectatorCountdown');
-    
-    // DÜZELTİLEN KISIM: Sayaç artık senkronize zamana göre çalışıyor
     let timeLeft = Math.round((sessionData.expirationTimestamp - getSyncedTime()) / 1000);
 
-    if (timeLeft <= 0) {
+    const handleTimeout = () => {
         countdownEl.textContent = 'Süre Doldu!';
-        resultContainer.innerHTML = `<button onclick="closeSpectatorModal()" class="mt-4 py-3 px-8 bg-red-700 hover:bg-red-600 text-white font-bold rounded-lg transition-colors">Oyuna Dön</button>`;
+        // --- YENİ EKLENEN KISIM ---
+        const resultP = document.getElementById('spectatorResult');
+        if (resultP) {
+            resultP.textContent = 'Kart seçilmedi, puan kazanılamadı.';
+            resultP.className = 'text-xl text-red-400 font-bold h-8';
+        }
+        // --- YENİ KISIM SONU ---
+        resultContainer.innerHTML += `<button onclick="closeSpectatorModal()" class="mt-4 py-3 px-8 bg-red-700 hover:bg-red-600 text-white font-bold rounded-lg transition-colors">Oyuna Dön</button>`;
+    };
+    
+    if (timeLeft <= 0) {
+        handleTimeout();
         spectatorModal.style.display = 'flex';
         return;
     }
@@ -5552,9 +5723,8 @@ function openSpectatorModal(sessionData) {
         if (timeLeft >= 0) {
             countdownEl.textContent = timeLeft;
         } else {
-            countdownEl.textContent = 'Süre Doldu!';
             clearInterval(spectatorCountdownInterval);
-            resultContainer.innerHTML = `<button onclick="closeSpectatorModal()" class="mt-4 py-3 px-8 bg-red-700 hover:bg-red-600 text-white font-bold rounded-lg transition-colors">Oyuna Dön</button>`;
+            handleTimeout();
         }
     }, 1000);
     
@@ -7717,48 +7887,6 @@ function updateTotalBoxCount() {
     document.getElementById('totalBoxCountDisplay').textContent = total;
 }
 
-// Tüm satırlardaki verileri okur, yeni ayarları veritabanına kaydeder ve oyunu sıfırlar.
-async function saveBoxSettings() {
-    if (!isAdmin) return;
-
-    const newConfig = [];
-    let totalBoxes = 0;
-    let hasError = false;
-
-    document.querySelectorAll('.box-setting-row').forEach(row => {
-        if (hasError) return;
-        const type = row.querySelector('.setting-type').value;
-        const valueInput = row.querySelector('.setting-value');
-        const value = parseInt(valueInput.value);
-        const count = parseInt(row.querySelector('.setting-count').value);
-
-        if (isNaN(count) || count <= 0) {
-            return; // Adet girilmemişse bu satırı atla
-        }
-        if (isNaN(value) && !valueInput.disabled) {
-            displayMessage(`Hata: '${type}' türü için geçerli bir 'Değer' girmelisiniz.`);
-            hasError = true;
-        }
-        
-        newConfig.push({ type, value, count });
-        totalBoxes += count;
-    });
-
-    if (hasError) return; // Hata varsa işlemi durdur
-
-    if (totalBoxes === 0) {
-        displayMessage("En az bir kutu türü için adet girmelisiniz!");
-        return;
-    }
-
-    const confirmed = await customConfirm(`Toplam ${totalBoxes} kutu ile yeni bir oyun başlatılacak. Mevcut oyun sıfırlanacak. Onaylıyor musunuz?`);
-    if (confirmed) {
-        await db.ref('gameConfig/boxContents').set(newConfig);
-        await resetGameBoard(); 
-        displayMessage("Kutu ayarları başarıyla kaydedildi ve oyun yeni ayarlarla yeniden başlatıldı!");
-        closeBoxSettingsModal();
-    }
-}
 function openHelpModal() {
   helpModal.style.display = 'flex';
 }
