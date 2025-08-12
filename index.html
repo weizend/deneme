@@ -405,24 +405,6 @@ body.modal-open .modal-content {
         <div class="flex justify-center items-center gap-4 mb-4">
     <h3 class="text-yellow-400 text-3xl font-bold">Şans Çarkı</h3>
     
-    <button onclick="openWheelLegendModal()" class="text-blue-400 hover:text-blue-300 transition-colors" title="Simge Anlamları">
-        <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-    </button>
-    <div id="solveProblemsModal" class="modal-overlay fixed inset-0 bg-black bg-opacity-70 flex justify-center items-center z-[9999] hidden">
-  <div class="modal-content bg-gray-800 p-8 rounded-xl shadow-2xl border border-orange-500 w-11/12 max-w-lg text-center relative">
-    <button class="modal-close-button" onclick="closeSolveProblemsModal()">&times;</button>
-    <h4 class="text-orange-300 text-2xl font-bold mb-6">Sorun Giderme Menüsü</h4>
-    <p class="text-gray-400 mb-6">Buradaki araçları kullanarak oyunda oluşabilecek genel sorunları çözebilirsiniz.</p>
-    <div class="space-y-4">
-        <button onclick="manualUnlockGame()" class="w-full py-3 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-lg shadow-md">
-            Oyun Kilidini Manuel Aç
-        </button>
-        <button onclick="manualResetAfterSurprise()" class="w-full py-3 bg-green-700 hover:bg-green-600 text-white font-bold rounded-lg shadow-md">
-            Oyunu Manuel Sıfırla (Sürpriz Sonrası)
-        </button>
-    </div>
-  </div>
-</div>
     
     <button id="wheelSettingsButton" onclick="openWheelSettingsModal()" class="hidden py-1 px-3 text-sm bg-teal-600 hover:bg-teal-500 rounded-lg">Çark Ayarları</button>
 </div>
@@ -1478,6 +1460,24 @@ body.modal-open .modal-content {
       <h4 class="text-blue-300 text-2xl font-bold mb-6">Çark Simgeleri ve Anlamları</h4>
       <div id="wheelLegendContent" class="space-y-3 text-left scrollable-list max-h-80 overflow-y-auto">
           </div>
+  </div>
+</div>
+<button onclick="openWheelLegendModal()" class="text-blue-400 hover:text-blue-300 transition-colors" title="Simge Anlamları">
+    <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+</button>
+<div id="solveProblemsModal" class="modal-overlay fixed inset-0 bg-black bg-opacity-70 flex justify-center items-center z-[9999] hidden">
+  <div class="modal-content bg-gray-800 p-8 rounded-xl shadow-2xl border border-orange-500 w-11/12 max-w-lg text-center relative">
+    <button class="modal-close-button" onclick="closeSolveProblemsModal()">&times;</button>
+    <h4 class="text-orange-300 text-2xl font-bold mb-6">Sorun Giderme Menüsü</h4>
+    <p class="text-gray-400 mb-6">Buradaki araçları kullanarak oyunda oluşabilecek genel sorunları çözebilirsiniz.</p>
+    <div class="space-y-4">
+        <button onclick="manualUnlockGame()" class="w-full py-3 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-lg shadow-md">
+            Oyun Kilidini Manuel Aç
+        </button>
+        <button onclick="manualResetAfterSurprise()" class="w-full py-3 bg-green-700 hover:bg-green-600 text-white font-bold rounded-lg shadow-md">
+            Oyunu Manuel Sıfırla (Sürpriz Sonrası)
+        </button>
+    </div>
   </div>
 </div>
   <script>
