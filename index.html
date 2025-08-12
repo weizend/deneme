@@ -2285,64 +2285,54 @@ function getUserBadgesHtml(u, leaders, forPublicProfile = false) {
     return crownHtml + otherBadgesHtml;
 }
 
-  // === ESKİ loadUserRankingsAndBoxCounts FONKSİYONUNU SİL VE BUNU YAPIŞTIR ===
-
-function loadUserRankingsAndBoxCounts() {
+  function loadUserRankingsAndBoxCounts() {
     const ref = db.ref('users');
 
-    // Önceki dinleyiciyi temizle
     if (activeListeners.userRankings && activeListeners.userRankings.ref) {
         activeListeners.userRankings.ref.off();
     }
-    
-    // Dinleyiciyi kaydet
     activeListeners.userRankings = { ref: ref };
-    
-    // Sadece ilk yüklemede tüm veriyi çek
+
     ref.once('value', initialSnap => {
-        allUsersCache = []; // Önbelleği temizle
+        allUsersCache = [];
         const usersData = initialSnap.val();
         if (usersData) {
             allUsersCache = Object.entries(usersData)
                 .filter(([username, userData]) => username.toLowerCase() !== 'weizendtv' && userData.approved)
                 .map(([username, userData]) => ({ username, ...userData }));
         }
-        renderUserRankings(); // İlk sıralamayı çiz
+        renderUserRankings();
+        loadLeaderboardRanking(); // DÜZELTME: Liderler tablosunu da çizmesi için komut eklendi.
     });
 
-    // Yeni eklenen kullanıcıları dinle
     ref.on('child_added', snap => {
         const username = snap.key;
         const userData = snap.val();
-        if (username.toLowerCase() !== 'weizendtv' && userData.approved) {
-            // Eğer önbellekte zaten varsa ekleme (ilk yüklemede gelebilir), yoksa ekle
-            if (!allUsersCache.some(u => u.username === username)) {
-                allUsersCache.push({ username, ...userData });
-                renderUserRankings();
-            }
+        if (username.toLowerCase() !== 'weizendtv' && userData.approved && !allUsersCache.some(u => u.username === username)) {
+            allUsersCache.push({ username, ...userData });
+            renderUserRankings();
+            loadLeaderboardRanking(); // DÜZELTME: Liderler tablosunu da çizmesi için komut eklendi.
         }
     });
 
-    // Değişen kullanıcıları dinle
     ref.on('child_changed', snap => {
         const username = snap.key;
         const userData = snap.val();
         const userIndex = allUsersCache.findIndex(u => u.username === username);
         if (userIndex > -1) {
-            // Kullanıcıyı önbellekte güncelle
             allUsersCache[userIndex] = { username, ...userData };
-            renderUserRankings(); // Sıralamayı yeniden çiz
+            renderUserRankings();
+            loadLeaderboardRanking(); // DÜZELTME: Liderler tablosunu da çizmesi için komut eklendi.
         }
     });
 
-    // Silinen kullanıcıları dinle
     ref.on('child_removed', snap => {
         const username = snap.key;
         const userIndex = allUsersCache.findIndex(u => u.username === username);
         if (userIndex > -1) {
-            // Kullanıcıyı önbellekten sil
             allUsersCache.splice(userIndex, 1);
-            renderUserRankings(); // Sıralamayı yeniden çiz
+            renderUserRankings();
+            loadLeaderboardRanking(); // DÜZELTME: Liderler tablosunu da çizmesi için komut eklendi.
         }
     });
 }
@@ -2502,11 +2492,7 @@ function loadUserRankingsAndBoxCounts() {
     return leaders;
 }
     
-  // === ESKİ loadLeaderboardRanking FONKSİYONUNU SİL VE BUNU YAPIŞTIR ===
-
-async function loadLeaderboardRanking() {
-    // Bu fonksiyon artık kendi dinleyicisini kullanmıyor.
-    // Bunun yerine, zaten anlık olarak güncellenen `allUsersCache` verisini kullanacak.
+  async function loadLeaderboardRanking() {
     const usersData = {};
     allUsersCache.forEach(user => {
         usersData[user.username] = user;
