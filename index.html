@@ -3050,11 +3050,14 @@ async function deleteUserAvatar(username, avatarId) {
   }
 
 async function openBox(index) {
+    // Oyunun kilitli olup olmadığını kontrol et. Kilitliyse işlem yapma.
     if (isGameLocked) {
         displayMessage("Şu anda başka bir kullanıcı kutu açıyor veya oyun beklemede. Lütfen 5 saniye bekleyin.");
         return;
     }
+    // Kutu zaten açıksa, işlemi durdur.
     if (boxes[index].opened) return;
+    // Adminlerin oyun oynamasını engelle.
     if (isAdmin) {
         displayMessage("Adminler oyun oynamaz, sadece izler.");
         return;
@@ -3064,27 +3067,33 @@ async function openBox(index) {
     let userSnap = await userRef.once('value');
     let user = userSnap.val();
 
+    // Kullanıcı verisi yoksa hata mesajı göster.
     if (!user) { displayMessage("Kullanıcı verisi bulunamadı."); return; }
     
+    // Kullanıcının engelli olup olmadığını kontrol et.
     const isCurrentlyBlocked = user.blocked && user.blockedUntil && Date.now() < user.blockedUntil;
     if (isCurrentlyBlocked) {
         displayBlockedMessage(user.blockedUntil, currentUser);
         return;
     }
+    // Kutu hakkının yeterli olup olmadığını kontrol et.
     if ((user.kutuHakki || 0) < BOX_RIGHTS_COST_PER_BOX) {
         displayMessage("Yetersiz kutu hakkı.");
         return;
     }
 
+    // Kullanıcıya onay sorusu sor.
     const initialConfirm = await customConfirm(`<b>${boxes[index].id}</b> numaralı kutuyu açmak istediğinize emin misiniz?`);
     if (!initialConfirm) return;
 
     const boxRef = db.ref('boxes/' + index);
     let latestBoxSnap = await boxRef.once('value');
+    // Kutunun biz onaylarken başkası tarafından açılıp açılmadığını kontrol et.
     if (latestBoxSnap.val().opened) {
         displayMessage(`Seçtiğiniz kutu <b>${latestBoxSnap.val().opener}</b> tarafından açıldı. Geç kaldınız!`);
         return;
     }
+    // Kullanıcı verisini yeniden çek, güncel durumu al.
     userSnap = await userRef.once('value');
     user = userSnap.val();
     
@@ -3092,6 +3101,7 @@ async function openBox(index) {
     let useMultiplier = false;
     const originalMultiplierSource = user.multiplierSource || 'none';
     
+    // Çarpan kullanım mantığı
     if (user.multiplierSource === 'box') {
         finalMultiplier = user.activeMultiplier;
         useMultiplier = true;
@@ -3108,11 +3118,10 @@ async function openBox(index) {
         }
     }
 
-    // Oyun kilidini ayarla
+    // Oyun kilidini ayarla, böylece aynı anda sadece bir kullanıcı kutu açabilir.
     await db.ref('gameLock').set(true);
 
-    // Kilit için bir süre aşımı mekanizması
-    // Eğer 3 saniye içinde kilit açılmazsa, otomatik olarak kaldır.
+    // Kilit için bir süre aşımı mekanizması (timeout).
     setTimeout(async () => {
         const gameLockRef = db.ref('gameLock');
         const lockSnap = await gameLockRef.once('value');
@@ -3122,6 +3131,7 @@ async function openBox(index) {
         }
     }, 3000); // 3 saniye sonra kontrol et
 
+    // Kullanıcının açtığı kutu sayısını artır.
     const statsRef = db.ref(`gameStats/boxesOpenedByUsers/${currentUser}`);
     await statsRef.transaction(currentValue => {
         return (currentValue || 0) + 1;
@@ -3130,17 +3140,21 @@ async function openBox(index) {
     const box = boxes[index];
     let message = '';
     const updates = {};
+    // Kutu hakkını ve açılan kutu sayısını güncelle.
     updates['kutuHakki'] = (user.kutuHakki || 0) - BOX_RIGHTS_COST_PER_BOX;
     updates['boxesOpenedCount'] = (user.boxesOpenedCount || 0) + 1;
     
+    // Kutu verilerini hazırla.
     const boxUpdate = { opened: true, opener: currentUser, id: box.id, content: box.content, value: box.value };
     const boxOpenInfo = { boxId: box.id, opener: currentUser, content: box.content, value: box.value, timestamp: firebase.database.ServerValue.TIMESTAMP };
 
+    // Eğer çarpan kullanıldıysa, bu bilgiyi kaydet.
     if (finalMultiplier > 1) {
         boxUpdate.multiplierApplied = finalMultiplier;
         boxOpenInfo.multiplierUsed = finalMultiplier;
     }
     
+    // Kutunun içeriğine göre farklı işlemler yap.
     if (box.content === 'multiplier') {
         updates['multiplierFoundCount'] = (user.multiplierFoundCount || 0) + 1;
         
@@ -3155,6 +3169,7 @@ async function openBox(index) {
         }
     } 
     else {
+        // Çarpanı kullan ve sıfırla veya kullanım sayısını azalt.
         if (useMultiplier && box.content !== 'surpriz') {
             if (originalMultiplierSource === 'box') {
                 updates['activeMultiplier'] = 1;
@@ -3234,9 +3249,11 @@ async function openBox(index) {
         }
     }
 
+    // Kullanıcı ve kutu verilerini güncelle.
     await userRef.update(updates);
     await boxRef.update(boxUpdate);
 
+    // Sürpriz kutu dışındaki durumlar için bildirim gönder ve kilidi kaldır.
     if (box.content !== 'surpriz') {
         await db.ref('lastOpenedBox').set(boxOpenInfo);
         displayMessage(message);
@@ -3279,14 +3296,6 @@ async function handleSurpriseBoxCleanup(sessionData) {
     
     await db.ref('surprise_box_session').remove();
 }
-
-  async function resetGame() {
-      const confirmed = await customConfirm("Oyunu sıfırlamak istiyor musunuz? (Tüm kutular kapatılır, karıştırılır ve kutu açma istatistikleri sıfırlanır)");
-      if (confirmed) {
-          await resetGameBoard();
-          displayMessage("Oyun yöneticisi tarafından sıfırlandı.");
-      }
-  }
 
   async function restartSystem() {
     const confirmed = await customConfirm("Sistemi baştan başlatmak istediğinize emin misiniz? Tüm kullanıcı verileri (puan, hak, istatistik) sıfırlanacak!");
