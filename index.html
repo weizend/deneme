@@ -2285,54 +2285,64 @@ function getUserBadgesHtml(u, leaders, forPublicProfile = false) {
     return crownHtml + otherBadgesHtml;
 }
 
-  function loadUserRankingsAndBoxCounts() {
+  // === ESKİ loadUserRankingsAndBoxCounts FONKSİYONUNU SİL VE BUNU YAPIŞTIR ===
+
+function loadUserRankingsAndBoxCounts() {
     const ref = db.ref('users');
 
+    // Önceki dinleyiciyi temizle
     if (activeListeners.userRankings && activeListeners.userRankings.ref) {
         activeListeners.userRankings.ref.off();
     }
+    
+    // Dinleyiciyi kaydet
     activeListeners.userRankings = { ref: ref };
-
+    
+    // Sadece ilk yüklemede tüm veriyi çek
     ref.once('value', initialSnap => {
-        allUsersCache = [];
+        allUsersCache = []; // Önbelleği temizle
         const usersData = initialSnap.val();
         if (usersData) {
             allUsersCache = Object.entries(usersData)
                 .filter(([username, userData]) => username.toLowerCase() !== 'weizendtv' && userData.approved)
                 .map(([username, userData]) => ({ username, ...userData }));
         }
-        renderUserRankings();
-        loadLeaderboardRanking(); // DÜZELTME: Liderler tablosunu da çizmesi için komut eklendi.
+        renderUserRankings(); // İlk sıralamayı çiz
     });
 
+    // Yeni eklenen kullanıcıları dinle
     ref.on('child_added', snap => {
         const username = snap.key;
         const userData = snap.val();
-        if (username.toLowerCase() !== 'weizendtv' && userData.approved && !allUsersCache.some(u => u.username === username)) {
-            allUsersCache.push({ username, ...userData });
-            renderUserRankings();
-            loadLeaderboardRanking(); // DÜZELTME: Liderler tablosunu da çizmesi için komut eklendi.
+        if (username.toLowerCase() !== 'weizendtv' && userData.approved) {
+            // Eğer önbellekte zaten varsa ekleme (ilk yüklemede gelebilir), yoksa ekle
+            if (!allUsersCache.some(u => u.username === username)) {
+                allUsersCache.push({ username, ...userData });
+                renderUserRankings();
+            }
         }
     });
 
+    // Değişen kullanıcıları dinle
     ref.on('child_changed', snap => {
         const username = snap.key;
         const userData = snap.val();
         const userIndex = allUsersCache.findIndex(u => u.username === username);
         if (userIndex > -1) {
+            // Kullanıcıyı önbellekte güncelle
             allUsersCache[userIndex] = { username, ...userData };
-            renderUserRankings();
-            loadLeaderboardRanking(); // DÜZELTME: Liderler tablosunu da çizmesi için komut eklendi.
+            renderUserRankings(); // Sıralamayı yeniden çiz
         }
     });
 
+    // Silinen kullanıcıları dinle
     ref.on('child_removed', snap => {
         const username = snap.key;
         const userIndex = allUsersCache.findIndex(u => u.username === username);
         if (userIndex > -1) {
+            // Kullanıcıyı önbellekten sil
             allUsersCache.splice(userIndex, 1);
-            renderUserRankings();
-            loadLeaderboardRanking(); // DÜZELTME: Liderler tablosunu da çizmesi için komut eklendi.
+            renderUserRankings(); // Sıralamayı yeniden çiz
         }
     });
 }
@@ -2492,56 +2502,73 @@ function getUserBadgesHtml(u, leaders, forPublicProfile = false) {
     return leaders;
 }
     
-  async function loadLeaderboardRanking() {
-    const usersData = {};
-    allUsersCache.forEach(user => {
-        usersData[user.username] = user;
-    });
+  // === ESKİ loadLeaderboardRanking FONKSİYONUNU SİL VE BUNU YAPIŞTIR ===
 
-    if (Object.keys(usersData).length === 0) {
-        document.getElementById("badgedUsersRanking").innerHTML = "<div class='text-center text-gray-400'>Henüz lider kullanıcı yok.</div>";
-        return;
+async function loadLeaderboardRanking() {
+    const ref = db.ref('users');
+
+    // Önceki dinleyiciyi temizle
+    if (activeListeners.leaderboard && activeListeners.leaderboard.ref) {
+        activeListeners.leaderboard.ref.off();
     }
 
-    const leaders = await calculateAllLeaders(usersData);
-    
-    const leaderUsernames = new Set([
-        leaders.currentBalanceUser, leaders.highEverBalanceUser, leaders.surpriseBoxUser,
-        leaders.bombUser, leaders.spentPointsUser, leaders.multiplierUser,
-        leaders.boxUser, leaders.shieldUser, leaders.clickCatchLeaderUser, leaders.wheelSpinUser
-    ]);
-    leaderUsernames.delete(null);
+    // Dinleyiciyi kaydet
+    activeListeners.leaderboard = { ref: ref };
 
-    const leaderUsers = allUsersCache.filter(u => leaderUsernames.has(u.username)).map(u => {
-        const userLeaderStatus = {
-            isCurrentLeader: u.username === leaders.currentBalanceUser,
-            isHighLeader: u.username === leaders.highEverBalanceUser,
-            isSurpriseLeader: u.username === leaders.surpriseBoxUser,
-            isBombLeader: u.username === leaders.bombUser,
-            isStoreLeader: u.username === leaders.spentPointsUser,
-            isMultiplierLeader: u.username === leaders.multiplierUser,
-            isBoxLeader: u.username === leaders.boxUser,
-            isShieldLeader: u.username === leaders.shieldUser,
-            isClickCatchLeader: u.username === leaders.clickCatchLeaderUser,
-            isWheelSpinLeader: u.username === leaders.wheelSpinUser
-        };
-        return { ...u, ...userLeaderStatus };
-    });
+    const renderLeaders = async () => {
+        const usersData = {};
+        allUsersCache.forEach(user => {
+            usersData[user.username] = user;
+        });
 
-    leaderUsers.sort((a, b) => {
-        const aBadgeCount = Object.values(a).filter(val => val === true).length;
-        const bBadgeCount = Object.values(b).filter(val => val === true).length;
-        if (bBadgeCount !== aBadgeCount) return bBadgeCount - aBadgeCount;
-        return (b.balance || 0) - (a.balance || 0);
-    });
+        if (Object.keys(usersData).length === 0) {
+            document.getElementById("badgedUsersRanking").innerHTML = "<div class='text-center text-gray-400'>Henüz lider kullanıcı yok.</div>";
+            return;
+        }
 
-    const html = leaderUsers.map((u, i) => {
-        const badgesHtml = getUserBadgesHtml(u, u);
-        const avatarUrl = u.selectedAvatar ? u.selectedAvatar.url : defaultAvatarUrl;
-        return `<div class="mb-3 p-3 bg-gray-800 rounded-md border border-gray-700 cursor-pointer hover:bg-gray-700" onclick="openPublicUserDetailModal('${u.username}')"><div class="text-center">${badgesHtml}</div><div class="flex items-center justify-start mt-1"><span class="font-semibold text-lg text-yellow-300 mr-3 w-8 text-left">${i + 1}.</span><img src="${avatarUrl}" class="w-12 h-12 rounded-md mr-3 object-contain"><span class="font-semibold text-lg">${u.username}</span></div></div>`;
-    }).join("");
+        const leaders = await calculateAllLeaders(usersData);
+        
+        const leaderUsernames = new Set([
+            leaders.currentBalanceUser, leaders.highEverBalanceUser, leaders.surpriseBoxUser,
+            leaders.bombUser, leaders.spentPointsUser, leaders.multiplierUser,
+            leaders.boxUser, leaders.shieldUser, leaders.clickCatchLeaderUser, leaders.wheelSpinUser
+        ]);
+        leaderUsernames.delete(null);
 
-    document.getElementById("badgedUsersRanking").innerHTML = html || "<div class='text-center text-gray-400'>Henüz lider kullanıcı yok.</div>";
+        const leaderUsers = allUsersCache.filter(u => leaderUsernames.has(u.username)).map(u => {
+            const userLeaderStatus = {
+                isCurrentLeader: u.username === leaders.currentBalanceUser,
+                isHighLeader: u.username === leaders.highEverBalanceUser,
+                isSurpriseLeader: u.username === leaders.surpriseBoxUser,
+                isBombLeader: u.username === leaders.bombUser,
+                isStoreLeader: u.username === leaders.spentPointsUser,
+                isMultiplierLeader: u.username === leaders.multiplierUser,
+                isBoxLeader: u.username === leaders.boxUser,
+                isShieldLeader: u.username === leaders.shieldUser,
+                isClickCatchLeader: u.username === leaders.clickCatchLeaderUser,
+                isWheelSpinLeader: u.username === leaders.wheelSpinUser
+            };
+            return { ...u, ...userLeaderStatus };
+        });
+
+        leaderUsers.sort((a, b) => {
+            const aBadgeCount = Object.values(a).filter(val => val === true).length;
+            const bBadgeCount = Object.values(b).filter(val => val === true).length;
+            if (bBadgeCount !== aBadgeCount) return bBadgeCount - aBadgeCount;
+            return (b.balance || 0) - (a.balance || 0);
+        });
+
+        const html = leaderUsers.map((u, i) => {
+            const badgesHtml = getUserBadgesHtml(u, u);
+            const avatarUrl = u.selectedAvatar ? u.selectedAvatar.url : defaultAvatarUrl;
+            return `<div class="mb-3 p-3 bg-gray-800 rounded-md border border-gray-700 cursor-pointer hover:bg-gray-700" onclick="openPublicUserDetailModal('${u.username}')"><div class="text-center">${badgesHtml}</div><div class="flex items-center justify-start mt-1"><span class="font-semibold text-lg text-yellow-300 mr-3 w-8 text-left">${i + 1}.</span><img src="${avatarUrl}" class="w-12 h-12 rounded-md mr-3 object-contain"><span class="font-semibold text-lg">${u.username}</span></div></div>`;
+        }).join("");
+
+        document.getElementById("badgedUsersRanking").innerHTML = html || "<div class='text-center text-gray-400'>Henüz lider kullanıcı yok.</div>";
+    };
+
+    // Değişiklik olduğunda Liderler tablosunu yeniden çiz
+    ref.on('value', renderLeaders);
 }
   
   function loadPendingUsers() {
@@ -3240,10 +3267,6 @@ async function openBox(index) {
             const lostPoints = user.balance || 0;
             if ((user.iflasShieldUses || 0) > 0) {
                 updates['iflasShieldUses'] = (user.iflasShieldUses || 0) - 1;
-                
-                // === EKSİK OLAN SATIR BURAYA EKLENDİ ===
-                updates['iflasShieldUsedCount'] = (user.iflasShieldUsedCount || 0) + 1;
-
                 shieldWasUsed = true;
                 message = `İflas! 🛡️ Kalkanın seni korudu!`;
             } else {
@@ -4300,13 +4323,17 @@ async function deletePurchase(purchaseId) {
   function openBadgeInfoModal() { badgeInfoModal.style.display = 'flex'; }
   function closeBadgeInfoModal() { badgeInfoModal.style.display = 'none'; }
 
-// === ESKİ openPublicUserDetailModal FONKSİYONUNU SİLİP BUNU YAPIŞTIR ===
+// YENİ VE GÜNCELLENMİŞ FONKSİYON
 async function openPublicUserDetailModal(username) {
+  // DÜZELTME: Fonksiyonun başında body'e class ekleniyor.
+  // Bu, modal açıldığında arka planın kaymasını engeller.
   document.body.classList.add('modal-open');
     if (activeBlockedUserTimers[username]) {
         clearInterval(activeBlockedUserTimers[username]);
         delete activeBlockedUserTimers[username];
     }
+    // DÜZELTME: Hangi kullanıcının modal'ının açık olduğunu takip etmek için
+    // modal elementine bir data attribute ekliyoruz. Kapatma işleminde bu bize lazım olacak.
     publicUserDetailModal.dataset.viewingUser = username;
 
     const userSnap = await db.ref('users/' + username).once('value');
@@ -4319,33 +4346,24 @@ async function openPublicUserDetailModal(username) {
     const userLeaderStatus = {
         isCurrentLeader: username === leaders.currentBalanceUser,
         isHighLeader: username === leaders.highEverBalanceUser,
-        isBoxLeader: username === leaders.boxUser,
         isSurpriseLeader: username === leaders.surpriseBoxUser,
         isBombLeader: username === leaders.bombUser,
-        isMultiplierLeader: username === leaders.multiplierUser,
         isStoreLeader: username === leaders.spentPointsUser,
+        isMultiplierLeader: username === leaders.multiplierUser,
+        isBoxLeader: username === leaders.boxUser,
         isShieldLeader: username === leaders.shieldUser,
         isClickCatchLeader: username === leaders.clickCatchLeaderUser,
         isWheelSpinLeader: username === leaders.wheelSpinUser
     };
 
     const badges = getUserBadgesHtml(userData, userLeaderStatus, true);
+    
     document.getElementById('publicUserKingBadge').innerHTML = badges.crown;
     document.getElementById('publicUserOtherBadges').innerHTML = badges.others;
 
-    // === YENİ ROZET GÖSTERME MANTIĞI EKLENDİ ===
     document.getElementById('publicBadgeBalance').innerHTML = userLeaderStatus.isCurrentLeader ? '🥇' : '';
     document.getElementById('publicBadgeHighest').innerHTML = userLeaderStatus.isHighLeader ? '🏆' : '';
-    document.getElementById('badge-stat-box').innerHTML = userLeaderStatus.isBoxLeader ? '📦' : '';
-    document.getElementById('badge-stat-wheel').innerHTML = userLeaderStatus.isWheelSpinLeader ? '🎡' : '';
-    document.getElementById('badge-stat-clickcatch').innerHTML = userLeaderStatus.isClickCatchLeader ? '🎯' : '';
-    document.getElementById('badge-stat-surprise').innerHTML = userLeaderStatus.isSurpriseLeader ? '🎉' : ((userData.surpriseBoxesOpened || 0) > 0 ? '🎁' : '');
-    document.getElementById('badge-stat-bomb').innerHTML = userLeaderStatus.isBombLeader ? '💣' : '';
-    document.getElementById('badge-stat-multiplier').innerHTML = userLeaderStatus.isMultiplierLeader ? '✖️' : '';
-    document.getElementById('badge-stat-shield').innerHTML = userLeaderStatus.isShieldLeader ? '🛡️' : '';
-    document.getElementById('badge-stat-store').innerHTML = userLeaderStatus.isStoreLeader ? '🛒' : '';
-    
-    // ... (Fonksiyonun geri kalanı aynı, burada kesiyorum) ...
+
     const avatarUrl = userData.selectedAvatar ? userData.selectedAvatar.url : defaultAvatarUrl;
     document.getElementById('publicUserAvatar').src = avatarUrl;
     document.getElementById('publicUserName').textContent = username;
@@ -4372,6 +4390,18 @@ async function openPublicUserDetailModal(username) {
     document.getElementById('publicUserMultiplierFoundCount').textContent = userData.multiplierFoundCount || 0;
     document.getElementById('publicUserShieldUsedCount').textContent = userData.iflasShieldUsedCount || 0;
     document.getElementById('publicUserTotalSpent').textContent = userData.totalSpentPoints || 0;
+    
+    const statBadgeIds = ['box', 'wheel', 'clickcatch', 'surprise', 'bomb', 'multiplier', 'shield', 'store'];
+    statBadgeIds.forEach(id => document.getElementById(`badge-stat-${id}`).innerHTML = '');
+
+    if (userLeaderStatus.isBoxLeader) document.getElementById('badge-stat-box').innerHTML = '📦';
+    if (userLeaderStatus.isWheelSpinLeader) document.getElementById('badge-stat-wheel').innerHTML = '🎡';
+    if (userLeaderStatus.isClickCatchLeader) document.getElementById('badge-stat-clickcatch').innerHTML = '🎯';
+    if (userLeaderStatus.isSurpriseLeader) document.getElementById('badge-stat-surprise').innerHTML = '🎉';
+    if (userLeaderStatus.isBombLeader) document.getElementById('badge-stat-bomb').innerHTML = '💣';
+    if (userLeaderStatus.isMultiplierLeader) document.getElementById('badge-stat-multiplier').innerHTML = '✖️';
+    if (userLeaderStatus.isShieldLeader) document.getElementById('badge-stat-shield').innerHTML = '🛡️';
+    if (userLeaderStatus.isStoreLeader) document.getElementById('badge-stat-store').innerHTML = '🛒';
 
     const blockedInfoDiv = document.getElementById('publicUserBlockedInfo');
     const countdownEl = document.getElementById('publicUserBlockedCountdown');
@@ -4399,7 +4429,7 @@ async function openPublicUserDetailModal(username) {
     publicUserDetailModal.style.display = 'flex';
 }
   
-  // === ESKİ openUserManagementModal FONKSİYONUNU SİLİP BUNU YAPIŞTIR ===
+  // YENİ VE DÜZELTİLMİŞ FONKSİYON
 async function openUserManagementModal(username) {
     if (activeBlockedUserTimers[username]) {
         clearInterval(activeBlockedUserTimers[username]);
@@ -4417,6 +4447,7 @@ async function openUserManagementModal(username) {
 
     const leaders = await calculateAllLeaders(allUsersSnap.val());
 
+    // Yönetilen kullanıcıya özel liderlik durumlarını belirle
     const userLeaderStatus = {
         isCurrentLeader: username === leaders.currentBalanceUser,
         isHighLeader: username === leaders.highEverBalanceUser,
@@ -4429,32 +4460,13 @@ async function openUserManagementModal(username) {
         isClickCatchLeader: username === leaders.clickCatchLeaderUser,
         isWheelSpinLeader: username === leaders.wheelSpinUser
     };
-    
-    // Rozet span'larını temizle
-    ['managedBadgeBalance', 'managedBadgeHighest', 'managedBadgeWheel', 'managedBadgeBox', 'managedBadgeSurprise', 'managedBadgeBomb', 'managedBadgeMultiplier', 'managedBadgeStore', 'managedBadgeShield', 'managedBadgeClickCatch'].forEach(id => {
-        const el = document.getElementById(id);
-        if(el) el.innerHTML = '';
-    });
-
-    // === YENİ ROZET GÖSTERME MANTIĞI EKLENDİ ===
+  // YENİ EKLENEN KISIM: Admin panelindeki satır başı rozetlerini de dinamik hale getirir.
     document.getElementById('managedBadgeBalance').innerHTML = userLeaderStatus.isCurrentLeader ? '🥇' : '';
     document.getElementById('managedBadgeHighest').innerHTML = userLeaderStatus.isHighLeader ? '🏆' : '';
-    document.getElementById('managedBadgeBox').innerHTML = userLeaderStatus.isBoxLeader ? '📦' : '';
-    document.getElementById('managedBadgeSurprise').innerHTML = userLeaderStatus.isSurpriseLeader ? '🎉' : ((userData.surpriseBoxesOpened || 0) > 0 ? '🎁' : '');
-    document.getElementById('managedBadgeBomb').innerHTML = userLeaderStatus.isBombLeader ? '💣' : '';
-    document.getElementById('managedBadgeMultiplier').innerHTML = userLeaderStatus.isMultiplierLeader ? '✖️' : '';
-    document.getElementById('managedBadgeStore').innerHTML = userLeaderStatus.isStoreLeader ? '🛒' : '';
-    document.getElementById('managedBadgeShield').innerHTML = userLeaderStatus.isShieldLeader ? '🛡️' : '';
-    document.getElementById('managedBadgeClickCatch').innerHTML = userLeaderStatus.isClickCatchLeader ? '🎯' : '';
-    document.getElementById('managedBadgeWheel').innerHTML = userLeaderStatus.isWheelSpinLeader ? '🎡' : '';
 
     const avatarUrl = userData.selectedAvatar ? userData.selectedAvatar.url : defaultAvatarUrl;
     document.getElementById('managedUserAvatar').src = avatarUrl;
     document.getElementById('managedUserName').textContent = username;
-    // ... (Fonksiyonun geri kalanı aynı, burada kesiyorum) ...
-    // Diğer tüm document.getElementById... satırları aynı kalacak.
-    // Sadece yukarıdaki rozet mantığı eklendi/güncellendi.
-    // Fonksiyonun geri kalanını değiştirmene gerek yok.
     document.getElementById('managedUserBalance').textContent = userData.balance || 0;
     document.getElementById('managedUserHighestBalance').textContent = userData.highestBalanceEver || 0;
     document.getElementById('managedUserBoxRight').textContent = userData.kutuHakki || 0;
@@ -4503,7 +4515,21 @@ async function openUserManagementModal(username) {
     document.getElementById('managedUserClickCatchScore').textContent = userData.clickCatchHighestScore || 0;
     document.getElementById('managedUserWheelSpins').textContent = userData.wheelSpinsCount || 0;
 
-    // ... (Fonksiyonun geri kalanı aynı şekilde devam ediyor)
+    // Yönetim panelindeki liderlik rozetlerini göster
+    ['managedBadgeWheel', 'managedBadgeBox', 'managedBadgeSurprise', 'managedBadgeBomb', 'managedBadgeMultiplier', 'managedBadgeStore', 'managedBadgeShield', 'managedBadgeClickCatch'].forEach(id => {
+        const el = document.getElementById(id);
+        if(el) el.innerHTML = '';
+    });
+
+    if (userLeaderStatus.isBoxLeader) document.getElementById('managedBadgeBox').innerHTML = '📦';
+    if (userLeaderStatus.isSurpriseLeader) document.getElementById('managedBadgeSurprise').innerHTML = '🎉';
+    if (userLeaderStatus.isBombLeader) document.getElementById('managedBadgeBomb').innerHTML = '💣';
+    if (userLeaderStatus.isMultiplierLeader) document.getElementById('managedBadgeMultiplier').innerHTML = '✖️';
+    if (userLeaderStatus.isStoreLeader) document.getElementById('managedBadgeStore').innerHTML = '🛒';
+    if (userLeaderStatus.isShieldLeader) document.getElementById('managedBadgeShield').innerHTML = '🛡️';
+    if (userLeaderStatus.isClickCatchLeader) document.getElementById('managedBadgeClickCatch').innerHTML = '🎯';
+    if (userLeaderStatus.isWheelSpinLeader) document.getElementById('managedBadgeWheel').innerHTML = '🎡';
+
     const historyList = document.getElementById('managedUserPurchaseHistory');
     historyList.innerHTML = 'Yükleniyor...';
     db.ref('purchaseHistory').orderByChild('username').equalTo(username).once('value').then(snap => {
@@ -5693,8 +5719,6 @@ function listenForSurpriseBox() {
                             points: finalSessionData.result.points, 
                             multiplier: finalSessionData.multiplier 
                         });
-
-                      db.ref('users/' + finalSessionData.user + '/surpriseBoxesOpened').transaction(count => (count || 0) + 1);
                         
                         if (finalSessionData.user === currentUser) {
                             closeCardSelectionModal();
@@ -7361,31 +7385,29 @@ function renderActivityFeed(activities) {
 function initActivityFeed() {
     const activityBellContainer = document.getElementById('activityBellContainer');
     const activityCounter = document.getElementById('activityCounter');
+    const activityFeedPanel = document.getElementById('activityFeedPanel');
     const activityFeedList = document.getElementById('activityFeedList');
 
     activityBellContainer.classList.remove('hidden');
 
     const userFeedStatusRef = db.ref(`users/${currentUser}/lastCheckedFeedTimestamp`);
+    //... fonksiyonun devamı
     const ref = db.ref('activityFeed').orderByChild('timestamp');
 
-    // Önceki dinleyiciyi temizle
-    if (activeListeners.activityFeed && activeListeners.activityFeed.ref) {
-        activeListeners.activityFeed.ref.off();
-    }
-    
-    // Dinleyiciyi kaydet
-    activeListeners.activityFeed = { ref: ref };
-
-    let initialLoadComplete = false;
-
-    // Sadece ilk başta son 50 eylemi yükle
-    ref.limitToLast(50).once('value', async (snapshot) => {
-        const feedData = snapshot.val() || {};
+    const callback = async (snapshot) => {
+        const feedData = snapshot.val();
         
+        if (!feedData) {
+            renderActivityFeed([]); 
+            activityCounter.classList.add('hidden'); 
+            return;
+        }
+
         const userStatusSnap = await userFeedStatusRef.once('value');
         const lastChecked = userStatusSnap.val() || 0;
+        
         let unreadCount = 0;
-
+        
         const sortedActivities = Object.keys(feedData).map(key => {
             return { id: key, ...feedData[key] };
         }).sort((a, b) => b.timestamp - a.timestamp);
@@ -7395,22 +7417,19 @@ function initActivityFeed() {
                 unreadCount++;
             }
         });
-        
-        updateUnreadCounter(unreadCount);
-        renderActivityFeed(sortedActivities); // Mevcut eylemleri ekrana çiz
-        initialLoadComplete = true;
 
-        // Sadece yeni eylemleri dinlemeye başla
-        ref.startAt(Date.now()).on('child_added', (childSnapshot) => {
-            if (!initialLoadComplete) return;
-            
-            const newActivity = { id: childSnapshot.key, ...childSnapshot.val() };
-            addActivityToTop(newActivity); // Yeni eylemi listenin başına ekle
-            
-            const currentCount = parseInt(activityCounter.textContent) || 0;
-            updateUnreadCounter(currentCount + 1);
-        });
-    });
+        if (unreadCount > 0) {
+            activityCounter.textContent = unreadCount > 9 ? '9+' : unreadCount;
+            activityCounter.classList.remove('hidden');
+        } else {
+            activityCounter.classList.add('hidden');
+        }
+        
+        renderActivityFeed(sortedActivities);
+    };
+
+    activeListeners.activityFeed = { ref, event: 'value', callback };
+    ref.on('value', callback);
 }
 
 
@@ -8261,243 +8280,8 @@ function closeWheelLegendModal() {
           usesInput.classList.add('hidden');
       }
   });
-
-    function updateUnreadCounter(count) {
-    const activityCounter = document.getElementById('activityCounter');
-    if (count > 0) {
-        activityCounter.textContent = count > 9 ? '9+' : count;
-        activityCounter.classList.remove('hidden');
-    } else {
-        activityCounter.classList.add('hidden');
-    }
-}
-
-    // YENİ YARDIMCI FONKSİYON: Sadece yeni gelen eylemi listenin başına ekler
-function addActivityToTop(activity) {
-    const activityFeedList = document.getElementById('activityFeedList');
-    const placeholder = activityFeedList.querySelector('p');
-    if (placeholder) placeholder.remove();
-
-    const newElement = document.createElement('div');
-    // renderActivityFeed fonksiyonundan kopyalanan render mantığı
-    const details = activity.details || {};
-    let iconContent = getActivityIcon(activity.type, details);
-    let message = '';
-    const timeAgo = formatRelativeTime(activity.timestamp);
-    const userHtml = `<b class="cursor-pointer hover:underline" onclick="openPublicUserDetailModal('${activity.username}')">${activity.username}</b>`;
+  // YENİ EKLENECEK KOD SONU
     
-    // Mesaj oluşturma mantığı (renderActivityFeed'den alınabilir veya basitleştirilebilir)
-    message = `${userHtml} yeni bir eylem gerçekleştirdi.`; // Basit bir mesaj
-    
-    // (Detaylı mesajlar için renderActivityFeed içindeki switch-case yapısı buraya kopyalanabilir)
-    
-     newElement.innerHTML = `
-        <div class="flex items-start gap-4 p-3 mb-2 bg-gray-900/50 rounded-lg border-l-2 border-yellow-500 animate-pulse">
-            <div class="text-2xl mt-1">${iconContent}</div>
-            <div class="flex-1">
-                <p class="text-white text-sm">${getActivityMessage(activity)}</p>
-                <div class="flex justify-between items-center mt-1">
-                    <span class="text-xs text-gray-500">${timeAgo}</span>
-                </div>
-            </div>
-        </div>
-    `;
-    
-    const adminClearButton = activityFeedList.querySelector('.p-1.mb-2.text-center');
-    if (adminClearButton) {
-        adminClearButton.after(newElement.firstChild);
-    } else {
-        activityFeedList.prepend(newElement.firstChild);
-    }
-    
-    setTimeout(() => newElement.querySelector('.animate-pulse')?.classList.remove('animate-pulse'), 1000);
-}
-
-    // YENİ YARDIMCI FONKSİYON: Aktivite mesajını oluşturur (renderActivityFeed'den taşındı)
-function getActivityMessage(activity) {
-    const details = activity.details || {};
-    const userHtml = `<b class="cursor-pointer hover:underline" onclick="openPublicUserDetailModal('${activity.username}')">${activity.username}</b>`;
-    let message = `${userHtml} bir eylem gerçekleştirdi.`; // Varsayılan
-
-    switch (activity.type) {
-         case 'openBox':
-            let openBoxMultiplierText = '';
-            if (details.multiplier && details.multiplier > 1) {
-                openBoxMultiplierText = ` <span class="text-xs text-purple-400">(${details.multiplier}x Çarpan ile)</span>`;
-            }
-            message = `${userHtml}, <b>${details.boxId}</b> numaralı kutudan <span class="text-green-400 font-bold">+${details.points} Puan</span> kazandı${openBoxMultiplierText}.`;
-            break;
-        case 'iflas':
-            let iflasMultiplierText = '';
-            if (details.multiplier && details.multiplier > 1) {
-                iflasMultiplierText = ` <span class="text-xs text-purple-400">(${details.multiplier}x Çarpan ile)</span>`;
-            }
-            if (details.shieldUsed) {
-                message = `${userHtml}, <b>${details.boxId}</b> numaralı kutudan Bomba buldu ama kalkanı tarafından korundu${iflasMultiplierText}.`;
-            } else {
-                message = `${userHtml}, <b>${details.boxId}</b> numaralı kutudan Bomba buldu ve <span class="text-red-500 font-bold">-${details.lostPoints} puan</span> kaybetti${iflasMultiplierText}.`;
-            }
-            break;
-        case 'multiplierFound':
-             message = `${userHtml}, <b>${details.boxId}</b> numaralı kutudan <span class="text-purple-400 font-bold">${details.value}x Çarpan</span> buldu.`;
-            break;
-        case 'multiplierRefund':
-            message = `${userHtml}, <b>${details.boxId}</b> numaralı kutudan <span class="text-purple-400 font-bold">${details.newMultiplier}x Çarpan</span> buldu. Mevcut ${details.refundedMultiplier}x mağaza çarpanı iade edildi.`;
-            break;
-        case 'newItemFound':
-            let newItemMultiplierText = '';
-            if (details.multiplier && details.multiplier > 1) {
-                newItemMultiplierText = ` <span class="text-xs text-purple-400">(${details.multiplier}x Çarpan ile)</span>`;
-            }
-            message = `${userHtml}, <b>${details.boxId}</b> numaralı kutudan <span class="text-cyan-400 font-bold">${details.itemName}</span> buldu${newItemMultiplierText}.`;
-            break;
-        case 'surpriseBox':
-            const multiplierText = (details.multiplier || 1) > 1 ? ` (${details.multiplier}x çarpan ile)` : '';
-            const source = details.boxId === 'Çark' ? 'Şans Çarkı\'ndan' : `<b>${details.boxId}</b> numaralı kutudan`;
-            message = `${userHtml}, ${source} Sürpriz Kutu buldu ve <span class="text-green-400 font-bold">+${details.points} Puan</span> kazandı${multiplierText}!`;
-            break;
-        case 'buyItem':
-            if (details.itemType === 'tempMultiplier') {
-                const duration = details.itemDuration || 1;
-                message = `${userHtml}, mağazadan <span class="text-red-500 font-bold">-${details.itemCost} puan</span> karşılığında <span class="text-cyan-400 font-bold">${duration} ADET ${details.itemValue}x Çarpan</span> satın aldı.`;
-            } else {
-                const quantity = details.itemValue || 1;
-                const itemName = details.itemName || 'bir ürün';
-                message = `${userHtml}, mağazadan <span class="text-red-500 font-bold">-${details.itemCost} puan</span> karşılığında <span class="text-cyan-400 font-bold">+${quantity} ADET ${itemName}</span> satın aldı.`;
-            }
-            break;
-        case 'spinWheel':
-            let prizeText = ''; 
-            const prizeType = details.type;
-            const prizeValue = details.value;
-            switch(prizeType) {
-                case 'points': prizeText = `+${prizeValue} Puan`; break;
-                case 'boxRights': prizeText = `+${prizeValue} Kutu Hakkı`; break;
-                case 'iflasShield': prizeText = `+${prizeValue} İflas Kalkanı`; break;
-                case 'tempMultiplier': prizeText = `${prizeValue}x Çarpan`; break;
-                case 'surpriseBox': prizeText = `Sürpriz Kutu`; break;
-                case 'clickCatchTicket': prizeText = `+${prizeValue} Tıkla-Yakala Bileti`; break;
-                case 'wheelTicket': prizeText = `+${prizeValue} Çark Bileti`; break;
-                case 'pas': prizeText = `Pas`; break;
-                default: prizeText = details.result || 'bir ödül'; break;
-            }
-            if (prizeType === 'pas') {
-                message = `${userHtml}, Şans Çarkı'nı çevirdi ve <span class="text-gray-400 font-bold">Pas geldi</span>.`;
-            } else {
-                const prizeDisplayHtml = `<span class="text-cyan-400 font-bold">${prizeText}</span>`;
-                message = `${userHtml}, Şans Çarkı'nı çevirerek ${prizeDisplayHtml} kazandı.`;
-            }
-            break;
-        case 'clickCatchSolo':
-            if (details.score >= 0) {
-                message = `${userHtml}, Tıkla-Yakala (Tekli) oyun oynadı ve <span class="text-green-400 font-bold">+${details.score} Puan</span> kazandı.`;
-            } else {
-                message = `${userHtml}, Tıkla-Yakala (Tekli) oyununda <span class="text-red-500 font-bold">${details.score} Puan</span> kaybetti.`;
-            }
-            if(details.specialItems) {
-                message += ` Ayrıca <span class="text-cyan-400 font-bold">${details.specialItems}</span> elde etti.`
-            }
-            break;
-        case 'clickCatchLobby':
-            message = `${userHtml}, Tıkla-Yakala (Lobi) oyununda birinci oldu ve <span class="text-green-400 font-bold">+${details.prize} Puan</span> kazandı.`;
-            break;
-        case 'dailyReward':
-            if (details.rewardType === 'tempMultiplier') {
-                message = `${userHtml}, günlük ödül olarak <span class="text-cyan-400 font-bold">${details.rewardUses} ADET ${details.rewardValue}x Çarpan</span> aldı.`;
-            } else if (details.rewardType === 'points') {
-                message = `${userHtml}, günlük ödül olarak <span class="text-green-400 font-bold">+${details.rewardValue} Puan</span> aldı.`;
-            } else {
-                message = `${userHtml}, günlük ödül olarak <span class="text-cyan-400 font-bold">+${details.rewardValue} ADET ${details.rewardName}</span> aldı.`;
-            }
-            break;
-        case 'surpriseBoxTimeout':
-            const sourceText = details.boxId === 'Çark' 
-                ? "Şans Çarkı'ndan gelen" 
-                : `<b>${details.boxId}</b> numaralı kutudan gelen`;
-            message = `${userHtml}, 60 saniye içinde kart seçimi yapmadığı için ${sourceText} Sürpriz Kutu şansını kaçırdı.`;
-            break;
-    }
-    return message;
-}
-
-    function renderActivityItemHtml(activity) {
-    const details = activity.details || {};
-    let iconContent = getActivityIcon(activity.type, details);
-    let message = '';
-    const timeAgo = formatRelativeTime(activity.timestamp);
-    const userHtml = `<b class="cursor-pointer hover:underline" onclick="openPublicUserDetailModal('${activity.username}')">${activity.username}</b>`;
-    const deleteButtonHtml = isAdmin ? `
-        <button onclick="deleteActivity('${activity.id}')" class="ml-2 text-gray-500 hover:text-red-500 transition-colors" title="Bu Eylemi Sil">
-            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1-1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" /></svg>
-        </button>
-    ` : '';
-
-    // Mesaj oluşturma mantığı
-    switch (activity.type) {
-        case 'openBox':
-            let openBoxMultiplierText = details.multiplier > 1 ? ` <span class="text-xs text-purple-400">(${details.multiplier}x Çarpan ile)</span>` : '';
-            message = `${userHtml}, <b>${details.boxId}</b> numaralı kutudan <span class="text-green-400 font-bold">+${details.points} Puan</span> kazandı${openBoxMultiplierText}.`;
-            break;
-        case 'iflas':
-            let iflasMultiplierText = details.multiplier > 1 ? ` <span class="text-xs text-purple-400">(${details.multiplier}x Çarpan ile)</span>` : '';
-            message = details.shieldUsed ? `${userHtml}, <b>${details.boxId}</b> numaralı kutudan Bomba buldu ama kalkanı tarafından korundu${iflasMultiplierText}.` : `${userHtml}, <b>${details.boxId}</b> numaralı kutudan Bomba buldu ve <span class="text-red-500 font-bold">-${details.lostPoints} puan</span> kaybetti${iflasMultiplierText}.`;
-            break;
-        case 'multiplierFound':
-            message = `${userHtml}, <b>${details.boxId}</b> numaralı kutudan <span class="text-purple-400 font-bold">${details.value}x Çarpan</span> buldu.`;
-            break;
-        case 'multiplierRefund':
-            message = `${userHtml}, <b>${details.boxId}</b> numaralı kutudan <span class="text-purple-400 font-bold">${details.newMultiplier}x Çarpan</span> buldu. Mevcut ${details.refundedMultiplier}x mağaza çarpanı iade edildi.`;
-            break;
-        case 'newItemFound':
-            let newItemMultiplierText = details.multiplier > 1 ? ` <span class="text-xs text-purple-400">(${details.multiplier}x Çarpan ile)</span>` : '';
-            message = `${userHtml}, <b>${details.boxId}</b> numaralı kutudan <span class="text-cyan-400 font-bold">${details.itemName}</span> buldu${newItemMultiplierText}.`;
-            break;
-        case 'surpriseBox':
-            const multiplierText = (details.multiplier || 1) > 1 ? ` (${details.multiplier}x çarpan ile)` : '';
-            const source = details.boxId === 'Çark' ? 'Şans Çarkı\'ndan' : `<b>${details.boxId}</b> numaralı kutudan`;
-            message = `${userHtml}, ${source} Sürpriz Kutu buldu ve <span class="text-green-400 font-bold">+${details.points} Puan</span> kazandı${multiplierText}!`;
-            break;
-        case 'buyItem':
-            const quantity = details.itemValue || 1;
-            const itemName = details.itemName || 'bir ürün';
-            message = `${userHtml}, mağazadan <span class="text-red-500 font-bold">-${details.itemCost} puan</span> karşılığında <span class="text-cyan-400 font-bold">+${quantity} ADET ${itemName}</span> satın aldı.`;
-            break;
-        case 'spinWheel':
-            const prizeText = details.result || 'bir ödül';
-            message = (details.type === 'pas') ? `${userHtml}, Şans Çarkı'nı çevirdi ve <span class="text-gray-400 font-bold">Pas geldi</span>.` : `${userHtml}, Şans Çarkı'nı çevirerek <span class="text-cyan-400 font-bold">${prizeText}</span> kazandı.`;
-            break;
-        case 'clickCatchSolo':
-            message = (details.score >= 0) ? `${userHtml}, Tıkla-Yakala oynadı ve <span class="text-green-400 font-bold">+${details.score} Puan</span> kazandı.` : `${userHtml}, Tıkla-Yakala oyununda <span class="text-red-500 font-bold">${details.score} Puan</span> kaybetti.`;
-            if(details.specialItems) message += ` Ayrıca <span class="text-cyan-400 font-bold">${details.specialItems}</span> elde etti.`;
-            break;
-        case 'clickCatchLobby':
-            message = `${userHtml}, Tıkla-Yakala (Lobi) oyununda birinci oldu ve <span class="text-green-400 font-bold">+${details.prize} Puan</span> kazandı.`;
-            break;
-        case 'dailyReward':
-            message = `${userHtml}, günlük ödül olarak <span class="text-cyan-400 font-bold">${details.rewardName}</span> aldı.`;
-            break;
-        case 'surpriseBoxTimeout':
-            const sourceText = details.boxId === 'Çark' ? "Şans Çarkı'ndan gelen" : `<b>${details.boxId}</b> numaralı kutudan gelen`;
-            message = `${userHtml}, süre dolduğu için ${sourceText} Sürpriz Kutu şansını kaçırdı.`;
-            break;
-        default:
-            message = `${userHtml} bir eylem gerçekleştirdi.`;
-    }
-
-    return `
-        <div class="flex items-start gap-4 p-3 mb-2 bg-gray-900/50 rounded-lg border-l-2 border-gray-700">
-            <div class="text-2xl mt-1">${iconContent}</div>
-            <div class="flex-1">
-                <p class="text-white text-sm">${message}</p>
-                <div class="flex justify-between items-center mt-1">
-                    <span class="text-xs text-gray-500">${timeAgo}</span>
-                    ${deleteButtonHtml}
-                </div>
-            </div>
-        </div>
-    `;
-}
-  
 </script>
 </body>
 </html>
