@@ -181,14 +181,19 @@
     cursor: crosshair;
   }
   .catch-item {
-      position: absolute;
-      width: 50px;
-      height: 50px;
-      background-size: contain;
-      background-repeat: no-repeat;
-      cursor: pointer;
-      transition: transform 0.1s ease;
-  }
+    position: absolute;
+    width: 50px;
+    height: 50px;
+    background-size: contain;
+    background-repeat: no-repeat;
+    cursor: pointer;
+    transition: transform 0.1s ease;
+    /* --- YENİ EKLENEN KODLAR --- */
+    -webkit-user-select: none; /* Safari */
+    -moz-user-select: none;    /* Firefox */
+    -ms-user-select: none;     /* Internet Explorer/Edge */
+    user-select: none;         /* Standart sözdizimi */
+}
   .catch-item:hover {
       transform: scale(1.1);
   }
