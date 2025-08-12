@@ -661,16 +661,15 @@ body.modal-open .modal-content {
         </div>
 
         <div class="bg-gray-800/80 p-6 rounded-xl border border-gray-700">
-          <h4 class="text-red-400 text-xl font-semibold mb-4 border-b border-gray-600 pb-2">Tehlikeli Bölge</h4>
-          <div class="flex flex-wrap gap-3 justify-center">
-            <button onclick="revealAll()" class="flex-1 py-2 px-3 bg-blue-800 hover:bg-blue-700 text-white font-bold rounded-lg text-sm">Tüm Kutuları Aç</button>
-            <button onclick="resetGame()" class="flex-1 py-2 px-3 bg-orange-700 hover:bg-orange-600 text-white font-bold rounded-lg text-sm">Oyunu Sıfırla</button>
-            <button onclick="restartSystem()" class="flex-1 py-2 px-3 bg-red-800 hover:bg-red-700 text-white font-bold rounded-lg text-sm">Sistemi Sıfırla</button>
-            <button onclick="clearAllTotalSpentPoints()" class="flex-1 py-2 px-3 bg-purple-800 hover:bg-purple-700 text-white font-bold rounded-lg text-sm">Harcanan Puanları Temizle</button>
-            <button onclick="clearPurchaseHistory()" class="flex-1 py-2 px-3 bg-pink-800 hover:bg-pink-700 text-white font-bold rounded-lg text-sm">Satın Alma Geçmişini Sil</button>
-          </div>
-        </div>
-      </div>
+  <h4 class="text-red-400 text-xl font-semibold mb-4 border-b border-gray-600 pb-2">Tehlikeli Bölge</h4>
+  <div class="flex flex-wrap gap-3 justify-center">
+    <button onclick="revealAll()" class="flex-1 py-2 px-3 bg-blue-800 hover:bg-blue-700 text-white font-bold rounded-lg text-sm">Tüm Kutuları Aç</button>
+    <button onclick="resetGame()" class="flex-1 py-2 px-3 bg-orange-700 hover:bg-orange-600 text-white font-bold rounded-lg text-sm">Oyunu Sıfırla</button>
+    <button onclick="restartSystem()" class="flex-1 py-2 px-3 bg-red-800 hover:bg-red-700 text-white font-bold rounded-lg text-sm">Sistemi Sıfırla</button>
+    <button onclick="clearAllTotalSpentPoints()" class="flex-1 py-2 px-3 bg-purple-800 hover:bg-purple-700 text-white font-bold rounded-lg text-sm">Harcanan Puanları Temizle</button>
+    <button onclick="clearPurchaseHistory()" class="flex-1 py-2 px-3 bg-pink-800 hover:bg-pink-700 text-white font-bold rounded-lg text-sm">Satın Alma Geçmişini Sil</button>
+  </div>
+</div>
 
       <div class="bg-gray-800/80 p-6 rounded-xl border border-gray-700 flex flex-col">
         <h4 class="text-yellow-200 text-xl font-semibold mb-4 border-b border-gray-600 pb-2 flex-shrink-0">Kullanıcı Yönetimi</h4>
@@ -679,38 +678,61 @@ body.modal-open .modal-content {
         </div>
         <div id="allUsers" class="flex-grow scrollable-list overflow-y-auto bg-gray-900/50 p-2 rounded-md">Yükleniyor...</div>
       </div>
+      
 
       <div class="bg-gray-800/80 p-6 rounded-xl border border-gray-700">
-        <h4 class="text-yellow-200 text-xl font-semibold mb-4 border-b border-gray-600 pb-2">Toplu Kullanıcı İşlemleri</h4>
-        <div class="space-y-6">
-          <div>
-            <label for="globalPoint" class="block text-gray-300 mb-1">Toplu Puan İşlemi</label>
-            <input type="number" id="globalPoint" placeholder="Puan Miktarı" min="1" class="w-full p-3 mb-2 bg-gray-700 border border-gray-600 rounded-lg text-white">
-            <div class="flex gap-2">
-              <button onclick="changeAllPoints(true)" class="flex-1 py-2 bg-green-700 hover:bg-green-600 text-white font-bold rounded-lg text-sm">Ekle</button>
-              <button onclick="changeAllPoints(false)" class="flex-1 py-2 bg-red-700 hover:bg-red-600 text-white font-bold rounded-lg text-sm">Sil</button>
-            </div>
-          </div>
-          <div>
-            <label for="globalBoxRight" class="block text-gray-300 mb-1">Toplu Kutu Hakkı İşlemi</label>
-            <input type="number" id="globalBoxRight" placeholder="Kutu Hakkı Miktarı" min="1" class="w-full p-3 mb-2 bg-gray-700 border border-gray-600 rounded-lg text-white">
-            <div class="flex gap-2">
-              <button onclick="changeAllBoxRights(true)" class="flex-1 py-2 bg-green-700 hover:bg-green-600 text-white font-bold rounded-lg text-sm">Ekle</button>
-              <button onclick="changeAllBoxRights(false)" class="flex-1 py-2 bg-red-700 hover:bg-red-600 text-white font-bold rounded-lg text-sm">Sil</button>
-            </div>
-          </div>
-        </div>
+  <h4 class="text-yellow-200 text-xl font-semibold mb-4 border-b border-gray-600 pb-2">Toplu Kullanıcı İşlemleri</h4>
+  <div class="space-y-6">
+    <div>
+      <label for="globalPoint" class="block text-gray-300 mb-1">Toplu Puan İşlemi</label>
+      <input type="number" id="globalPoint" placeholder="Puan Miktarı" min="1" class="w-full p-3 mb-2 bg-gray-700 border border-gray-600 rounded-lg text-white">
+      <div class="flex gap-2">
+        <button onclick="changeAllPoints(true)" class="flex-1 py-2 bg-green-700 hover:bg-green-600 text-white font-bold rounded-lg text-sm">Ekle</button>
+        <button onclick="changeAllPoints(false)" class="flex-1 py-2 bg-red-700 hover:bg-red-600 text-white font-bold rounded-lg text-sm">Sil</button>
       </div>
-      
-        <div class="flex flex-wrap gap-2 justify-center mt-4">
-          <button onclick="revealAll()" class="py-2 px-4 bg-red-700 hover:bg-red-600 text-white font-bold rounded-lg">Tüm Kutuları Aç</button>
-          <button onclick="resetGame()" class="py-2 px-4 bg-red-700 hover:bg-red-600 text-white font-bold rounded-lg">Oyunu Baştan Başlat</button>
-          <button onclick="restartSystem()" class="py-2 px-4 bg-red-700 hover:bg-red-600 text-white font-bold rounded-lg">Sistemi Yeniden Başlat</button>
-          <button onclick="clearAllTotalSpentPoints()" class="py-2 px-4 bg-orange-700 hover:bg-orange-600 text-white font-bold rounded-lg">Harcanan Puanları Sıfırla</button>
-          <button onclick="clearPurchaseHistory()" class="py-2 px-4 bg-orange-700 hover:bg-orange-600 text-white font-bold rounded-lg">Satın Alma Geçmişini Temizle</button>
-        </div>
     </div>
-   </div>
+    <div>
+      <label for="globalBoxRight" class="block text-gray-300 mb-1">Toplu Kutu Hakkı İşlemi</label>
+      <input type="number" id="globalBoxRight" placeholder="Kutu Hakkı Miktarı" min="1" class="w-full p-3 mb-2 bg-gray-700 border border-gray-600 rounded-lg text-white">
+      <div class="flex gap-2">
+        <button onclick="changeAllBoxRights(true)" class="flex-1 py-2 bg-green-700 hover:bg-green-600 text-white font-bold rounded-lg text-sm">Ekle</button>
+        <button onclick="changeAllBoxRights(false)" class="flex-1 py-2 bg-red-700 hover:bg-red-600 text-white font-bold rounded-lg text-sm">Sil</button>
+      </div>
+    </div>
+    <div>
+      <label for="globalShield" class="block text-gray-300 mb-1">Toplu İflas Kalkanı İşlemi</label>
+      <input type="number" id="globalShield" placeholder="Kalkan Miktarı" min="1" class="w-full p-3 mb-2 bg-gray-700 border border-gray-600 rounded-lg text-white">
+      <div class="flex gap-2">
+        <button onclick="changeAllShields(true)" class="flex-1 py-2 bg-green-700 hover:bg-green-600 text-white font-bold rounded-lg text-sm">Ekle</button>
+        <button onclick="changeAllShields(false)" class="flex-1 py-2 bg-red-700 hover:bg-red-600 text-white font-bold rounded-lg text-sm">Sil</button>
+      </div>
+    </div>
+    <div>
+      <label for="globalWheelTicket" class="block text-gray-300 mb-1">Toplu Çark Bileti İşlemi</label>
+      <input type="number" id="globalWheelTicket" placeholder="Bilet Miktarı" min="1" class="w-full p-3 mb-2 bg-gray-700 border border-gray-600 rounded-lg text-white">
+      <div class="flex gap-2">
+        <button onclick="changeAllWheelTickets(true)" class="flex-1 py-2 bg-green-700 hover:bg-green-600 text-white font-bold rounded-lg text-sm">Ekle</button>
+        <button onclick="changeAllWheelTickets(false)" class="flex-1 py-2 bg-red-700 hover:bg-red-600 text-white font-bold rounded-lg text-sm">Sil</button>
+      </div>
+    </div>
+    <div>
+      <label for="globalClickCatchTicket" class="block text-gray-300 mb-1">Toplu Tıkla-Yakala Bileti İşlemi</label>
+      <input type="number" id="globalClickCatchTicket" placeholder="Bilet Miktarı" min="1" class="w-full p-3 mb-2 bg-gray-700 border border-gray-600 rounded-lg text-white">
+      <div class="flex gap-2">
+        <button onclick="changeAllClickCatchTickets(true)" class="flex-1 py-2 bg-green-700 hover:bg-green-600 text-white font-bold rounded-lg text-sm">Ekle</button>
+        <button onclick="changeAllClickCatchTickets(false)" class="flex-1 py-2 bg-red-700 hover:bg-red-600 text-white font-bold rounded-lg text-sm">Sil</button>
+      </div>
+    </div>
+    <div>
+      <label for="globalMultiplier" class="block text-gray-300 mb-1">Toplu Çarpan İşlemi</label>
+      <input type="number" id="globalMultiplier" placeholder="Çarpan Değeri (örn: 2, 3)" min="2" class="w-full p-3 mb-2 bg-gray-700 border border-gray-600 rounded-lg text-white">
+      <input type="number" id="globalMultiplierUses" placeholder="Kullanım Sayısı" min="1" class="w-full p-3 mb-2 bg-gray-700 border border-gray-600 rounded-lg text-white">
+      <div class="flex gap-2">
+        <button onclick="setAllMultipliers()" class="flex-1 py-2 bg-green-700 hover:bg-green-600 text-white font-bold rounded-lg text-sm">Uygula</button>
+        <button onclick="clearAllMultipliers()" class="flex-1 py-2 bg-red-700 hover:bg-red-600 text-white font-bold rounded-lg text-sm">Sıfırla</button>
+      </div>
+    </div>
+  </div>
 </div>
   <div id="pointAdjustmentModal" class="modal-overlay fixed inset-0 bg-black bg-opacity-70 flex justify-center items-center z-[9999] hidden">
     <div class="modal-content bg-gray-800 p-8 rounded-xl shadow-2xl border border-red-700 w-11/12 max-w-md text-center relative">
@@ -907,6 +929,7 @@ body.modal-open .modal-content {
     <h4 class="text-yellow-400 text-2xl font-bold mb-6">Kullanıcı Yönetimi: <span id="managedUserName"></span></h4>
     
     <div id="managedUserDetails" class="text-left text-gray-300 mb-6 space-y-1">
+        
     <p><span id="managedBadgeBalance" class="inline-block w-6 text-center"></span>Mevcut Puan: <span id="managedUserBalance" class="font-bold text-yellow-300"></span></p>
     <p><span id="managedBadgeHighest" class="inline-block w-6 text-center"></span>Ulaşılan En Yüksek Puan: <span id="managedUserHighestBalance" class="font-bold text-green-400"></span></p>
     <p>Kutu Hakkı: <span id="managedUserBoxRight" class="font-bold text-green-400"></span></p>
@@ -1953,6 +1976,7 @@ async function afterLogin() {
     loadAnnouncements();
     loadClickCatchRankings();
     listenForGameChanges();
+    listenForAdminNotifications();
     listenForSurpriseBox();
     listenForDailyRewardChanges();
     initActivityFeed();
@@ -4340,7 +4364,10 @@ async function openUserManagementModal(username) {
     document.getElementById('managedUserName').textContent = username;
     document.getElementById('managedUserBalance').textContent = userData.balance || 0;
     document.getElementById('managedUserHighestBalance').textContent = userData.highestBalanceEver || 0;
-    document.getElementById('managedUserBoxRight').textContent = userData.kutuHakki || 0;
+document.getElementById('managedUserBoxRight').textContent = userData.kutuHakki || 0;
+document.getElementById('managedUserWheelTickets').textContent = userData.carkBileti || 0;
+document.getElementById('managedUserClickCatchTickets').textContent = userData.clickCatchTickets || 0;
+document.getElementById('managedUserIflasShield').textContent = userData.iflasShieldUses || 0;
     document.getElementById('managedUserWheelTickets').textContent = userData.carkBileti || 0;
     document.getElementById('managedUserClickCatchTickets').textContent = userData.clickCatchTickets || 0;
     document.getElementById('managedUserIflasShield').textContent = userData.iflasShieldUses || 0;
@@ -7019,6 +7046,9 @@ function renderActivityFeed(activities) {
                     case 'pas':             prizeText = `Pas`; break;
                     default:                prizeText = details.result || 'bir ödül'; break;
                 }
+                case 'adminBulkAction':
+  message = `${userHtml}, admin paneli üzerinden toplu işlem yaptı: <span class="text-red-400 font-bold">${details.action}</span>`;
+  break;
 
                 if (prizeType === 'pas') {
                     message = `${userHtml}, Şans Çarkı'nı çevirdi ve <span class="text-gray-400 font-bold">Pas geldi</span>.`;
@@ -8044,6 +8074,116 @@ db.ref('gameLock').on('value', snap => {
     updateLockButtonText(isLocked);
     isGameLocked = isLocked;
 });
+
+// YENİ: TOPLU KALKAN EKLEME/SİLME FONKSİYONLARI
+async function changeAllShields(add) { 
+    const amount = parseInt(document.getElementById("globalShield").value); 
+    if (isNaN(amount) || amount <= 0) { 
+        displayMessage("Geçerli miktar girin."); 
+        return; 
+    } 
+    const confirmed = await customConfirm(`Tüm kullanıcılara ${add ? 'eklemek' : 'silmek'} istediğinizden emin misiniz?`); 
+    if (confirmed) { 
+        db.ref('users').once('value').then(snap => { 
+            const updates = {}; 
+            snap.forEach(child => { 
+                if (child.val().approved && !child.val().blocked && child.key !== "weizendtv") { 
+                    let shields = child.val().iflasShieldUses || 0; 
+                    shields = add ? shields + amount : Math.max(shields - amount, 0); 
+                    updates['users/' + child.key + '/iflasShieldUses'] = shields; 
+                } 
+            }); 
+            db.ref().update(updates).then(() => displayMessage("Tüm kullanıcılara kalkan işlemi başarıyla uygulandı.")) 
+        }); 
+    } 
+}
+
+// YENİ: TOPLU ÇARK BİLETİ EKLEME/SİLME FONKSİYONLARI
+async function changeAllWheelTickets(add) { 
+    const amount = parseInt(document.getElementById("globalWheelTicket").value); 
+    if (isNaN(amount) || amount <= 0) { 
+        displayMessage("Geçerli miktar girin."); 
+        return; 
+    } 
+    const confirmed = await customConfirm(`Tüm kullanıcılara ${add ? 'eklemek' : 'silmek'} istediğinizden emin misiniz?`); 
+    if (confirmed) { 
+        db.ref('users').once('value').then(snap => { 
+            const updates = {}; 
+            snap.forEach(child => { 
+                if (child.val().approved && !child.val().blocked && child.key !== "weizendtv") { 
+                    let tickets = child.val().carkBileti || 0; 
+                    tickets = add ? tickets + amount : Math.max(tickets - amount, 0); 
+                    updates['users/' + child.key + '/carkBileti'] = tickets; 
+                } 
+            }); 
+            db.ref().update(updates).then(() => displayMessage("Tüm kullanıcılara çark bileti işlemi başarıyla uygulandı.")) 
+        }); 
+    } 
+}
+
+// YENİ: TOPLU TIKLA-YAKALA BİLETİ EKLEME/SİLME FONKSİYONLARI
+async function changeAllClickCatchTickets(add) { 
+    const amount = parseInt(document.getElementById("globalClickCatchTicket").value); 
+    if (isNaN(amount) || amount <= 0) { 
+        displayMessage("Geçerli miktar girin."); 
+        return; 
+    } 
+    const confirmed = await customConfirm(`Tüm kullanıcılara ${add ? 'eklemek' : 'silmek'} istediğinizden emin misiniz?`); 
+    if (confirmed) { 
+        db.ref('users').once('value').then(snap => { 
+            const updates = {}; 
+            snap.forEach(child => { 
+                if (child.val().approved && !child.val().blocked && child.key !== "weizendtv") { 
+                    let tickets = child.val().clickCatchTickets || 0; 
+                    tickets = add ? tickets + amount : Math.max(tickets - amount, 0); 
+                    updates['users/' + child.key + '/clickCatchTickets'] = tickets; 
+                } 
+            }); 
+            db.ref().update(updates).then(() => displayMessage("Tüm kullanıcılara tıkla-yakala bileti işlemi başarıyla uygulandı.")) 
+        }); 
+    } 
+}
+
+// YENİ: TOPLU ÇARPAN AYARLAMA VE SIFIRLAMA FONKSİYONLARI
+async function setAllMultipliers() { 
+    const multiplierValue = parseInt(document.getElementById("globalMultiplier").value); 
+    const multiplierUses = parseInt(document.getElementById("globalMultiplierUses").value); 
+    if (isNaN(multiplierValue) || multiplierValue < 2 || isNaN(multiplierUses) || multiplierUses < 1) { 
+        displayMessage("Geçerli çarpan değeri (2 veya üzeri) ve kullanım sayısı (1 veya üzeri) girin."); 
+        return; 
+    } 
+    const confirmed = await customConfirm(`Tüm kullanıcılara ${multiplierValue}x çarpanı, ${multiplierUses} kullanım hakkı ile uygulamak istediğinizden emin misiniz?`); 
+    if (confirmed) { 
+        db.ref('users').once('value').then(snap => { 
+            const updates = {}; 
+            snap.forEach(child => { 
+                if (child.val().approved && !child.val().blocked && child.key !== "weizendtv") { 
+                    updates['users/' + child.key + '/activeMultiplier'] = multiplierValue;
+                    updates['users/' + child.key + '/multiplierSource'] = 'store'; 
+                    updates['users/' + child.key + '/multiplierRemainingUses'] = multiplierUses;
+                } 
+            }); 
+            db.ref().update(updates).then(() => displayMessage("Tüm kullanıcılara çarpan başarıyla uygulandı.")) 
+        }); 
+    } 
+}
+
+async function clearAllMultipliers() { 
+    const confirmed = await customConfirm("Tüm kullanıcıların aktif çarpanlarını sıfırlamak istediğinizden emin misiniz?"); 
+    if (confirmed) { 
+        db.ref('users').once('value').then(snap => { 
+            const updates = {}; 
+            snap.forEach(child => { 
+                if (child.val().approved && !child.val().blocked && child.key !== "weizendtv") { 
+                    updates['users/' + child.key + '/activeMultiplier'] = 1;
+                    updates['users/' + child.key + '/multiplierSource'] = 'none'; 
+                    updates['users/' + child.key + '/multiplierRemainingUses'] = 0;
+                } 
+            }); 
+            db.ref().update(updates).then(() => displayMessage("Tüm kullanıcıların çarpanları başarıyla sıfırlandı.")) 
+        }); 
+    } 
+}
     
 </script>
 </body>
