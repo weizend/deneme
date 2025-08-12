@@ -3066,7 +3066,7 @@ async function deleteUserAvatar(username, avatarId) {
 
 async function openBox(index) {
     if (isGameLocked) {
-        displayMessage("Şu anda başka bir kullanıcı kutu açıyor veya oyun beklemede. Lütfen 5 saniye bekleyin.");
+        displayMessage("Bir kullanıcı kutu açarken bağlantı sorunu yaşadığı için kutular kilitlendi. <b>'Sorunları Çöz'</b> menüsünden kilidi açabilirsiniz.");
         return;
     }
     if (boxes[index].opened) return;
@@ -6129,7 +6129,7 @@ function endSoloClickCatchGame() {
 
     let endMessage = '';
     if (clickCatchScore >= 0) {
-        endMessage = `Oyun bitti! Skorun: ${clickCatchScore}. Kazandığın puanlar ve ödüller hesabına eklendi!`;
+        endMessage = `Oyun bitti! Yakalanan puan: ${clickCatchScore}. Kazandığın puanlar ve ödüller hesabına eklendi!`;
     } else {
         endMessage = `Oyun bitti! Skorun: ${clickCatchScore}. Maalesef ${-clickCatchScore} puan kaybettin.`;
     }
