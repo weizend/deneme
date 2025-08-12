@@ -2505,70 +2505,57 @@ function loadUserRankingsAndBoxCounts() {
   // === ESKİ loadLeaderboardRanking FONKSİYONUNU SİL VE BUNU YAPIŞTIR ===
 
 async function loadLeaderboardRanking() {
-    const ref = db.ref('users');
+    // Bu fonksiyon artık kendi dinleyicisini kullanmıyor.
+    // Bunun yerine, zaten anlık olarak güncellenen `allUsersCache` verisini kullanacak.
+    const usersData = {};
+    allUsersCache.forEach(user => {
+        usersData[user.username] = user;
+    });
 
-    // Önceki dinleyiciyi temizle
-    if (activeListeners.leaderboard && activeListeners.leaderboard.ref) {
-        activeListeners.leaderboard.ref.off();
+    if (Object.keys(usersData).length === 0) {
+        document.getElementById("badgedUsersRanking").innerHTML = "<div class='text-center text-gray-400'>Henüz lider kullanıcı yok.</div>";
+        return;
     }
 
-    // Dinleyiciyi kaydet
-    activeListeners.leaderboard = { ref: ref };
+    const leaders = await calculateAllLeaders(usersData);
+    
+    const leaderUsernames = new Set([
+        leaders.currentBalanceUser, leaders.highEverBalanceUser, leaders.surpriseBoxUser,
+        leaders.bombUser, leaders.spentPointsUser, leaders.multiplierUser,
+        leaders.boxUser, leaders.shieldUser, leaders.clickCatchLeaderUser, leaders.wheelSpinUser
+    ]);
+    leaderUsernames.delete(null);
 
-    const renderLeaders = async () => {
-        const usersData = {};
-        allUsersCache.forEach(user => {
-            usersData[user.username] = user;
-        });
+    const leaderUsers = allUsersCache.filter(u => leaderUsernames.has(u.username)).map(u => {
+        const userLeaderStatus = {
+            isCurrentLeader: u.username === leaders.currentBalanceUser,
+            isHighLeader: u.username === leaders.highEverBalanceUser,
+            isSurpriseLeader: u.username === leaders.surpriseBoxUser,
+            isBombLeader: u.username === leaders.bombUser,
+            isStoreLeader: u.username === leaders.spentPointsUser,
+            isMultiplierLeader: u.username === leaders.multiplierUser,
+            isBoxLeader: u.username === leaders.boxUser,
+            isShieldLeader: u.username === leaders.shieldUser,
+            isClickCatchLeader: u.username === leaders.clickCatchLeaderUser,
+            isWheelSpinLeader: u.username === leaders.wheelSpinUser
+        };
+        return { ...u, ...userLeaderStatus };
+    });
 
-        if (Object.keys(usersData).length === 0) {
-            document.getElementById("badgedUsersRanking").innerHTML = "<div class='text-center text-gray-400'>Henüz lider kullanıcı yok.</div>";
-            return;
-        }
+    leaderUsers.sort((a, b) => {
+        const aBadgeCount = Object.values(a).filter(val => val === true).length;
+        const bBadgeCount = Object.values(b).filter(val => val === true).length;
+        if (bBadgeCount !== aBadgeCount) return bBadgeCount - aBadgeCount;
+        return (b.balance || 0) - (a.balance || 0);
+    });
 
-        const leaders = await calculateAllLeaders(usersData);
-        
-        const leaderUsernames = new Set([
-            leaders.currentBalanceUser, leaders.highEverBalanceUser, leaders.surpriseBoxUser,
-            leaders.bombUser, leaders.spentPointsUser, leaders.multiplierUser,
-            leaders.boxUser, leaders.shieldUser, leaders.clickCatchLeaderUser, leaders.wheelSpinUser
-        ]);
-        leaderUsernames.delete(null);
+    const html = leaderUsers.map((u, i) => {
+        const badgesHtml = getUserBadgesHtml(u, u);
+        const avatarUrl = u.selectedAvatar ? u.selectedAvatar.url : defaultAvatarUrl;
+        return `<div class="mb-3 p-3 bg-gray-800 rounded-md border border-gray-700 cursor-pointer hover:bg-gray-700" onclick="openPublicUserDetailModal('${u.username}')"><div class="text-center">${badgesHtml}</div><div class="flex items-center justify-start mt-1"><span class="font-semibold text-lg text-yellow-300 mr-3 w-8 text-left">${i + 1}.</span><img src="${avatarUrl}" class="w-12 h-12 rounded-md mr-3 object-contain"><span class="font-semibold text-lg">${u.username}</span></div></div>`;
+    }).join("");
 
-        const leaderUsers = allUsersCache.filter(u => leaderUsernames.has(u.username)).map(u => {
-            const userLeaderStatus = {
-                isCurrentLeader: u.username === leaders.currentBalanceUser,
-                isHighLeader: u.username === leaders.highEverBalanceUser,
-                isSurpriseLeader: u.username === leaders.surpriseBoxUser,
-                isBombLeader: u.username === leaders.bombUser,
-                isStoreLeader: u.username === leaders.spentPointsUser,
-                isMultiplierLeader: u.username === leaders.multiplierUser,
-                isBoxLeader: u.username === leaders.boxUser,
-                isShieldLeader: u.username === leaders.shieldUser,
-                isClickCatchLeader: u.username === leaders.clickCatchLeaderUser,
-                isWheelSpinLeader: u.username === leaders.wheelSpinUser
-            };
-            return { ...u, ...userLeaderStatus };
-        });
-
-        leaderUsers.sort((a, b) => {
-            const aBadgeCount = Object.values(a).filter(val => val === true).length;
-            const bBadgeCount = Object.values(b).filter(val => val === true).length;
-            if (bBadgeCount !== aBadgeCount) return bBadgeCount - aBadgeCount;
-            return (b.balance || 0) - (a.balance || 0);
-        });
-
-        const html = leaderUsers.map((u, i) => {
-            const badgesHtml = getUserBadgesHtml(u, u);
-            const avatarUrl = u.selectedAvatar ? u.selectedAvatar.url : defaultAvatarUrl;
-            return `<div class="mb-3 p-3 bg-gray-800 rounded-md border border-gray-700 cursor-pointer hover:bg-gray-700" onclick="openPublicUserDetailModal('${u.username}')"><div class="text-center">${badgesHtml}</div><div class="flex items-center justify-start mt-1"><span class="font-semibold text-lg text-yellow-300 mr-3 w-8 text-left">${i + 1}.</span><img src="${avatarUrl}" class="w-12 h-12 rounded-md mr-3 object-contain"><span class="font-semibold text-lg">${u.username}</span></div></div>`;
-        }).join("");
-
-        document.getElementById("badgedUsersRanking").innerHTML = html || "<div class='text-center text-gray-400'>Henüz lider kullanıcı yok.</div>";
-    };
-
-    // Değişiklik olduğunda Liderler tablosunu yeniden çiz
-    ref.on('value', renderLeaders);
+    document.getElementById("badgedUsersRanking").innerHTML = html || "<div class='text-center text-gray-400'>Henüz lider kullanıcı yok.</div>";
 }
   
   function loadPendingUsers() {
