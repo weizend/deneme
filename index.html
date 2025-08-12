@@ -6650,11 +6650,10 @@ function listenForLobbyChanges() {
 
         startSoloGameBtn.disabled = false;
 
-        // Lobi silinmişse veya yoksa her şeyi sıfırla
         if (!lobbyData || !lobbyData.state) {
             lobbyGameSettings = {};
-            hasShownLobbyNotification = false; // YENİ EKLENDİ: Bildirim bayrağını sıfırla
-            closeLobbyNotificationModal(); // YENİ EKLENDİ: Açıksa bildirim penceresini kapat
+            hasShownLobbyNotification = false; 
+            closeLobbyNotificationModal(); 
             lobbyStatusContainer.classList.add('hidden');
             lobbyGameOverScreen.classList.add('hidden');
             startScreen.style.display = 'flex';
@@ -6719,8 +6718,7 @@ function listenForLobbyChanges() {
             document.getElementById('lobbyStatusTitle').textContent = "Lobi Katılıma Açık!";
             startScreen.style.display = 'flex';
             document.getElementById('displayTarget').classList.add('hidden');
-
-            // YENİ EKLENDİ: Lobi bildirimini gösterme mantığı
+            
             if (!isAdmin && !isCurrentUserInLobby && !hasShownLobbyNotification) {
                 showLobbyNotification(lobbyData);
                 hasShownLobbyNotification = true;
@@ -6729,7 +6727,7 @@ function listenForLobbyChanges() {
         } else if (lobbyData.state === 'active') {
             document.getElementById('lobbyStatusTitle').textContent = "Oyun Başladı! Hedefe İlk Ulaşan Kazanır!";
             startScreen.style.display = 'none';
-            closeLobbyNotificationModal(); // YENİ EKLENDİ: Oyun başlayınca bildirimi kapat
+            closeLobbyNotificationModal();
             document.getElementById('displayScore').classList.add('hidden');
             document.getElementById('displaySpecials').classList.add('hidden');
             document.getElementById('displayTimer').classList.add('hidden');
@@ -6738,16 +6736,21 @@ function listenForLobbyChanges() {
             const currentUserScore = isCurrentUserInLobby ? (players[currentUser] ? players[currentUser].score : 0) : 0;
             document.getElementById('clickCatchTarget').textContent = `${currentUserScore} / ${lobbyData.target}`;
 
-            // YENİ EKLENDİ: Oyuncuyu otomatik olarak oyun ekranına çekme
             if (isCurrentUserInLobby && currentActiveSection !== 'clickCatch') {
                 showSection('clickCatch');
             }
 
-            if (!clickCatchItemInterval) {
-               showGameCountdown(() => {
-                   clickCatchItemInterval = setInterval(() => createCatchItem('lobby'), lobbyData.itemInterval);
-               });
+            // === PERFORMANS DÜZELTMESİ BURADA ===
+            // Artık sadece lobiye katılan oyuncular için oyun başlıyor ve hedefler görünüyor.
+            if (isCurrentUserInLobby) {
+                if (!clickCatchItemInterval) {
+                   showGameCountdown(() => {
+                       clickCatchItemInterval = setInterval(() => createCatchItem('lobby'), lobbyData.itemInterval);
+                   });
+                }
             }
+            // === DÜZELTME BİTTİ ===
+
         } else if (lobbyData.state === 'finished') {
             lobbyStatusContainer.classList.add('hidden');
             lobbyGameOverScreen.classList.remove('hidden');
@@ -6762,7 +6765,53 @@ function listenForLobbyChanges() {
 
     activeListeners.lobby = { ref: lobbyRef, event: 'value', callback };
     lobbyRef.on('value', callback);
-  }
+}
+
+    // === BU YENİ FONKSİYONLARI DOSYANIN SONUNA EKLE ===
+
+async function changeAllWheelTickets(add) {
+    const amount = parseInt(document.getElementById("globalWheelTicket").value);
+    if (isNaN(amount) || amount <= 0) {
+        displayMessage("Geçerli miktar girin.");
+        return;
+    }
+    const confirmed = await customConfirm(`Tüm kullanıcılara ${amount} adet Çark Bileti ${add ? 'eklemek' : 'silmek'} istediğinizden emin misiniz?`);
+    if (confirmed) {
+        db.ref('users').once('value').then(snap => {
+            const updates = {};
+            snap.forEach(child => {
+                if (child.val().approved && !child.val().blocked && child.key !== "weizendtv") {
+                    let currentTickets = child.val().carkBileti || 0;
+                    currentTickets = add ? currentTickets + amount : Math.max(0, currentTickets - amount);
+                    updates['users/' + child.key + '/carkBileti'] = currentTickets;
+                }
+            });
+            db.ref().update(updates).then(() => displayMessage("Tüm kullanıcılara Çark Bileti işlemi başarıyla uygulandı."));
+        });
+    }
+}
+
+async function changeAllClickCatchTickets(add) {
+    const amount = parseInt(document.getElementById("globalClickCatchTicket").value);
+    if (isNaN(amount) || amount <= 0) {
+        displayMessage("Geçerli miktar girin.");
+        return;
+    }
+    const confirmed = await customConfirm(`Tüm kullanıcılara ${amount} adet Tıkla-Yakala Bileti ${add ? 'eklemek' : 'silmek'} istediğinizden emin misiniz?`);
+    if (confirmed) {
+        db.ref('users').once('value').then(snap => {
+            const updates = {};
+            snap.forEach(child => {
+                if (child.val().approved && !child.val().blocked && child.key !== "weizendtv") {
+                    let currentTickets = child.val().clickCatchTickets || 0;
+                    currentTickets = add ? currentTickets + amount : Math.max(0, currentTickets - amount);
+                    updates['users/' + child.key + '/clickCatchTickets'] = currentTickets;
+                }
+            });
+            db.ref().update(updates).then(() => displayMessage("Tüm kullanıcılara Tıkla-Yakala Bileti işlemi başarıyla uygulandı."));
+        });
+    }
+}
   
   async function startLobbyGame() {
     if (!isAdmin) return;
