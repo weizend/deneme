@@ -405,8 +405,10 @@ body.modal-open .modal-content {
         <div class="flex justify-center items-center gap-4 mb-4">
     <h3 class="text-yellow-400 text-3xl font-bold">Şans Çarkı</h3>
     
-    
-    <button id="wheelSettingsButton" onclick="openWheelSettingsModal()" class="hidden py-1 px-3 text-sm bg-teal-600 hover:bg-teal-500 rounded-lg">Çark Ayarları</button>
+    <button onclick="openWheelLegendModal()" class="text-blue-400 hover:text-blue-300 transition-colors" title="Simge Anlamları">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+    </button>
+    <button id="wheelSettingsButton" ...>Çark Ayarları</button>
 </div>
         
         <p class="text-gray-300 mb-2">Çarkı çevirerek harika ödüller kazanma şansı yakala!</p>
@@ -8041,6 +8043,16 @@ function getIconForWheelLabel(label) {
     if (upperLabel.includes('İFLAS KALKANI')) return '🛡️';
     if (upperLabel.includes('PAS')) return '☠️';
     return '🎡'; // Varsayılan simge
+}
+
+    // === BU EKSİK FONKSİYONU DOSYANIN SONUNA EKLE ===
+
+function openWheelLegendModal() {
+    document.getElementById('wheelLegendModal').style.display = 'flex';
+}
+
+function closeWheelLegendModal() {
+    document.getElementById('wheelLegendModal').style.display = 'none';
 }
 
 function openWheelLegendModal() {
