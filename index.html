@@ -443,6 +443,21 @@ body.modal-open .modal-content {
     </div>
   </div>
 </div>
+      <div id="lobbyNotificationModal" class="modal-overlay fixed inset-0 bg-black bg-opacity-80 flex justify-center items-center z-[99998] hidden">
+  <div class="modal-content bg-gray-800 p-8 rounded-xl shadow-2xl border-4 border-blue-500 w-11/12 max-w-md text-center relative">
+    <h4 class="text-blue-400 text-3xl font-bold mb-4">📢 Tıkla-Yakala Lobisi Kuruldu! 📢</h4>
+    <div id="lobbyNotificationInfo" class="text-lg text-gray-200 space-y-3 bg-gray-900 p-4 rounded-lg">
+        </div>
+    <div class="flex gap-4 mt-8">
+        <button onclick="closeLobbyNotificationModal()" class="flex-1 py-3 bg-gray-600 hover:bg-gray-500 text-white font-bold rounded-lg shadow-md">
+          Kapat
+        </button>
+        <button onclick="goToLobbySection()" class="flex-1 py-3 bg-blue-700 hover:bg-blue-600 text-white font-bold rounded-lg shadow-md">
+          Lobiye Git
+        </button>
+    </div>
+  </div>
+</div>
 
         <div id="clickCatchContent" class="w-full hidden">
     
@@ -1527,6 +1542,7 @@ function getSyncedTime() {
   const auth = firebase.auth();
 
   // Global değişkenler
+  let hasShownLobbyNotification = false;
   let currentUser = null;
   let allUsersCache = [];
   let isAdmin = false;
@@ -6525,10 +6541,39 @@ async function getClickCatchLeaderUsername() {
       ref.on('value', callback);
   }
 
-  function listenForLobbyChanges() {
+    // === BU YENİ FONKSİYONLARI DOSYANIN SONUNA EKLE ===
+
+// Lobi bildirim penceresini gösterir
+function showLobbyNotification(lobbyData) {
+    const infoDiv = document.getElementById('lobbyNotificationInfo');
+    const useTickets = lobbyData.entryTickets > 0;
+    const entryRequirement = useTickets ? `${lobbyData.entryTickets} Bilet` : `${lobbyData.entryFee} Puan`;
+
+    infoDiv.innerHTML = `
+        <p>Giriş Ücreti: <b class="text-white">${entryRequirement}</b></p>
+        <p>Hedef: <b class="text-white">${lobbyData.target} Yakalama</b></p>
+        <p>Büyük Ödül: <b class="text-green-400">${lobbyData.prize} Puan</b></p>
+        <p class="mt-2 text-sm text-gray-400">Hemen Tıkla-Yakala sekmesine git ve lobiye katıl!</p>
+    `;
+    document.getElementById('lobbyNotificationModal').style.display = 'flex';
+}
+
+// Lobi bildirim penceresini kapatır
+function closeLobbyNotificationModal() {
+    document.getElementById('lobbyNotificationModal').style.display = 'none';
+}
+
+// "Lobiye Git" butonuna basıldığında çalışır
+function goToLobbySection() {
+    closeLobbyNotificationModal();
+    showSection('clickCatch');
+}
+
+  // === ESKİ listenForLobbyChanges FONKSİYONUNU SİL VE BUNU YAPIŞTIR ===
+
+function listenForLobbyChanges() {
     const lobbyRef = db.ref('clickCatchLobby');
 
-    // Önceki listener'ı kapat (eğer varsa)
     if (activeListeners.lobby) {
         activeListeners.lobby.ref.off(activeListeners.lobby.event, activeListeners.lobby.callback);
     }
@@ -6547,8 +6592,11 @@ async function getClickCatchLeaderUsername() {
 
         startSoloGameBtn.disabled = false;
 
+        // Lobi silinmişse veya yoksa her şeyi sıfırla
         if (!lobbyData || !lobbyData.state) {
             lobbyGameSettings = {};
+            hasShownLobbyNotification = false; // YENİ EKLENDİ: Bildirim bayrağını sıfırla
+            closeLobbyNotificationModal(); // YENİ EKLENDİ: Açıksa bildirim penceresini kapat
             lobbyStatusContainer.classList.add('hidden');
             lobbyGameOverScreen.classList.add('hidden');
             startScreen.style.display = 'flex';
@@ -6613,10 +6661,17 @@ async function getClickCatchLeaderUsername() {
             document.getElementById('lobbyStatusTitle').textContent = "Lobi Katılıma Açık!";
             startScreen.style.display = 'flex';
             document.getElementById('displayTarget').classList.add('hidden');
+
+            // YENİ EKLENDİ: Lobi bildirimini gösterme mantığı
+            if (!isAdmin && !isCurrentUserInLobby && !hasShownLobbyNotification) {
+                showLobbyNotification(lobbyData);
+                hasShownLobbyNotification = true;
+            }
             
         } else if (lobbyData.state === 'active') {
             document.getElementById('lobbyStatusTitle').textContent = "Oyun Başladı! Hedefe İlk Ulaşan Kazanır!";
             startScreen.style.display = 'none';
+            closeLobbyNotificationModal(); // YENİ EKLENDİ: Oyun başlayınca bildirimi kapat
             document.getElementById('displayScore').classList.add('hidden');
             document.getElementById('displaySpecials').classList.add('hidden');
             document.getElementById('displayTimer').classList.add('hidden');
@@ -6624,6 +6679,11 @@ async function getClickCatchLeaderUsername() {
             
             const currentUserScore = isCurrentUserInLobby ? (players[currentUser] ? players[currentUser].score : 0) : 0;
             document.getElementById('clickCatchTarget').textContent = `${currentUserScore} / ${lobbyData.target}`;
+
+            // YENİ EKLENDİ: Oyuncuyu otomatik olarak oyun ekranına çekme
+            if (isCurrentUserInLobby && currentActiveSection !== 'clickCatch') {
+                showSection('clickCatch');
+            }
 
             if (!clickCatchItemInterval) {
                showGameCountdown(() => {
