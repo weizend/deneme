@@ -3240,6 +3240,10 @@ async function openBox(index) {
             const lostPoints = user.balance || 0;
             if ((user.iflasShieldUses || 0) > 0) {
                 updates['iflasShieldUses'] = (user.iflasShieldUses || 0) - 1;
+                
+                // === EKSİK OLAN SATIR BURAYA EKLENDİ ===
+                updates['iflasShieldUsedCount'] = (user.iflasShieldUsedCount || 0) + 1;
+
                 shieldWasUsed = true;
                 message = `İflas! 🛡️ Kalkanın seni korudu!`;
             } else {
@@ -4296,17 +4300,13 @@ async function deletePurchase(purchaseId) {
   function openBadgeInfoModal() { badgeInfoModal.style.display = 'flex'; }
   function closeBadgeInfoModal() { badgeInfoModal.style.display = 'none'; }
 
-// YENİ VE GÜNCELLENMİŞ FONKSİYON
+// === ESKİ openPublicUserDetailModal FONKSİYONUNU SİLİP BUNU YAPIŞTIR ===
 async function openPublicUserDetailModal(username) {
-  // DÜZELTME: Fonksiyonun başında body'e class ekleniyor.
-  // Bu, modal açıldığında arka planın kaymasını engeller.
   document.body.classList.add('modal-open');
     if (activeBlockedUserTimers[username]) {
         clearInterval(activeBlockedUserTimers[username]);
         delete activeBlockedUserTimers[username];
     }
-    // DÜZELTME: Hangi kullanıcının modal'ının açık olduğunu takip etmek için
-    // modal elementine bir data attribute ekliyoruz. Kapatma işleminde bu bize lazım olacak.
     publicUserDetailModal.dataset.viewingUser = username;
 
     const userSnap = await db.ref('users/' + username).once('value');
@@ -4319,24 +4319,33 @@ async function openPublicUserDetailModal(username) {
     const userLeaderStatus = {
         isCurrentLeader: username === leaders.currentBalanceUser,
         isHighLeader: username === leaders.highEverBalanceUser,
+        isBoxLeader: username === leaders.boxUser,
         isSurpriseLeader: username === leaders.surpriseBoxUser,
         isBombLeader: username === leaders.bombUser,
-        isStoreLeader: username === leaders.spentPointsUser,
         isMultiplierLeader: username === leaders.multiplierUser,
-        isBoxLeader: username === leaders.boxUser,
+        isStoreLeader: username === leaders.spentPointsUser,
         isShieldLeader: username === leaders.shieldUser,
         isClickCatchLeader: username === leaders.clickCatchLeaderUser,
         isWheelSpinLeader: username === leaders.wheelSpinUser
     };
 
     const badges = getUserBadgesHtml(userData, userLeaderStatus, true);
-    
     document.getElementById('publicUserKingBadge').innerHTML = badges.crown;
     document.getElementById('publicUserOtherBadges').innerHTML = badges.others;
 
+    // === YENİ ROZET GÖSTERME MANTIĞI EKLENDİ ===
     document.getElementById('publicBadgeBalance').innerHTML = userLeaderStatus.isCurrentLeader ? '🥇' : '';
     document.getElementById('publicBadgeHighest').innerHTML = userLeaderStatus.isHighLeader ? '🏆' : '';
-
+    document.getElementById('badge-stat-box').innerHTML = userLeaderStatus.isBoxLeader ? '📦' : '';
+    document.getElementById('badge-stat-wheel').innerHTML = userLeaderStatus.isWheelSpinLeader ? '🎡' : '';
+    document.getElementById('badge-stat-clickcatch').innerHTML = userLeaderStatus.isClickCatchLeader ? '🎯' : '';
+    document.getElementById('badge-stat-surprise').innerHTML = userLeaderStatus.isSurpriseLeader ? '🎉' : ((userData.surpriseBoxesOpened || 0) > 0 ? '🎁' : '');
+    document.getElementById('badge-stat-bomb').innerHTML = userLeaderStatus.isBombLeader ? '💣' : '';
+    document.getElementById('badge-stat-multiplier').innerHTML = userLeaderStatus.isMultiplierLeader ? '✖️' : '';
+    document.getElementById('badge-stat-shield').innerHTML = userLeaderStatus.isShieldLeader ? '🛡️' : '';
+    document.getElementById('badge-stat-store').innerHTML = userLeaderStatus.isStoreLeader ? '🛒' : '';
+    
+    // ... (Fonksiyonun geri kalanı aynı, burada kesiyorum) ...
     const avatarUrl = userData.selectedAvatar ? userData.selectedAvatar.url : defaultAvatarUrl;
     document.getElementById('publicUserAvatar').src = avatarUrl;
     document.getElementById('publicUserName').textContent = username;
@@ -4363,18 +4372,6 @@ async function openPublicUserDetailModal(username) {
     document.getElementById('publicUserMultiplierFoundCount').textContent = userData.multiplierFoundCount || 0;
     document.getElementById('publicUserShieldUsedCount').textContent = userData.iflasShieldUsedCount || 0;
     document.getElementById('publicUserTotalSpent').textContent = userData.totalSpentPoints || 0;
-    
-    const statBadgeIds = ['box', 'wheel', 'clickcatch', 'surprise', 'bomb', 'multiplier', 'shield', 'store'];
-    statBadgeIds.forEach(id => document.getElementById(`badge-stat-${id}`).innerHTML = '');
-
-    if (userLeaderStatus.isBoxLeader) document.getElementById('badge-stat-box').innerHTML = '📦';
-    if (userLeaderStatus.isWheelSpinLeader) document.getElementById('badge-stat-wheel').innerHTML = '🎡';
-    if (userLeaderStatus.isClickCatchLeader) document.getElementById('badge-stat-clickcatch').innerHTML = '🎯';
-    if (userLeaderStatus.isSurpriseLeader) document.getElementById('badge-stat-surprise').innerHTML = '🎉';
-    if (userLeaderStatus.isBombLeader) document.getElementById('badge-stat-bomb').innerHTML = '💣';
-    if (userLeaderStatus.isMultiplierLeader) document.getElementById('badge-stat-multiplier').innerHTML = '✖️';
-    if (userLeaderStatus.isShieldLeader) document.getElementById('badge-stat-shield').innerHTML = '🛡️';
-    if (userLeaderStatus.isStoreLeader) document.getElementById('badge-stat-store').innerHTML = '🛒';
 
     const blockedInfoDiv = document.getElementById('publicUserBlockedInfo');
     const countdownEl = document.getElementById('publicUserBlockedCountdown');
@@ -4402,7 +4399,7 @@ async function openPublicUserDetailModal(username) {
     publicUserDetailModal.style.display = 'flex';
 }
   
-  // YENİ VE DÜZELTİLMİŞ FONKSİYON
+  // === ESKİ openUserManagementModal FONKSİYONUNU SİLİP BUNU YAPIŞTIR ===
 async function openUserManagementModal(username) {
     if (activeBlockedUserTimers[username]) {
         clearInterval(activeBlockedUserTimers[username]);
@@ -4420,7 +4417,6 @@ async function openUserManagementModal(username) {
 
     const leaders = await calculateAllLeaders(allUsersSnap.val());
 
-    // Yönetilen kullanıcıya özel liderlik durumlarını belirle
     const userLeaderStatus = {
         isCurrentLeader: username === leaders.currentBalanceUser,
         isHighLeader: username === leaders.highEverBalanceUser,
@@ -4433,13 +4429,32 @@ async function openUserManagementModal(username) {
         isClickCatchLeader: username === leaders.clickCatchLeaderUser,
         isWheelSpinLeader: username === leaders.wheelSpinUser
     };
-  // YENİ EKLENEN KISIM: Admin panelindeki satır başı rozetlerini de dinamik hale getirir.
+    
+    // Rozet span'larını temizle
+    ['managedBadgeBalance', 'managedBadgeHighest', 'managedBadgeWheel', 'managedBadgeBox', 'managedBadgeSurprise', 'managedBadgeBomb', 'managedBadgeMultiplier', 'managedBadgeStore', 'managedBadgeShield', 'managedBadgeClickCatch'].forEach(id => {
+        const el = document.getElementById(id);
+        if(el) el.innerHTML = '';
+    });
+
+    // === YENİ ROZET GÖSTERME MANTIĞI EKLENDİ ===
     document.getElementById('managedBadgeBalance').innerHTML = userLeaderStatus.isCurrentLeader ? '🥇' : '';
     document.getElementById('managedBadgeHighest').innerHTML = userLeaderStatus.isHighLeader ? '🏆' : '';
+    document.getElementById('managedBadgeBox').innerHTML = userLeaderStatus.isBoxLeader ? '📦' : '';
+    document.getElementById('managedBadgeSurprise').innerHTML = userLeaderStatus.isSurpriseLeader ? '🎉' : ((userData.surpriseBoxesOpened || 0) > 0 ? '🎁' : '');
+    document.getElementById('managedBadgeBomb').innerHTML = userLeaderStatus.isBombLeader ? '💣' : '';
+    document.getElementById('managedBadgeMultiplier').innerHTML = userLeaderStatus.isMultiplierLeader ? '✖️' : '';
+    document.getElementById('managedBadgeStore').innerHTML = userLeaderStatus.isStoreLeader ? '🛒' : '';
+    document.getElementById('managedBadgeShield').innerHTML = userLeaderStatus.isShieldLeader ? '🛡️' : '';
+    document.getElementById('managedBadgeClickCatch').innerHTML = userLeaderStatus.isClickCatchLeader ? '🎯' : '';
+    document.getElementById('managedBadgeWheel').innerHTML = userLeaderStatus.isWheelSpinLeader ? '🎡' : '';
 
     const avatarUrl = userData.selectedAvatar ? userData.selectedAvatar.url : defaultAvatarUrl;
     document.getElementById('managedUserAvatar').src = avatarUrl;
     document.getElementById('managedUserName').textContent = username;
+    // ... (Fonksiyonun geri kalanı aynı, burada kesiyorum) ...
+    // Diğer tüm document.getElementById... satırları aynı kalacak.
+    // Sadece yukarıdaki rozet mantığı eklendi/güncellendi.
+    // Fonksiyonun geri kalanını değiştirmene gerek yok.
     document.getElementById('managedUserBalance').textContent = userData.balance || 0;
     document.getElementById('managedUserHighestBalance').textContent = userData.highestBalanceEver || 0;
     document.getElementById('managedUserBoxRight').textContent = userData.kutuHakki || 0;
@@ -4488,21 +4503,7 @@ async function openUserManagementModal(username) {
     document.getElementById('managedUserClickCatchScore').textContent = userData.clickCatchHighestScore || 0;
     document.getElementById('managedUserWheelSpins').textContent = userData.wheelSpinsCount || 0;
 
-    // Yönetim panelindeki liderlik rozetlerini göster
-    ['managedBadgeWheel', 'managedBadgeBox', 'managedBadgeSurprise', 'managedBadgeBomb', 'managedBadgeMultiplier', 'managedBadgeStore', 'managedBadgeShield', 'managedBadgeClickCatch'].forEach(id => {
-        const el = document.getElementById(id);
-        if(el) el.innerHTML = '';
-    });
-
-    if (userLeaderStatus.isBoxLeader) document.getElementById('managedBadgeBox').innerHTML = '📦';
-    if (userLeaderStatus.isSurpriseLeader) document.getElementById('managedBadgeSurprise').innerHTML = '🎉';
-    if (userLeaderStatus.isBombLeader) document.getElementById('managedBadgeBomb').innerHTML = '💣';
-    if (userLeaderStatus.isMultiplierLeader) document.getElementById('managedBadgeMultiplier').innerHTML = '✖️';
-    if (userLeaderStatus.isStoreLeader) document.getElementById('managedBadgeStore').innerHTML = '🛒';
-    if (userLeaderStatus.isShieldLeader) document.getElementById('managedBadgeShield').innerHTML = '🛡️';
-    if (userLeaderStatus.isClickCatchLeader) document.getElementById('managedBadgeClickCatch').innerHTML = '🎯';
-    if (userLeaderStatus.isWheelSpinLeader) document.getElementById('managedBadgeWheel').innerHTML = '🎡';
-
+    // ... (Fonksiyonun geri kalanı aynı şekilde devam ediyor)
     const historyList = document.getElementById('managedUserPurchaseHistory');
     historyList.innerHTML = 'Yükleniyor...';
     db.ref('purchaseHistory').orderByChild('username').equalTo(username).once('value').then(snap => {
@@ -5692,6 +5693,8 @@ function listenForSurpriseBox() {
                             points: finalSessionData.result.points, 
                             multiplier: finalSessionData.multiplier 
                         });
+
+                      db.ref('users/' + finalSessionData.user + '/surpriseBoxesOpened').transaction(count => (count || 0) + 1);
                         
                         if (finalSessionData.user === currentUser) {
                             closeCardSelectionModal();
