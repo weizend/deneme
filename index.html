@@ -2222,24 +2222,19 @@ async function logout() {
     ref.on('value', callback);
   }
   
- // === ESKİ getUserBadgesHtml FONKSİYONUNU SİL VE BUNU YAPIŞTIR ===
-function getUserBadgesHtml(u, leaders, forPublicProfile = false) {
-    // 1. Kullanıcının tüm liderlik rozetlerine sahip olup olmadığını kontrol et
+ function getUserBadgesHtml(u, leaders, forPublicProfile = false) {
     const hasKingCrown = leaders.isCurrentLeader && leaders.isHighLeader && leaders.isSurpriseLeader &&
                          leaders.isBombLeader && leaders.isStoreLeader && leaders.isMultiplierLeader &&
                          leaders.isBoxLeader && leaders.isShieldLeader && leaders.isClickCatchLeader && leaders.isWheelSpinLeader;
 
-    // 2. Eğer profil sayfası için çağrıldıysa (forPublicProfile = true)
     if (forPublicProfile) {
-        // Eğer Kral Tacı varsa, sadece tacı göster, diğerlerini gösterme
         if (hasKingCrown) {
             return {
                 crown: `<span class="text-3xl" title="Tüm Liderlik Rozetlerinin Sahibi!">👑</span>`,
-                others: '' // Diğer rozetler alanı boş olacak
+                others: ''
             };
         }
 
-        // Eğer Kral Tacı yoksa, sahip olduğu TÜM rozetleri topla
         const allBadges = [];
         if (leaders.isCurrentLeader) allBadges.push(`<span class="text-2xl" title="Mevcut Puan Lideri">🥇</span>`);
         if (leaders.isHighLeader) allBadges.push(`<span class="text-2xl" title="Ulaşılan En Yüksek Puan Lideri">🏆</span>`);
@@ -2255,14 +2250,12 @@ function getUserBadgesHtml(u, leaders, forPublicProfile = false) {
             allBadges.push(`<span class="text-2xl" title="Sürpriz Kutu Rozeti">🎁</span>`);
         }
         
-        // Obje olarak döndür, "crown" kısmı boş, "others" kısmı dolu
         return {
             crown: '',
             others: allBadges.join('')
         };
     }
 
-    // 3. Eğer sıralama listeleri için çağrıldıysa (forPublicProfile = false)
     const rankingBadges = [];
     if (leaders.isCurrentLeader) rankingBadges.push(`<span class="text-xl" title="Mevcut Puan Lideri">🥇</span>`);
     if (leaders.isHighLeader) rankingBadges.push(`<span class="text-xl" title="Ulaşılan En Yüksek Puan Lideri">🏆</span>`);
@@ -2278,7 +2271,6 @@ function getUserBadgesHtml(u, leaders, forPublicProfile = false) {
         rankingBadges.push(`<span class="text-xl" title="Sürpriz Kutu Rozeti">🎁</span>`);
     }
 
-    // Kral Tacı varsa, onu diğer rozetlerin üstüne ayrı bir satırda koy
     const crownHtml = hasKingCrown ? `<div class="flex justify-center w-full mb-1"><span class="text-3xl" title="Tüm Liderlik Rozetlerinin Sahibi!">👑</span></div>` : '';
     const otherBadgesHtml = `<div class="flex items-center justify-center gap-1 h-6">${rankingBadges.join('')}</div>`;
 
@@ -2347,7 +2339,6 @@ function loadUserRankingsAndBoxCounts() {
     });
 }
 
-// YEPYENİ FONKSİYON - BU KOD BLOĞUNU OLDUĞU GİBİ EKLE
 async function calculateAllLeaders(allUsersData) {
     const currentClickCatchLeader = await getClickCatchLeaderUsername();
     let leaders = {
@@ -2362,74 +2353,72 @@ async function calculateAllLeaders(allUsersData) {
         maxWheelSpins: -1, wheelSpinUser: null,
     };
 
-    for (const u in allUsersData) {
-        if (u.toLowerCase() === 'weizendtv' || !allUsersData[u].approved) continue;
-        const userData = allUsersData[u];
+    // allUsersData bir obje olduğu için for...in döngüsü kullanıyoruz.
+    for (const username in allUsersData) {
+        if (username.toLowerCase() === 'weizendtv' || !allUsersData[username].approved) continue;
+        const userData = allUsersData[username];
         
-        // Lider olabilmek için istatistiğin 0'dan büyük olması şartı eklendi.
         const userBalance = userData.balance || 0;
         if (userBalance > 0 && userBalance > leaders.highestCurrentBalance) {
             leaders.highestCurrentBalance = userBalance;
-            leaders.currentBalanceUser = u;
+            leaders.currentBalanceUser = username;
         }
 
         const userHighestBalance = userData.highestBalanceEver || 0;
         if (userHighestBalance > 0 && userHighestBalance > leaders.highestEverBalance) {
             leaders.highestEverBalance = userHighestBalance;
-            leaders.highEverBalanceUser = u;
+            leaders.highEverBalanceUser = username;
         }
 
         const userSurpriseBoxes = userData.surpriseBoxesOpened || 0;
         if (userSurpriseBoxes > 0 && userSurpriseBoxes > leaders.maxSurpriseBoxes) {
             leaders.maxSurpriseBoxes = userSurpriseBoxes;
-            leaders.surpriseBoxUser = u;
+            leaders.surpriseBoxUser = username;
         }
 
         const userBombCount = userData.iflasCount || 0;
         if (userBombCount > 0 && userBombCount > leaders.maxBombCount) {
             leaders.maxBombCount = userBombCount;
-            leaders.bombUser = u;
+            leaders.bombUser = username;
         }
 
         const userSpentPoints = userData.totalSpentPoints || 0;
         if (userSpentPoints > 0 && userSpentPoints > leaders.maxSpentPoints) {
             leaders.maxSpentPoints = userSpentPoints;
-            leaders.spentPointsUser = u;
+            leaders.spentPointsUser = username;
         }
 
         const userMultiplierFound = userData.multiplierFoundCount || 0;
         if (userMultiplierFound > 0 && userMultiplierFound > leaders.maxMultiplierFound) {
             leaders.maxMultiplierFound = userMultiplierFound;
-            leaders.multiplierUser = u;
+            leaders.multiplierUser = username;
         }
 
         const userBoxesOpened = userData.boxesOpenedCount || 0;
         if (userBoxesOpened > 0 && userBoxesOpened > leaders.maxBoxesOpened) {
             leaders.maxBoxesOpened = userBoxesOpened;
-            leaders.boxUser = u;
+            leaders.boxUser = username;
         }
 
         const userShieldUsed = userData.iflasShieldUsedCount || 0;
         if (userShieldUsed > 0 && userShieldUsed > leaders.maxShieldUsed) {
             leaders.maxShieldUsed = userShieldUsed;
-            leaders.shieldUser = u;
+            leaders.shieldUser = username;
         }
         
         const userWheelSpins = userData.wheelSpinsCount || 0;
         if (userWheelSpins > 0 && userWheelSpins > leaders.maxWheelSpins) {
             leaders.maxWheelSpins = userWheelSpins;
-            leaders.wheelSpinUser = u;
+            leaders.wheelSpinUser = username;
         }
     }
     
-    // Tıkla-yakala liderini de objeye dahil et
     leaders.clickCatchLeaderUser = currentClickCatchLeader;
     
     return leaders;
 }
 
-  // === ESKİ renderUserRankings FONKSİYONUNU SİL VE BUNU YAPIŞTIR ===
-async function renderUserRankings() {
+  async function renderUserRankings() {
     const searchTerm = document.getElementById('searchUserRanking').value.trim().toLowerCase();
     
     let filteredUsers = allUsersCache;
@@ -2437,13 +2426,11 @@ async function renderUserRankings() {
         filteredUsers = allUsersCache.filter(u => u.username.toLowerCase().includes(searchTerm));
     }
 
-    // Yeni merkezi lider hesaplama fonksiyonunu çağırıyoruz.
     const leaders = await calculateAllLeaders(allUsersCache.reduce((obj, user) => (obj[user.username] = user, obj), {}));
 
     filteredUsers.sort((a, b) => (b.balance || 0) - (a.balance || 0));
 
     let html = filteredUsers.map((u, i) => {
-        // Her kullanıcı için liderlik durumunu kontrol et
         const userLeaderStatus = {
             isCurrentLeader: u.username === leaders.currentBalanceUser,
             isHighLeader: u.username === leaders.highEverBalanceUser,
@@ -2457,7 +2444,6 @@ async function renderUserRankings() {
             isWheelSpinLeader: u.username === leaders.wheelSpinUser
         };
 
-        // Rozetlerin HTML'ini yeni akıllı fonksiyondan al
         const userIcons = getUserBadgesHtml(u, userLeaderStatus);
         const avatarUrl = u.selectedAvatar ? u.selectedAvatar.url : defaultAvatarUrl;
         
@@ -2486,16 +2472,13 @@ async function renderUserRankings() {
 }
 
 
-// === ESKİ loadLeaderboardRanking FONKSİYONUNU SİL VE BUNU YAPIŞTIR ===
 async function loadLeaderboardRanking() {
     const ref = db.ref('users');
 
-    // Önceki dinleyiciyi temizle
     if (activeListeners.leaderboard && activeListeners.leaderboard.ref) {
         activeListeners.leaderboard.ref.off();
     }
 
-    // Dinleyiciyi kaydet
     activeListeners.leaderboard = { ref: ref };
 
     const renderLeaders = async () => {
@@ -2518,7 +2501,36 @@ async function loadLeaderboardRanking() {
         ]);
         leaderUsernames.delete(null);
 
-        const leaderUsers = allUsersCache.filter(u => leaderUsernames.has(u.username)).map(u => {
+        // ÖNCEKİ HATALI KISIM BURADAYDI, ŞİMDİ DÜZELTİLDİ.
+        // Sadece lider olan kullanıcıları listeye alıyoruz.
+        const leaderUsers = allUsersCache.filter(u => leaderUsernames.has(u.username));
+
+        // Liderleri önce rozet sayısına, sonra puanına göre sırala
+        leaderUsers.sort((a, b) => {
+            const getBadgeCount = (user) => {
+                let count = 0;
+                if (user.username === leaders.currentBalanceUser) count++;
+                if (user.username === leaders.highEverBalanceUser) count++;
+                if (user.username === leaders.surpriseBoxUser) count++;
+                if (user.username === leaders.bombUser) count++;
+                if (user.username === leaders.spentPointsUser) count++;
+                if (user.username === leaders.multiplierUser) count++;
+                if (user.username === leaders.boxUser) count++;
+                if (user.username === leaders.shieldUser) count++;
+                if (user.username === leaders.clickCatchLeaderUser) count++;
+                if (user.username === leaders.wheelSpinUser) count++;
+                return count;
+            };
+
+            const aBadgeCount = getBadgeCount(a);
+            const bBadgeCount = getBadgeCount(b);
+            
+            if (bBadgeCount !== aBadgeCount) return bBadgeCount - aBadgeCount;
+            return (b.balance || 0) - (a.balance || 0);
+        });
+
+        const html = leaderUsers.map((u, i) => {
+            // Her lider için rozet durumunu yeniden ve doğru bir şekilde hesaplıyoruz.
             const userLeaderStatus = {
                 isCurrentLeader: u.username === leaders.currentBalanceUser,
                 isHighLeader: u.username === leaders.highEverBalanceUser,
@@ -2531,18 +2543,7 @@ async function loadLeaderboardRanking() {
                 isClickCatchLeader: u.username === leaders.clickCatchLeaderUser,
                 isWheelSpinLeader: u.username === leaders.wheelSpinUser
             };
-            return { ...u, ...userLeaderStatus };
-        });
-
-        leaderUsers.sort((a, b) => {
-            const aBadgeCount = Object.values(a).filter(val => val === true).length;
-            const bBadgeCount = Object.values(b).filter(val => val === true).length;
-            if (bBadgeCount !== aBadgeCount) return bBadgeCount - aBadgeCount;
-            return (b.balance || 0) - (a.balance || 0);
-        });
-
-        const html = leaderUsers.map((u, i) => {
-            const badgesHtml = getUserBadgesHtml(u, u);
+            const badgesHtml = getUserBadgesHtml(u, userLeaderStatus);
             const avatarUrl = u.selectedAvatar ? u.selectedAvatar.url : defaultAvatarUrl;
             return `<div class="mb-3 p-3 bg-gray-800 rounded-md border border-gray-700 cursor-pointer hover:bg-gray-700" onclick="openPublicUserDetailModal('${u.username}')"><div class="text-center">${badgesHtml}</div><div class="flex items-center justify-start mt-1"><span class="font-semibold text-lg text-yellow-300 mr-3 w-8 text-left">${i + 1}.</span><img src="${avatarUrl}" class="w-12 h-12 rounded-md mr-3 object-contain"><span class="font-semibold text-lg">${u.username}</span></div></div>`;
         }).join("");
@@ -2550,7 +2551,6 @@ async function loadLeaderboardRanking() {
         document.getElementById("badgedUsersRanking").innerHTML = html || "<div class='text-center text-gray-400'>Henüz lider kullanıcı yok.</div>";
     };
 
-    // Değişiklik olduğunda Liderler tablosunu yeniden çiz
     ref.on('value', renderLeaders);
 }
   
@@ -3121,7 +3121,6 @@ async function deleteUserAvatar(username, avatarId) {
       }); 
   }
 
-// === ESKİ openBox FONKSİYONUNU SİL VE BUNU YAPIŞTIR ===
 async function openBox(index) {
     if (isGameLocked) {
         displayMessage("Bir kullanıcı kutu açarken bağlantı sorunu yaşadığı için kutular kilitlendi. <b>'Sorunları Çöz'</b> menüsünden kilidi açabilirsiniz.");
@@ -3247,10 +3246,9 @@ async function openBox(index) {
         else if (box.content === 'iflas') {
             let shieldWasUsed = false;
             const lostPoints = user.balance || 0;
-            updates['iflasCount'] = (user.iflasCount || 0) + 1; // Her durumda bomba sayısını artır
+            updates['iflasCount'] = (user.iflasCount || 0) + 1;
             if ((user.iflasShieldUses || 0) > 0) {
                 updates['iflasShieldUses'] = (user.iflasShieldUses || 0) - 1;
-                // *** İSTEĞİNİ ÇÖZEN SATIR BURASI ***
                 updates['iflasShieldUsedCount'] = (user.iflasShieldUsedCount || 0) + 1; 
                 shieldWasUsed = true;
                 message = `İflas! 🛡️ Kalkanın seni korudu!`;
@@ -4308,7 +4306,6 @@ async function deletePurchase(purchaseId) {
   function openBadgeInfoModal() { badgeInfoModal.style.display = 'flex'; }
   function closeBadgeInfoModal() { badgeInfoModal.style.display = 'none'; }
 
-// === ESKİ openPublicUserDetailModal FONKSİYONUNU SİL VE BUNU YAPIŞTIR ===
 async function openPublicUserDetailModal(username) {
   document.body.classList.add('modal-open');
     if (activeBlockedUserTimers[username]) {
