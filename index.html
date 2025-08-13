@@ -93,21 +93,6 @@
   #gameDiv.modal-is-open .best-seller-badge {
     visibility: hidden;
   }
-  /* EYLEM LİSTESİ KAYBOLMA EFEKTİ */
-#activityFeedList {
-  position: relative; /* Bu zaten class ile eklenmişti ama burada da durması garanti olur */
-}
-
-#activityFeedList::after {
-  content: '';
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 60px; /* Gölgenin yüksekliği, artırıp azaltabilirsin */
-  background: linear-gradient(to top, #1f2937, transparent); /* #1f2937 = bg-gray-800 */
-  pointer-events: none; /* Bu, gölgenin fare tıklamalarını engellememesini sağlar */
-}
   /* ŞANS ÇARKI STİLLERİ BAŞLANGIÇ */
 #wheelContainer {
     position: relative;
@@ -273,20 +258,21 @@ body.modal-open .modal-content {
     WEIZENDTV KUTU OYUNU
 </header>
 
-<div id="activityFeedPanel" class="fixed top-0 right-0 h-full w-full max-w-md bg-gray-900/80 backdrop-blur-sm border-l-2 border-red-800 shadow-2xl z-[10000] transform translate-x-full transition-transform duration-300 ease-in-out hidden">
-    <div class="flex flex-col h-full">
-        <div class="flex justify-between items-center p-4 border-b border-gray-700/50">
-            <h4 class="text-yellow-300 text-2xl font-bold tracking-wider">Son Eylemler</h4>
-            <button onclick="closeActivityFeed()" class="p-2 rounded-full hover:bg-white/10 transition-colors">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                </svg>
-            </button>
-        </div>
-        <div id="activityFeedList" class="flex-grow p-2 sm:p-4 space-y-3 overflow-y-auto scrollable-list">
-            </div>
-    </div>
+<div id="activityFeedPanel" class="fixed top-0 right-0 h-full w-full max-w-md bg-gray-800 border-l-2 border-red-700 shadow-2xl z-[10000] transform translate-x-full transition-transform duration-300 ease-in-out hidden">
+      <div class="flex flex-col h-full">
+          <div class="flex justify-between items-center p-4 border-b border-gray-700">
+              <h4 class="text-yellow-400 text-2xl font-bold">Son Eylemler</h4>
+              <button onclick="closeActivityFeed()" class="p-2 rounded-full hover:bg-gray-700 transition-colors">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+              </button>
+          </div>
+          <div id="activityFeedList" class="flex-grow overflow-y-auto p-4 scrollable-list">
+              </div>
+      </div>
 </div>
+
 <div id="loginContainer" class="bg-gray-800 p-8 rounded-xl shadow-lg border border-red-700 w-full max-w-md">
     <div class="flex border-b border-gray-600 mb-6">
         <button id="loginTabBtn" onclick="switchAuthTab('login')" class="flex-1 py-3 text-lg font-bold border-b-2 border-red-500 text-white transition-colors duration-300">Giriş Yap</button>
@@ -7166,18 +7152,18 @@ function logActivity(type, username, details = {}) {
 
     // Performans için eski aktiviteleri sil (son 100 aktiviteyi tut)
     db.ref('activityFeed').orderByChild('timestamp').limitToFirst(1).once('value', (snapshot) => {
-        if (snapshot.numChildren() > 30) { // Limiti 100'e çıkardık
+        if (snapshot.numChildren() > 100) { // Limiti 100'e çıkardık
             const oldestKey = Object.keys(snapshot.val())[0];
             db.ref('activityFeed/' + oldestKey).remove();
         }
     });
 }
 
-// ESKİ getActivityIcon FONKSİYONUNU SİLİP BUNU YAPIŞTIR
+// ESKİ getActivityIcon FONKSİYONUNU KOMPLE SİLİP, TÜM SİMGELERİ İÇEREN BU NİHAİ VERSİYONU YAPIŞTIR
 
 function getActivityIcon(type, details = {}) {
     let icon = '🔔';
-    let bgColor = 'bg-gray-500'; // Varsayılan renk
+    let bgColor = 'bg-gray-500';
 
     switch (type) {
         case 'openBox':
@@ -7189,12 +7175,21 @@ function getActivityIcon(type, details = {}) {
             bgColor = 'bg-yellow-500';
             break;
         case 'iflas':
-            icon = details.shieldUsed ? '🛡️' : '💣';
-            bgColor = details.shieldUsed ? 'bg-blue-500' : 'bg-red-600';
+            // GÜNCELLENDİ: Artık çarpanla bomba bulma durumunu da kontrol ediyor.
+            if (details.shieldUsed) {
+                icon = '🛡️';
+                bgColor = 'bg-blue-500';
+            } else if (details.multiplier && details.multiplier > 1) {
+                icon = '❌'; // Çarpanla bulunan bomba için özel X simgesi
+                bgColor = 'bg-red-800'; // Daha koyu, tehlikeli bir kırmızı
+            } else {
+                icon = '💣';
+                bgColor = 'bg-red-600';
+            }
             break;
         case 'multiplierFound':
         case 'multiplierRefund':
-            icon = '✖️';
+            icon = '✖️'; // Çarpan bulma simgesi
             bgColor = 'bg-purple-500';
             break;
         case 'newItemFound':
@@ -7210,8 +7205,14 @@ function getActivityIcon(type, details = {}) {
             bgColor = 'bg-indigo-500';
             break;
         case 'spinWheel':
-            icon = '🎡';
-            bgColor = 'bg-pink-500';
+            // GÜNCELLENDİ: Artık çarkın sonucuna göre farklı simgeler gösteriyor.
+            if (details.type === 'pas') {
+                icon = '❌'; // "Pas" geldiğinde artık bu simge görünecek.
+                bgColor = 'bg-gray-700';
+            } else {
+                icon = '🎡'; // Diğer tüm kazanç durumlarında bu simge görünecek.
+                bgColor = 'bg-pink-500';
+            }
             break;
         case 'clickCatchSolo':
         case 'clickCatchLobby':
@@ -7228,7 +7229,6 @@ function getActivityIcon(type, details = {}) {
             break;
     }
 
-    // Artık sadece emoji değil, tam bir HTML bloğu döndürüyoruz.
     return `
         <div class="flex-shrink-0 w-12 h-12 rounded-full flex items-center justify-center ${bgColor} shadow-lg">
             <span class="text-2xl">${icon}</span>
@@ -7236,7 +7236,7 @@ function getActivityIcon(type, details = {}) {
     `;
 }
 
-// ESKİ renderActivityFeed FONKSİYONUNU SİLİP BUNU YAPIŞTIR
+// ESKİ renderActivityFeed FONKSİYONUNU SİLİP, MİKTARLARI GÖSTEREN BU YENİ VERSİYONU YAPIŞTIR
 
 function renderActivityFeed(activities) {
     const activityFeedList = document.getElementById('activityFeedList');
@@ -7257,56 +7257,66 @@ function renderActivityFeed(activities) {
         activityFeedList.innerHTML += '<p class="text-center text-gray-400 p-4">Gösterilecek eylem bulunamadı.</p>';
         return;
     }
+    
+    // YENİ: Kod anahtarlarını okunabilir isimlere çevirmek için bir yardımcı nesne
+    const typeToName = {
+        points: 'Puan',
+        boxRights: 'Kutu Hakkı',
+        iflasShield: 'İflas Kalkanı',
+        wheelTicket: 'Çark Bileti',
+        clickCatchTicket: 'Tıkla-Yakala Bileti',
+        tempMultiplier: 'Çarpan'
+    };
 
     activities.forEach(activity => {
-        if (!activity || !activity.username) {
-            console.warn("Hatalı formatta aktivite verisi atlandı:", activity);
-            return;
-        }
+        if (!activity || !activity.username) { return; }
         const details = activity.details || {};
-
-        // Artık HTML bloğu olarak gelen ikonu direkt kullanıyoruz.
         let iconHtml = getActivityIcon(activity.type, details);
         let message = '';
         const timeAgo = formatRelativeTime(activity.timestamp);
-
         const deleteButtonHtml = isAdmin ? `
             <button onclick="deleteActivity('${activity.id}')" class="ml-2 p-1 rounded-full text-gray-500 hover:text-red-500 hover:bg-white/10 transition-colors" title="Bu Eylemi Sil">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1-1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" /></svg>
             </button>
         ` : '';
-
         const userHtml = `<b class="text-yellow-300 cursor-pointer hover:underline" onclick="openPublicUserDetailModal('${activity.username}')">${activity.username}</b>`;
 
-        // Mesaj oluşturma mantığı aynı kalıyor, sadece daha iyi okunması için stilleri güncelliyoruz.
         switch (activity.type) {
             case 'openBox':
-                let openBoxMultiplierText = details.multiplier > 1 ? ` <span class="text-xs text-purple-400">(${details.multiplier}x ile)</span>` : '';
-                message = `${userHtml}, <b>${details.boxId}</b> no'lu kutudan <span class="text-green-300 font-bold">+${details.points} Puan</span> kazandı${openBoxMultiplierText}.`;
+                let openBoxMultiplierText = details.multiplier > 1 ? ` <span class="text-xs text-purple-400">(${details.multiplier}x çarpan kullanıldı)</span>` : '';
+                message = `${userHtml}, <b>${details.boxId}</b> numaralı kutudan <span class="text-green-300 font-bold">+${details.points} Puan</span> kazandı${openBoxMultiplierText}.`;
                 break;
             case 'iflas':
-                let iflasMultiplierText = details.multiplier > 1 ? ` <span class="text-xs text-purple-400">(${details.multiplier}x ile)</span>` : '';
+                let iflasMultiplierText = details.multiplier > 1 ? ` <span class="text-xs text-purple-400">(${details.multiplier}x çarpan kullanıldı)</span>` : '';
                 message = details.shieldUsed 
-                    ? `${userHtml}, bomba buldu ama kalkanı tarafından korundu${iflasMultiplierText}.`
-                    : `${userHtml}, bomba buldu ve <span class="text-red-400 font-bold">${details.lostPoints} puan</span> kaybetti${iflasMultiplierText}.`;
+                    ? `${userHtml}, <b>${details.boxId}</b> numaralı kutudan bomba buldu ama kalkanı tarafından korundu${iflasMultiplierText}.`
+                    : `${userHtml}, <b>${details.boxId}</b> numaralı kutudan bomba buldu ve <span class="text-red-400 font-bold">${details.lostPoints} puan</span> kaybetti${iflasMultiplierText}.`;
                 break;
             case 'multiplierFound':
-                 message = `${userHtml}, kutudan <span class="text-purple-300 font-bold">${details.value}x Çarpan</span> buldu.`;
+                 message = `${userHtml}, <b>${details.boxId}</b> numaralı kutudan <span class="text-purple-300 font-bold">${details.value}x Çarpan</span> buldu.`;
                 break;
             case 'multiplierRefund':
-                message = `${userHtml}, kutudan <span class="text-purple-300 font-bold">${details.newMultiplier}x Çarpan</span> buldu ve mağaza çarpanı iade edildi.`;
+                message = `${userHtml}, <b>${details.boxId}</b> numaralı kutudan <span class="text-purple-300 font-bold">${details.newMultiplier}x Çarpan</span> buldu ve mağaza çarpanı iade edildi.`;
                 break;
             case 'newItemFound':
-                let newItemMultiplierText = details.multiplier > 1 ? ` <span class="text-xs text-purple-400">(${details.multiplier}x ile)</span>` : '';
-                message = `${userHtml}, kutudan <span class="text-cyan-300 font-bold">${details.itemName}</span> buldu${newItemMultiplierText}.`;
+                let newItemMultiplierText = details.multiplier > 1 ? ` <span class="text-xs text-purple-400">(${details.multiplier}x çarpan kullanıldı)</span>` : '';
+                message = `${userHtml}, <b>${details.boxId}</b> numaralı kutudan <span class="text-cyan-300 font-bold">${details.itemName}</span> buldu${newItemMultiplierText}.`;
                 break;
             case 'surpriseBox':
-                const multiplierText = (details.multiplier || 1) > 1 ? ` (${details.multiplier}x ile)` : '';
-                const source = details.boxId === 'Çark' ? 'Şans Çarkı\'ndan' : `<b>${details.boxId}</b> no'lu kutudan`;
+                const multiplierText = (details.multiplier || 1) > 1 ? ` <span class="text-xs text-purple-400">(${details.multiplier}x çarpan kullanıldı)</span>` : '';
+                const source = details.boxId === 'Çark' ? 'Şans Çarkı\'ndan' : `<b>${details.boxId}</b> numaralı kutudan`;
                 message = `${userHtml}, ${source} Sürpriz Kutu buldu ve <span class="text-green-300 font-bold">+${details.points} Puan</span> kazandı${multiplierText}!`;
                 break;
             case 'buyItem':
-                 message = `${userHtml}, mağazadan <span class="text-cyan-300 font-bold">${details.itemName}</span> satın aldı. (<span class="text-red-400 font-bold">-${details.itemCost} puan</span>)`;
+                // GÜNCELLENDİ: Alınan ürünün adı yerine, kazanılan eşyanın türü ve miktarı gösteriliyor.
+                let purchasedItemText = '';
+                if (details.itemType === 'tempMultiplier') {
+                    purchasedItemText = `<span class="text-cyan-300 font-bold">${details.itemDuration} adet ${details.itemValue}x Çarpan</span>`;
+                } else {
+                    const itemName = typeToName[details.itemType] || details.itemName;
+                    purchasedItemText = `<span class="text-cyan-300 font-bold">+${details.itemValue} ${itemName}</span>`;
+                }
+                message = `${userHtml}, mağazadan <span class="text-red-400 font-bold">-${details.itemCost} puan</span> harcayarak ${purchasedItemText} aldı.`;
                 break;
             case 'spinWheel':
                 message = `${userHtml}, Şans Çarkı'nı çevirerek <span class="text-pink-300 font-bold">${details.result}</span> kazandı.`;
@@ -7318,7 +7328,15 @@ function renderActivityFeed(activities) {
                 message = `${userHtml}, Tıkla-Yakala lobisini kazanarak <span class="text-orange-300 font-bold">${details.prize} Puan</span> elde etti.`;
                 break;
             case 'dailyReward':
-                 message = `${userHtml}, günlük ödül olarak <span class="text-teal-300 font-bold">${details.rewardName}</span> aldı.`;
+                // GÜNCELLENDİ: Alınan ödülün adı yerine, kazanılan eşyanın türü ve miktarı gösteriliyor.
+                let rewardText = '';
+                if (details.rewardType === 'tempMultiplier') {
+                    rewardText = `<span class="text-teal-300 font-bold">${details.rewardUses} adet ${details.rewardValue}x Çarpan</span>`;
+                } else {
+                    const rewardName = typeToName[details.rewardType] || details.rewardName;
+                    rewardText = `<span class="text-teal-300 font-bold">+${details.rewardValue} ${rewardName}</span>`;
+                }
+                message = `${userHtml}, günlük ödül olarak ${rewardText} aldı.`;
                 break;
             case 'surpriseBoxTimeout':
                  message = `${userHtml}, Sürpriz Kutu şansını süre dolduğu için kaçırdı.`;
@@ -7327,7 +7345,6 @@ function renderActivityFeed(activities) {
                 message = `${userHtml} bir eylem gerçekleştirdi.`;
         }
 
-        // Yeni kart yapısını oluşturuyoruz.
         const activityHtml = `
             <div class="bg-gray-800/70 p-3 rounded-xl flex items-center gap-4 border border-transparent hover:border-gray-700 transition-all duration-200">
                 ${iconHtml}
@@ -7345,6 +7362,7 @@ function renderActivityFeed(activities) {
     });
 }
 
+// YUKARIDAKİ FONKSİYONU BULUP BUNUNLA DEĞİŞTİR
 function initActivityFeed() {
     const activityBellContainer = document.getElementById('activityBellContainer');
     const activityCounter = document.getElementById('activityCounter');
@@ -7354,8 +7372,8 @@ function initActivityFeed() {
     activityBellContainer.classList.remove('hidden');
 
     const userFeedStatusRef = db.ref(`users/${currentUser}/lastCheckedFeedTimestamp`);
-    // Veritabanından sadece son 20 eylemi çekmek için sorguyu güncelliyoruz.
-    const ref = db.ref('activityFeed').orderByChild('timestamp').limitToLast(20);
+    //... fonksiyonun devamı
+    const ref = db.ref('activityFeed').orderByChild('timestamp');
 
     const callback = async (snapshot) => {
         const feedData = snapshot.val();
