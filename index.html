@@ -2933,7 +2933,135 @@ function adjustUserClickCatchTickets(add) {
 }
   async function changeAllPoints(add) { const amount = parseInt(document.getElementById("globalPoint").value); if (isNaN(amount) || amount <= 0) { displayMessage("Geçerli miktar girin."); return; } const confirmed = await customConfirm(`Tüm kullanıcılara ${add ? 'eklemek' : 'silmek'} istediğinizden emin misiniz?`); if (confirmed) { db.ref('users').once('value').then(snap => { const updates = {}; snap.forEach(child => { if (child.val().approved && !child.val().blocked && child.key !== "weizendtv") { let balance = child.val().balance || 0; let highestBalanceEver = child.val().highestBalanceEver || 0; balance = add ? balance + amount : Math.max(balance - amount, 0); if (balance > highestBalanceEver) highestBalanceEver = balance; updates['users/' + child.key + '/balance'] = balance; updates['users/' + child.key + '/highestBalanceEver'] = highestBalanceEver; } }); db.ref().update(updates).then(() => displayMessage("Tüm kullanıcılara puan işlemi başarıyla uygulandı.")) }); } }
   async function changeAllBoxRights(add) { const amount = parseInt(document.getElementById("globalBoxRight").value); if (isNaN(amount) || amount <= 0) { displayMessage("Geçerli miktar girin."); return; } const confirmed = await customConfirm(`Tüm kullanıcılara ${add ? 'eklemek' : 'silmek'} istediğinizden emin misiniz?`); if (confirmed) { db.ref('users').once('value').then(snap => { const updates = {}; snap.forEach(child => { if (child.val().approved && !child.val().blocked && child.key !== "weizendtv") { let kutuHakki = child.val().kutuHakki || 0; kutuHakki = add ? kutuHakki + amount : Math.max(kutuHakki - amount, 0); updates['users/' + child.key + '/kutuHakki'] = kutuHakki; } }); db.ref().update(updates).then(() => displayMessage("Tüm kullanıcılara kutu hakkı işlemi başarıyla uygulandı.")) }); } }
-  
+  // === YENİ TOPLU İŞLEM FONKSİYONLARI BAŞLANGICI ===
+
+/**
+ * Tüm onaylı ve engelli olmayan kullanıcılara toplu olarak İflas Kalkanı ekler veya siler.
+ * @param {boolean} add - True ise ekler, false ise siler.
+ */
+async function changeAllShields(add) {
+    const amount = parseInt(document.getElementById("globalShield").value);
+    if (isNaN(amount) || amount <= 0) {
+        displayMessage("Geçerli bir kalkan miktarı girin.");
+        return;
+    }
+    const confirmed = await customConfirm(`Tüm kullanıcılara ${amount} adet İflas Kalkanı ${add ? 'eklemek' : 'silmek'} istediğinizden emin misiniz?`);
+    if (confirmed) {
+        db.ref('users').once('value').then(snap => {
+            const updates = {};
+            snap.forEach(child => {
+                // Sadece onaylı, engelli olmayan ve admin dışındaki kullanıcılara işlem yap
+                if (child.val().approved && !child.val().blocked && child.key !== "weizendtv") {
+                    let currentShields = child.val().iflasShieldUses || 0;
+                    currentShields = add ? currentShields + amount : Math.max(0, currentShields - amount);
+                    updates['users/' + child.key + '/iflasShieldUses'] = currentShields;
+                }
+            });
+            db.ref().update(updates).then(() => displayMessage("Tüm kullanıcılara kalkan işlemi başarıyla uygulandı."));
+        });
+    }
+}
+
+/**
+ * Tüm onaylı ve engelli olmayan kullanıcılara toplu olarak Şans Çarkı Bileti ekler veya siler.
+ * @param {boolean} add - True ise ekler, false ise siler.
+ */
+async function changeAllWheelTickets(add) {
+    const amount = parseInt(document.getElementById("globalWheelTicket").value);
+    if (isNaN(amount) || amount <= 0) {
+        displayMessage("Geçerli bir bilet miktarı girin.");
+        return;
+    }
+    const confirmed = await customConfirm(`Tüm kullanıcılara ${amount} adet Çark Bileti ${add ? 'eklemek' : 'silmek'} istediğinizden emin misiniz?`);
+    if (confirmed) {
+        db.ref('users').once('value').then(snap => {
+            const updates = {};
+            snap.forEach(child => {
+                // Sadece onaylı, engelli olmayan ve admin dışındaki kullanıcılara işlem yap
+                if (child.val().approved && !child.val().blocked && child.key !== "weizendtv") {
+                    let currentTickets = child.val().carkBileti || 0;
+                    currentTickets = add ? currentTickets + amount : Math.max(0, currentTickets - amount);
+                    updates['users/' + child.key + '/carkBileti'] = currentTickets;
+                }
+            });
+            db.ref().update(updates).then(() => displayMessage("Tüm kullanıcılara Çark Bileti işlemi başarıyla uygulandı."));
+        });
+    }
+}
+
+    // === YENİ TOPLU ÇARPAN FONKSİYONLARI BAŞLANGICI ===
+
+/**
+ * Tüm onaylı ve engelli olmayan kullanıcılara toplu olarak çarpan ve kullanım hakkı atar.
+ */
+async function setAllMultipliers() {
+    const multiplier = parseInt(document.getElementById("globalMultiplier").value);
+    const uses = parseInt(document.getElementById("globalMultiplierUses").value);
+
+    if (isNaN(multiplier) || multiplier < 2) {
+        displayMessage("Geçerli bir çarpan değeri girin (en az 2).");
+        return;
+    }
+    if (isNaN(uses) || uses <= 0) {
+        displayMessage("Geçerli bir kullanım sayısı girin.");
+        return;
+    }
+
+    const confirmed = await customConfirm(`Tüm kullanıcılara ${multiplier}x çarpanı ${uses} kullanım hakkı ile uygulamak istediğinizden emin misiniz?`);
+    if (confirmed) {
+        db.ref('users').once('value').then(snap => {
+            const updates = {};
+            snap.forEach(child => {
+                // Sadece onaylı, engelli olmayan ve admin dışındaki kullanıcılara işlem yap
+                if (child.val().approved && !child.val().blocked && child.key !== "weizendtv") {
+                    const userPath = 'users/' + child.key;
+                    updates[userPath + '/activeMultiplier'] = multiplier;
+                    updates[userPath + '/multiplierRemainingUses'] = uses;
+                    // Bu çarpanın mağazadan gelmiş gibi davranmasını sağlıyoruz
+                    updates[userPath + '/multiplierSource'] = 'store'; 
+                }
+            });
+            db.ref().update(updates).then(() => {
+                displayMessage("Tüm kullanıcılara çarpan işlemi başarıyla uygulandı.");
+            }).catch(error => {
+                console.error("Toplu çarpan atama hatası:", error);
+                displayMessage("İşlem sırasında bir hata oluştu.");
+            });
+        });
+    }
+}
+
+/**
+ * Tüm onaylı ve engelli olmayan kullanıcıların aktif çarpanlarını sıfırlar.
+ */
+async function clearAllMultipliers() {
+    const confirmed = await customConfirm("Tüm kullanıcıların aktif çarpanlarını sıfırlamak istediğinizden emin misiniz? Bu işlem geri alınamaz.");
+    if (confirmed) {
+        db.ref('users').once('value').then(snap => {
+            const updates = {};
+            snap.forEach(child => {
+                 // Sadece onaylı, engelli olmayan ve admin dışındaki kullanıcılara işlem yap
+                if (child.val().approved && !child.val().blocked && child.key !== "weizendtv") {
+                    const userPath = 'users/' + child.key;
+                    updates[userPath + '/activeMultiplier'] = 1;
+                    updates[userPath + '/multiplierRemainingUses'] = 0;
+                    updates[userPath + '/multiplierSource'] = 'none';
+                    updates[userPath + '/activeStoreMultiplierItemId'] = null; // Mağaza çarpanı ID'sini de temizle
+                }
+            });
+            db.ref().update(updates).then(() => {
+                displayMessage("Tüm kullanıcıların çarpanları başarıyla sıfırlandı.");
+            }).catch(error => {
+                console.error("Toplu çarpan sıfırlama hatası:", error);
+                displayMessage("İşlem sırasında bir hata oluştu.");
+            });
+        });
+    }
+}
+
+// === YENİ TOPLU ÇARPAN FONKSİYONLARI SONU ===
+
+// === YENİ TOPLU İŞLEM FONKSİYONLARI SONU ===
   async function resetUser(username) {
     const confirmed = await customConfirm(`<b>${username}</b> kullanıcısını sıfırlamak istediğinize emin misiniz? Bu işlem kullanıcının puanlarını, biletlerini ve istatistiklerini sıfırlar!`);
     if (!confirmed) return;
