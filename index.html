@@ -6614,7 +6614,7 @@ function goToLobbySection() {
     showSection('clickCatch');
 }
 
-  // === ESKİ listenForLobbyChanges FONKSİYONUNU SİL VE BUNU YAPIŞTIR ===
+  // ESKİ listenForLobbyChanges FONKSİYONUNU SİLİP, BUNU YAPIŞTIR
 
 function listenForLobbyChanges() {
     const lobbyRef = db.ref('clickCatchLobby');
@@ -6644,6 +6644,12 @@ function listenForLobbyChanges() {
             lobbyStatusContainer.classList.add('hidden');
             lobbyGameOverScreen.classList.add('hidden');
             startScreen.style.display = 'flex';
+            
+            // Oyun bitince veya iptal olunca arayüzdeki zamanlayıcıları temizle
+            if (clickCatchItemInterval) {
+                clearInterval(clickCatchItemInterval);
+                clickCatchItemInterval = null;
+            }
             
             joinLobbyBtn.disabled = true;
             joinLobbyBtn.textContent = 'Lobiye Katıl';
@@ -6726,27 +6732,30 @@ function listenForLobbyChanges() {
             if (isCurrentUserInLobby && currentActiveSection !== 'clickCatch') {
                 showSection('clickCatch');
             }
-
-            // === PERFORMANS DÜZELTMESİ BURADA ===
-            // Artık sadece lobiye katılan oyuncular için oyun başlıyor ve hedefler görünüyor.
+            
+            // ================== PERFORMANS DÜZELTMESİ BURADA ==================
+            // Bu blok artık sadece lobiye katılan oyuncularda çalışacak.
             if (isCurrentUserInLobby) {
                 if (!clickCatchItemInterval) {
                    showGameCountdown(() => {
+                       // Hedef oluşturma döngüsü sadece katılımcı için başlar.
                        clickCatchItemInterval = setInterval(() => createCatchItem('lobby'), lobbyData.itemInterval);
                    });
                 }
             }
-            // === DÜZELTME BİTTİ ===
+            // =================================================================
 
         } else if (lobbyData.state === 'finished') {
             lobbyStatusContainer.classList.add('hidden');
             lobbyGameOverScreen.classList.remove('hidden');
-            document.getElementById('lobbyGameOverInfo').innerHTML = `Kazanan: <b class="text-2xl text-yellow-300">${lobbyData.winner}</b>! Ödül: ${lobbyData.prize} Puan! <br> Katılım ücretleri iade edilmedi.`;
+            document.getElementById('lobbyGameOverInfo').innerHTML = `Kazanan: <b class="text-2xl text-yellow-300">${lobbyData.winner}</b>! Ödül: ${lobbyData.prize} Puan!`;
             
             startScreen.style.display = 'none';
             document.getElementById('displayTarget').classList.add('hidden');
-            clearInterval(clickCatchItemInterval);
-            clickCatchItemInterval = null;            
+            if (clickCatchItemInterval) {
+                clearInterval(clickCatchItemInterval);
+                clickCatchItemInterval = null;
+            }
         }
     };
 
@@ -7054,15 +7063,14 @@ function _actuallyStartSoloGame() {
     clickCatchItemInterval = setInterval(() => createCatchItem('solo'), soloGameSettings.itemInterval);
 }
 
-// setWinner FONKSİYONUNU BU YENİ HALİYLE DEĞİŞTİR
+// ESKİ setWinner FONKSİYONUNU SİLİP, YENİ ÖDÜL MANTIĞI İÇEREN BUNU YAPIŞTIR
 
-// BU FONKSİYONU BUL VE AŞAĞIDAKİYLE DEĞİŞTİR
 async function setWinner(username) {
-    const lobbySnap = await db.ref('clickCatchLobby').once('value');
+    const lobbyRef = db.ref('clickCatchLobby');
+    const lobbySnap = await lobbyRef.once('value');
     const lobbyData = lobbySnap.val();
     if (!lobbyData || lobbyData.state !== 'active') return;
 
-    // ESKİ "winnerData" YERİNE DETAYLI OYUN ÖZETİ OLUŞTURULUYOR
     const gameSummary = {
         winner: username,
         prize: lobbyData.prize,
@@ -7074,19 +7082,35 @@ async function setWinner(username) {
     
     logActivity('clickCatchLobby', username, { prize: lobbyData.prize });
     
-    // YENİ OYUN ÖZETİNİ VERİTABANINA YAZ
     await db.ref('clickCatchLobbyLastGameSummary').set(gameSummary);
     
     const updates = {
         state: 'finished',
         winner: username
     };
-    await db.ref('clickCatchLobby').update(updates);
+    await lobbyRef.update(updates);
     
     const winnerRef = db.ref(`users/${username}`);
     await winnerRef.transaction(user => {
         if (user) {
-            user.balance = (user.balance || 0) + lobbyData.prize;
+            // ================== YENİ ÖDÜL MANTIĞI BURADA ==================
+            let finalPrize = lobbyData.prize;
+
+            // Eğer admin ödülü 500 olarak ayarladıysa...
+            if (lobbyData.prize === 500) {
+                // Eğer oyuna biletle girildiyse, biletleri iade et.
+                if (lobbyData.entryTickets > 0) {
+                    user.clickCatchTickets = (user.clickCatchTickets || 0) + lobbyData.entryTickets;
+                } 
+                // Eğer puanla girildiyse, giriş puanını da ödüle ekle.
+                else {
+                    finalPrize += lobbyData.entryFee;
+                }
+            }
+            // =============================================================
+
+            // Toplam ödülü kullanıcının bakiyesine ekle.
+            user.balance = (user.balance || 0) + finalPrize;
             if (user.balance > (user.highestBalanceEver || 0)) {
                 user.highestBalanceEver = user.balance;
             }
@@ -7094,6 +7118,7 @@ async function setWinner(username) {
         return user;
     });
 
+    // 5 saniye sonra lobi verisini temizle
     setTimeout(() => {
         db.ref('clickCatchLobby').remove();
     }, 5000);
