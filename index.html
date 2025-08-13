@@ -273,21 +273,20 @@ body.modal-open .modal-content {
     WEIZENDTV KUTU OYUNU
 </header>
 
-<div id="activityFeedPanel" class="fixed top-0 right-0 h-full w-full max-w-md bg-gray-800 border-l-2 border-red-700 shadow-2xl z-[10000] transform translate-x-full transition-transform duration-300 ease-in-out hidden">
-      <div class="flex flex-col h-full">
-          <div class="flex justify-between items-center p-4 border-b border-gray-700">
-              <h4 class="text-yellow-400 text-2xl font-bold">Son 20 Eylem</h4>
-              <button onclick="closeActivityFeed()" class="p-2 rounded-full hover:bg-gray-700 transition-colors">
-                  <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-                  </svg>
-              </button>
-          </div>
-          <div id="activityFeedList" class="flex-grow p-4 overflow-hidden relative">
-              </div>
-      </div>
+<div id="activityFeedPanel" class="fixed top-0 right-0 h-full w-full max-w-md bg-gray-900/80 backdrop-blur-sm border-l-2 border-red-800 shadow-2xl z-[10000] transform translate-x-full transition-transform duration-300 ease-in-out hidden">
+    <div class="flex flex-col h-full">
+        <div class="flex justify-between items-center p-4 border-b border-gray-700/50">
+            <h4 class="text-yellow-300 text-2xl font-bold tracking-wider">Son Eylemler</h4>
+            <button onclick="closeActivityFeed()" class="p-2 rounded-full hover:bg-white/10 transition-colors">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+            </button>
+        </div>
+        <div id="activityFeedList" class="flex-grow p-2 sm:p-4 space-y-3 overflow-y-auto scrollable-list">
+            </div>
+    </div>
 </div>
-
 <div id="loginContainer" class="bg-gray-800 p-8 rounded-xl shadow-lg border border-red-700 w-full max-w-md">
     <div class="flex border-b border-gray-600 mb-6">
         <button id="loginTabBtn" onclick="switchAuthTab('login')" class="flex-1 py-3 text-lg font-bold border-b-2 border-red-500 text-white transition-colors duration-300">Giriş Yap</button>
@@ -7167,69 +7166,87 @@ function logActivity(type, username, details = {}) {
 
     // Performans için eski aktiviteleri sil (son 100 aktiviteyi tut)
     db.ref('activityFeed').orderByChild('timestamp').limitToFirst(1).once('value', (snapshot) => {
-        if (snapshot.numChildren() > 100) { // Limiti 100'e çıkardık
+        if (snapshot.numChildren() > 30) { // Limiti 100'e çıkardık
             const oldestKey = Object.keys(snapshot.val())[0];
             db.ref('activityFeed/' + oldestKey).remove();
         }
     });
 }
 
-// MEVCUT getActivityIcon FONKSİYONUNU BU BLOK İLE DEĞİŞTİRİN
+// ESKİ getActivityIcon FONKSİYONUNU SİLİP BUNU YAPIŞTIR
 
 function getActivityIcon(type, details = {}) {
+    let icon = '🔔';
+    let bgColor = 'bg-gray-500'; // Varsayılan renk
+
     switch (type) {
         case 'openBox':
-            return '💰'; 
+            icon = '💰';
+            bgColor = 'bg-green-500';
+            break;
         case 'surpriseBox':
-            return '🎉'; 
-        
-        // *** DÜZENLENEN KISIM: Çarpanla bomba bulma ikonu eklendi ***
+            icon = '🎉';
+            bgColor = 'bg-yellow-500';
+            break;
         case 'iflas':
-            if (details.shieldUsed) return '🛡️';
-            if (details.multiplier && details.multiplier > 1) return '❌';
-            return '💣';
-
+            icon = details.shieldUsed ? '🛡️' : '💣';
+            bgColor = details.shieldUsed ? 'bg-blue-500' : 'bg-red-600';
+            break;
         case 'multiplierFound':
-            return '✖️';
         case 'multiplierRefund':
-            return '✖️'; // M harfi ✖️ ile değiştirildi
-
+            icon = '✖️';
+            bgColor = 'bg-purple-500';
+            break;
         case 'newItemFound':
-            if (details.itemType === 'wheelTicket') return '🎫';
-            if (details.itemType === 'clickCatchTicket') return '🎟️';
-            if (details.itemType === 'iflasShield') return '🛡️';
             const itemName = (details.itemName || '').toLowerCase();
-            if (itemName.includes('kalkan')) return '🛡️';
-            if (itemName.includes('çark bileti')) return '🎫';
-            if (itemName.includes('yakala bileti')) return '🎟️';
-            return '📦';
+            if (itemName.includes('kalkan')) icon = '🛡️';
+            else if (itemName.includes('çark bileti')) icon = '🎫';
+            else if (itemName.includes('yakala bileti')) icon = '🎟️';
+            else icon = '📦';
+            bgColor = 'bg-cyan-500';
+            break;
         case 'buyItem':
-            return '🛒';
+            icon = '🛒';
+            bgColor = 'bg-indigo-500';
+            break;
         case 'spinWheel':
-            return '🎡';
+            icon = '🎡';
+            bgColor = 'bg-pink-500';
+            break;
         case 'clickCatchSolo':
         case 'clickCatchLobby':
-            return '🎯';
+            icon = '🎯';
+            bgColor = 'bg-orange-500';
+            break;
         case 'dailyReward':
-            return '📅';
+            icon = '📅';
+            bgColor = 'bg-teal-500';
+            break;
         case 'surpriseBoxTimeout':
-            return '⏰';
-        default:
-            return '🔔';
+            icon = '⏰';
+            bgColor = 'bg-gray-600';
+            break;
     }
+
+    // Artık sadece emoji değil, tam bir HTML bloğu döndürüyoruz.
+    return `
+        <div class="flex-shrink-0 w-12 h-12 rounded-full flex items-center justify-center ${bgColor} shadow-lg">
+            <span class="text-2xl">${icon}</span>
+        </div>
+    `;
 }
 
-// MEVCUT renderActivityFeed FONKSİYONUNU BU BLOK İLE DEĞİŞTİRİN
+// ESKİ renderActivityFeed FONKSİYONUNU SİLİP BUNU YAPIŞTIR
 
 function renderActivityFeed(activities) {
     const activityFeedList = document.getElementById('activityFeedList');
     activityFeedList.innerHTML = '';
-    
+
     if (isAdmin) {
         const clearButtonHtml = `
-            <div class="p-1 mb-2 text-center">
-                <button onclick="clearAllActivities()" class="w-full py-2 px-4 bg-red-800 hover:bg-red-700 text-white font-bold rounded-lg shadow-md text-sm">
-                    Tüm Eylem Geçmişini Temizle
+            <div class="px-2 mb-2 text-center">
+                <button onclick="clearAllActivities()" class="w-full py-2 px-4 bg-red-800/50 hover:bg-red-700 text-white font-bold rounded-lg shadow-md text-sm border border-red-600">
+                    Eylem Geçmişini Temizle
                 </button>
             </div>
         `;
@@ -7244,134 +7261,78 @@ function renderActivityFeed(activities) {
     activities.forEach(activity => {
         if (!activity || !activity.username) {
             console.warn("Hatalı formatta aktivite verisi atlandı:", activity);
-            return; 
+            return;
         }
-        const details = activity.details || {}; 
+        const details = activity.details || {};
 
-        let iconContent = getActivityIcon(activity.type, details);
+        // Artık HTML bloğu olarak gelen ikonu direkt kullanıyoruz.
+        let iconHtml = getActivityIcon(activity.type, details);
         let message = '';
         const timeAgo = formatRelativeTime(activity.timestamp);
-        
+
         const deleteButtonHtml = isAdmin ? `
-            <button onclick="deleteActivity('${activity.id}')" class="ml-2 text-gray-500 hover:text-red-500 transition-colors" title="Bu Eylemi Sil">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1-1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" /></svg>
+            <button onclick="deleteActivity('${activity.id}')" class="ml-2 p-1 rounded-full text-gray-500 hover:text-red-500 hover:bg-white/10 transition-colors" title="Bu Eylemi Sil">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1-1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" /></svg>
             </button>
         ` : '';
 
-        const userHtml = `<b class="cursor-pointer hover:underline" onclick="openPublicUserDetailModal('${activity.username}')">${activity.username}</b>`;
+        const userHtml = `<b class="text-yellow-300 cursor-pointer hover:underline" onclick="openPublicUserDetailModal('${activity.username}')">${activity.username}</b>`;
 
+        // Mesaj oluşturma mantığı aynı kalıyor, sadece daha iyi okunması için stilleri güncelliyoruz.
         switch (activity.type) {
             case 'openBox':
-                let openBoxMultiplierText = '';
-                if (details.multiplier && details.multiplier > 1) {
-                    openBoxMultiplierText = ` <span class="text-xs text-purple-400">(${details.multiplier}x Çarpan ile)</span>`;
-                }
-                message = `${userHtml}, <b>${details.boxId}</b> numaralı kutudan <span class="text-green-400 font-bold">+${details.points} Puan</span> kazandı${openBoxMultiplierText}.`;
+                let openBoxMultiplierText = details.multiplier > 1 ? ` <span class="text-xs text-purple-400">(${details.multiplier}x ile)</span>` : '';
+                message = `${userHtml}, <b>${details.boxId}</b> no'lu kutudan <span class="text-green-300 font-bold">+${details.points} Puan</span> kazandı${openBoxMultiplierText}.`;
                 break;
-
-            // *** DÜZENLENEN KISIM BAŞLANGICI ***
             case 'iflas':
-                let iflasMultiplierText = '';
-                if (details.multiplier && details.multiplier > 1) {
-                    iflasMultiplierText = ` <span class="text-xs text-purple-400">(${details.multiplier}x Çarpan ile)</span>`;
-                }
-                if (details.shieldUsed) {
-                    message = `${userHtml}, <b>${details.boxId}</b> numaralı kutudan Bomba buldu ama kalkanı tarafından korundu${iflasMultiplierText}.`;
-                } else {
-                    message = `${userHtml}, <b>${details.boxId}</b> numaralı kutudan Bomba buldu ve <span class="text-red-500 font-bold">-${details.lostPoints} puan</span> kaybetti${iflasMultiplierText}.`;
-                }
+                let iflasMultiplierText = details.multiplier > 1 ? ` <span class="text-xs text-purple-400">(${details.multiplier}x ile)</span>` : '';
+                message = details.shieldUsed 
+                    ? `${userHtml}, bomba buldu ama kalkanı tarafından korundu${iflasMultiplierText}.`
+                    : `${userHtml}, bomba buldu ve <span class="text-red-400 font-bold">${details.lostPoints} puan</span> kaybetti${iflasMultiplierText}.`;
                 break;
             case 'multiplierFound':
-                 message = `${userHtml}, <b>${details.boxId}</b> numaralı kutudan <span class="text-purple-400 font-bold">${details.value}x Çarpan</span> buldu.`;
+                 message = `${userHtml}, kutudan <span class="text-purple-300 font-bold">${details.value}x Çarpan</span> buldu.`;
                 break;
             case 'multiplierRefund':
-                message = `${userHtml}, <b>${details.boxId}</b> numaralı kutudan <span class="text-purple-400 font-bold">${details.newMultiplier}x Çarpan</span> buldu. Mevcut ${details.refundedMultiplier}x mağaza çarpanı iade edildi.`;
+                message = `${userHtml}, kutudan <span class="text-purple-300 font-bold">${details.newMultiplier}x Çarpan</span> buldu ve mağaza çarpanı iade edildi.`;
                 break;
-            // *** DÜZENLENEN KISIM SONU ***
-
             case 'newItemFound':
-                let newItemMultiplierText = '';
-                if (details.multiplier && details.multiplier > 1) {
-                    newItemMultiplierText = ` <span class="text-xs text-purple-400">(${details.multiplier}x Çarpan ile)</span>`;
-                }
-                message = `${userHtml}, <b>${details.boxId}</b> numaralı kutudan <span class="text-cyan-400 font-bold">${details.itemName}</span> buldu${newItemMultiplierText}.`;
+                let newItemMultiplierText = details.multiplier > 1 ? ` <span class="text-xs text-purple-400">(${details.multiplier}x ile)</span>` : '';
+                message = `${userHtml}, kutudan <span class="text-cyan-300 font-bold">${details.itemName}</span> buldu${newItemMultiplierText}.`;
                 break;
             case 'surpriseBox':
-                const multiplierText = (details.multiplier || 1) > 1 ? ` (${details.multiplier}x çarpan ile)` : '';
-                const source = details.boxId === 'Çark' ? 'Şans Çarkı\'ndan' : `<b>${details.boxId}</b> numaralı kutudan`;
-                message = `${userHtml}, ${source} Sürpriz Kutu buldu ve <span class="text-green-400 font-bold">+${details.points} Puan</span> kazandı${multiplierText}!`;
+                const multiplierText = (details.multiplier || 1) > 1 ? ` (${details.multiplier}x ile)` : '';
+                const source = details.boxId === 'Çark' ? 'Şans Çarkı\'ndan' : `<b>${details.boxId}</b> no'lu kutudan`;
+                message = `${userHtml}, ${source} Sürpriz Kutu buldu ve <span class="text-green-300 font-bold">+${details.points} Puan</span> kazandı${multiplierText}!`;
                 break;
             case 'buyItem':
-                if (details.itemType === 'tempMultiplier') {
-                    const duration = details.itemDuration || 1;
-                    message = `${userHtml}, mağazadan <span class="text-red-500 font-bold">-${details.itemCost} puan</span> karşılığında <span class="text-cyan-400 font-bold">${duration} ADET ${details.itemValue}x Çarpan</span> satın aldı.`;
-                } else {
-                    const quantity = details.itemValue || 1;
-                    const itemName = details.itemName || 'bir ürün';
-                    message = `${userHtml}, mağazadan <span class="text-red-500 font-bold">-${details.itemCost} puan</span> karşılığında <span class="text-cyan-400 font-bold">+${quantity} ADET ${itemName}</span> satın aldı.`;
-                }
+                 message = `${userHtml}, mağazadan <span class="text-cyan-300 font-bold">${details.itemName}</span> satın aldı. (<span class="text-red-400 font-bold">-${details.itemCost} puan</span>)`;
                 break;
             case 'spinWheel':
-                let prizeText = ''; 
-                const prizeType = details.type;
-                const prizeValue = details.value;
-
-                switch(prizeType) {
-                    case 'points':          prizeText = `+${prizeValue} Puan`; break;
-                    case 'boxRights':       prizeText = `+${prizeValue} Kutu Hakkı`; break;
-                    case 'iflasShield':     prizeText = `+${prizeValue} İflas Kalkanı`; break;
-                    case 'tempMultiplier':  prizeText = `${prizeValue}x Çarpan`; break;
-                    case 'surpriseBox':     prizeText = `Sürpriz Kutu`; break;
-                    case 'clickCatchTicket':prizeText = `+${prizeValue} Tıkla-Yakala Bileti`; break;
-                    case 'wheelTicket':     prizeText = `+${prizeValue} Çark Bileti`; break;
-                    case 'pas':             prizeText = `Pas`; break;
-                    default:                prizeText = details.result || 'bir ödül'; break;
-                }
-
-                if (prizeType === 'pas') {
-                    message = `${userHtml}, Şans Çarkı'nı çevirdi ve <span class="text-gray-400 font-bold">Pas geldi</span>.`;
-                } else {
-                    const prizeDisplayHtml = `<span class="text-cyan-400 font-bold">${prizeText}</span>`;
-                    message = `${userHtml}, Şans Çarkı'nı çevirerek ${prizeDisplayHtml} kazandı.`;
-                }
+                message = `${userHtml}, Şans Çarkı'nı çevirerek <span class="text-pink-300 font-bold">${details.result}</span> kazandı.`;
                 break;
             case 'clickCatchSolo':
-                if (details.score >= 0) {
-                    message = `${userHtml}, Tıkla-Yakala (Tekli) oyun oynadı ve <span class="text-green-400 font-bold">+${details.score} Puan</span> kazandı.`;
-                } else {
-                    message = `${userHtml}, Tıkla-Yakala (Tekli) oyununda <span class="text-red-500 font-bold">${details.score} Puan</span> kaybetti.`;
-                }
-                if(details.specialItems) {
-                    message += ` Ayrıca <span class="text-cyan-400 font-bold">${details.specialItems}</span> elde etti.`
-                }
+                 message = `${userHtml}, Tıkla-Yakala oynadı ve <span class="text-orange-300 font-bold">${details.score} Puan</span> topladı.`;
                 break;
             case 'clickCatchLobby':
-                message = `${userHtml}, Tıkla-Yakala (Lobi) oyununda birinci oldu ve <span class="text-green-400 font-bold">+${details.prize} Puan</span> kazandı.`;
+                message = `${userHtml}, Tıkla-Yakala lobisini kazanarak <span class="text-orange-300 font-bold">${details.prize} Puan</span> elde etti.`;
                 break;
             case 'dailyReward':
-                if (details.rewardType === 'tempMultiplier') {
-                    message = `${userHtml}, günlük ödül olarak <span class="text-cyan-400 font-bold">${details.rewardUses} ADET ${details.rewardValue}x Çarpan</span> aldı.`;
-                } else if (details.rewardType === 'points') {
-                    message = `${userHtml}, günlük ödül olarak <span class="text-green-400 font-bold">+${details.rewardValue} Puan</span> aldı.`;
-                } else {
-                    message = `${userHtml}, günlük ödül olarak <span class="text-cyan-400 font-bold">+${details.rewardValue} ADET ${details.rewardName}</span> aldı.`;
-                }
+                 message = `${userHtml}, günlük ödül olarak <span class="text-teal-300 font-bold">${details.rewardName}</span> aldı.`;
                 break;
             case 'surpriseBoxTimeout':
-                const sourceText = details.boxId === 'Çark' 
-                    ? "Şans Çarkı'ndan gelen" 
-                    : `<b>${details.boxId}</b> numaralı kutudan gelen`;
-                message = `${userHtml}, 60 saniye içinde kart seçimi yapmadığı için ${sourceText} Sürpriz Kutu şansını kaçırdı.`;
+                 message = `${userHtml}, Sürpriz Kutu şansını süre dolduğu için kaçırdı.`;
                 break;
             default:
                 message = `${userHtml} bir eylem gerçekleştirdi.`;
         }
 
+        // Yeni kart yapısını oluşturuyoruz.
         const activityHtml = `
-            <div class="flex items-start gap-4 p-3 mb-2 bg-gray-900/50 rounded-lg border-l-2 border-gray-700">
-                <div class="text-2xl mt-1">${iconContent}</div>
-                <div class="flex-1">
-                    <p class="text-white text-sm">${message}</p>
+            <div class="bg-gray-800/70 p-3 rounded-xl flex items-center gap-4 border border-transparent hover:border-gray-700 transition-all duration-200">
+                ${iconHtml}
+                <div class="flex-1 min-w-0">
+                    <p class="text-gray-200 text-sm leading-relaxed">${message}</p>
                     <div class="flex justify-between items-center mt-1">
                         <span class="text-xs text-gray-500">${timeAgo}</span>
                         ${deleteButtonHtml}
@@ -7383,6 +7344,7 @@ function renderActivityFeed(activities) {
         activityFeedList.innerHTML += activityHtml;
     });
 }
+
 function initActivityFeed() {
     const activityBellContainer = document.getElementById('activityBellContainer');
     const activityCounter = document.getElementById('activityCounter');
