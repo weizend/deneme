@@ -7656,27 +7656,25 @@ function renderActivityFeed(activities) {
                     }
                     break;
                 case 'clickCatchSolo':
-                    let puanMesaji = '';
                     if (details.score > 0) {
-                        puanMesaji = `ve <span class="text-green-300 font-bold">+${details.score} Puan</span> topladı.`;
+                        message = `${userHtml}, Tıkla-Yakala oynadı ve <span class="text-green-300 font-bold">+${details.score} Puan</span> topladı.`;
                     } else if (details.score < 0) {
-                        puanMesaji = `ve bomba yakalayarak <span class="text-red-400 font-bold">${details.score} Puan</span> kaybetti.`;
+                        // --- SON İSTEĞİNİ KARŞILAYAN GÜNCELLEME BURADA ---
+                        // Math.abs kaldırıldı, böylece - işareti görünür.
+                        message = `${userHtml}, Tıkla-Yakala oynadı ve <span class="text-red-400 font-bold">${details.score} Puan</span> kaybetti.`;
                     } else {
-                        puanMesaji = `ancak puan toplayamadı.`;
+                        message = `${userHtml}, Tıkla-Yakala oynadı ancak puan kazanamadı.`;
                     }
-                    message = `${userHtml}, Tıkla-Yakala oynadı ${puanMesaji}`;
 
                     if (details.specialItems && details.specialItems.length > 0) {
                         message += ` Ayrıca, <span class="text-cyan-300 font-bold">${details.specialItems.join(', ')}</span> kazandı.`;
                     } else {
-                        message += ` <span class="text-xs text-gray-500">(Özel eşya yakalayamadı)</span>`;
+                        message += ` <span class="text-xs text-gray-500">(Özel eşya yakalanmadı)</span>`;
                     }
                     break;
                 case 'clickCatchLobby':
                     message = `${userHtml}, lobi oyununu kazanarak <span class="text-yellow-300 font-bold">+${details.prize} Puan</span> ödül aldı!`;
                     break;
-                
-                // --- İSTEĞİNİ KARŞILAYAN GÜNCELLEME BURADA ---
                 case 'dailyReward':
                     let rewardText = '';
                     const rewardType = details.rewardType;
@@ -7687,13 +7685,10 @@ function renderActivityFeed(activities) {
                     } else if (rewardType === 'tempMultiplier') {
                         rewardText = `${details.rewardUses} adet ${rewardValue}x Çarpan`;
                     } else {
-                        // Diğer tüm eşyalar (Kutu Hakkı, Bilet vb.) için '+' işareti ekleniyor.
                         rewardText = `+${rewardValue} ${typeToName[rewardType] || details.rewardName}`;
                     }
                     message = `${userHtml}, günlük ödül olarak <span class="text-teal-300 font-bold">${rewardText}</span> aldı.`;
                     break;
-                // --- GÜNCELLEME SONU ---
-
                 case 'surpriseBoxTimeout':
                     message = `${userHtml}, Sürpriz Kutu şansını süre dolduğu için kaçırdı.`;
                     break;
