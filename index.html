@@ -7602,14 +7602,12 @@ function renderActivityFeed(activities) {
 
             switch (activity.type) {
                 case 'openBox':
-                    // --- ÇARPAN BİLGİSİ GÜNCELLENDİ ---
                     let openBoxMultiplierText = (details.multiplier && details.multiplier > 1)
                         ? ` <span class="text-xs text-purple-400">(${details.multiplier}x çarpan kullandı)</span>`
                         : ` <span class="text-xs text-gray-500">(Çarpan kullanılmadı)</span>`;
                     message = `${userHtml}, <b>${details.boxId}</b> numaralı kutudan <span class="text-green-300 font-bold">+${details.points} Puan</span> kazandı${openBoxMultiplierText}.`;
                     break;
                 case 'iflas':
-                    // --- ÇARPAN BİLGİSİ GÜNCELLENDİ ---
                     let iflasMultiplierText = (details.multiplier && details.multiplier > 1)
                         ? ` <span class="text-xs text-purple-400">(${details.multiplier}x çarpan kullandı)</span>`
                         : ` <span class="text-xs text-gray-500">(Çarpan kullanılmadı)</span>`;
@@ -7618,7 +7616,6 @@ function renderActivityFeed(activities) {
                         : `${userHtml}, <b>${details.boxId}</b> numaralı kutudan bomba buldu ve <span class="text-red-400 font-bold">-${details.lostPoints} Puan</span> kaybetti${iflasMultiplierText}.`;
                     break;
                 case 'surpriseBox':
-                    // --- ÇARPAN BİLGİSİ GÜNCELLENDİ ---
                     let surpriseMultiplierText = (details.multiplier && details.multiplier > 1)
                         ? ` <span class="text-xs text-purple-400">(${details.multiplier}x çarpan kullandı)</span>`
                         : ` <span class="text-xs text-gray-500">(Çarpan kullanılmadı)</span>`;
@@ -7632,7 +7629,6 @@ function renderActivityFeed(activities) {
                      message = `${userHtml}, <b>${details.boxId}</b> numaralı kutudan <span class="text-purple-300 font-bold">${details.newMultiplier}x Çarpan</span> buldu ve mağaza çarpanı iade edildi.`;
                     break;
                 case 'newItemFound':
-                     // --- ÇARPAN BİLGİSİ GÜNCELLENDİ ---
                      let newItemMultiplierText = (details.multiplier && details.multiplier > 1)
                         ? ` <span class="text-xs text-purple-400">(${details.multiplier}x çarpan kullandı)</span>`
                         : ` <span class="text-xs text-gray-500">(Çarpan kullanılmadı)</span>`;
@@ -7679,19 +7675,25 @@ function renderActivityFeed(activities) {
                 case 'clickCatchLobby':
                     message = `${userHtml}, lobi oyununu kazanarak <span class="text-yellow-300 font-bold">+${details.prize} Puan</span> ödül aldı!`;
                     break;
+                
+                // --- İSTEĞİNİ KARŞILAYAN GÜNCELLEME BURADA ---
                 case 'dailyReward':
                     let rewardText = '';
                     const rewardType = details.rewardType;
                     const rewardValue = details.rewardValue;
+
                     if (rewardType === 'points') {
                         rewardText = `+${rewardValue} Puan`;
                     } else if (rewardType === 'tempMultiplier') {
                         rewardText = `${details.rewardUses} adet ${rewardValue}x Çarpan`;
                     } else {
+                        // Diğer tüm eşyalar (Kutu Hakkı, Bilet vb.) için '+' işareti ekleniyor.
                         rewardText = `+${rewardValue} ${typeToName[rewardType] || details.rewardName}`;
                     }
                     message = `${userHtml}, günlük ödül olarak <span class="text-teal-300 font-bold">${rewardText}</span> aldı.`;
                     break;
+                // --- GÜNCELLEME SONU ---
+
                 case 'surpriseBoxTimeout':
                     message = `${userHtml}, Sürpriz Kutu şansını süre dolduğu için kaçırdı.`;
                     break;
