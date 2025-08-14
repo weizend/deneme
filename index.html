@@ -1989,6 +1989,8 @@ auth.onAuthStateChanged(user => {
 });
 
   // DEĞİŞTİRİLECEK FONKSİYON
+// MEVCUT afterLogin FONKSİYONUNU SİLİP BUNU YAPIŞTIRIN
+
 async function afterLogin() {
     document.getElementById("loginContainer").style.display = "none";
     document.getElementById("gameDiv").style.display = "block";
@@ -2000,7 +2002,7 @@ async function afterLogin() {
     if (isAdmin) {
       document.getElementById('adminPanelToggleButton').classList.remove('hidden');
       document.getElementById('boxSettingsButton').classList.remove('hidden');
-      document.getElementById('currentUserAvatar').src = 'https://i.hizliresim.com/mtwdr1x.png?_gl=1*1vzhmma*_ga*MTA2NTkzNzE4OC4xNzQ3MTQ1Mzk0*_ga_M9ZRXYS2YN*czE3NTUxNzY3MTckbzEwJGcxJHQxNzU1MTc3NTAwJGozNyRsMCRoMA..';
+      document.getElementById('currentUserAvatar').src = 'https://i.hizliresim.com/bsjpkbe.png';
     } else {
       document.getElementById('adminPanelToggleButton').classList.add('hidden');
       document.getElementById('boxSettingsButton').classList.add('hidden');
@@ -2026,7 +2028,8 @@ async function afterLogin() {
     listenForSurpriseBox();
     listenForDailyRewardChanges();
     initActivityFeed();
-    listenForGlobalNotifications(); // <-- YENİ EKLENEN SATIR BU!
+    listenForGlobalNotifications();
+    listenForLobbyChanges(); // LOBİ DİNLEYİCİSİ ARTIK BURADA ÇAĞRILIYOR
     
     if (!isAdmin) {
         listenForAdminNotifications();
@@ -2070,6 +2073,8 @@ async function afterLogin() {
     }
   }
   // DEĞİŞTİRİLECEK FONKSİYON
+// MEVCUT showSection FONKSİYONUNU SİLİP BUNU YAPIŞTIRIN
+
 function showSection(sectionId) {
     document.getElementById('gameContent').classList.add('hidden');
     document.getElementById('storeSection').classList.add('hidden');
@@ -2118,7 +2123,7 @@ function showSection(sectionId) {
         }
     } else if (sectionId === 'clickCatch') {
         loadClickCatchRankings();
-        listenForLobbyChanges(); 
+        // listenForLobbyChanges(); // BU SATIR ARTIK BURADA DEĞİL
         listenForLastGameSummary(); 
         
         if (currentUser && !isAdmin) {
