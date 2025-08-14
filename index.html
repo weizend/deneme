@@ -7578,7 +7578,6 @@ function renderActivityFeed(activities) {
         return;
     }
     
-    // Ödül türlerini metne çevirmek için bir yardımcı obje
     const typeToName = {
         points: 'Puan',
         boxRights: 'Kutu Hakkı',
@@ -7603,17 +7602,26 @@ function renderActivityFeed(activities) {
 
             switch (activity.type) {
                 case 'openBox':
-                    let openBoxMultiplierText = details.multiplier > 1 ? ` <span class="text-xs text-purple-400">(${details.multiplier}x)</span>` : '';
+                    // --- ÇARPAN BİLGİSİ GÜNCELLENDİ ---
+                    let openBoxMultiplierText = (details.multiplier && details.multiplier > 1)
+                        ? ` <span class="text-xs text-purple-400">(${details.multiplier}x çarpan kullandı)</span>`
+                        : ` <span class="text-xs text-gray-500">(Çarpan kullanılmadı)</span>`;
                     message = `${userHtml}, <b>${details.boxId}</b> numaralı kutudan <span class="text-green-300 font-bold">+${details.points} Puan</span> kazandı${openBoxMultiplierText}.`;
                     break;
                 case 'iflas':
-                    let iflasMultiplierText = details.multiplier > 1 ? ` <span class="text-xs text-purple-400">(${details.multiplier}x)</span>` : '';
+                    // --- ÇARPAN BİLGİSİ GÜNCELLENDİ ---
+                    let iflasMultiplierText = (details.multiplier && details.multiplier > 1)
+                        ? ` <span class="text-xs text-purple-400">(${details.multiplier}x çarpan kullandı)</span>`
+                        : ` <span class="text-xs text-gray-500">(Çarpan kullanılmadı)</span>`;
                     message = details.shieldUsed 
                         ? `${userHtml}, <b>${details.boxId}</b> numaralı kutudan bomba buldu ama kalkanı korudu${iflasMultiplierText}.`
                         : `${userHtml}, <b>${details.boxId}</b> numaralı kutudan bomba buldu ve <span class="text-red-400 font-bold">-${details.lostPoints} Puan</span> kaybetti${iflasMultiplierText}.`;
                     break;
                 case 'surpriseBox':
-                    let surpriseMultiplierText = details.multiplier > 1 ? ` <span class="text-xs text-purple-400">(${details.multiplier}x)</span>` : '';
+                    // --- ÇARPAN BİLGİSİ GÜNCELLENDİ ---
+                    let surpriseMultiplierText = (details.multiplier && details.multiplier > 1)
+                        ? ` <span class="text-xs text-purple-400">(${details.multiplier}x çarpan kullandı)</span>`
+                        : ` <span class="text-xs text-gray-500">(Çarpan kullanılmadı)</span>`;
                     const source = details.boxId === 'Çark' ? 'Şans Çarkı\'ndan' : `<b>${details.boxId}</b> numaralı kutudan`;
                     message = `${userHtml}, ${source} Sürpriz Kutu buldu ve <span class="text-green-300 font-bold">+${details.points} Puan</span> kazandı${surpriseMultiplierText}!`;
                     break;
@@ -7624,7 +7632,10 @@ function renderActivityFeed(activities) {
                      message = `${userHtml}, <b>${details.boxId}</b> numaralı kutudan <span class="text-purple-300 font-bold">${details.newMultiplier}x Çarpan</span> buldu ve mağaza çarpanı iade edildi.`;
                     break;
                 case 'newItemFound':
-                     let newItemMultiplierText = details.multiplier > 1 ? ` <span class="text-xs text-purple-400">(${details.multiplier}x)</span>` : '';
+                     // --- ÇARPAN BİLGİSİ GÜNCELLENDİ ---
+                     let newItemMultiplierText = (details.multiplier && details.multiplier > 1)
+                        ? ` <span class="text-xs text-purple-400">(${details.multiplier}x çarpan kullandı)</span>`
+                        : ` <span class="text-xs text-gray-500">(Çarpan kullanılmadı)</span>`;
                     message = `${userHtml}, <b>${details.boxId}</b> numaralı kutudan <span class="text-cyan-300 font-bold">${details.itemName}</span> buldu${newItemMultiplierText}.`;
                     break;
                 case 'buyItem':
