@@ -496,10 +496,10 @@ body.modal-open .modal-content {
         </div>
         
         <div class="flex justify-around items-center mb-4 bg-gray-900 p-3 rounded-lg">
-            <div id="displayScore" class="hidden">
-                <p class="text-gray-400 text-sm">Toplanan Puan</p>
-                <p id="clickCatchScore" class="text-green-400 font-bold text-lg">0</p>
-            </div>
+    <div id="displayScore" class="hidden">
+        <p class="text-gray-400 text-sm">Toplanan Skor</p>
+        <p id="clickCatchScore" class="text-green-400 font-bold text-lg">0</p>
+    </div>
             <div id="displaySpecials" class="hidden">
                 <p class="text-gray-400 text-sm">Alınan Ödüller</p>
                 <div id="collectedSpecials" class="h-[28px] flex items-center justify-center gap-2"></div>
@@ -546,7 +546,7 @@ body.modal-open .modal-content {
           </button>
       </div>
 
-      <h3 class="text-yellow-400 text-xl font-bold border-b border-gray-600 pb-3 mb-4">TIKLA-YAKALA TOPLANAN PUAN SIRALAMASI 🎯</h3>
+      <h3 class="text-yellow-400 text-xl font-bold border-b border-gray-600 pb-3 mb-4">TIKLA-YAKALA HAFTALIK SKOR SIRALAMASI 🎯</h3>
       <input type="text" id="searchClickCatchRanking" oninput="loadClickCatchRankings()" placeholder="Sıralamada Kullanıcı Ara..." class="w-full p-3 mb-4 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500 transition duration-300">
       <div id="clickCatchRankings" class="scrollable-list max-h-80 overflow-y-auto border border-gray-600 rounded-lg p-3 bg-gray-900 text-sm leading-relaxed">Yükleniyor...</div>
     </div>
@@ -993,7 +993,7 @@ body.modal-open .modal-content {
         <p><span id="managedBadgeMultiplier" class="inline-block w-6 text-center"></span>Bulunan Çarpan Sayısı: <span id="managedUserMultiplierFoundCount" class="font-bold text-fuchsia-400"></span></p>
         <p><span id="managedBadgeStore" class="inline-block w-6 text-center"></span>Mağazada Harcanan Puan: <span id="managedUserTotalSpent" class="font-bold text-fuchsia-400"></span></p>
         <p><span id="managedBadgeShield" class="inline-block w-6 text-center"></span>Kullanılan Kalkan Sayısı: <span id="managedUserShieldUsedCount" class="font-bold text-fuchsia-400"></span></p>
-        <p><span id="managedBadgeClickCatch" class="inline-block w-6 text-center"></span>Tıkla-Yakala Toplanan Puan: <span id="managedUserClickCatchScore" class="font-bold text-fuchsia-400"></span></p>
+        <p><span id="managedBadgeClickCatch" class="inline-block w-6 text-center"></span>Toplam Tıkla-Yakala Skoru: <span id="managedUserSkor" class="font-bold text-fuchsia-400"></span></p>
       <p><span id="managedBadgeWheel" class="inline-block w-6 text-center"></span>Çevrilen Çark Sayısı: <span id="managedUserWheelSpins" class="font-bold text-fuchsia-400"></span></p>
     </div>
 
@@ -1061,7 +1061,7 @@ body.modal-open .modal-content {
             <div class="space-y-3 text-gray-300">
                 <p class="flex justify-between items-center"><span><span class="inline-block w-6 text-center" id="badge-stat-box"></span>Toplam Açılan Kutu:</span> <span id="publicUserBoxesOpened" class="font-bold text-fuchsia-400 text-lg"></span></p>
                 <p class="flex justify-between items-center"><span><span class="inline-block w-6 text-center" id="badge-stat-wheel"></span>Toplam Çevrilen Çark:</span> <span id="publicUserWheelSpins" class="font-bold text-fuchsia-400 text-lg"></span></p>
-                <p class="flex justify-between items-center"><span><span class="inline-block w-6 text-center" id="badge-stat-clickcatch"></span>Tıkla-Yakala Rekoru:</span> <span id="publicUserClickCatchScore" class="font-bold text-fuchsia-400 text-lg"></span></p>
+                <p class="flex justify-between items-center"><span><span class="inline-block w-6 text-center" id="badge-stat-clickcatch"></span>Toplam Tıkla-Yakala Skoru:</span> <span id="publicUserSkor" class="font-bold text-fuchsia-400 text-lg"></span></p>
                 <hr class="border-gray-600 !my-2">
                 <p class="flex justify-between items-center"><span><span class="inline-block w-6 text-center" id="badge-stat-surprise"></span>Bulunan Sürpriz Kutu:</span> <span id="publicUserSurpriseBoxes" class="font-bold text-fuchsia-400 text-lg"></span></p>
                 <p class="flex justify-between items-center"><span><span class="inline-block w-6 text-center" id="badge-stat-bomb"></span>Bulunan Bomba Sayısı:</span> <span id="publicUserBombCount" class="font-bold text-fuchsia-400 text-lg"></span></p>
@@ -4521,6 +4521,7 @@ async function deletePurchase(purchaseId) {
   function openBadgeInfoModal() { badgeInfoModal.style.display = 'flex'; }
   function closeBadgeInfoModal() { badgeInfoModal.style.display = 'none'; }
 
+// MEVCUT openPublicUserDetailModal FONKSİYONUNU SİL VE BUNU YAPIŞTIR
 async function openPublicUserDetailModal(username) {
     document.body.classList.add('modal-open');
     if (activeBlockedUserTimers[username]) {
@@ -4531,12 +4532,9 @@ async function openPublicUserDetailModal(username) {
 
     const userRef = db.ref('users/' + username);
 
-    // .once() yerine .on() kullanarak canlı bir dinleyici başlatıyoruz
-    // --- DEĞİŞEN KISIM BAŞLANGICI ---
     const userProfileCallback = async (userSnap) => {
         const userData = userSnap.val();
         if (!userData) {
-            // Eğer kullanıcı silinirse veya veri gelmezse pencereyi kapat
             closePublicUserDetailModal();
             return;
         }
@@ -4561,7 +4559,6 @@ async function openPublicUserDetailModal(username) {
 
         document.getElementById('publicUserKingBadge').innerHTML = badges.crown;
         document.getElementById('publicUserOtherBadges').innerHTML = badges.others;
-
         document.getElementById('publicBadgeBalance').innerHTML = userLeaderStatus.isCurrentLeader ? '🥇' : '';
         document.getElementById('publicBadgeHighest').innerHTML = userLeaderStatus.isHighLeader ? '🏆' : '';
 
@@ -4585,7 +4582,10 @@ async function openPublicUserDetailModal(username) {
 
         document.getElementById('publicUserBoxesOpened').textContent = userData.boxesOpenedCount || 0;
         document.getElementById('publicUserWheelSpins').textContent = userData.wheelSpinsCount || 0;
-        document.getElementById('publicUserClickCatchScore').textContent = userData.clickCatchHighestScore || 0;
+        
+        // Bu satır Puan yerine yeni Skor sistemini gösterecek şekilde güncellendi.
+        document.getElementById('publicUserSkor').textContent = userData.skor || 0;
+        
         document.getElementById('publicUserSurpriseBoxes').textContent = userData.surpriseBoxesOpened || 0;
         document.getElementById('publicUserBombCount').textContent = userData.iflasCount || 0;
         document.getElementById('publicUserMultiplierFoundCount').textContent = userData.multiplierFoundCount || 0;
@@ -4617,12 +4617,10 @@ async function openPublicUserDetailModal(username) {
     };
 
     userRef.on('value', userProfileCallback);
-    // Dinleyiciyi ve referansını bir obje olarak saklıyoruz.
     activeUserProfileListener = { ref: userRef, callback: userProfileCallback };
-    // --- DEĞİŞEN KISIM SONU ---
 }
   
-  // YENİ VE DÜZELTİLMİŞ FONKSİYON
+  // MEVCUT openUserManagementModal FONKSİYONUNU SİL VE BUNU YAPIŞTIR
 async function openUserManagementModal(username) {
     if (activeBlockedUserTimers[username]) {
         clearInterval(activeBlockedUserTimers[username]);
@@ -4640,7 +4638,6 @@ async function openUserManagementModal(username) {
 
     const leaders = await calculateAllLeaders(allUsersSnap.val());
 
-    // Yönetilen kullanıcıya özel liderlik durumlarını belirle
     const userLeaderStatus = {
         isCurrentLeader: username === leaders.currentBalanceUser,
         isHighLeader: username === leaders.highEverBalanceUser,
@@ -4653,7 +4650,7 @@ async function openUserManagementModal(username) {
         isClickCatchLeader: username === leaders.clickCatchLeaderUser,
         isWheelSpinLeader: username === leaders.wheelSpinUser
     };
-  // YENİ EKLENEN KISIM: Admin panelindeki satır başı rozetlerini de dinamik hale getirir.
+    
     document.getElementById('managedBadgeBalance').innerHTML = userLeaderStatus.isCurrentLeader ? '🥇' : '';
     document.getElementById('managedBadgeHighest').innerHTML = userLeaderStatus.isHighLeader ? '🏆' : '';
 
@@ -4705,10 +4702,12 @@ async function openUserManagementModal(username) {
     document.getElementById('managedUserMultiplierFoundCount').textContent = userData.multiplierFoundCount || 0;
     document.getElementById('managedUserTotalSpent').textContent = userData.totalSpentPoints || 0;
     document.getElementById('managedUserShieldUsedCount').textContent = userData.iflasShieldUsedCount || 0;
-    document.getElementById('managedUserClickCatchScore').textContent = userData.clickCatchHighestScore || 0;
+    
+    // Bu satır Puan yerine yeni Skor sistemini gösterecek şekilde güncellendi.
+    document.getElementById('managedUserSkor').textContent = userData.skor || 0;
+    
     document.getElementById('managedUserWheelSpins').textContent = userData.wheelSpinsCount || 0;
 
-    // Yönetim panelindeki liderlik rozetlerini göster
     ['managedBadgeWheel', 'managedBadgeBox', 'managedBadgeSurprise', 'managedBadgeBomb', 'managedBadgeMultiplier', 'managedBadgeStore', 'managedBadgeShield', 'managedBadgeClickCatch'].forEach(id => {
         const el = document.getElementById(id);
         if(el) el.innerHTML = '';
@@ -6635,25 +6634,14 @@ function handleSoloItemClick(event) {
     item.remove();
 }
   
+// MEVCUT deleteUserFromLeaderboard FONKSİYONUNU SİL VE BUNU YAPIŞTIR
 async function deleteUserFromLeaderboard(event, username) {
-    event.stopPropagation(); // Olayın alt elementlere tıklanmasını engeller
+    event.stopPropagation();
     if (!isAdmin) return;
-
-    const confirmed = await customConfirm(`<b>${username}</b> kullanıcısının Tıkla-Yakala skorunu sıfırlamak istediğinize emin misiniz? Bu işlem, kullanıcının hem haftalık sıralamasını hem de kişisel rekorunu kalıcı olarak silecektir!`);
-    
+    const confirmed = await customConfirm(`<b>${username}</b> adlı kullanıcıyı bu haftanın skor listesinden silmek istediğinize emin misiniz? Bu işlem, kullanıcının toplam skorunu etkilemez.`);
     if (confirmed) {
-        // 1. İki farklı konumu (haftalık skorlar ve kullanıcı profili) aynı anda güncellemek için bir obje oluşturuyoruz.
-        const updates = {};
-        updates[`/clickCatchWeeklyScores/${username}`] = null; // Haftalık skoru silmek için null atıyoruz.
-        updates[`/users/${username}/clickCatchHighestScore`] = 0; // Profildeki en yüksek skoru sıfırlıyoruz.
-
-        // 2. Tek bir komutla hem silme hem de güncelleme işlemini veritabanına gönderiyoruz.
-        await db.ref().update(updates);
-
-        displayMessage(`${username} kullanıcısının Tıkla-Yakala skoru başarıyla sıfırlandı.`);
-        
-        // Tıkla-Yakala sıralama listesini anında yenilemek için bu fonksiyonu hala çağırıyoruz.
-        // Ana liderlik tablosu ise veritabanı dinleyicisi sayesinde otomatik olarak güncellenecektir.
+        await db.ref(`clickCatchWeeklyScores/${username}`).remove();
+        displayMessage(`${username} bu haftanın skor tablosundan silindi.`);
         loadClickCatchRankings();
     }
 }
@@ -6669,29 +6657,24 @@ async function getClickCatchLeaderUsername() {
     });
     return scores.length > 0 ? scores[0].username : null;
 }
-   function loadClickCatchRankings() {
+   // BU 3 FONKSİYONUN ESKİLERİNİ SİLİP, YENİLERİNİ YAPIŞTIRIN
+
+function loadClickCatchRankings() {
       const rankingsList = document.getElementById('clickCatchRankings');
       const searchTerm = document.getElementById('searchClickCatchRanking').value.trim().toLowerCase();
       const ref = db.ref('clickCatchWeeklyScores').orderByValue();
       
       const callback = snap => {
           rankingsList.innerHTML = 'Yükleniyor...';
-          
           if (!snap.exists()) {
               rankingsList.innerHTML = '<p class="text-center text-gray-400">Bu hafta henüz skor kaydedilmedi.</p>';
-              clickCatchLeader = null;
               return;
           }
 
           let html = '';
           const scores = [];
-          snap.forEach(child => {
-              scores.push({ username: child.key, score: child.val() });
-          });
+          snap.forEach(child => { scores.push({ username: child.key, score: child.val() }); });
           scores.reverse();
-
-          if(scores.length > 0) { clickCatchLeader = scores[0].username; } 
-          else { clickCatchLeader = null; }
 
           let filteredScores = scores;
           if (searchTerm) {
@@ -6700,11 +6683,7 @@ async function getClickCatchLeaderUsername() {
 
           filteredScores.forEach((entry, index) => {
               const leaderBadge = (index === 0 && !searchTerm) ? '<span title="Tıkla ve Yakala Lideri">🎯</span>' : '';
-              const deleteButton = isAdmin 
-? `<button onclick="deleteUserFromLeaderboard(event, '${entry.username}')" class="ml-3 text-gray-500 hover:text-red-500 transition-colors" title="Skor Tablosundan Sil">
-       <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1-1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" /></svg>
-     </button>` : '';
-
+              const deleteButton = isAdmin ? `<button onclick="deleteUserFromLeaderboard(event, '${entry.username}')" class="ml-3 text-gray-500 hover:text-red-500 transition-colors" title="Skor Tablosundan Sil"><svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1-1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" /></svg></button>` : '';
               const userData = allUsersCache.find(user => user.username === entry.username);
               const avatarUrl = userData && userData.selectedAvatar ? userData.selectedAvatar.url : defaultAvatarUrl;
 
@@ -6716,7 +6695,7 @@ async function getClickCatchLeaderUsername() {
                         <span>${leaderBadge} ${entry.username}</span>
                         ${deleteButton}
                     </div>
-                    <span class="font-bold text-yellow-300">${entry.score} Puan</span>
+                    <span class="font-bold text-yellow-300">${entry.score} Skor</span>
                 </div>`;
           });
           rankingsList.innerHTML = html || '<p class="text-center text-gray-400">Aramayla eşleşen kullanıcı bulunamadı.</p>';
@@ -6727,9 +6706,7 @@ async function getClickCatchLeaderUsername() {
       }
       activeListeners.clickCatchRankings = { ref, event: 'value', callback };
       ref.on('value', callback);
-  }
-
-    // === BU YENİ FONKSİYONLARI DOSYANIN SONUNA EKLE ===
+}
 
 // Lobi bildirim penceresini gösterir
 function showLobbyNotification(lobbyData) {
@@ -7471,7 +7448,7 @@ async function startSoloClickCatchGame() {
     showGameCountdown(_actuallyStartSoloGame);
 }
 
-// --- ESKİ endSoloClickCatchGame FONKSİYONUNU SİL, BUNU YAPIŞTIR ---
+// MEVCUT endSoloClickCatchGame FONKSİYONUNU KOMPLE SİL VE BUNU YAPIŞTIR
 
 function endSoloClickCatchGame() {
     clickCatchGameActive = false;
@@ -7489,62 +7466,43 @@ function endSoloClickCatchGame() {
     document.getElementById('displaySpecials').classList.add('hidden');
     document.getElementById('displayTimer').classList.add('hidden');
 
-    // --- İSTEĞİNİ KARŞILAYAN BÖLÜM BAŞLANGICI ---
-
-    // 1. Kazanılan özel hediyeleri bir liste haline getiriyoruz.
     const specialItemsWonLog = [];
-    if (collectedBoxRights > 0) {
-        specialItemsWonLog.push(`+${collectedBoxRights} Kutu Hakkı`);
-    }
-    if (collectedIflasShields > 0) {
-        specialItemsWonLog.push(`+${collectedIflasShields} İflas Kalkanı`);
-    }
-    if (collectedWheelTickets > 0) {
-        specialItemsWonLog.push(`+${collectedWheelTickets} Çark Bileti`);
-    }
+    if (collectedBoxRights > 0) specialItemsWonLog.push(`+${collectedBoxRights} Kutu Hakkı`);
+    if (collectedIflasShields > 0) specialItemsWonLog.push(`+${collectedIflasShields} İflas Kalkanı`);
+    if (collectedWheelTickets > 0) specialItemsWonLog.push(`+${collectedWheelTickets} Çark Bileti`);
 
-    // 2. Oyun sonu bilgilendirme penceresi için mesajı hazırlıyoruz.
-    let endMessage = `Oyun bitti! Toplanan Puan: <b>${clickCatchScore}</b>.`;
+    let endMessage = `Oyun bitti! Toplanan Skor: <b>${clickCatchScore}</b>.`;
     if (specialItemsWonLog.length > 0) {
-        // Eğer hediye yakalandıysa:
         endMessage += `<br>Ayrıca, <b>${specialItemsWonLog.join(', ')}</b> kazandın!`;
-    } else {
-        // Eğer hediye yakalanmadıysa:
-        endMessage += `<br>Bu turda özel hediye yakalayamadın.`;
     }
-    // Hazırlanan mesajı bilgilendirme penceresinde gösteriyoruz.
     displayMessage(endMessage);
 
-    // 3. "Son Eylemler"e gönderilecek veriyi hazırlayıp yolluyoruz.
     logActivity('clickCatchSolo', currentUser, {
         score: clickCatchScore,
-        specialItems: specialItemsWonLog // Özel hediye listesini de gönderiyoruz
+        specialItems: specialItemsWonLog
     });
-
-    // --- İSTEĞİNİ KARŞILAYAN BÖLÜM SONU ---
 
     const userRef = db.ref('users/' + currentUser);
     const weeklyScoreRef = db.ref(`clickCatchWeeklyScores/${currentUser}`);
 
+    // Haftalık skoru güncelle (Bu kısım aynı kalıyor, çünkü haftalık rekabeti tutuyor)
     weeklyScoreRef.transaction(currentWeeklyScore => {
-        return (currentWeeklyScore || 0) + Math.max(0, clickCatchScore);
-    }).then(transactionResult => {
-        const newTotalWeeklyScore = transactionResult.snapshot.val();
+        return (currentWeeklyScore || 0) + clickCatchScore;
+    });
 
-        userRef.transaction(user => {
-            if (user) {
-                user.balance = (user.balance || 0) + clickCatchScore;
-                if (user.balance < 0) user.balance = 0;
-                if (user.balance > (user.highestBalanceEver || 0)) user.highestBalanceEver = user.balance;
-                if (newTotalWeeklyScore > (user.clickCatchHighestScore || 0)) {
-                    user.clickCatchHighestScore = newTotalWeeklyScore;
-                }
-                user.kutuHakki = (user.kutuHakki || 0) + collectedBoxRights;
-                user.iflasShieldUses = (user.iflasShieldUses || 0) + collectedIflasShields;
-                user.carkBileti = (user.carkBileti || 0) + collectedWheelTickets;
-            }
-            return user;
-        });
+    // Kullanıcının ana verilerini güncelle
+    userRef.transaction(user => {
+        if (user) {
+            // --- DEĞİŞEN ANA MANTIK BURASI ---
+            // 1. Yeni 'skor' alanını güncelle, Puan (balance) alanına dokunma.
+            user.skor = (user.skor || 0) + clickCatchScore;
+
+            // 2. Kazanılan özel eşyaları ekle.
+            user.kutuHakki = (user.kutuHakki || 0) + collectedBoxRights;
+            user.iflasShieldUses = (user.iflasShieldUses || 0) + collectedIflasShields;
+            user.carkBileti = (user.carkBileti || 0) + collectedWheelTickets;
+        }
+        return user;
     });
 }
 
