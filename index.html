@@ -537,15 +537,10 @@ body.modal-open .modal-content {
             </div>
         </div>
     </div>
-
+<div id="lastWinnerContainer" class="hidden bg-gray-900/50 p-4 rounded-lg border border-yellow-400 mb-6 text-left">
+    </div>
     <div class="tableBox bg-gray-800 p-6 rounded-xl shadow-lg border border-red-700 w-full md:flex-1 min-w-[280px] mt-6 mx-auto max-w-2xl">
       
-      <div id="clickCatchAdminResetContainer" class="hidden mb-4">
-          <button onclick="startClickCatchResetProcess()" class="w-full py-3 bg-green-700 hover:bg-green-600 text-white font-bold rounded-lg shadow-md text-base">
-              🏆 Sezonu Sıfırla ve Lideri Ödüllendir
-          </button>
-      </div>
-
       <h3 class="text-yellow-400 text-xl font-bold border-b border-gray-600 pb-3 mb-4">TIKLA-YAKALA HAFTALIK SKOR SIRALAMASI 🎯</h3>
       <input type="text" id="searchClickCatchRanking" oninput="loadClickCatchRankings()" placeholder="Sıralamada Kullanıcı Ara..." class="w-full p-3 mb-4 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500 transition duration-300">
       <div id="clickCatchRankings" class="scrollable-list max-h-80 overflow-y-auto border border-gray-600 rounded-lg p-3 bg-gray-900 text-sm leading-relaxed">Yükleniyor...</div>
@@ -1272,7 +1267,7 @@ body.modal-open .modal-content {
   <div id="soloGameSettingsModal" class="modal-overlay fixed inset-0 bg-black bg-opacity-70 flex justify-center items-center z-[9999] hidden">
     <div class="modal-content bg-gray-800 p-8 rounded-xl shadow-2xl border border-purple-500 w-11/12 max-w-3xl text-left relative max-h-[90vh] flex flex-col">
         <button class="modal-close-button" onclick="closeSoloGameSettingsModal()">&times;</button>
-        <h3 class="text-purple-300 text-3xl font-bold mb-6 text-center">Tekli Oyun Ayarları</h3>
+        <h3 class="text-purple-300 text-3xl font-bold mb-6 text-center">Tekli Oyun Ayarları ve Yönetimi</h3>
         <div class="flex-grow overflow-y-auto scrollable-list pr-4">
             <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
                 
@@ -1343,8 +1338,12 @@ body.modal-open .modal-content {
                 </div>
             </div>
         </div>
-        <div class="mt-6 pt-4 border-t border-gray-700">
-            <button onclick="saveSoloGameSettings()" class="w-full py-3 bg-purple-600 hover:bg-purple-500 text-white font-bold rounded-lg shadow-md">Tekli Oyun Ayarlarını Kaydet</button>
+        <div class="mt-6 pt-4 border-t border-gray-700 flex flex-col sm:flex-row gap-4">
+            <button onclick="saveSoloGameSettings()" class="flex-1 py-3 bg-purple-600 hover:bg-purple-500 text-white font-bold rounded-lg shadow-md">Ayarları Kaydet</button>
+            
+            <button onclick="startClickCatchResetProcess()" class="flex-1 py-3 bg-green-700 hover:bg-green-600 text-white font-bold rounded-lg shadow-md">🏆 Sezonu Sıfırla ve Lideri Ödüllendir</button>
+            
+            <button onclick="resetClickCatchLeaderboard()" class="flex-1 py-3 bg-orange-700 hover:bg-orange-600 text-white font-bold rounded-lg shadow-md">Haftalık Skorları Sıfırla</button>
         </div>
     </div>
 </div>
@@ -1387,7 +1386,6 @@ body.modal-open .modal-content {
                 <button id="lobbyStartBtn" onclick="triggerLobbyGameStart()" class="flex-1 py-3 bg-blue-700 hover:bg-blue-600 text-white font-bold rounded-lg shadow-md disabled:bg-gray-600 disabled:cursor-not-allowed" disabled>Oyunu Başlat</button>
                 <button onclick="endLobbyGame(true)" class="flex-1 py-3 bg-red-700 hover:bg-red-600 text-white font-bold rounded-lg shadow-md">Lobi İptal Et ve Ücretleri İade Et</button>
             </div>
-            <button onclick="resetClickCatchLeaderboard()" class="w-full mt-4 py-2 bg-orange-700 hover:bg-orange-600 text-white font-bold rounded-lg shadow-md">Haftalık Sıralamayı Sıfırla</button>
         </div>
     </div>
 </div>
@@ -6351,7 +6349,8 @@ async function resetClickCatchLeaderboard() {
         return;
     }
     const confirmed = await customConfirm(
-        "Tüm 'Tıkla-Yakala' sıralamasını ve tüm kullanıcıların kişisel rekorlarını VE <b>PROFiLLERİNDEKİ TOPLAM SKORLARINI</b> kalıcı olarak silmek istediğinizden emin misiniz? <b class='text-red-400'>Bu işlem lideri ödüllendirmeyecek ve kullanıcılara hediye bilet vermeyecektir!</b>"
+        // GÜNCELLENEN MESAJ: Artık şampiyon bilgisinin de silineceği yazıyor.
+        "Tüm 'Tıkla-Yakala' sıralamasını, kullanıcıların toplam skorlarını VE <b>Önceki Sezonun Şampiyonu</b> bilgisini kalıcı olarak silmek istediğinizden emin misiniz? <b class='text-red-400'>Bu işlem lideri ödüllendirmeyecek ve hediye bilet vermeyecektir!</b>"
     );
 
     if (!confirmed) {
@@ -6360,6 +6359,9 @@ async function resetClickCatchLeaderboard() {
 
     try {
         await db.ref('clickCatchWeeklyScores').remove();
+        // YENİ EKLENEN SATIR: Şampiyon bilgisini de veritabanından siliyor.
+        await db.ref('gameStats/clickCatchSeasonSummary').remove(); 
+        
         const usersRef = db.ref('users');
         const usersSnap = await usersRef.once('value');
         const usersData = usersSnap.val();
@@ -6367,11 +6369,9 @@ async function resetClickCatchLeaderboard() {
         const updates = {};
         if (usersData) {
             for (const username in usersData) {
-                // Hem tek oyundaki en yüksek skoru sıfırla
                 if (usersData[username].hasOwnProperty('clickCatchHighestScore')) {
                     updates[`/users/${username}/clickCatchHighestScore`] = 0;
                 }
-                // Hem de profildeki toplam skoru sıfırla
                 if (usersData[username].hasOwnProperty('skor')) {
                     updates[`/users/${username}/skor`] = 0;
                 }
@@ -6382,14 +6382,14 @@ async function resetClickCatchLeaderboard() {
             await db.ref().update(updates);
         }
         clickCatchLeader = null;
-        displayMessage("Tüm Tıkla-Yakala sıralaması, kişisel rekorlar ve toplam skorlar başarıyla sıfırlandı.");
+        // GÜNCELLENEN MESAJ: Başarı mesajı da güncellendi.
+        displayMessage("Tüm Tıkla-Yakala sıralaması, şampiyon bilgisi ve toplam skorlar başarıyla sıfırlandı.");
         
     } catch (error) {
         console.error("Tıkla-Yakala sıralaması sıfırlanırken hata oluştu:", error);
         displayMessage("Sıfırlama işlemi sırasında bir hata meydana geldi.");
     }
 }
-
 function startClickCatchResetProcess() {
     if (!isAdmin) return;
 
@@ -6412,7 +6412,17 @@ function closeClickCatchRewardModal() {
     document.getElementById('clickCatchRewardModal').style.display = 'none';
 }
 
-// MEVCUT confirmAndExecuteReset FONKSİYONUNU SİL VE BUNU YAPIŞTIR
+    // YENİ EKLENECEK FONKSİYONLAR
+async function clearLastSeasonWinner() {
+    if (!isAdmin) return;
+    const confirmed = await customConfirm("Önceki sezonun şampiyonu bilgisini temizlemek istediğinize emin misiniz?");
+    if (confirmed) {
+        await db.ref('gameStats/clickCatchSeasonSummary').remove();
+        displayMessage("Sezon kazananı bilgisi temizlendi.");
+    }
+}
+// YENİ FONKSİYONLAR BİTİŞİ
+
 async function confirmAndExecuteReset() {
     if (!isAdmin) return;
 
@@ -6425,13 +6435,47 @@ async function confirmAndExecuteReset() {
     
     const rewardType = document.getElementById('leaderRewardType').value;
     const rewardAmount = parseInt(document.getElementById('leaderRewardAmount').value);
-    const allUsersTicketAmount = 1; // Herkese +1 bilet verilecek
+    const allUsersTicketAmount = 1;
 
     if (isNaN(rewardAmount) || rewardAmount <= 0) {
         displayMessage("Lütfen lider için geçerli bir ödül miktarı girin.");
         return;
     }
     
+    // --- YENİ EKLENEN KOD BAŞLANGICI ---
+    // 1. Önceki sezonun kazanan bilgilerini ve yeni kazananın skorunu al
+    const seasonSummaryRef = db.ref('gameStats/clickCatchSeasonSummary');
+    const weeklyScoresRef = db.ref('clickCatchWeeklyScores');
+    
+    const [previousSummarySnap, weeklyScoresSnap] = await Promise.all([
+        seasonSummaryRef.once('value'),
+        weeklyScoresRef.once('value')
+    ]);
+
+    const previousSummary = previousSummarySnap.val();
+    const weeklyScores = weeklyScoresSnap.val();
+    const newWinningScore = weeklyScores[leader] || 0;
+
+    // 2. Yeni kazanan için özet verisini oluştur
+    const newSeasonSummary = {
+        winnerName: leader,
+        winningScore: newWinningScore,
+        resetTimestamp: firebase.database.ServerValue.TIMESTAMP
+    };
+
+    // 3. Eğer önceki kazanan aynı kişiyse, karşılaştırma yap
+    if (previousSummary && previousSummary.winnerName === leader) {
+        newSeasonSummary.previousScore = previousSummary.winningScore;
+        if (newWinningScore > previousSummary.winningScore) {
+            newSeasonSummary.scoreChange = 'up';
+        } else if (newWinningScore < previousSummary.winningScore) {
+            newSeasonSummary.scoreChange = 'down';
+        } else {
+            newSeasonSummary.scoreChange = 'same';
+        }
+    }
+    // --- YENİ EKLENEN KOD SONU ---
+
     const usersSnap = await db.ref('users').once('value');
     const allUsersData = usersSnap.val();
     
@@ -6443,50 +6487,33 @@ async function confirmAndExecuteReset() {
 
     const updates = {};
     const typeToName = {
-        points: 'Puan',
-        boxRights: 'Kutu Hakkı',
-        wheelTicket: 'Çark Bileti',
-        iflasShield: 'İflas Kalkanı'
+        points: 'Puan', boxRights: 'Kutu Hakkı', wheelTicket: 'Çark Bileti', iflasShield: 'İflas Kalkanı'
     };
     
-    // 1. Liderin ödülünü hazırla
     switch (rewardType) {
-        case 'points':
-            updates[`/users/${leader}/balance`] = (winnerData.balance || 0) + rewardAmount;
-            break;
-        case 'boxRights':
-            updates[`/users/${leader}/kutuHakki`] = (winnerData.kutuHakki || 0) + rewardAmount;
-            break;
-        case 'wheelTicket':
-            updates[`/users/${leader}/carkBileti`] = (winnerData.carkBileti || 0) + rewardAmount;
-            break;
-        case 'iflasShield':
-            updates[`/users/${leader}/iflasShieldUses`] = (winnerData.iflasShieldUses || 0) + rewardAmount;
-            break;
+        case 'points': updates[`/users/${leader}/balance`] = (winnerData.balance || 0) + rewardAmount; break;
+        case 'boxRights': updates[`/users/${leader}/kutuHakki`] = (winnerData.kutuHakki || 0) + rewardAmount; break;
+        case 'wheelTicket': updates[`/users/${leader}/carkBileti`] = (winnerData.carkBileti || 0) + rewardAmount; break;
+        case 'iflasShield': updates[`/users/${leader}/iflasShieldUses`] = (winnerData.iflasShieldUses || 0) + rewardAmount; break;
     }
 
-    // 2. Herkesin biletini ve skorunu hazırla
     for (const username in allUsersData) {
         const userData = allUsersData[username];
         if (userData.approved && !userData.blocked && username !== 'weizendtv') {
             updates[`/users/${username}/clickCatchTickets`] = (userData.clickCatchTickets || 0) + allUsersTicketAmount;
             updates[`/users/${username}/clickCatchHighestScore`] = 0;
-            // YENİ EKLENEN SATIR: Herkesin toplam skorunu sıfırla
             updates[`/users/${username}/skor`] = 0;
         }
     }
     
-    // 3. Haftalık skor tablosunu sil
     updates['/clickCatchWeeklyScores'] = null;
+    updates['/gameStats/clickCatchSeasonSummary'] = newSeasonSummary; // YENİ: Kazanan özetini güncelle
 
-    // 4. Tüm güncellemeleri tek seferde yap
     await db.ref().update(updates);
     
-    // 5. Herkese bildirim gönder
     const notificationMessage = `Tıkla-Yakala sezonu sona erdi! Lider ${leader}, ${rewardAmount} ${typeToName[rewardType]} kazandı! Herkese ${allUsersTicketAmount} bilet hediye!`;
     await db.ref('globalNotifications').push({ message: notificationMessage, timestamp: firebase.database.ServerValue.TIMESTAMP });
 
-    // 6. İşlemi bitir
     closeClickCatchRewardModal();
     displayMessage("Sezon başarıyla sıfırlandı, ödüller ve hediyeler dağıtıldı!");
 }
@@ -8635,19 +8662,17 @@ function closeWheelLegendModal() {
     document.getElementById('wheelLegendModal').style.display = 'none';
 }
 
-    function listenForLastGameSummary() {
-    const ref = db.ref('clickCatchLobbyLastGameSummary');
-    const container = document.getElementById('lastWinnerContainer');
-    const titleEl = document.getElementById('lastWinnerInfo');
-    const detailsListEl = document.getElementById('lastGameDetailsList');
+    // MEVCUT listenForLastGameSummary FONKSİYONUNU BUL VE BUNUNLA DEĞİŞTİR
+function listenForLastGameSummary() {
+    // 1. Lobi oyununun son kazananını dinle
+    const lobbyRef = db.ref('clickCatchLobbyLastGameSummary');
+    const lobbyContainer = document.getElementById('lastWinnerContainer'); // Bu ID'yi HTML'de daha önce kullandık
+    const lobbyTitleEl = document.getElementById('lastWinnerInfo');
+    const lobbyDetailsListEl = document.getElementById('lastGameDetailsList');
 
-    const callback = snap => {
+    const lobbyCallback = snap => {
         const summaryData = snap.val();
-
-        // EĞER VERİ VARSA VE KAZANAN BELLİ İSE BİLGİLERİ GÖSTER
         if (summaryData && summaryData.winner) {
-            
-            // 1. Oyun Süresini Hesapla
             let durationText = '';
             if (summaryData.startTimestamp && summaryData.endTimestamp) {
                 const durationMs = summaryData.endTimestamp - summaryData.startTimestamp;
@@ -8657,18 +8682,16 @@ function closeWheelLegendModal() {
                 durationText = ` (Süre: ${minutes}dk ${remainingSeconds}sn)`;
             }
 
-            // 2. Ana Başlığı Güncelle (Admin için silme butonuyla birlikte)
             let deleteButton = '';
             if (isAdmin) {
                 deleteButton = `
-                    <button onclick="clearLastWinner()" class="ml-2 text-gray-500 hover:text-red-500 transition-colors" title="Son Kazananı Sil">
+                    <button onclick="clearLastWinner()" class="ml-2 text-gray-500 hover:text-red-500 transition-colors" title="Son Lobi Kazananını Sil">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1-1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" /></svg>
                     </button>
                 `;
             }
-            titleEl.innerHTML = `🏆 Son Lobi Galibi: <b class="text-white">${summaryData.winner}</b> (+${summaryData.prize} Puan)${durationText}${deleteButton}`;
+            lobbyTitleEl.innerHTML = `🏆 Son Lobi Galibi: <b class="text-white">${summaryData.winner}</b> (+${summaryData.prize} Puan)${durationText}${deleteButton}`;
 
-            // 3. Oyuncu Listesini Oluştur ve Sırala
             const players = summaryData.players || {};
             const sortedPlayers = Object.entries(players).sort(([, a], [, b]) => b.score - a.score);
             
@@ -8686,36 +8709,69 @@ function closeWheelLegendModal() {
                 `;
             });
             
-            detailsListEl.innerHTML = detailsHtml;
-            container.classList.remove('hidden'); // Paneli görünür yap
+            lobbyDetailsListEl.innerHTML = detailsHtml;
+            lobbyContainer.classList.remove('hidden'); 
 
         } else {
-            // SORUNU ÇÖZEN KISIM: EĞER VERİ SİLİNMİŞSE (NULL İSE) PANELİ GİZLE
-            container.classList.add('hidden');
+            lobbyContainer.classList.add('hidden');
         }
     };
     
-    // Listener'ı tekrar tekrar eklememek için kontrol
     if (activeListeners.lobbySummary) {
         activeListeners.lobbySummary.ref.off('value', activeListeners.lobbySummary.callback);
     }
-    activeListeners.lobbySummary = { ref, event: 'value', callback };
-    ref.on('value', callback);
-}
+    activeListeners.lobbySummary = { ref: lobbyRef, event: 'value', callback: lobbyCallback };
+    lobbyRef.on('value', lobbyCallback);
 
-    // YENİ EKLENECEK KOD BAŞLANGICI
-  // Günlük Ödül modalındaki "Ödül Tipi" dropdown'ını dinler.
-  document.getElementById('dailyRewardType').addEventListener('change', function() {
-      const usesInput = document.getElementById('dailyRewardMultiplierUses');
-      // Eğer seçilen tip "Çarpan" (tempMultiplier) ise, Kullanım Hakkı alanını göster.
-      if (this.value === 'tempMultiplier') {
-          usesInput.classList.remove('hidden');
-      } else {
-      // Değilse, Kullanım Hakkı alanını gizle.
-          usesInput.classList.add('hidden');
-      }
-  });
-  // YENİ EKLENECEK KOD SONU
+    // 2. Haftalık sezon kazananını dinle (YENİ EKLENEN KISIM)
+    const seasonRef = db.ref('gameStats/clickCatchSeasonSummary');
+    const seasonContainer = document.getElementById('lastWinnerContainer'); // Aynı container'ı kullanıyoruz.
+
+    const seasonCallback = snap => {
+        const summaryData = snap.val();
+        if (summaryData && summaryData.winnerName) {
+            
+            let comparisonHtml = '';
+            if (summaryData.scoreChange) {
+                if (summaryData.scoreChange === 'up') {
+                    comparisonHtml = `<span class="text-green-400 font-bold ml-2 flex items-center" title="Önceki rekorunu geçti! (${summaryData.previousScore})"> <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M14.707 12.707a1 1 0 01-1.414 0L10 9.414l-3.293 3.293a1 1 0 01-1.414-1.414l4-4a1 1 0 011.414 0l4 4a1 1 0 010 1.414z" clip-rule="evenodd" /></svg> (+${summaryData.winningScore - summaryData.previousScore})</span>`;
+                } else if (summaryData.scoreChange === 'down') {
+                    comparisonHtml = `<span class="text-red-400 font-bold ml-2 flex items-center" title="Önceki rekorunun altında kaldı. (${summaryData.previousScore})"> <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" /></svg> (${summaryData.winningScore - summaryData.previousScore})</span>`;
+                }
+            }
+
+            let deleteButton = '';
+            if (isAdmin) {
+                deleteButton = `<button onclick="clearLastSeasonWinner()" class="ml-auto text-gray-500 hover:text-red-500 transition-colors" title="Sezon Kazananı Bilgisini Temizle">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1-1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" /></svg>
+                    </button>`;
+            }
+
+            seasonContainer.innerHTML = `
+                <div class="flex justify-between items-center border-b border-gray-700 pb-2">
+                    <h4 class="text-yellow-300 text-xl font-semibold">👑 Önceki Sezonun Şampiyonu</h4>
+                    ${deleteButton}
+                </div>
+                <div class="mt-3 flex items-center">
+                    <b class="text-2xl text-white">${summaryData.winnerName}</b>
+                    <span class="text-xl text-gray-300 mx-2">-</span>
+                    <b class="text-2xl text-green-400">${summaryData.winningScore} Skor</b>
+                    ${comparisonHtml}
+                </div>
+            `;
+            seasonContainer.classList.remove('hidden');
+        } else {
+            seasonContainer.classList.add('hidden');
+            seasonContainer.innerHTML = ''; // İçeriği temizle
+        }
+    };
+    
+    if (activeListeners.seasonSummary) {
+        activeListeners.seasonSummary.ref.off('value', activeListeners.seasonSummary.callback);
+    }
+    activeListeners.seasonSummary = { ref: seasonRef, event: 'value', callback: seasonCallback };
+    seasonRef.on('value', seasonCallback);
+}
     
 </script>
 </body>
