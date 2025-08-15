@@ -249,13 +249,6 @@ body.modal-open .modal-content {
     border-color: #8b5cf6; /* focus:border-purple-500 */
     box-shadow: 0 0 0 2px #a78bfa; /* focus:ring-2 focus:ring-purple-400 */
   }
-  
-  /* BU YENİ KODU STYLE ETİKETLERİNİN İÇİNE EKLEYİN */
-.pinned-activity {
-    border-color: #fde047; /* Sarı renkli çerçeve */
-    background-color: #374151; /* Biraz daha açık bir arkaplan */
-    animation: glow 2.5s ease-in-out infinite; /* Parlama animasyonu */
-}
 
 </style>
 </head>
@@ -1356,35 +1349,6 @@ body.modal-open .modal-content {
     </div>
 </div>
 
-<div id="clickCatchRewardModal" class="modal-overlay fixed inset-0 bg-black bg-opacity-70 flex justify-center items-center z-[10000] hidden">
-  <div class="modal-content bg-gray-800 p-8 rounded-xl shadow-2xl border border-green-500 w-11/12 max-w-lg text-left relative">
-    <button class="modal-close-button" onclick="closeClickCatchRewardModal()">&times;</button>
-    <h3 class="text-green-300 text-3xl font-bold mb-6 text-center">Tıkla-Yakala Sezon Sonu Ödülleri</h3>
-    
-    <div class="space-y-4">
-        <div>
-            <h4 class="text-lg font-semibold text-yellow-300 mb-2">🏆 Liderlik Ödülü (<span id="leaderToReward" class="font-bold"></span>)</h4>
-            <div class="grid grid-cols-2 gap-4">
-                <select id="leaderRewardType" class="box-setting-input">
-                  <option value="points">Puan</option>
-                  <option value="boxRights">Kutu Hakkı</option>
-                  <option value="wheelTicket">Çark Bileti</option>
-                  <option value="iflasShield">İflas Kalkanı</option>
-                </select>
-                <input type="number" id="leaderRewardAmount" class="box-setting-input" placeholder="Ödül Miktarı">
-            </div>
-        </div>
-    </div>
-
-    <div class="mt-8 pt-4 border-t border-gray-700">
-        <p class="text-center text-gray-400 text-sm mb-4">Onayladığınızda, lider ödülünü alacak, <b class="text-white">tüm oyunculara +1 Tıkla-Yakala bileti verilecek</b> ve sıralama sıfırlanacaktır.</p>
-        <button onclick="confirmAndExecuteReset()" class="w-full py-3 bg-green-700 hover:bg-green-600 text-white font-bold rounded-lg shadow-md">
-            ÖDÜLLERİ DAĞIT VE SEZONU SIFIRLA
-        </button>
-    </div>
-  </div>
-</div>
-
 <div id="lobbySettingsModal" class="modal-overlay fixed inset-0 bg-black bg-opacity-70 flex justify-center items-center z-[9999] hidden">
     <div class="modal-content bg-gray-800 p-8 rounded-xl shadow-2xl border border-blue-500 w-11/12 max-w-lg text-left relative">
         <button class="modal-close-button" onclick="closeLobbySettingsModal()">&times;</button>
@@ -1547,6 +1511,34 @@ body.modal-open .modal-content {
       <h4 class="text-blue-300 text-2xl font-bold mb-6">Çark Simgeleri ve Anlamları</h4>
       <div id="wheelLegendContent" class="space-y-3 text-left scrollable-list max-h-80 overflow-y-auto">
           </div>
+  </div>
+</div>
+<div id="clickCatchRewardModal" class="modal-overlay fixed inset-0 bg-black bg-opacity-70 flex justify-center items-center z-[10000] hidden">
+  <div class="modal-content bg-gray-800 p-8 rounded-xl shadow-2xl border border-green-500 w-11/12 max-w-lg text-left relative">
+    <button class="modal-close-button" onclick="closeClickCatchRewardModal()">&times;</button>
+    <h3 class="text-green-300 text-3xl font-bold mb-6 text-center">Tıkla-Yakala Sezon Sonu Ödülleri</h3>
+    
+    <div class="space-y-4">
+        <div>
+            <h4 class="text-lg font-semibold text-yellow-300 mb-2">🏆 Liderlik Ödülü (<span id="leaderToReward" class="font-bold"></span>)</h4>
+            <div class="grid grid-cols-2 gap-4">
+                <select id="leaderRewardType" class="box-setting-input">
+                  <option value="points">Puan</option>
+                  <option value="boxRights">Kutu Hakkı</option>
+                  <option value="wheelTicket">Çark Bileti</option>
+                  <option value="iflasShield">İflas Kalkanı</option>
+                </select>
+                <input type="number" id="leaderRewardAmount" class="box-setting-input" placeholder="Ödül Miktarı">
+            </div>
+        </div>
+    </div>
+
+    <div class="mt-8 pt-4 border-t border-gray-700">
+        <p class="text-center text-gray-400 text-sm mb-4">Onayladığınızda, lider ödülünü alacak, <b class="text-white">tüm oyunculara +1 Tıkla-Yakala bileti verilecek</b> ve sıralama sıfırlanacaktır.</p>
+        <button onclick="confirmAndExecuteReset()" class="w-full py-3 bg-green-700 hover:bg-green-600 text-white font-bold rounded-lg shadow-md">
+            ÖDÜLLERİ DAĞIT VE SEZONU SIFIRLA
+        </button>
+    </div>
   </div>
 </div>
   <script>
@@ -2115,6 +2107,7 @@ async function afterLogin() {
         gameTabBtn.classList.remove('border-red-500', 'text-white');
     }
   }
+  
   // MEVCUT showSection FONKSİYONUNU SİLİP BUNU YAPIŞTIRIN
 function showSection(sectionId) {
     document.getElementById('gameContent').classList.add('hidden');
@@ -6351,9 +6344,7 @@ function closeLobbySettingsModal() {
         endSoloClickCatchGame();
     }
   }
-    
-// MEVCUT resetClickCatchLeaderboard, startClickCatchResetProcess, closeClickCatchRewardModal ve confirmAndExecuteReset FONKSİYONLARINI SİLİP BU BLOKU YAPIŞTIRIN
-
+  
 async function resetClickCatchLeaderboard() {
     if (!isAdmin) {
         displayMessage("Bu işlemi yapmaya yetkiniz yok.");
@@ -6428,7 +6419,7 @@ async function confirmAndExecuteReset() {
     
     const rewardType = document.getElementById('leaderRewardType').value;
     const rewardAmount = parseInt(document.getElementById('leaderRewardAmount').value);
-    const allUsersTicketAmount = 1;
+    const allUsersTicketAmount = 1; // Herkese +1 bilet verilecek
 
     if (isNaN(rewardAmount) || rewardAmount <= 0) {
         displayMessage("Lütfen lider için geçerli bir ödül miktarı girin.");
@@ -6487,13 +6478,11 @@ async function confirmAndExecuteReset() {
     const notificationMessage = `Tıkla-Yakala sezonu sona erdi! Lider ${leader}, ${rewardAmount} ${typeToName[rewardType]} kazandı! Herkese ${allUsersTicketAmount} bilet hediye!`;
     await db.ref('globalNotifications').push({ message: notificationMessage, timestamp: firebase.database.ServerValue.TIMESTAMP });
 
-    // YENİ EKLENEN SATIR: Bu olayı Son Eylemler'e de kaydediyoruz.
-    logActivity('seasonReset', leader, { prize: `${rewardAmount} ${typeToName[rewardType]}`, ticketGift: allUsersTicketAmount });
-
     // 6. İşlemi bitir
     closeClickCatchRewardModal();
     displayMessage("Sezon başarıyla sıfırlandı, ödüller ve hediyeler dağıtıldı!");
 }
+    
   function createCatchItem(gameMode) {
     if (!clickCatchGameActive && gameMode === 'solo') return;
     if (gameMode === 'lobby' && (!lobbyGameSettings.state || lobbyGameSettings.state !== 'active')) return;
@@ -6647,15 +6636,27 @@ function handleSoloItemClick(event) {
 }
   
 async function deleteUserFromLeaderboard(event, username) {
-      event.stopPropagation(); // Olayın yayılmasını engeller
-      if (!isAdmin) return;
-      const confirmed = await customConfirm(`<b>${username}</b> adlı kullanıcıyı Yakalayıcılar listesinden silmek istediğinize emin misiniz?`);
-      if (confirmed) {
-          await db.ref(`clickCatchWeeklyScores/${username}`).remove();
-          displayMessage(`${username} skor tablosundan silindi.`);
-          loadClickCatchRankings(); // Tabloyu anında yenile
-      }
-  }
+    event.stopPropagation(); // Olayın alt elementlere tıklanmasını engeller
+    if (!isAdmin) return;
+
+    const confirmed = await customConfirm(`<b>${username}</b> kullanıcısının Tıkla-Yakala skorunu sıfırlamak istediğinize emin misiniz? Bu işlem, kullanıcının hem haftalık sıralamasını hem de kişisel rekorunu kalıcı olarak silecektir!`);
+    
+    if (confirmed) {
+        // 1. İki farklı konumu (haftalık skorlar ve kullanıcı profili) aynı anda güncellemek için bir obje oluşturuyoruz.
+        const updates = {};
+        updates[`/clickCatchWeeklyScores/${username}`] = null; // Haftalık skoru silmek için null atıyoruz.
+        updates[`/users/${username}/clickCatchHighestScore`] = 0; // Profildeki en yüksek skoru sıfırlıyoruz.
+
+        // 2. Tek bir komutla hem silme hem de güncelleme işlemini veritabanına gönderiyoruz.
+        await db.ref().update(updates);
+
+        displayMessage(`${username} kullanıcısının Tıkla-Yakala skoru başarıyla sıfırlandı.`);
+        
+        // Tıkla-Yakala sıralama listesini anında yenilemek için bu fonksiyonu hala çağırıyoruz.
+        // Ana liderlik tablosu ise veritabanı dinleyicisi sayesinde otomatik olarak güncellenecektir.
+        loadClickCatchRankings();
+    }
+}
   // YENİ YARDIMCI FONKSİYON: Tıkla-Yakala liderinin kullanıcı adını anlık çeker.
 async function getClickCatchLeaderUsername() {
     const scoresSnap = await db.ref('clickCatchWeeklyScores').orderByValue().limitToLast(1).once('value');
@@ -7632,20 +7633,7 @@ function logActivity(type, username, details = {}) {
     });
 }
 
-// MEVCUT pinActivity, unpinActivity, getActivityIcon ve renderActivityFeed FONKSİYONLARINI SİLİP
-// BU BLOKTAKİ 4 FONKSİYONUN TAMAMINI ONLARIN YERİNE YAPIŞTIRIN.
-
-async function pinActivity(activityId) {
-    if (!isAdmin || !activityId) return;
-    await db.ref('pinnedActivityId').set(activityId);
-    displayMessage("Eylem başarıyla sabitlendi.");
-}
-
-async function unpinActivity() {
-    if (!isAdmin) return;
-    await db.ref('pinnedActivityId').remove();
-    displayMessage("Sabitlenmiş eylem kaldırıldı.");
-}
+// --- MEVCUT getActivityIcon FONKSİYONUNU SİL, BUNU YAPIŞTIR ---
 
 function getActivityIcon(type, details = {}) {
     let icon = '🔔';
@@ -7661,12 +7649,12 @@ function getActivityIcon(type, details = {}) {
             bgColor = 'bg-yellow-500';
             break;
         case 'iflas':
-            if (details.multiplier && details.multiplier > 1 && !details.shieldUsed) {
-                icon = '❌';
-                bgColor = 'bg-red-800';
-            } else if (details.shieldUsed) {
+            if (details.shieldUsed) {
                 icon = '🛡️';
                 bgColor = 'bg-blue-500';
+            } else if (details.multiplier && details.multiplier > 1) {
+                icon = '❌'; 
+                bgColor = 'bg-red-800';
             } else {
                 icon = '💣';
                 bgColor = 'bg-red-600';
@@ -7677,14 +7665,23 @@ function getActivityIcon(type, details = {}) {
             icon = '✖️';
             bgColor = 'bg-purple-500';
             break;
+            
+        // --- İSTEĞİNİ KARŞILAYAN DÜZELTME BURADA ---
         case 'newItemFound':
-            const itemType = details.itemType;
-            if (itemType === 'iflasShield') icon = '🛡️';
-            else if (itemType === 'wheelTicket') icon = '🎫';
-            else if (itemType === 'clickCatchTicket') icon = '🎟️';
-            else icon = '📦';
+            const itemType = details.itemType; // itemType'ı direkt kullanıyoruz (örn: 'wheelTicket')
+            if (itemType === 'iflasShield') {
+                icon = '🛡️';
+            } else if (itemType === 'wheelTicket') {
+                icon = '🎫'; // Şans Çarkı Bileti için doğru ikon
+            } else if (itemType === 'clickCatchTicket') {
+                icon = '🎟️'; // Tıkla-Yakala Bileti için doğru ikon
+            } else {
+                icon = '📦'; // Diğer tüm eşyalar için varsayılan
+            }
             bgColor = 'bg-cyan-500';
             break;
+        // --- DÜZELTME SONU ---
+            
         case 'buyItem':
             icon = '🛒';
             bgColor = 'bg-indigo-500';
@@ -7702,10 +7699,6 @@ function getActivityIcon(type, details = {}) {
             icon = '📅';
             bgColor = 'bg-teal-500';
             break;
-        case 'seasonReset':
-            icon = '👑';
-            bgColor = 'bg-yellow-600';
-            break;
         case 'surpriseBoxTimeout':
             icon = '⏰';
             bgColor = 'bg-gray-600';
@@ -7719,143 +7712,7 @@ function getActivityIcon(type, details = {}) {
     `;
 }
 
-// DOSYADAKİ MEVCUT renderActivityFeed FONKSİYONUNU KOMPLE SİLİP
-// BUNU YAPIŞTIR.
-
-async function renderActivityFeed(activities) {
-    const activityFeedList = document.getElementById('activityFeedList');
-    activityFeedList.innerHTML = '';
-
-    const pinnedIdSnap = await db.ref('pinnedActivityId').once('value');
-    const pinnedId = pinnedIdSnap.val();
-
-    if (isAdmin) {
-        activityFeedList.innerHTML += `<div class="px-2 mb-2 text-center"><button onclick="clearAllActivities()" class="w-full py-2 px-4 bg-red-800/50 hover:bg-red-700 text-white font-bold rounded-lg shadow-md text-sm border border-red-600">Eylem Geçmişini Temizle</button></div>`;
-    }
-
-    if (!activities || activities.length === 0) {
-        activityFeedList.innerHTML += '<p class="text-center text-gray-400 p-4">Gösterilecek eylem bulunamadı.</p>';
-        return;
-    }
-
-    let pinnedHtml = '';
-    let otherHtml = '';
-
-    activities.forEach(activity => {
-        if (!activity || !activity.username || !activity.type) return;
-
-        const details = activity.details || {};
-        let message = '';
-        const timeAgo = formatRelativeTime(activity.timestamp);
-        const userHtml = `<b class="text-yellow-300 cursor-pointer hover:underline" onclick="openPublicUserDetailModal('${activity.username}')">${activity.username}</b>`;
-        const isPinned = activity.id === pinnedId;
-        
-        let adminButtons = '';
-        if (isAdmin) {
-            const pinButton = isPinned 
-                ? `<button onclick="unpinActivity()" class="p-1 rounded-full text-yellow-400 hover:text-yellow-200" title="Sabiti Kaldır"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 1a4.5 4.5 0 00-4.5 4.5V9H5a2 2 0 00-2 2v6a2 2 0 002 2h10a2 2 0 002-2v-6a2 2 0 00-2-2h-.5V5.5A4.5 4.5 0 0010 1zm3 8V5.5a3 3 0 10-6 0V9h6z" clip-rule="evenodd" /></svg></button>`
-                : `<button onclick="pinActivity('${activity.id}')" class="p-1 rounded-full text-gray-500 hover:text-yellow-400" title="Bu Eylemi Sabitle"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path d="M10.894 2.553a1 1 0 00-1.788 0l-1 1.732a1 1 0 00.894 1.447h2a1 1 0 00.894-1.447l-1-1.732zM13.53 7.11a1 1 0 00-1.413-1.414l-1.05 1.052a1 1 0 001.414 1.414l1.05-1.052zM4.646 5.696a1 1 0 10-1.414 1.414l1.05 1.052a1 1 0 001.414-1.414L4.646 5.696zM11.5 12.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0zM15 15.5a1 1 0 100-2H5a1 1 0 100 2h10z" /></svg></button>`;
-            
-            const deleteButton = `<button onclick="deleteActivity('${activity.id}')" class="p-1 rounded-full text-gray-500 hover:text-red-500" title="Bu Eylemi Sil"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1-1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" /></svg></button>`;
-            
-            adminButtons = `<div class="flex items-center">${pinButton}${deleteButton}</div>`;
-            
-            // --- TEST İÇİN BU SATIRI EKLEDİM ---
-            adminButtons += '<span class="text-red-500 font-bold ml-2"> [ADMİN TEST] </span>';
-        }
-        
-        // Switch case (mesaj oluşturma) kısmı aynı kaldığı için buraya eklemedim, dosyanızda kalsın...
-        switch (activity.type) {
-            case 'seasonReset':
-                message = `${userHtml}, Tıkla-Yakala sezonunu bitirdi ve <span class="text-yellow-200 font-bold">${details.prize}</span> ödül kazandı. Herkese <span class="text-green-300 font-bold">+${details.ticketGift} Bilet</span> hediye edildi!`;
-                break;
-            case 'openBox':
-                let openBoxMultiplierText = (details.multiplier && details.multiplier > 1) ? ` <span class="text-xs text-purple-400">(${details.multiplier}x çarpan kullandı)</span>` : ` <span class="text-xs text-gray-500">(Çarpan kullanılmadı)</span>`;
-                message = `${userHtml}, <b>${details.boxId}</b> numaralı kutudan <span class="text-green-300 font-bold">+${details.points} Puan</span> kazandı${openBoxMultiplierText}.`;
-                break;
-            case 'iflas':
-                let iflasMultiplierText = (details.multiplier && details.multiplier > 1) ? ` <span class="text-xs text-purple-400">(${details.multiplier}x çarpan kullandı)</span>` : ` <span class="text-xs text-gray-500">(Çarpan kullanılmadı)</span>`;
-                message = details.shieldUsed ? `${userHtml}, <b>${details.boxId}</b> numaralı kutudan bomba buldu ama kalkanı korudu${iflasMultiplierText}.` : `${userHtml}, <b>${details.boxId}</b> numaralı kutudan bomba buldu ve <span class="text-red-400 font-bold">-${details.lostPoints} Puan</span> kaybetti${iflasMultiplierText}.`;
-                break;
-            case 'surpriseBox':
-                let surpriseMultiplierText = (details.multiplier && details.multiplier > 1) ? ` <span class="text-xs text-purple-400">(${details.multiplier}x çarpan kullandı)</span>` : ` <span class="text-xs text-gray-500">(Çarpan kullanılmadı)</span>`;
-                const source = details.boxId === 'Çark' ? 'Şans Çarkı\'ndan' : `<b>${details.boxId}</b> numaralı kutudan`;
-                message = `${userHtml}, ${source} Sürpriz Kutu buldu ve <span class="text-green-300 font-bold">+${details.points} Puan</span> kazandı${surpriseMultiplierText}!`;
-                break;
-            case 'multiplierFound':
-                message = `${userHtml}, <b>${details.boxId}</b> numaralı kutudan <span class="text-purple-300 font-bold">${details.value}x Çarpan</span> buldu.`;
-                break;
-            case 'multiplierRefund':
-                 message = `${userHtml}, <b>${details.boxId}</b> numaralı kutudan <span class="text-purple-300 font-bold">${details.newMultiplier}x Çarpan</span> buldu ve mağaza çarpanı iade edildi.`;
-                break;
-            case 'newItemFound':
-                 let newItemMultiplierText = (details.multiplier && details.multiplier > 1) ? ` <span class="text-xs text-purple-400">(${details.multiplier}x çarpan kullandı)</span>` : ` <span class="text-xs text-gray-500">(Çarpan kullanılmadı)</span>`;
-                message = `${userHtml}, <b>${details.boxId}</b> numaralı kutudan <span class="text-cyan-300 font-bold">${details.itemName}</span> buldu${newItemMultiplierText}.`;
-                break;
-            case 'buyItem':
-                 const typeToName = { points: 'Puan', boxRights: 'Kutu Hakkı', iflasShield: 'İflas Kalkanı', wheelTicket: 'Çark Bileti', clickCatchTicket: 'Tıkla-Yakala Bileti', tempMultiplier: 'Çarpan' };
-                 let purchasedItemText = '';
-                 if (details.itemType === 'tempMultiplier') { purchasedItemText = `<span class="text-indigo-300 font-bold">${details.itemDuration} Adet ${details.itemValue}x Çarpan</span>`; } 
-                 else if (details.itemValue) { const itemName = typeToName[details.itemType] || details.itemName; purchasedItemText = `<span class="text-indigo-300 font-bold">+${details.itemValue} ${itemName}</span>`; } 
-                 else { purchasedItemText = `<span class="text-indigo-300 font-bold">${details.itemName}</span>`; }
-                 message = `${userHtml}, <span class="text-red-400 font-bold">-${details.itemCost} Puan</span> harcayarak mağazadan ${purchasedItemText} aldı.`;
-                 break;
-             case 'spinWheel':
-                if (details.type === 'pas') { message = `${userHtml}, çarkı çevirdi ve <span class="text-gray-400 font-bold">Pas</span> geçti.`; } 
-                else { message = `${userHtml}, çarkı çevirerek <span class="text-pink-300 font-bold">${details.result}</span> kazandı.`; }
-                break;
-             case 'clickCatchSolo':
-                if (details.score > 0) { message = `${userHtml}, Tıkla-Yakala oynadı ve <span class="text-green-300 font-bold">+${details.score} Puan</span> topladı.`; } 
-                else if (details.score < 0) { message = `${userHtml}, Tıkla-Yakala oynadı ve <span class="text-red-400 font-bold">${details.score} Puan</span> kaybetti.`; } 
-                else { message = `${userHtml}, Tıkla-Yakala oynadı ancak puan kazanamadı.`; }
-                if (details.specialItems && details.specialItems.length > 0) { message += ` Ayrıca, <span class="text-cyan-300 font-bold">${details.specialItems.join(', ')}</span> kazandı.`; }
-                break;
-             case 'clickCatchLobby':
-                message = `${userHtml}, lobi oyununu kazanarak <span class="text-yellow-300 font-bold">+${details.prize} Puan</span> ödül aldı!`;
-                break;
-            case 'dailyReward':
-                const rewardTypeToName = { points: 'Puan', boxRights: 'Kutu Hakkı', iflasShield: 'İflas Kalkanı', wheelTicket: 'Çark Bileti', clickCatchTicket: 'Tıkla-Yakala Bileti', tempMultiplier: 'Çarpan' };
-                let rewardText = '';
-                if (details.rewardType === 'tempMultiplier') { rewardText = `${details.rewardUses} adet ${details.rewardValue}x Çarpan`; } 
-                else { rewardText = `+${details.rewardValue} ${rewardTypeToName[details.rewardType] || details.rewardName}`; }
-                message = `${userHtml}, günlük ödül olarak <span class="text-teal-300 font-bold">${rewardText}</span> aldı.`;
-                break;
-            case 'surpriseBoxTimeout':
-                message = `${userHtml}, Sürpriz Kutu şansını süre dolduğu için kaçırdı.`;
-                break;
-            default:
-                message = `${userHtml} bir eylem gerçekleştirdi. (Tip: ${activity.type})`;
-                break;
-        }
-
-
-        const activityHtml = `
-            <div class="bg-gray-800/70 p-3 rounded-xl flex items-center gap-4 border border-gray-700/50 hover:border-gray-600 transition-all duration-200 ${isPinned ? 'pinned-activity' : ''}">
-                ${getActivityIcon(activity.type, details)}
-                <div class="flex-1 min-w-0">
-                    <p class="text-gray-200 text-sm leading-relaxed">${message}</p>
-                    <div class="flex justify-between items-center mt-1">
-                        <span class="text-xs text-gray-500">${timeAgo}</span>
-                        ${adminButtons}
-                    </div>
-                </div>
-            </div>`;
-        
-        if (isPinned) {
-            pinnedHtml += activityHtml;
-        } else {
-            otherHtml += `<div class="mb-3">${activityHtml}</div>`;
-        }
-    });
-
-    let finalHtml = '';
-    if (pinnedHtml) {
-        finalHtml += `<div class="mb-4">${pinnedHtml}</div><hr class="border-yellow-500 border-2 rounded-full mb-4">`;
-    }
-    finalHtml += otherHtml;
-    
-    activityFeedList.innerHTML += finalHtml;
-}
+// --- MEVCUT renderActivityFeed FONKSİYONUNU SİL, BUNU YAPIŞTIR ---
 
 function renderActivityFeed(activities) {
     const activityFeedList = document.getElementById('activityFeedList');
