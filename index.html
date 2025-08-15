@@ -539,17 +539,14 @@ body.modal-open .modal-content {
     </div>
 
     <div class="tableBox bg-gray-800 p-6 rounded-xl shadow-lg border border-red-700 w-full md:flex-1 min-w-[280px] mt-6 mx-auto max-w-2xl">
-      
-      <div id="clickCatchAdminResetContainer" class="hidden mb-4">
-          <button onclick="startClickCatchResetProcess()" class="w-full py-3 bg-green-700 hover:bg-green-600 text-white font-bold rounded-lg shadow-md text-base">
-              🏆 Sezonu Sıfırla ve Lideri Ödüllendir
-          </button>
-      </div>
+    
+    <div id="clickCatchChampionBox" class="hidden mb-6">
+        </div>
 
-      <h3 class="text-yellow-400 text-xl font-bold border-b border-gray-600 pb-3 mb-4">TIKLA-YAKALA HAFTALIK SKOR SIRALAMASI 🎯</h3>
-      <input type="text" id="searchClickCatchRanking" oninput="loadClickCatchRankings()" placeholder="Sıralamada Kullanıcı Ara..." class="w-full p-3 mb-4 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500 transition duration-300">
-      <div id="clickCatchRankings" class="scrollable-list max-h-80 overflow-y-auto border border-gray-600 rounded-lg p-3 bg-gray-900 text-sm leading-relaxed">Yükleniyor...</div>
-    </div>
+    <h3 class="text-yellow-400 text-xl font-bold border-b border-gray-600 pb-3 mb-4">TIKLA-YAKALA HAFTALIK SKOR SIRALAMASI 🎯</h3>
+    <input type="text" id="searchClickCatchRanking" oninput="loadClickCatchRankings()" placeholder="Sıralamada Kullanıcı Ara..." class="w-full p-3 mb-4 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500 transition duration-300">
+    <div id="clickCatchRankings" class="scrollable-list max-h-80 overflow-y-auto border border-gray-600 rounded-lg p-3 bg-gray-900 text-sm leading-relaxed">Yükleniyor...</div>
+</div>
 
 </div>
             
@@ -1343,10 +1340,12 @@ body.modal-open .modal-content {
                 </div>
             </div>
         </div>
-        <div class="mt-6 pt-4 border-t border-gray-700">
-            <button onclick="saveSoloGameSettings()" class="w-full py-3 bg-purple-600 hover:bg-purple-500 text-white font-bold rounded-lg shadow-md">Tekli Oyun Ayarlarını Kaydet</button>
-        </div>
-    </div>
+        <div class="mt-6 pt-4 border-t border-gray-700 space-y-3">
+    <button onclick="saveSoloGameSettings()" class="w-full py-3 bg-purple-600 hover:bg-purple-500 text-white font-bold rounded-lg shadow-md">Tekli Oyun Ayarlarını Kaydet</button>
+    
+    <button onclick="startClickCatchResetProcess()" class="w-full py-3 bg-green-700 hover:bg-green-600 text-white font-bold rounded-lg shadow-md text-base">Sezonu Sıfırla ve Ödüllendir</button>
+    
+    <button onclick="resetClickCatchLeaderboard()" class="w-full py-2 bg-orange-700 hover:bg-orange-600 text-white font-bold rounded-lg shadow-md">Tüm Skorları Kalıcı Olarak Sıfırla</button>
 </div>
 
 <div id="lobbySettingsModal" class="modal-overlay fixed inset-0 bg-black bg-opacity-70 flex justify-center items-center z-[9999] hidden">
@@ -1382,12 +1381,10 @@ body.modal-open .modal-content {
         </div>
 
         <div class="bg-gray-900 p-4 rounded-lg border border-gray-700">
-            <h4 class="text-lg font-semibold text-yellow-300 mb-3">Oyun Kontrolü</h4>
-            <div class="flex gap-4">
-                <button id="lobbyStartBtn" onclick="triggerLobbyGameStart()" class="flex-1 py-3 bg-blue-700 hover:bg-blue-600 text-white font-bold rounded-lg shadow-md disabled:bg-gray-600 disabled:cursor-not-allowed" disabled>Oyunu Başlat</button>
-                <button onclick="endLobbyGame(true)" class="flex-1 py-3 bg-red-700 hover:bg-red-600 text-white font-bold rounded-lg shadow-md">Lobi İptal Et ve Ücretleri İade Et</button>
-            </div>
-            <button onclick="resetClickCatchLeaderboard()" class="w-full mt-4 py-2 bg-orange-700 hover:bg-orange-600 text-white font-bold rounded-lg shadow-md">Haftalık Sıralamayı Sıfırla</button>
+    <h4 class="text-lg font-semibold text-yellow-300 mb-3">Oyun Kontrolü</h4>
+    <div class="flex gap-4">
+        <button id="lobbyStartBtn" onclick="triggerLobbyGameStart()" class="flex-1 py-3 bg-blue-700 hover:bg-blue-600 text-white font-bold rounded-lg shadow-md disabled:bg-gray-600 disabled:cursor-not-allowed" disabled>Oyunu Başlat</button>
+        <button onclick="endLobbyGame(true)" class="flex-1 py-3 bg-red-700 hover:bg-red-600 text-white font-bold rounded-lg shadow-md">Lobi İptal Et ve Ücretleri İade Et</button>
         </div>
     </div>
 </div>
@@ -1534,7 +1531,7 @@ body.modal-open .modal-content {
     </div>
 
     <div class="mt-8 pt-4 border-t border-gray-700">
-        <p class="text-center text-gray-400 text-sm mb-4">Onayladığınızda, lider ödülünü alacak, <b class="text-white">tüm oyunculara +1 Tıkla-Yakala bileti verilecek</b> ve sıralama sıfırlanacaktır.</p>
+        <p class="text-center text-gray-400 text-sm mb-4">Onayladığınızda, lider ödülünü alacak, <b class="text-white">tüm oyunculara +1 Tıkla-Yakala bileti verilecek</b> ve tüm skorlar sıfırlanacaktır.</p>
         <button onclick="confirmAndExecuteReset()" class="w-full py-3 bg-green-700 hover:bg-green-600 text-white font-bold rounded-lg shadow-md">
             ÖDÜLLERİ DAĞIT VE SEZONU SIFIRLA
         </button>
@@ -2023,8 +2020,61 @@ auth.onAuthStateChanged(user => {
   }
 });
 
-  // DEĞİŞTİRİLECEK FONKSİYON
-// MEVCUT afterLogin FONKSİYONUNU SİLİP BUNU YAPIŞTIRIN
+// BU YENİ FONKSİYONLARI SCRIPT'İN EN SONUNA EKLEYİN
+
+function listenForChampionData() {
+    const ref = db.ref('clickCatchChampion');
+    const callback = (snap) => {
+        renderChampionBox(snap.val());
+    };
+    activeListeners.championData = { ref, event: 'value', callback };
+    ref.on('value', callback);
+}
+
+function renderChampionBox(data) {
+    const box = document.getElementById('clickCatchChampionBox');
+    if (!data || !data.currentWinner) {
+        box.classList.add('hidden');
+        return;
+    }
+
+    const { currentWinner, previousWinner } = data;
+    const resetDate = new Date(currentWinner.resetTimestamp).toLocaleString('tr-TR');
+
+    let previousStatsHtml = '';
+    if (previousWinner) {
+        const scoreDiff = currentWinner.winningScore - previousWinner.winningScore;
+        const arrow = scoreDiff > 0 ? `<span class="text-green-400 font-bold">↑</span>` : (scoreDiff < 0 ? `<span class="text-red-400 font-bold">↓</span>` : '');
+        
+        previousStatsHtml = `
+            <div class="mt-3 pt-3 border-t border-gray-600/50 text-xs text-gray-400">
+                <p class="font-bold mb-1">Önceki Şampiyonluk:</p>
+                <div class="flex justify-between items-center">
+                    <span>Skor: ${previousWinner.winningScore} ${arrow}</span>
+                    <span>Ödül: ${previousWinner.rewardText}</span>
+                    <span>Tarih: ${new Date(previousWinner.resetTimestamp).toLocaleDateString('tr-TR')}</span>
+                </div>
+            </div>
+        `;
+    }
+
+    box.className = 'mb-6 p-4 bg-gray-900/50 rounded-xl border-2 border-yellow-500 glowing-border';
+    box.innerHTML = `
+        <h4 class="text-center text-yellow-300 text-xl font-bold mb-3">👑 HAFTANIN ŞAMPİYONU 👑</h4>
+        <div class="flex flex-col sm:flex-row justify-between items-center text-center sm:text-left">
+            <div class="mb-3 sm:mb-0">
+                <p class="text-2xl font-bold text-white">${currentWinner.winnerName}</p>
+                <p class="text-sm text-gray-400">Ödül: <span class="text-yellow-200">${currentWinner.rewardText}</span></p>
+            </div>
+            <div class="text-sm text-gray-300 bg-gray-800/50 p-2 rounded-md">
+                <p>Haftalık Skor: <b class="text-white">${currentWinner.winningScore}</b></p>
+                <p>Sezon Süresi: <b class="text-white">${currentWinner.seasonDuration}</b></p>
+                <p>Tarih: <b class="text-white">${resetDate}</b></p>
+            </div>
+        </div>
+        ${previousStatsHtml}
+    `;
+}
 
 async function afterLogin() {
     document.getElementById("loginContainer").style.display = "none";
@@ -2064,7 +2114,8 @@ async function afterLogin() {
     listenForDailyRewardChanges();
     initActivityFeed();
     listenForGlobalNotifications();
-    listenForLobbyChanges(); // LOBİ DİNLEYİCİSİ ARTIK BURADA ÇAĞRILIYOR
+    listenForLobbyChanges();
+    listenForChampionData();
     
     if (!isAdmin) {
         listenForAdminNotifications();
@@ -6344,13 +6395,15 @@ function closeLobbySettingsModal() {
     }
   }
   
+// MEVCUT resetClickCatchLeaderboard FONKSİYONUNU SİLİP BUNU YAPIŞTIRIN
 async function resetClickCatchLeaderboard() {
     if (!isAdmin) {
         displayMessage("Bu işlemi yapmaya yetkiniz yok.");
         return;
     }
+    
     const confirmed = await customConfirm(
-        "Tüm 'Tıkla-Yakala' sıralamasını ve tüm kullanıcıların kişisel rekorlarını kalıcı olarak silmek istediğinizden emin misiniz? <b class='text-red-400'>Bu işlem lideri ödüllendirmeyecek ve kullanıcılara hediye bilet vermeyecektir!</b>"
+        "Tüm 'Tıkla-Yakala' skorlarını kalıcı olarak sıfırlamak istediğinizden emin misiniz? Bu işlem, hem bu haftanın sıralamasını hem de <b class='text-red-400'>tüm kullanıcıların profillerindeki toplam skorları</b> silecektir. Bu işlem geri alınamaz ve ödül vermez!"
     );
 
     if (!confirmed) {
@@ -6358,128 +6411,168 @@ async function resetClickCatchLeaderboard() {
     }
 
     try {
-        await db.ref('clickCatchWeeklyScores').remove();
         const usersRef = db.ref('users');
         const usersSnap = await usersRef.once('value');
         const usersData = usersSnap.val();
         
         const updates = {};
+        updates['/clickCatchWeeklyScores'] = null;
+        
+        // YENİ: Sezon başlangıç zamanını kaydet
+        updates['/gameStats/clickCatchSeasonStart'] = firebase.database.ServerValue.TIMESTAMP;
+
         if (usersData) {
             for (const username in usersData) {
+                if (usersData[username].hasOwnProperty('skor')) {
+                    updates[`/users/${username}/skor`] = 0;
+                }
                 if (usersData[username].hasOwnProperty('clickCatchHighestScore')) {
                     updates[`/users/${username}/clickCatchHighestScore`] = 0;
                 }
             }
         }
 
-        if (Object.keys(updates).length > 0) {
-            await db.ref().update(updates);
-        }
-        clickCatchLeader = null;
-        displayMessage("Tüm Tıkla-Yakala sıralaması ve kişisel rekorlar başarıyla sıfırlandı.");
+        await db.ref().update(updates);
+        displayMessage("Tüm Tıkla-Yakala skorları ve sıralaması başarıyla sıfırlandı.");
         
     } catch (error) {
-        console.error("Tıkla-Yakala sıralaması sıfırlanırken hata oluştu:", error);
+        console.error("Tıkla-Yakala skorları sıfırlanırken hata oluştu:", error);
         displayMessage("Sıfırlama işlemi sırasında bir hata meydana geldi.");
     }
 }
 
-function startClickCatchResetProcess() {
+// MEVCUT confirmAndExecuteReset FONKSİYONUNU SİLİP BUNU YAPIŞTIRIN
+async function confirmAndExecuteReset() {
     if (!isAdmin) return;
 
-    getClickCatchLeaderUsername().then(leader => {
+    const leader = await getClickCatchLeaderUsername();
+    if (!leader) { /* ... hata mesajı ve return ... */ return; }
+    
+    // 1. Gerekli tüm bilgileri topla
+    const rewardType = document.getElementById('leaderRewardType').value;
+    const rewardAmount = parseInt(document.getElementById('leaderRewardAmount').value);
+    const allUsersTicketAmount = 1;
+    // ... input kontrolleri ...
+
+    const [usersSnap, weeklyScoresSnap, lastChampionSnap, seasonStartSnap] = await Promise.all([
+        db.ref('users').once('value'),
+        db.ref('clickCatchWeeklyScores').once('value'),
+        db.ref('clickCatchChampion').once('value'),
+        db.ref('gameStats/clickCatchSeasonStart').once('value')
+    ]);
+
+    const allUsersData = usersSnap.val();
+    const weeklyScores = weeklyScoresSnap.val();
+    const lastChampionData = lastChampionSnap.val();
+    const seasonStartTime = seasonStartSnap.val();
+
+    const winnerData = allUsersData[leader];
+    const winningScore = weeklyScores ? weeklyScores[leader] : 0;
+    
+    let seasonDurationText = 'Bilinmiyor';
+    const resetTimestamp = getSyncedTime();
+    if(seasonStartTime) {
+        const durationMs = resetTimestamp - seasonStartTime;
+        const days = Math.floor(durationMs / (1000 * 60 * 60 * 24));
+        const hours = Math.floor((durationMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+        const minutes = Math.floor((durationMs % (1000 * 60 * 60)) / (1000 * 60));
+        let parts = [];
+        if (days > 0) parts.push(`${days}g`);
+        if (hours > 0) parts.push(`${hours}s`);
+        if (minutes > 0) parts.push(`${minutes}d`);
+        if (parts.length === 0 && durationMs > 0) parts.push('<1d');
+        seasonDurationText = parts.join(' ');
+    }
+    
+    const typeToName = { points: 'Puan', boxRights: 'Kutu Hakkı', wheelTicket: 'Çark Bileti', iflasShield: 'İflas Kalkanı' };
+    const rewardText = `${rewardAmount} ${typeToName[rewardType]}`;
+
+    // 2. Yeni şampiyon objesini oluştur
+    const newChampion = {
+        winnerName: leader,
+        rewardText: rewardText,
+        winningScore: winningScore,
+        seasonDuration: seasonDurationText,
+        resetTimestamp: resetTimestamp
+    };
+
+    // 3. Veritabanı güncelleme objesini hazırla
+    const updates = {};
+    updates['/clickCatchChampion/currentWinner'] = newChampion;
+    
+    // 4. Eğer yeni kazanan eski kazananla aynıysa, eski veriyi 'previousWinner' alanına taşı
+    if (lastChampionData && lastChampionData.currentWinner && lastChampionData.currentWinner.winnerName === leader) {
+        updates['/clickCatchChampion/previousWinner'] = lastChampionData.currentWinner;
+    } else {
+        updates['/clickCatchChampion/previousWinner'] = null;
+    }
+
+    // 5. Liderin ödülünü, herkesin biletini ve skor sıfırlamalarını hazırla
+    // ... (ödül switch bloğu aynı kalıyor) ...
+    switch (rewardType) {
+        case 'points': updates[`/users/${leader}/balance`] = (winnerData.balance || 0) + rewardAmount; break;
+        case 'boxRights': updates[`/users/${leader}/kutuHakki`] = (winnerData.kutuHakki || 0) + rewardAmount; break;
+        case 'wheelTicket': updates[`/users/${leader}/carkBileti`] = (winnerData.carkBileti || 0) + rewardAmount; break;
+        case 'iflasShield': updates[`/users/${leader}/iflasShieldUses`] = (winnerData.iflasShieldUses || 0) + rewardAmount; break;
+    }
+
+    for (const username in allUsersData) {
+        const userData = allUsersData[username];
+        if (userData.approved && !userData.blocked && username !== 'weizendtv') {
+            updates[`/users/${username}/clickCatchTickets`] = (userData.clickCatchTickets || 0) + allUsersTicketAmount;
+            if (userData.hasOwnProperty('skor')) updates[`/users/${username}/skor`] = 0;
+            if (userData.hasOwnProperty('clickCatchHighestScore')) updates[`/users/${username}/clickCatchHighestScore`] = 0;
+        }
+    }
+    
+    // 6. Haftalık skorları ve sezon başlangıç zamanını sıfırla
+    updates['/clickCatchWeeklyScores'] = null;
+    updates['/gameStats/clickCatchSeasonStart'] = firebase.database.ServerValue.TIMESTAMP;
+    
+    // 7. Tüm güncellemeleri tek seferde yap
+    await db.ref().update(updates);
+    
+    // 8. Bildirimleri gönder ve logla
+    const notificationMessage = `Tıkla-Yakala sezonu sona erdi! Lider ${leader}, ${rewardText} kazandı! Herkese ${allUsersTicketAmount} bilet hediye!`;
+    await db.ref('globalNotifications').push({ message: notificationMessage, timestamp: firebase.database.ServerValue.TIMESTAMP });
+    logActivity('seasonReset', leader, { prize: rewardText, ticketGift: allUsersTicketAmount });
+    
+    closeClickCatchRewardModal();
+    displayMessage("Sezon başarıyla sıfırlandı, ödüller ve hediyeler dağıtıldı!");
+}
+
+// MEVCUT startClickCatchResetProcess FONKSİYONUNU SİL VE BUNU YAPIŞTIR
+
+async function startClickCatchResetProcess() {
+    // Hata yakalamak için try...catch bloğu ekledik.
+    try {
+        if (!isAdmin) return;
+
+        // .then() yerine await kullanarak kodu daha okunabilir hale getirdik.
+        const leader = await getClickCatchLeaderUsername();
+
         if (!leader) {
             displayMessage("Sıralamada henüz bir lider bulunmuyor. Önce oyuncuların skor yapması gerekir.");
             return;
         }
         
-        customConfirm(`Tıkla-Yakala sezonunu sıfırlamak üzeresiniz. Lider <b>(${leader})</b> ödüllendirilecek, tüm sıralama silinecek ve kullanıcılara hediye bilet verilecek. Devam etmek istiyor musunuz?`).then(confirmed => {
-            if (confirmed) {
-                document.getElementById('leaderToReward').textContent = leader;
-                document.getElementById('clickCatchRewardModal').style.display = 'flex';
-            }
-        });
-    });
+        // .then() yerine await kullandık.
+        const confirmed = await customConfirm(`Tıkla-Yakala sezonunu sıfırlamak üzeresiniz. Lider <b>(${leader})</b> ödüllendirilecek, tüm sıralama silinecek ve kullanıcılara hediye bilet verilecek. Devam etmek istiyor musunuz?`);
+
+        if (confirmed) {
+            document.getElementById('leaderToReward').textContent = leader;
+            document.getElementById('clickCatchRewardModal').style.display = 'flex';
+        }
+
+    } catch (error) {
+        // Eğer yukarıdaki adımlardan herhangi birinde hata olursa, bu blok çalışır.
+        console.error("Sezon sıfırlama işlemi başlatılırken hata oluştu:", error);
+        displayMessage("Bir hata oluştu. Lütfen konsolu (F12) kontrol edin.");
+    }
 }
 
 function closeClickCatchRewardModal() {
     document.getElementById('clickCatchRewardModal').style.display = 'none';
-}
-
-async function confirmAndExecuteReset() {
-    if (!isAdmin) return;
-
-    const leader = await getClickCatchLeaderUsername();
-    if (!leader) {
-        displayMessage("Hata: Lider bulunamadı. İşlem iptal edildi.");
-        closeClickCatchRewardModal();
-        return;
-    }
-    
-    const rewardType = document.getElementById('leaderRewardType').value;
-    const rewardAmount = parseInt(document.getElementById('leaderRewardAmount').value);
-    const allUsersTicketAmount = 1; // Herkese +1 bilet verilecek
-
-    if (isNaN(rewardAmount) || rewardAmount <= 0) {
-        displayMessage("Lütfen lider için geçerli bir ödül miktarı girin.");
-        return;
-    }
-    
-    const usersSnap = await db.ref('users').once('value');
-    const allUsersData = usersSnap.val();
-    
-    const winnerData = allUsersData[leader];
-    if (!winnerData) {
-        displayMessage(`Hata: Lider kullanıcı (${leader}) veritabanında bulunamadı.`);
-        return;
-    }
-
-    const updates = {};
-    const typeToName = {
-        points: 'Puan',
-        boxRights: 'Kutu Hakkı',
-        wheelTicket: 'Çark Bileti',
-        iflasShield: 'İflas Kalkanı'
-    };
-    
-    // 1. Liderin ödülünü hazırla
-    switch (rewardType) {
-        case 'points':
-            updates[`/users/${leader}/balance`] = (winnerData.balance || 0) + rewardAmount;
-            break;
-        case 'boxRights':
-            updates[`/users/${leader}/kutuHakki`] = (winnerData.kutuHakki || 0) + rewardAmount;
-            break;
-        case 'wheelTicket':
-            updates[`/users/${leader}/carkBileti`] = (winnerData.carkBileti || 0) + rewardAmount;
-            break;
-        case 'iflasShield':
-            updates[`/users/${leader}/iflasShieldUses`] = (winnerData.iflasShieldUses || 0) + rewardAmount;
-            break;
-    }
-
-    // 2. Herkesin biletini ve skorunu hazırla
-    for (const username in allUsersData) {
-        const userData = allUsersData[username];
-        if (userData.approved && !userData.blocked && username !== 'weizendtv') {
-            updates[`/users/${username}/clickCatchTickets`] = (userData.clickCatchTickets || 0) + allUsersTicketAmount;
-            updates[`/users/${username}/clickCatchHighestScore`] = 0;
-        }
-    }
-    
-    // 3. Haftalık skor tablosunu sil
-    updates['/clickCatchWeeklyScores'] = null;
-
-    // 4. Tüm güncellemeleri tek seferde yap
-    await db.ref().update(updates);
-    
-    // 5. Herkese bildirim gönder
-    const notificationMessage = `Tıkla-Yakala sezonu sona erdi! Lider ${leader}, ${rewardAmount} ${typeToName[rewardType]} kazandı! Herkese ${allUsersTicketAmount} bilet hediye!`;
-    await db.ref('globalNotifications').push({ message: notificationMessage, timestamp: firebase.database.ServerValue.TIMESTAMP });
-
-    // 6. İşlemi bitir
-    closeClickCatchRewardModal();
-    displayMessage("Sezon başarıyla sıfırlandı, ödüller ve hediyeler dağıtıldı!");
 }
     
   function createCatchItem(gameMode) {
