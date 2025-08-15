@@ -249,6 +249,13 @@ body.modal-open .modal-content {
     border-color: #8b5cf6; /* focus:border-purple-500 */
     box-shadow: 0 0 0 2px #a78bfa; /* focus:ring-2 focus:ring-purple-400 */
   }
+  
+  /* BU YENİ KODU STYLE ETİKETLERİNİN İÇİNE EKLEYİN */
+.pinned-activity {
+    border-color: #fde047; /* Sarı renkli çerçeve */
+    background-color: #374151; /* Biraz daha açık bir arkaplan */
+    animation: glow 2.5s ease-in-out infinite; /* Parlama animasyonu */
+}
 
 </style>
 </head>
@@ -471,80 +478,87 @@ body.modal-open .modal-content {
 
         <div id="clickCatchContent" class="w-full hidden">
     
-            <div class="bg-gray-800 p-6 rounded-xl shadow-lg border border-red-700 text-center">
-                <h3 class="text-yellow-400 text-3xl font-bold mb-4">Tıkla-Yakala</h3>
+    <div class="bg-gray-800 p-6 rounded-xl shadow-lg border border-red-700 text-center">
+        <h3 class="text-yellow-400 text-3xl font-bold mb-4">Tıkla-Yakala</h3>
+
+        <div id="clickCatchAdminButtonsContainer" class="hidden bg-gray-900/50 p-4 rounded-lg border border-yellow-500 mb-6 flex justify-center gap-4">
+            <button onclick="openSoloGameSettingsModal()" class="py-3 px-6 bg-purple-600 hover:bg-purple-500 text-white font-bold rounded-lg shadow-md">
+                Tekli Oyun Ayarları
+            </button>
+            <button onclick="openLobbySettingsModal()" class="py-3 px-6 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-lg shadow-md">
+                Lobi Yönetim Paneli
+            </button>
+        </div>
+
+        <div id="lastWinnerContainer" class="hidden bg-gray-900/50 p-4 rounded-lg border border-yellow-400 mb-6 text-left">
+            <h4 id="lastWinnerInfo" class="text-yellow-300 text-xl font-semibold mb-3 border-b border-gray-700 pb-2"></h4>
+            <div id="lastGameDetailsList" class="space-y-2">
+            </div>
+        </div>
         
-                <div id="clickCatchAdminButtonsContainer" class="hidden bg-gray-900/50 p-4 rounded-lg border border-yellow-500 mb-6 flex justify-center gap-4">
-                    <button onclick="openSoloGameSettingsModal()" class="py-3 px-6 bg-purple-600 hover:bg-purple-500 text-white font-bold rounded-lg shadow-md">
-                        Tekli Oyun Ayarları
-                    </button>
-                    <button onclick="openLobbySettingsModal()" class="py-3 px-6 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-lg shadow-md">
-                        Lobi Yönetim Paneli
+        <div id="lobbyStatusContainer" class="hidden bg-blue-900/50 p-4 rounded-lg border border-blue-400 mb-6">
+            <h4 id="lobbyStatusTitle" class="text-blue-300 text-xl font-semibold animate-pulse">Lobi Katılıma Açık!</h4>
+            <p id="lobbyStatusInfo" class="mt-2 text-gray-200"></p>
+            <div id="lobbyPlayerList" class="mt-2 text-sm text-gray-400"></div>
+        </div>
+        
+        <div class="flex justify-around items-center mb-4 bg-gray-900 p-3 rounded-lg">
+            <div id="displayScore" class="hidden">
+                <p class="text-gray-400 text-sm">Toplanan Puan</p>
+                <p id="clickCatchScore" class="text-green-400 font-bold text-lg">0</p>
+            </div>
+            <div id="displaySpecials" class="hidden">
+                <p class="text-gray-400 text-sm">Alınan Ödüller</p>
+                <div id="collectedSpecials" class="h-[28px] flex items-center justify-center gap-2"></div>
+            </div>
+            <div id="displayTarget" class="hidden">
+                <p class="text-gray-400 text-sm">Hedef</p>
+                <p id="clickCatchTarget" class="text-purple-400 font-bold text-lg">0 / 10</p>
+            </div>
+            <div id="displayTimer" class="hidden">
+                <p class="text-gray-400 text-sm">Kalan Süre</p>
+                <p id="clickCatchTimer" class="text-yellow-400 font-bold text-lg">30</p>
+            </div>
+        </div>
+        <div id="clickCatchGameAreaContainer" class="flex justify-center mb-4">
+            <div id="clickCatchGameArea">
+                 <div id="clickCatchStartScreen" class="w-full h-full flex flex-col justify-center items-center bg-black bg-opacity-50">
+                    <p class="text-xl mb-6">Oyun Modunu Seç</p>
+                    <div class="flex gap-4">
+                       <button id="startSoloGameBtn" onclick="startSoloClickCatchGame()" class="py-3 px-10 bg-purple-600 hover:bg-purple-500 text-white font-bold rounded-lg shadow-md">Tek Oyna</button>
+                       <button id="joinLobbyBtn" onclick="joinLobby()" class="py-3 px-10 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-lg shadow-md disabled:bg-gray-600 disabled:cursor-not-allowed" disabled>Lobiye Katıl</button>
+                    </div>
+                </div>
+                
+                <div id="gameCountdownOverlay" class="absolute inset-0 bg-gray-900/90 hidden flex-col justify-center items-center text-center z-20">
+                    <p class="text-6xl font-extrabold text-yellow-400 animate-pulse" id="countdownText"></p>
+                </div>
+                
+                <div id="lobbyGameOverScreen" class="absolute inset-0 bg-gray-900/95 rounded-lg hidden flex flex-col items-center justify-center p-8 text-center border-4 border-gray-700">
+                    <h4 id="lobbyGameOverTitle" class="text-white text-3xl font-bold mb-4">Oyun Bitti!</h4>
+                    <p id="lobbyGameOverInfo" class="text-xl text-gray-200 mb-6"></p>
+                    <button onclick="closeLobbyGameOverScreen()" class="mt-4 py-2 px-6 bg-red-700 hover:bg-red-600 text-white font-bold rounded-lg shadow-md hover:shadow-lg transform hover:-translate-y-1 transition duration-300">
+                        Oyun Ekranına Dön
                     </button>
                 </div>
-        
-                <div id="lastWinnerContainer" class="hidden bg-gray-900/50 p-4 rounded-lg border border-yellow-400 mb-6 text-left">
-    <h4 id="lastWinnerInfo" class="text-yellow-300 text-xl font-semibold mb-3 border-b border-gray-700 pb-2"></h4>
-    <div id="lastGameDetailsList" class="space-y-2">
+            </div>
         </div>
+    </div>
+
+    <div class="tableBox bg-gray-800 p-6 rounded-xl shadow-lg border border-red-700 w-full md:flex-1 min-w-[280px] mt-6 mx-auto max-w-2xl">
+      
+      <div id="clickCatchAdminResetContainer" class="hidden mb-4">
+          <button onclick="startClickCatchResetProcess()" class="w-full py-3 bg-green-700 hover:bg-green-600 text-white font-bold rounded-lg shadow-md text-base">
+              🏆 Sezonu Sıfırla ve Lideri Ödüllendir
+          </button>
+      </div>
+
+      <h3 class="text-yellow-400 text-xl font-bold border-b border-gray-600 pb-3 mb-4">TIKLA-YAKALA TOPLANAN PUAN SIRALAMASI 🎯</h3>
+      <input type="text" id="searchClickCatchRanking" oninput="loadClickCatchRankings()" placeholder="Sıralamada Kullanıcı Ara..." class="w-full p-3 mb-4 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500 transition duration-300">
+      <div id="clickCatchRankings" class="scrollable-list max-h-80 overflow-y-auto border border-gray-600 rounded-lg p-3 bg-gray-900 text-sm leading-relaxed">Yükleniyor...</div>
+    </div>
+
 </div>
-                
-                <div id="lobbyStatusContainer" class="hidden bg-blue-900/50 p-4 rounded-lg border border-blue-400 mb-6">
-                    <h4 id="lobbyStatusTitle" class="text-blue-300 text-xl font-semibold animate-pulse">Lobi Katılıma Açık!</h4>
-                    <p id="lobbyStatusInfo" class="mt-2 text-gray-200"></p>
-                    <div id="lobbyPlayerList" class="mt-2 text-sm text-gray-400"></div>
-                </div>
-                
-                <div class="flex justify-around items-center mb-4 bg-gray-900 p-3 rounded-lg">
-                    <div id="displayScore" class="hidden">
-                        <p class="text-gray-400 text-sm">Toplanan Puan</p>
-                        <p id="clickCatchScore" class="text-green-400 font-bold text-lg">0</p>
-                    </div>
-                    <div id="displaySpecials" class="hidden">
-                        <p class="text-gray-400 text-sm">Alınan Ödüller</p>
-                        <div id="collectedSpecials" class="h-[28px] flex items-center justify-center gap-2"></div>
-                    </div>
-                    <div id="displayTarget" class="hidden">
-                        <p class="text-gray-400 text-sm">Hedef</p>
-                        <p id="clickCatchTarget" class="text-purple-400 font-bold text-lg">0 / 10</p>
-                    </div>
-                    <div id="displayTimer" class="hidden">
-                        <p class="text-gray-400 text-sm">Kalan Süre</p>
-                        <p id="clickCatchTimer" class="text-yellow-400 font-bold text-lg">30</p>
-                    </div>
-                </div>
-                <div id="clickCatchGameAreaContainer" class="flex justify-center mb-4">
-                    <div id="clickCatchGameArea">
-                         <div id="clickCatchStartScreen" class="w-full h-full flex flex-col justify-center items-center bg-black bg-opacity-50">
-                            <p class="text-xl mb-6">Oyun Modunu Seç</p>
-                            <div class="flex gap-4">
-                               <button id="startSoloGameBtn" onclick="startSoloClickCatchGame()" class="py-3 px-10 bg-purple-600 hover:bg-purple-500 text-white font-bold rounded-lg shadow-md">Tek Oyna</button>
-                               <button id="joinLobbyBtn" onclick="joinLobby()" class="py-3 px-10 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-lg shadow-md disabled:bg-gray-600 disabled:cursor-not-allowed" disabled>Lobiye Katıl</button>
-                            </div>
-                        </div>
-                        
-                        <div id="gameCountdownOverlay" class="absolute inset-0 bg-gray-900/90 hidden flex-col justify-center items-center text-center z-20">
-                            <p class="text-6xl font-extrabold text-yellow-400 animate-pulse" id="countdownText"></p>
-                        </div>
-                        
-                        <div id="lobbyGameOverScreen" class="absolute inset-0 bg-gray-900/95 rounded-lg hidden flex flex-col items-center justify-center p-8 text-center border-4 border-gray-700">
-                            <h4 id="lobbyGameOverTitle" class="text-white text-3xl font-bold mb-4">Oyun Bitti!</h4>
-                            <p id="lobbyGameOverInfo" class="text-xl text-gray-200 mb-6"></p>
-                            <button onclick="closeLobbyGameOverScreen()" class="mt-4 py-2 px-6 bg-red-700 hover:bg-red-600 text-white font-bold rounded-lg shadow-md hover:shadow-lg transform hover:-translate-y-1 transition duration-300">
-                                Oyun Ekranına Dön
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-    
-            <div class="tableBox bg-gray-800 p-6 rounded-xl shadow-lg border border-red-700 w-full md:flex-1 min-w-[280px] mt-6 mx-auto max-w-2xl">
-              <h3 class="text-yellow-400 text-xl font-bold border-b border-gray-600 pb-3 mb-4">TIKLA-YAKALA TOPLANAN PUAN SIRALAMASI 🎯</h3>
-              <input type="text" id="searchClickCatchRanking" oninput="loadClickCatchRankings()" placeholder="Sıralamada Kullanıcı Ara..." class="w-full p-3 mb-4 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500 transition duration-300">
-              <div id="clickCatchRankings" class="scrollable-list max-h-80 overflow-y-auto border border-gray-600 rounded-lg p-3 bg-gray-900 text-sm leading-relaxed">Yükleniyor...</div>
-            </div>
-        
-        </div>
             
         <div id="storeSection" class="w-full hidden">
           <h3 class="text-yellow-400 text-3xl font-bold mb-2 text-center">Mağaza</h3>
@@ -1337,9 +1351,38 @@ body.modal-open .modal-content {
             </div>
         </div>
         <div class="mt-6 pt-4 border-t border-gray-700">
-            <button onclick="saveSoloGameSettings()" class="w-full py-3 bg-green-700 hover:bg-green-600 text-white font-bold rounded-lg shadow-md">Ayarları Kaydet</button>
+            <button onclick="saveSoloGameSettings()" class="w-full py-3 bg-purple-600 hover:bg-purple-500 text-white font-bold rounded-lg shadow-md">Tekli Oyun Ayarlarını Kaydet</button>
         </div>
     </div>
+</div>
+
+<div id="clickCatchRewardModal" class="modal-overlay fixed inset-0 bg-black bg-opacity-70 flex justify-center items-center z-[10000] hidden">
+  <div class="modal-content bg-gray-800 p-8 rounded-xl shadow-2xl border border-green-500 w-11/12 max-w-lg text-left relative">
+    <button class="modal-close-button" onclick="closeClickCatchRewardModal()">&times;</button>
+    <h3 class="text-green-300 text-3xl font-bold mb-6 text-center">Tıkla-Yakala Sezon Sonu Ödülleri</h3>
+    
+    <div class="space-y-4">
+        <div>
+            <h4 class="text-lg font-semibold text-yellow-300 mb-2">🏆 Liderlik Ödülü (<span id="leaderToReward" class="font-bold"></span>)</h4>
+            <div class="grid grid-cols-2 gap-4">
+                <select id="leaderRewardType" class="box-setting-input">
+                  <option value="points">Puan</option>
+                  <option value="boxRights">Kutu Hakkı</option>
+                  <option value="wheelTicket">Çark Bileti</option>
+                  <option value="iflasShield">İflas Kalkanı</option>
+                </select>
+                <input type="number" id="leaderRewardAmount" class="box-setting-input" placeholder="Ödül Miktarı">
+            </div>
+        </div>
+    </div>
+
+    <div class="mt-8 pt-4 border-t border-gray-700">
+        <p class="text-center text-gray-400 text-sm mb-4">Onayladığınızda, lider ödülünü alacak, <b class="text-white">tüm oyunculara +1 Tıkla-Yakala bileti verilecek</b> ve sıralama sıfırlanacaktır.</p>
+        <button onclick="confirmAndExecuteReset()" class="w-full py-3 bg-green-700 hover:bg-green-600 text-white font-bold rounded-lg shadow-md">
+            ÖDÜLLERİ DAĞIT VE SEZONU SIFIRLA
+        </button>
+    </div>
+  </div>
 </div>
 
 <div id="lobbySettingsModal" class="modal-overlay fixed inset-0 bg-black bg-opacity-70 flex justify-center items-center z-[9999] hidden">
@@ -2073,7 +2116,6 @@ async function afterLogin() {
     }
   }
   // MEVCUT showSection FONKSİYONUNU SİLİP BUNU YAPIŞTIRIN
-
 function showSection(sectionId) {
     document.getElementById('gameContent').classList.add('hidden');
     document.getElementById('storeSection').classList.add('hidden');
@@ -2082,6 +2124,9 @@ function showSection(sectionId) {
     document.getElementById('clickCatchContent').classList.add('hidden');
     document.getElementById('adminStoreManagementButtonContainer').classList.add('hidden');
     document.getElementById('adminAnnouncementControls').classList.add('hidden');
+    
+    const clickCatchAdminResetContainer = document.getElementById('clickCatchAdminResetContainer');
+    if (clickCatchAdminResetContainer) clickCatchAdminResetContainer.classList.add('hidden');
     
     const clickCatchAdminButtonsContainer = document.getElementById('clickCatchAdminButtonsContainer');
     if(clickCatchAdminButtonsContainer) clickCatchAdminButtonsContainer.classList.add('hidden');
@@ -2107,7 +2152,6 @@ function showSection(sectionId) {
         if (isAdmin) {
             document.getElementById('adminStoreManagementButtonContainer').classList.remove('hidden');
         } else {
-            // YENİ: Mağaza sekmesi görüldüğünde, zaman damgasını güncelle ve bildirimi kaldır
             document.getElementById('storeIndicator').classList.add('hidden');
             db.ref(`users/${currentUser}/lastSeenStoreTimestamp`).set(latestStoreItemTimestamp);
         }
@@ -2116,13 +2160,11 @@ function showSection(sectionId) {
         if (isAdmin) {
             document.getElementById('adminAnnouncementControls').classList.remove('hidden');
         } else {
-            // YENİ: Duyuru sekmesi görüldüğünde, zaman damgasını güncelle ve bildirimi kaldır
             document.getElementById('announcementIndicator').classList.add('hidden');
             db.ref(`users/${currentUser}/lastSeenAnnouncementTimestamp`).set(latestAnnouncementTimestamp);
         }
     } else if (sectionId === 'clickCatch') {
         loadClickCatchRankings();
-        // listenForLobbyChanges(); // BU SATIR ARTIK BURADA DEĞİL
         listenForLastGameSummary(); 
         
         if (currentUser && !isAdmin) {
@@ -2136,6 +2178,7 @@ function showSection(sectionId) {
 
         if (isAdmin) {
             document.getElementById('clickCatchAdminButtonsContainer').classList.remove('hidden');
+            if (clickCatchAdminResetContainer) clickCatchAdminResetContainer.classList.remove('hidden');
             loadSoloGameSettings(); 
         }
     } else if (sectionId === 'chanceWheel') {
@@ -6309,14 +6352,15 @@ function closeLobbySettingsModal() {
     }
   }
     
+// MEVCUT resetClickCatchLeaderboard, startClickCatchResetProcess, closeClickCatchRewardModal ve confirmAndExecuteReset FONKSİYONLARINI SİLİP BU BLOKU YAPIŞTIRIN
+
 async function resetClickCatchLeaderboard() {
     if (!isAdmin) {
         displayMessage("Bu işlemi yapmaya yetkiniz yok.");
         return;
     }
-
     const confirmed = await customConfirm(
-        "Tüm 'Tıkla-Yakala' sıralamasını ve tüm kullanıcıların kişisel rekorlarını kalıcı olarak silmek istediğinizden emin misiniz? Bu işlem geri alınamaz!"
+        "Tüm 'Tıkla-Yakala' sıralamasını ve tüm kullanıcıların kişisel rekorlarını kalıcı olarak silmek istediğinizden emin misiniz? <b class='text-red-400'>Bu işlem lideri ödüllendirmeyecek ve kullanıcılara hediye bilet vermeyecektir!</b>"
     );
 
     if (!confirmed) {
@@ -6324,11 +6368,7 @@ async function resetClickCatchLeaderboard() {
     }
 
     try {
-        // 1. Haftalık skor tablosunu tamamen sil.
-        // Bu tablo olmasa bile kod hata vermeden çalışacaktır.
         await db.ref('clickCatchWeeklyScores').remove();
-
-        // 2. Tüm kullanıcıların kişisel rekorlarını sıfırla.
         const usersRef = db.ref('users');
         const usersSnap = await usersRef.once('value');
         const usersData = usersSnap.val();
@@ -6336,27 +6376,123 @@ async function resetClickCatchLeaderboard() {
         const updates = {};
         if (usersData) {
             for (const username in usersData) {
-                // Sadece 'clickCatchHighestScore' alanı olan kullanıcıları güncelle
                 if (usersData[username].hasOwnProperty('clickCatchHighestScore')) {
                     updates[`/users/${username}/clickCatchHighestScore`] = 0;
                 }
             }
         }
 
-        // Eğer güncellenecek kullanıcı varsa, toplu güncelleme yap.
         if (Object.keys(updates).length > 0) {
             await db.ref().update(updates);
         }
-
-        // 3. Global lider değişkenini temizle
         clickCatchLeader = null;
-
         displayMessage("Tüm Tıkla-Yakala sıralaması ve kişisel rekorlar başarıyla sıfırlandı.");
         
     } catch (error) {
         console.error("Tıkla-Yakala sıralaması sıfırlanırken hata oluştu:", error);
         displayMessage("Sıfırlama işlemi sırasında bir hata meydana geldi.");
     }
+}
+
+function startClickCatchResetProcess() {
+    if (!isAdmin) return;
+
+    getClickCatchLeaderUsername().then(leader => {
+        if (!leader) {
+            displayMessage("Sıralamada henüz bir lider bulunmuyor. Önce oyuncuların skor yapması gerekir.");
+            return;
+        }
+        
+        customConfirm(`Tıkla-Yakala sezonunu sıfırlamak üzeresiniz. Lider <b>(${leader})</b> ödüllendirilecek, tüm sıralama silinecek ve kullanıcılara hediye bilet verilecek. Devam etmek istiyor musunuz?`).then(confirmed => {
+            if (confirmed) {
+                document.getElementById('leaderToReward').textContent = leader;
+                document.getElementById('clickCatchRewardModal').style.display = 'flex';
+            }
+        });
+    });
+}
+
+function closeClickCatchRewardModal() {
+    document.getElementById('clickCatchRewardModal').style.display = 'none';
+}
+
+async function confirmAndExecuteReset() {
+    if (!isAdmin) return;
+
+    const leader = await getClickCatchLeaderUsername();
+    if (!leader) {
+        displayMessage("Hata: Lider bulunamadı. İşlem iptal edildi.");
+        closeClickCatchRewardModal();
+        return;
+    }
+    
+    const rewardType = document.getElementById('leaderRewardType').value;
+    const rewardAmount = parseInt(document.getElementById('leaderRewardAmount').value);
+    const allUsersTicketAmount = 1;
+
+    if (isNaN(rewardAmount) || rewardAmount <= 0) {
+        displayMessage("Lütfen lider için geçerli bir ödül miktarı girin.");
+        return;
+    }
+    
+    const usersSnap = await db.ref('users').once('value');
+    const allUsersData = usersSnap.val();
+    
+    const winnerData = allUsersData[leader];
+    if (!winnerData) {
+        displayMessage(`Hata: Lider kullanıcı (${leader}) veritabanında bulunamadı.`);
+        return;
+    }
+
+    const updates = {};
+    const typeToName = {
+        points: 'Puan',
+        boxRights: 'Kutu Hakkı',
+        wheelTicket: 'Çark Bileti',
+        iflasShield: 'İflas Kalkanı'
+    };
+    
+    // 1. Liderin ödülünü hazırla
+    switch (rewardType) {
+        case 'points':
+            updates[`/users/${leader}/balance`] = (winnerData.balance || 0) + rewardAmount;
+            break;
+        case 'boxRights':
+            updates[`/users/${leader}/kutuHakki`] = (winnerData.kutuHakki || 0) + rewardAmount;
+            break;
+        case 'wheelTicket':
+            updates[`/users/${leader}/carkBileti`] = (winnerData.carkBileti || 0) + rewardAmount;
+            break;
+        case 'iflasShield':
+            updates[`/users/${leader}/iflasShieldUses`] = (winnerData.iflasShieldUses || 0) + rewardAmount;
+            break;
+    }
+
+    // 2. Herkesin biletini ve skorunu hazırla
+    for (const username in allUsersData) {
+        const userData = allUsersData[username];
+        if (userData.approved && !userData.blocked && username !== 'weizendtv') {
+            updates[`/users/${username}/clickCatchTickets`] = (userData.clickCatchTickets || 0) + allUsersTicketAmount;
+            updates[`/users/${username}/clickCatchHighestScore`] = 0;
+        }
+    }
+    
+    // 3. Haftalık skor tablosunu sil
+    updates['/clickCatchWeeklyScores'] = null;
+
+    // 4. Tüm güncellemeleri tek seferde yap
+    await db.ref().update(updates);
+    
+    // 5. Herkese bildirim gönder
+    const notificationMessage = `Tıkla-Yakala sezonu sona erdi! Lider ${leader}, ${rewardAmount} ${typeToName[rewardType]} kazandı! Herkese ${allUsersTicketAmount} bilet hediye!`;
+    await db.ref('globalNotifications').push({ message: notificationMessage, timestamp: firebase.database.ServerValue.TIMESTAMP });
+
+    // YENİ EKLENEN SATIR: Bu olayı Son Eylemler'e de kaydediyoruz.
+    logActivity('seasonReset', leader, { prize: `${rewardAmount} ${typeToName[rewardType]}`, ticketGift: allUsersTicketAmount });
+
+    // 6. İşlemi bitir
+    closeClickCatchRewardModal();
+    displayMessage("Sezon başarıyla sıfırlandı, ödüller ve hediyeler dağıtıldı!");
 }
   function createCatchItem(gameMode) {
     if (!clickCatchGameActive && gameMode === 'solo') return;
@@ -6890,9 +7026,10 @@ function listenForGlobalNotifications() {
     const lobbySnap = await lobbyRef.once('value');
     const lobbyData = lobbySnap.val();
 
-    if (!lobbyData || !lobbyData.players) {
+    // Lobi zaten yoksa veya boşsa işlemi bitir.
+    if (!lobbyData) {
         if (isCancel) {
-            displayMessage("Lobi zaten boş olduğu için iptal edildi.");
+            displayMessage("İptal edilecek aktif bir lobi bulunmuyor.");
         }
         await lobbyRef.remove();
         return;
@@ -6901,51 +7038,65 @@ function listenForGlobalNotifications() {
     const currentState = lobbyData.state;
     const useTickets = lobbyData.entryTickets > 0;
     const updates = {};
-    let message = "";
+    let messageForAdmin = "";
 
+    // Senaryo 1: Lobi "beklemede" veya "aktif" durumdayken admin tarafından iptal ediliyor.
+    // Bu durumda ücretler iade edilir ve bildirim gönderilir.
     if (isCancel && (currentState === 'waiting' || currentState === 'active')) {
-        const confirmed = await customConfirm("Lobi iptal edilecek. Oyun devam ederken iptal edildiği için tüm katılımcıların ücretleri iade edilecek. Emin misin?");
+        const confirmed = await customConfirm("Lobi iptal edilecek ve tüm katılımcıların ücretleri iade edilecek. Emin misin?");
         if (!confirmed) return;
 
-        for (const player in lobbyData.players) {
-            const userRef = db.ref(`users/${player}`);
-            const userSnap = await userRef.once('value');
-            const userData = userSnap.val();
+        // Lobide oyuncu varsa iade işlemlerini yap
+        if (lobbyData.players) {
+            for (const player in lobbyData.players) {
+                const userRef = db.ref(`users/${player}`);
+                const userSnap = await userRef.once('value');
+                const userData = userSnap.val();
 
-            if (userData) {
-                if (useTickets) {
-                    const currentTickets = userData.clickCatchTickets || 0;
-                    updates[`users/${player}/clickCatchTickets`] = currentTickets + (lobbyData.entryTickets || 0);
-                } else {
-                    const currentBalance = userData.balance || 0;
-                    updates[`users/${player}/balance`] = currentBalance + (lobbyData.entryFee || 0);
+                if (userData) {
+                    // Ücret türüne göre iadeyi hazırla
+                    if (useTickets) {
+                        const currentTickets = userData.clickCatchTickets || 0;
+                        updates[`users/${player}/clickCatchTickets`] = currentTickets + (lobbyData.entryTickets || 0);
+                    } else {
+                        const currentBalance = userData.balance || 0;
+                        updates[`users/${player}/balance`] = currentBalance + (lobbyData.entryFee || 0);
+                    }
+                    
+                    // --- YENİ EKLENEN BİLDİRİM KODU ---
+                    const messageForUser = "Kurulu lobi admin tarafından iptal edildi. Katılım ücretiniz iade edildi.";
+                    const notifKey = db.ref('users/' + player + '/notifications').push().key;
+                    updates[`users/${player}/notifications/${notifKey}`] = { message: messageForUser, timestamp: firebase.database.ServerValue.TIMESTAMP };
+                    // --- BİLDİRİM KODU SONU ---
                 }
             }
         }
-        message = "Lobi iptal edildi ve tüm katılımcıların ücretleri iade edildi.";
-        // BİLDİRİMİ GÖSTER
-        displayNotification("Lobi iptal edildi! Ücretleriniz iade edildi.", 'bg-red-500');
-
-    } else {
+        messageForAdmin = "Lobi iptal edildi ve tüm katılımcıların ücretleri iade edildi.";
+    } 
+    // Senaryo 2: Oyun zaten bitmiş veya başka bir durumda iptal ediliyor.
+    // Bu durumda ücret iadesi yapılmaz.
+    else {
+        let confirmationMessage = "Lobi sonlandırılacak. Bu işlem geri alınamaz.";
         if (isCancel) {
-            const confirmed = await customConfirm("Oyun zaten tamamlanmış. Lobiyi iptal etmek, katılım ücretlerinin iade edilmemesine sebep olacaktır. Emin misin?");
-            if (!confirmed) return;
+             confirmationMessage = "Oyun zaten tamamlanmış. Lobiyi sonlandırmak, ücretlerin iade edilmemesine neden olur. Emin misin?";
         }
-        
+        const confirmed = await customConfirm(confirmationMessage);
+        if (!confirmed) return;
+
         const winner = lobbyData.winner;
-        if (winner) {
-            message = `Oyun sonlandırıldı. Kazanan: ${winner}. Katılım ücretleri iade edilmedi.`;
-        } else {
-            message = "Lobi sonlandırıldı. Kazanan belirlenmediği için katılım ücretleri iade edilmedi.";
-        }
+        messageForAdmin = winner 
+            ? `Oyun sonlandırıldı. Kazanan: ${winner}. Ücretler iade edilmedi.`
+            : "Lobi sonlandırıldı. Kazanan belirlenmediği için ücretler iade edilmedi.";
     }
     
+    // Hazırlanan tüm güncellemeleri (iade ve bildirimler) tek seferde veritabanına yaz
     if (Object.keys(updates).length > 0) {
         await db.ref().update(updates);
     }
     
+    // Son olarak lobiyi sil ve admine bilgi ver
     await lobbyRef.remove();
-    displayMessage(message);
+    displayMessage(messageForAdmin);
 }
   // Yeni eklenecek fonksiyon: Ekranda geçici bildirim gösterir
 function displayNotification(message, color = 'bg-yellow-500') {
@@ -7481,7 +7632,20 @@ function logActivity(type, username, details = {}) {
     });
 }
 
-// --- MEVCUT getActivityIcon FONKSİYONUNU SİL, BUNU YAPIŞTIR ---
+// MEVCUT pinActivity, unpinActivity, getActivityIcon ve renderActivityFeed FONKSİYONLARINI SİLİP
+// BU BLOKTAKİ 4 FONKSİYONUN TAMAMINI ONLARIN YERİNE YAPIŞTIRIN.
+
+async function pinActivity(activityId) {
+    if (!isAdmin || !activityId) return;
+    await db.ref('pinnedActivityId').set(activityId);
+    displayMessage("Eylem başarıyla sabitlendi.");
+}
+
+async function unpinActivity() {
+    if (!isAdmin) return;
+    await db.ref('pinnedActivityId').remove();
+    displayMessage("Sabitlenmiş eylem kaldırıldı.");
+}
 
 function getActivityIcon(type, details = {}) {
     let icon = '🔔';
@@ -7497,12 +7661,12 @@ function getActivityIcon(type, details = {}) {
             bgColor = 'bg-yellow-500';
             break;
         case 'iflas':
-            if (details.shieldUsed) {
+            if (details.multiplier && details.multiplier > 1 && !details.shieldUsed) {
+                icon = '❌';
+                bgColor = 'bg-red-800';
+            } else if (details.shieldUsed) {
                 icon = '🛡️';
                 bgColor = 'bg-blue-500';
-            } else if (details.multiplier && details.multiplier > 1) {
-                icon = '❌'; 
-                bgColor = 'bg-red-800';
             } else {
                 icon = '💣';
                 bgColor = 'bg-red-600';
@@ -7513,23 +7677,14 @@ function getActivityIcon(type, details = {}) {
             icon = '✖️';
             bgColor = 'bg-purple-500';
             break;
-            
-        // --- İSTEĞİNİ KARŞILAYAN DÜZELTME BURADA ---
         case 'newItemFound':
-            const itemType = details.itemType; // itemType'ı direkt kullanıyoruz (örn: 'wheelTicket')
-            if (itemType === 'iflasShield') {
-                icon = '🛡️';
-            } else if (itemType === 'wheelTicket') {
-                icon = '🎫'; // Şans Çarkı Bileti için doğru ikon
-            } else if (itemType === 'clickCatchTicket') {
-                icon = '🎟️'; // Tıkla-Yakala Bileti için doğru ikon
-            } else {
-                icon = '📦'; // Diğer tüm eşyalar için varsayılan
-            }
+            const itemType = details.itemType;
+            if (itemType === 'iflasShield') icon = '🛡️';
+            else if (itemType === 'wheelTicket') icon = '🎫';
+            else if (itemType === 'clickCatchTicket') icon = '🎟️';
+            else icon = '📦';
             bgColor = 'bg-cyan-500';
             break;
-        // --- DÜZELTME SONU ---
-            
         case 'buyItem':
             icon = '🛒';
             bgColor = 'bg-indigo-500';
@@ -7547,6 +7702,10 @@ function getActivityIcon(type, details = {}) {
             icon = '📅';
             bgColor = 'bg-teal-500';
             break;
+        case 'seasonReset':
+            icon = '👑';
+            bgColor = 'bg-yellow-600';
+            break;
         case 'surpriseBoxTimeout':
             icon = '⏰';
             bgColor = 'bg-gray-600';
@@ -7560,7 +7719,143 @@ function getActivityIcon(type, details = {}) {
     `;
 }
 
-// --- MEVCUT renderActivityFeed FONKSİYONUNU SİL, BUNU YAPIŞTIR ---
+// DOSYADAKİ MEVCUT renderActivityFeed FONKSİYONUNU KOMPLE SİLİP
+// BUNU YAPIŞTIR.
+
+async function renderActivityFeed(activities) {
+    const activityFeedList = document.getElementById('activityFeedList');
+    activityFeedList.innerHTML = '';
+
+    const pinnedIdSnap = await db.ref('pinnedActivityId').once('value');
+    const pinnedId = pinnedIdSnap.val();
+
+    if (isAdmin) {
+        activityFeedList.innerHTML += `<div class="px-2 mb-2 text-center"><button onclick="clearAllActivities()" class="w-full py-2 px-4 bg-red-800/50 hover:bg-red-700 text-white font-bold rounded-lg shadow-md text-sm border border-red-600">Eylem Geçmişini Temizle</button></div>`;
+    }
+
+    if (!activities || activities.length === 0) {
+        activityFeedList.innerHTML += '<p class="text-center text-gray-400 p-4">Gösterilecek eylem bulunamadı.</p>';
+        return;
+    }
+
+    let pinnedHtml = '';
+    let otherHtml = '';
+
+    activities.forEach(activity => {
+        if (!activity || !activity.username || !activity.type) return;
+
+        const details = activity.details || {};
+        let message = '';
+        const timeAgo = formatRelativeTime(activity.timestamp);
+        const userHtml = `<b class="text-yellow-300 cursor-pointer hover:underline" onclick="openPublicUserDetailModal('${activity.username}')">${activity.username}</b>`;
+        const isPinned = activity.id === pinnedId;
+        
+        let adminButtons = '';
+        if (isAdmin) {
+            const pinButton = isPinned 
+                ? `<button onclick="unpinActivity()" class="p-1 rounded-full text-yellow-400 hover:text-yellow-200" title="Sabiti Kaldır"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 1a4.5 4.5 0 00-4.5 4.5V9H5a2 2 0 00-2 2v6a2 2 0 002 2h10a2 2 0 002-2v-6a2 2 0 00-2-2h-.5V5.5A4.5 4.5 0 0010 1zm3 8V5.5a3 3 0 10-6 0V9h6z" clip-rule="evenodd" /></svg></button>`
+                : `<button onclick="pinActivity('${activity.id}')" class="p-1 rounded-full text-gray-500 hover:text-yellow-400" title="Bu Eylemi Sabitle"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path d="M10.894 2.553a1 1 0 00-1.788 0l-1 1.732a1 1 0 00.894 1.447h2a1 1 0 00.894-1.447l-1-1.732zM13.53 7.11a1 1 0 00-1.413-1.414l-1.05 1.052a1 1 0 001.414 1.414l1.05-1.052zM4.646 5.696a1 1 0 10-1.414 1.414l1.05 1.052a1 1 0 001.414-1.414L4.646 5.696zM11.5 12.5a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0zM15 15.5a1 1 0 100-2H5a1 1 0 100 2h10z" /></svg></button>`;
+            
+            const deleteButton = `<button onclick="deleteActivity('${activity.id}')" class="p-1 rounded-full text-gray-500 hover:text-red-500" title="Bu Eylemi Sil"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1-1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" /></svg></button>`;
+            
+            adminButtons = `<div class="flex items-center">${pinButton}${deleteButton}</div>`;
+            
+            // --- TEST İÇİN BU SATIRI EKLEDİM ---
+            adminButtons += '<span class="text-red-500 font-bold ml-2"> [ADMİN TEST] </span>';
+        }
+        
+        // Switch case (mesaj oluşturma) kısmı aynı kaldığı için buraya eklemedim, dosyanızda kalsın...
+        switch (activity.type) {
+            case 'seasonReset':
+                message = `${userHtml}, Tıkla-Yakala sezonunu bitirdi ve <span class="text-yellow-200 font-bold">${details.prize}</span> ödül kazandı. Herkese <span class="text-green-300 font-bold">+${details.ticketGift} Bilet</span> hediye edildi!`;
+                break;
+            case 'openBox':
+                let openBoxMultiplierText = (details.multiplier && details.multiplier > 1) ? ` <span class="text-xs text-purple-400">(${details.multiplier}x çarpan kullandı)</span>` : ` <span class="text-xs text-gray-500">(Çarpan kullanılmadı)</span>`;
+                message = `${userHtml}, <b>${details.boxId}</b> numaralı kutudan <span class="text-green-300 font-bold">+${details.points} Puan</span> kazandı${openBoxMultiplierText}.`;
+                break;
+            case 'iflas':
+                let iflasMultiplierText = (details.multiplier && details.multiplier > 1) ? ` <span class="text-xs text-purple-400">(${details.multiplier}x çarpan kullandı)</span>` : ` <span class="text-xs text-gray-500">(Çarpan kullanılmadı)</span>`;
+                message = details.shieldUsed ? `${userHtml}, <b>${details.boxId}</b> numaralı kutudan bomba buldu ama kalkanı korudu${iflasMultiplierText}.` : `${userHtml}, <b>${details.boxId}</b> numaralı kutudan bomba buldu ve <span class="text-red-400 font-bold">-${details.lostPoints} Puan</span> kaybetti${iflasMultiplierText}.`;
+                break;
+            case 'surpriseBox':
+                let surpriseMultiplierText = (details.multiplier && details.multiplier > 1) ? ` <span class="text-xs text-purple-400">(${details.multiplier}x çarpan kullandı)</span>` : ` <span class="text-xs text-gray-500">(Çarpan kullanılmadı)</span>`;
+                const source = details.boxId === 'Çark' ? 'Şans Çarkı\'ndan' : `<b>${details.boxId}</b> numaralı kutudan`;
+                message = `${userHtml}, ${source} Sürpriz Kutu buldu ve <span class="text-green-300 font-bold">+${details.points} Puan</span> kazandı${surpriseMultiplierText}!`;
+                break;
+            case 'multiplierFound':
+                message = `${userHtml}, <b>${details.boxId}</b> numaralı kutudan <span class="text-purple-300 font-bold">${details.value}x Çarpan</span> buldu.`;
+                break;
+            case 'multiplierRefund':
+                 message = `${userHtml}, <b>${details.boxId}</b> numaralı kutudan <span class="text-purple-300 font-bold">${details.newMultiplier}x Çarpan</span> buldu ve mağaza çarpanı iade edildi.`;
+                break;
+            case 'newItemFound':
+                 let newItemMultiplierText = (details.multiplier && details.multiplier > 1) ? ` <span class="text-xs text-purple-400">(${details.multiplier}x çarpan kullandı)</span>` : ` <span class="text-xs text-gray-500">(Çarpan kullanılmadı)</span>`;
+                message = `${userHtml}, <b>${details.boxId}</b> numaralı kutudan <span class="text-cyan-300 font-bold">${details.itemName}</span> buldu${newItemMultiplierText}.`;
+                break;
+            case 'buyItem':
+                 const typeToName = { points: 'Puan', boxRights: 'Kutu Hakkı', iflasShield: 'İflas Kalkanı', wheelTicket: 'Çark Bileti', clickCatchTicket: 'Tıkla-Yakala Bileti', tempMultiplier: 'Çarpan' };
+                 let purchasedItemText = '';
+                 if (details.itemType === 'tempMultiplier') { purchasedItemText = `<span class="text-indigo-300 font-bold">${details.itemDuration} Adet ${details.itemValue}x Çarpan</span>`; } 
+                 else if (details.itemValue) { const itemName = typeToName[details.itemType] || details.itemName; purchasedItemText = `<span class="text-indigo-300 font-bold">+${details.itemValue} ${itemName}</span>`; } 
+                 else { purchasedItemText = `<span class="text-indigo-300 font-bold">${details.itemName}</span>`; }
+                 message = `${userHtml}, <span class="text-red-400 font-bold">-${details.itemCost} Puan</span> harcayarak mağazadan ${purchasedItemText} aldı.`;
+                 break;
+             case 'spinWheel':
+                if (details.type === 'pas') { message = `${userHtml}, çarkı çevirdi ve <span class="text-gray-400 font-bold">Pas</span> geçti.`; } 
+                else { message = `${userHtml}, çarkı çevirerek <span class="text-pink-300 font-bold">${details.result}</span> kazandı.`; }
+                break;
+             case 'clickCatchSolo':
+                if (details.score > 0) { message = `${userHtml}, Tıkla-Yakala oynadı ve <span class="text-green-300 font-bold">+${details.score} Puan</span> topladı.`; } 
+                else if (details.score < 0) { message = `${userHtml}, Tıkla-Yakala oynadı ve <span class="text-red-400 font-bold">${details.score} Puan</span> kaybetti.`; } 
+                else { message = `${userHtml}, Tıkla-Yakala oynadı ancak puan kazanamadı.`; }
+                if (details.specialItems && details.specialItems.length > 0) { message += ` Ayrıca, <span class="text-cyan-300 font-bold">${details.specialItems.join(', ')}</span> kazandı.`; }
+                break;
+             case 'clickCatchLobby':
+                message = `${userHtml}, lobi oyununu kazanarak <span class="text-yellow-300 font-bold">+${details.prize} Puan</span> ödül aldı!`;
+                break;
+            case 'dailyReward':
+                const rewardTypeToName = { points: 'Puan', boxRights: 'Kutu Hakkı', iflasShield: 'İflas Kalkanı', wheelTicket: 'Çark Bileti', clickCatchTicket: 'Tıkla-Yakala Bileti', tempMultiplier: 'Çarpan' };
+                let rewardText = '';
+                if (details.rewardType === 'tempMultiplier') { rewardText = `${details.rewardUses} adet ${details.rewardValue}x Çarpan`; } 
+                else { rewardText = `+${details.rewardValue} ${rewardTypeToName[details.rewardType] || details.rewardName}`; }
+                message = `${userHtml}, günlük ödül olarak <span class="text-teal-300 font-bold">${rewardText}</span> aldı.`;
+                break;
+            case 'surpriseBoxTimeout':
+                message = `${userHtml}, Sürpriz Kutu şansını süre dolduğu için kaçırdı.`;
+                break;
+            default:
+                message = `${userHtml} bir eylem gerçekleştirdi. (Tip: ${activity.type})`;
+                break;
+        }
+
+
+        const activityHtml = `
+            <div class="bg-gray-800/70 p-3 rounded-xl flex items-center gap-4 border border-gray-700/50 hover:border-gray-600 transition-all duration-200 ${isPinned ? 'pinned-activity' : ''}">
+                ${getActivityIcon(activity.type, details)}
+                <div class="flex-1 min-w-0">
+                    <p class="text-gray-200 text-sm leading-relaxed">${message}</p>
+                    <div class="flex justify-between items-center mt-1">
+                        <span class="text-xs text-gray-500">${timeAgo}</span>
+                        ${adminButtons}
+                    </div>
+                </div>
+            </div>`;
+        
+        if (isPinned) {
+            pinnedHtml += activityHtml;
+        } else {
+            otherHtml += `<div class="mb-3">${activityHtml}</div>`;
+        }
+    });
+
+    let finalHtml = '';
+    if (pinnedHtml) {
+        finalHtml += `<div class="mb-4">${pinnedHtml}</div><hr class="border-yellow-500 border-2 rounded-full mb-4">`;
+    }
+    finalHtml += otherHtml;
+    
+    activityFeedList.innerHTML += finalHtml;
+}
 
 function renderActivityFeed(activities) {
     const activityFeedList = document.getElementById('activityFeedList');
