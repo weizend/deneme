@@ -9316,6 +9316,30 @@ async function executeSeasonReset(isManual = false) {
     closeSeasonManagementModal();
 }
 
+    // --- YENİ EKLENECEK FONKSİYON BAŞLANGICI ---
+
+async function stopSeasonCountdown() {
+    if (!isAdmin) return; // Sadece adminin kullanabildiğinden emin ol.
+
+    const confirmed = await customConfirm("Mevcut otomatik sezon sonu geri sayımını durdurmak ve ayarları silmek istediğinizden emin misiniz?");
+    if (!confirmed) return; // Kullanıcı "Hayır" derse işlemi iptal et.
+
+    try {
+        // Geri sayımı ve ayarları kontrol eden veritabanı yollarını sil.
+        await db.ref('gameConfig/seasonEndDate').remove();
+        await db.ref('gameConfig/seasonSettings').remove();
+
+        displayMessage("Otomatik sezon sıfırlama başarıyla iptal edildi. Geri sayım durduruldu.");
+        closeSeasonManagementModal(); // İşlem bittikten sonra pencereyi kapat.
+
+    } catch (error) {
+        console.error("Sezon sayacı durdurulurken hata:", error);
+        displayMessage("Geri sayım iptal edilirken bir hata oluştu. Lütfen konsolu kontrol edin.");
+    }
+}
+
+// --- YENİ EKLENECEK FONKSİYON SONU ---
+
 // Oyuncular için kalıcı duyuru sistemini dinler
 let currentPersistentAnnId = null;
 function listenForPersistentAnnouncement() {
