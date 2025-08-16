@@ -1312,173 +1312,99 @@ body.modal-open .modal-content {
         <button class="modal-close-button" onclick="closeSoloGameSettingsModal()">&times;</button>
         <h3 class="text-purple-300 text-3xl font-bold mb-6 text-center">Tıkla-Yakala Yönetim Paneli</h3>
         <div class="flex-grow overflow-y-auto scrollable-list pr-4">
-            
             <h4 class="text-lg font-semibold text-yellow-300 mb-3 text-center">Tekli Oyun Ayarları</h4>
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4 bg-gray-900 p-4 rounded-lg border border-gray-700">
-                <div>
-                    <h5 class="font-semibold text-gray-300 mb-2">Süre ve Görünüm</h5>
-                    <label for="soloGameDuration" class="block text-sm font-medium text-gray-400">Oyun Süresi (saniye)</label>
-                    <input type="number" id="soloGameDuration" class="box-setting-input mt-1 mb-3">
-                    <label for="soloItemInterval" class="block text-sm font-medium text-gray-400">Yeni Hedef Sıklığı (ms)</label>
-                    <input type="number" id="soloItemInterval" class="box-setting-input mt-1 mb-3">
-                    <label for="soloItemDisappearTime" class="block text-sm font-medium text-gray-400">Hedef Kaybolma Süresi (ms)</label>
-                    <input type="number" id="soloItemDisappearTime" class="box-setting-input mt-1">
-                </div>
-                <div>
-                     <h5 class="font-semibold text-gray-300 mb-2">Puan Değerleri</h5>
-                    <label for="soloNormalValue" class="block text-sm font-medium text-gray-400">Düşük Skor (🥮)</label>
-                    <input type="number" id="soloNormalValue" class="box-setting-input mt-1 mb-3">
-                    <label for="soloGoldValue" class="block text-sm font-medium text-gray-400">Yüksek Skor (💰)</label>
-                    <input type="number" id="soloGoldValue" class="box-setting-input mt-1 mb-3">
-                    <label for="soloBombValue" class="block text-sm font-medium text-gray-400">Bomba Cezası (💣)</label>
-                    <input type="number" id="soloBombValue" class="box-setting-input mt-1 mb-3">
-                    <label for="soloTimeValue" class="block text-sm font-medium text-gray-400">Süre Bonusu (⏰)</label>
-                    <input type="number" id="soloTimeValue" class="box-setting-input mt-1">
-                </div>
-                <div class="col-span-1 md:col-span-2">
-                    <h5 class="font-semibold text-gray-300 mb-2">Çıkma İhtimalleri (Toplamı 100 olmalı)</h5>
-                    <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
-                        <div>
-                            <label for="soloNormalChance" class="block text-sm font-medium text-gray-400">🥮 (%)</label>
-                            <input type="number" id="soloNormalChance" class="box-setting-input mt-1">
-                        </div>
-                        <div>
-                            <label for="soloGoldChance" class="block text-sm font-medium text-gray-400">💰 (%)</label>
-                            <input type="number" id="soloGoldChance" class="box-setting-input mt-1">
-                        </div>
-                        <div>
-                            <label for="soloBombChance" class="block text-sm font-medium text-gray-400">💣 (%)</label>
-                            <input type="number" id="soloBombChance" class="box-setting-input mt-1">
-                        </div>
-                        <div>
-                            <label for="soloTimeChance" class="block text-sm font-medium text-gray-400">⏰ (%)</label>
-                            <input type="number" id="soloTimeChance" class="box-setting-input mt-1">
-                        </div>
-                         <div>
-                            <label for="soloSpecialChance" class="block text-sm font-medium text-gray-400">🎁 (%)</label>
-                            <input type="number" id="soloSpecialChance" class="box-setting-input mt-1">
-                        </div>
+            <div class="bg-gray-900 p-4 rounded-lg border border-gray-700">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
+                    <div>
+                        <h5 class="font-semibold text-gray-300 mb-2">Süre ve Görünüm</h5>
+                        <label for="soloGameDuration" class="block text-sm font-medium text-gray-400">Oyun Süresi (saniye)</label>
+                        <input type="number" id="soloGameDuration" class="box-setting-input mt-1 mb-3">
+                        <label for="soloItemInterval" class="block text-sm font-medium text-gray-400">Yeni Hedef Sıklığı (ms)</label>
+                        <input type="number" id="soloItemInterval" class="box-setting-input mt-1 mb-3">
+                        <label for="soloItemDisappearTime" class="block text-sm font-medium text-gray-400">Hedef Kaybolma Süresi (ms)</label>
+                        <input type="number" id="soloItemDisappearTime" class="box-setting-input mt-1">
+                    </div>
+                    <div>
+                        <h5 class="font-semibold text-gray-300 mb-2">Puan Değerleri</h5>
+                        <label for="soloNormalValue" class="block text-sm font-medium text-gray-400">Düşük Skor (🥮)</label>
+                        <input type="number" id="soloNormalValue" class="box-setting-input mt-1 mb-3">
+                        <label for="soloGoldValue" class="block text-sm font-medium text-gray-400">Yüksek Skor (💰)</label>
+                        <input type="number" id="soloGoldValue" class="box-setting-input mt-1 mb-3">
+                        <label for="soloBombValue" class="block text-sm font-medium text-gray-400">Bomba Cezası (💣)</label>
+                        <input type="number" id="soloBombValue" class="box-setting-input mt-1 mb-3">
+                        <label for="soloTimeValue" class="block text-sm font-medium text-gray-400">Süre Bonusu (⏰)</label>
+                        <input type="number" id="soloTimeValue" class="box-setting-input mt-1">
                     </div>
                 </div>
-                <div class="col-span-1 md:col-span-2">
-                    <h5 class="font-semibold text-gray-300 mb-2">Çıkacak Özel Hedef</h5>
-                    <div class="grid grid-cols-2 gap-4">
-                        <select id="soloSpecialItemType" class="box-setting-input">
-                            <option value="boxRight">Kutu Hakkı (📦)</option>
-                            <option value="iflasShield">İflas Kalkanı (🛡️)</option>
-                            <option value="wheelTicket">Çark Bileti (🎫️)</option>
-                        </select>
-                        <input type="number" id="soloSpecialValue" class="box-setting-input" placeholder="Adet (örn: 1, 5)">
+            </div>
+
+            <div class="bg-gray-900 p-4 rounded-lg border border-gray-700 mt-4">
+                <h5 class="font-semibold text-gray-300 mb-2">Çıkma İhtimalleri (Toplamı 100 olmalı)</h5>
+                <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
+                    <div>
+                        <label for="soloNormalChance" class="block text-sm font-medium text-gray-400">🥮 (%)</label>
+                        <input type="number" id="soloNormalChance" class="box-setting-input mt-1">
                     </div>
+                    <div>
+                        <label for="soloGoldChance" class="block text-sm font-medium text-gray-400">💰 (%)</label>
+                        <input type="number" id="soloGoldChance" class="box-setting-input mt-1">
+                    </div>
+                    <div>
+                        <label for="soloBombChance" class="block text-sm font-medium text-gray-400">💣 (%)</label>
+                        <input type="number" id="soloBombChance" class="box-setting-input mt-1">
+                    </div>
+                    <div>
+                        <label for="soloTimeChance" class="block text-sm font-medium text-gray-400">⏰ (%)</label>
+                        <input type="number" id="soloTimeChance" class="box-setting-input mt-1">
+                    </div>
+                    <div>
+                        <label for="soloSpecialChance" class="block text-sm font-medium text-gray-400">🎁 (%)</label>
+                        <input type="number" id="soloSpecialChance" class="box-setting-input mt-1">
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-gray-900 p-4 rounded-lg border border-gray-700 mt-4">
+                <h5 class="font-semibold text-gray-300 mb-2">Çıkacak Özel Hedef</h5>
+                <div class="grid grid-cols-2 gap-4">
+                    <select id="soloSpecialItemType" class="box-setting-input">
+                        <option value="boxRight">Kutu Hakkı (📦)</option>
+                        <option value="iflasShield">İflas Kalkanı (🛡️)</option>
+                        <option value="wheelTicket">Çark Bileti (🎫️)</option>
+                    </select>
+                    <input type="number" id="soloSpecialValue" class="box-setting-input" placeholder="Adet (örn: 1, 5)">
                 </div>
             </div>
             
             <div class="mt-4">
                 <button onclick="saveSoloGameSettings()" class="w-full py-2 bg-green-700 hover:bg-green-600 text-white font-bold rounded-lg shadow-md">Tekli Oyun Ayarlarını Kaydet</button>
             </div>
-
-            <div class="mt-6 pt-4 border-t-2 border-dashed border-purple-400">
-                <h4 class="text-lg font-semibold text-purple-300 mb-3 text-center">🏆 Haftalık Otomatik Sıfırlama Yönetimi</h4>
-                <div class="bg-gray-900 p-4 rounded-lg border border-gray-700 space-y-4">
-                    <div>
-                        <label for="weeklyResetEndDateInput" class="block text-sm font-medium text-gray-300 mb-1">Haftalık Sıfırlama Bitiş Tarihi ve Saati:</label>
-                        <input type="datetime-local" id="weeklyResetEndDateInput" class="box-setting-input">
+        </div>
+        
+        <div class="mt-6 pt-4 border-t-2 border-dashed border-purple-400">
+            <h4 class="text-lg font-semibold text-purple-300 mb-3 text-center">🏆 Haftalık Otomatik Sıfırlama Yönetimi</h4>
+            <div class="bg-gray-900 p-4 rounded-lg border border-gray-700 space-y-4">
+                <div>
+                    <label for="weeklyResetEndDateInput" class="block text-sm font-medium text-gray-300 mb-1">Haftalık Sıfırlama Bitiş Tarihi ve Saati:</label>
+                    <input type="datetime-local" id="weeklyResetEndDateInput" class="box-setting-input">
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-gray-300 mb-1">Şampiyon Ödülü:</label>
+                    <div class="grid grid-cols-2 gap-4">
+                        <select id="weeklyPrizeType" class="box-setting-input">
+                            <option value="points">Puan</option>
+                            <option value="boxRights">Kutu Hakkı</option>
+                            <option value="wheelTicket">Çark Bileti</option>
+                            <option value="iflasShield">İflas Kalkanı</option>
+                        </select>
+                        <input type="number" id="weeklyPrizeAmount" class="box-setting-input" value="1000" min="1" placeholder="Miktar">
                     </div>
-                    <div>
-                        <label class="block text-sm font-medium text-gray-300 mb-1">Şampiyon Ödülü:</label>
-                        <div class="grid grid-cols-2 gap-4">
-                            <select id="weeklyPrizeType" class="box-setting-input">
-                                <option value="points">Puan</option>
-                                <option value="boxRights">Kutu Hakkı</option>
-                                <option value="wheelTicket">Çark Bileti</option>
-                                <option value="iflasShield">İflas Kalkanı</option>
-                            </select>
-                            <input type="number" id="weeklyPrizeAmount" class="box-setting-input" value="1000" min="1" placeholder="Miktar">
-                        </div>
-                    </div>
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
-                         <button onclick="saveWeeklyResetSettings()" class="w-full py-2 bg-purple-700 hover:bg-purple-600 text-white font-bold rounded-lg shadow-md">Haftalık Geri Sayımı Başlat/Kaydet</button>
-                         <button onclick="stopWeeklyReset()" class="w-full py-2 bg-orange-700 hover:bg-orange-600 text-white font-bold rounded-lg shadow-md">Geri Sayımı İptal Et</button>
-                    </div>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+                     <button onclick="saveWeeklyResetSettings()" class="w-full py-2 bg-purple-700 hover:bg-purple-600 text-white font-bold rounded-lg shadow-md">Haftalık Geri Sayımı Başlat/Kaydet</button>
+                     <button onclick="stopWeeklyReset()" class="w-full py-2 bg-orange-700 hover:bg-orange-600 text-white font-bold rounded-lg shadow-md">Geri Sayımı İptal Et</button>
                 </div>
             </div>
-        </div>
-    </div>
-</div>
-
-<div id="selectWinnerPrizeModal" class="modal-overlay fixed inset-0 bg-black bg-opacity-70 flex justify-center items-center z-[10000] hidden">
-  <div class="modal-content bg-gray-800 p-8 rounded-xl shadow-2xl border border-green-500 w-11/12 max-w-lg text-left relative">
-    <button class="modal-close-button" onclick="closeSelectWinnerModal()">&times;</button>
-    <h3 class="text-green-300 text-3xl font-bold mb-6 text-center">Haftanın Kazananını Ödüllendir</h3>
-    <div id="winnerInfoForAdmin" class="bg-gray-900 p-4 rounded-lg border border-gray-700 mb-4 text-center">
-      <p class="text-gray-400">Lider bilgisi yükleniyor...</p>
-    </div>
-    <div class="space-y-4">
-      <div>
-        <label for="prizeType" class="block text-sm font-medium text-gray-300 mb-1">Ödül Türü:</label>
-        <select id="prizeType" class="box-setting-input">
-          <option value="boxRights">Kutu Hakkı</option>
-          <option value="points">Puan</option>
-          <option value="wheelTicket">Çark Bileti</option>
-          <option value="iflasShield">İflas Kalkanı</option>
-        </select>
-      </div>
-      <div>
-        <label for="prizeAmount" class="block text-sm font-medium text-gray-300 mb-1">Miktar:</label>
-        <input type="number" id="prizeAmount" class="box-setting-input" value="1" min="1">
-      </div>
-    </div>
-    <div class="mt-6 pt-4 border-t border-gray-700">
-      <button onclick="confirmAndAwardPrize()" class="w-full py-3 bg-green-700 hover:bg-green-600 text-white font-bold rounded-lg shadow-md">
-        Ödülü Ver ve Haftayı Sıfırla
-      </button>
-    </div>
-  </div>
-</div>
-
-                <div class="bg-gray-900 p-4 rounded-lg border border-gray-700 col-span-1 md:col-span-2">
-                    <h4 class="text-lg font-semibold text-yellow-300 mb-3">Çıkma İhtimalleri (Toplamı 100 olmalı)</h4>
-                    <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
-                        <div>
-                            <label for="soloNormalChance" class="block text-sm font-medium text-gray-300">🥮 (%)</label>
-                            <input type="number" id="soloNormalChance" class="box-setting-input mt-1">
-                        </div>
-                        <div>
-                            <label for="soloGoldChance" class="block text-sm font-medium text-gray-300">💰 (%)</label>
-                            <input type="number" id="soloGoldChance" class="box-setting-input mt-1">
-                        </div>
-                        <div>
-                            <label for="soloBombChance" class="block text-sm font-medium text-gray-300">💣 (%)</label>
-                            <input type="number" id="soloBombChance" class="box-setting-input mt-1">
-                        </div>
-                        <div>
-                            <label for="soloTimeChance" class="block text-sm font-medium text-gray-300">⏰ (%)</label>
-                            <input type="number" id="soloTimeChance" class="box-setting-input mt-1">
-                        </div>
-                         <div>
-                            <label for="soloSpecialChance" class="block text-sm font-medium text-gray-300">📦🛡️🎫️ (%)</label>
-                            <input type="number" id="soloSpecialChance" class="box-setting-input mt-1">
-                        </div>
-                    </div>
-                </div>
-
-                <div class="bg-gray-900 p-4 rounded-lg border border-gray-700 col-span-1 md:col-span-2">
-                    <label for="soloSpecialItemType" class="block text-sm font-medium text-gray-300 mb-2">Çıkacak Özel Hedef Türü</label>
-                    <select id="soloSpecialItemType" class="box-setting-input">
-                        <option value="boxRight">Kutu Hakkı (📦)</option>
-                        <option value="iflasShield">İflas Kalkanı (🛡️)</option>
-                        <option value="wheelTicket">Çark Bileti (🎫️)</option>
-                    </select>
-                    <div>
-    <label for="soloSpecialValue" class="block text-sm font-medium text-gray-300">Özel Hedef Miktarı</label>
-    <input type="number" id="soloSpecialValue" class="box-setting-input mt-1" placeholder="Adet (örn: 1, 2, 5)">
-</div>
-                </div>
-            </div>
-        </div>
-        <div class="mt-6 pt-4 border-t border-gray-700">
-            <button onclick="saveSoloGameSettings()" class="w-full py-3 bg-green-700 hover:bg-green-600 text-white font-bold rounded-lg shadow-md">Ayarları Kaydet</button>
-            <button onclick="openSelectWinnerModal()" class="w-full mt-4 py-3 bg-yellow-600 hover:bg-yellow-500 text-white font-bold rounded-lg shadow-md">Haftanın Kazananını Seç</button>
         </div>
     </div>
 </div>
