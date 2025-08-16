@@ -569,10 +569,15 @@ body.modal-open .modal-content {
             </div>
     
             <div class="tableBox bg-gray-800 p-6 rounded-xl shadow-lg border border-red-700 w-full md:flex-1 min-w-[280px] mt-6 mx-auto max-w-2xl">
-              <h3 class="text-yellow-400 text-xl font-bold border-b border-gray-600 pb-3 mb-4">TIKLA-YAKALA HAFTALIK SKOR SIRALAMASI 🎯</h3>
-              <input type="text" id="searchClickCatchRanking" oninput="loadClickCatchRankings()" placeholder="Sıralamada Kullanıcı Ara..." class="w-full p-3 mb-4 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500 transition duration-300">
-              <div id="clickCatchRankings" class="scrollable-list max-h-80 overflow-y-auto border border-gray-600 rounded-lg p-3 bg-gray-900 text-sm leading-relaxed">Yükleniyor...</div>
-            </div>
+    <h3 class="text-yellow-400 text-xl font-bold border-b border-gray-600 pb-3 mb-4">TIKLA-YAKALA HAFTALIK SKOR SIRALAMASI 🎯</h3>
+    <input type="text" id="searchClickCatchRanking" oninput="loadClickCatchRankings()" placeholder="Sıralamada Kullanıcı Ara..." class="w-full p-3 mb-4 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500 transition duration-300">
+    
+    <div id="weeklyResetCountdownContainer" class="hidden text-center bg-purple-900/50 border border-purple-400 text-purple-200 p-3 rounded-lg mb-4">
+        Haftalık Liderin Belirlenmesine: <span id="weeklyResetCountdown" class="font-bold text-white tracking-wider"></span>
+    </div>
+
+    <div id="clickCatchRankings" class="scrollable-list max-h-80 overflow-y-auto border border-gray-600 rounded-lg p-3 bg-gray-900 text-sm leading-relaxed">Yükleniyor...</div>
+</div>
         
         </div>
             
@@ -1305,45 +1310,109 @@ body.modal-open .modal-content {
   <div id="soloGameSettingsModal" class="modal-overlay fixed inset-0 bg-black bg-opacity-70 flex justify-center items-center z-[9999] hidden">
     <div class="modal-content bg-gray-800 p-8 rounded-xl shadow-2xl border border-purple-500 w-11/12 max-w-3xl text-left relative max-h-[90vh] flex flex-col">
         <button class="modal-close-button" onclick="closeSoloGameSettingsModal()">&times;</button>
-        <h3 class="text-purple-300 text-3xl font-bold mb-6 text-center">Tekli Oyun Ayarları</h3>
+        <h3 class="text-purple-300 text-3xl font-bold mb-6 text-center">Tıkla-Yakala Yönetim Paneli</h3>
         <div class="flex-grow overflow-y-auto scrollable-list pr-4">
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
-                
-                <div class="bg-gray-900 p-4 rounded-lg border border-gray-700">
-                    <h4 class="text-lg font-semibold text-yellow-300 mb-3">Süre ve Görünüm</h4>
-                    <label for="soloGameDuration" class="block text-sm font-medium text-gray-300">Oyun Süresi (saniye)</label>
+            
+            <h4 class="text-lg font-semibold text-yellow-300 mb-3 text-center">Tekli Oyun Ayarları</h4>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4 bg-gray-900 p-4 rounded-lg border border-gray-700">
+                <div>
+                    <h5 class="font-semibold text-gray-300 mb-2">Süre ve Görünüm</h5>
+                    <label for="soloGameDuration" class="block text-sm font-medium text-gray-400">Oyun Süresi (saniye)</label>
                     <input type="number" id="soloGameDuration" class="box-setting-input mt-1 mb-3">
-                    
-                    <label for="soloItemInterval" class="block text-sm font-medium text-gray-300">Yeni Hedef Çıkma Sıklığı (milisaniye)</label>
+                    <label for="soloItemInterval" class="block text-sm font-medium text-gray-400">Yeni Hedef Sıklığı (ms)</label>
                     <input type="number" id="soloItemInterval" class="box-setting-input mt-1 mb-3">
-
-                    <label for="soloItemDisappearTime" class="block text-sm font-medium text-gray-300">Hedefin Kaybolma Süresi (milisaniye)</label>
+                    <label for="soloItemDisappearTime" class="block text-sm font-medium text-gray-400">Hedef Kaybolma Süresi (ms)</label>
                     <input type="number" id="soloItemDisappearTime" class="box-setting-input mt-1">
                 </div>
-
-                <div class="bg-gray-900 p-4 rounded-lg border border-gray-700">
-                     <h4 class="text-lg font-semibold text-yellow-300 mb-3">Puan Değerleri</h4>
-                    <label for="soloNormalValue" class="block text-sm font-medium text-gray-300">Düşük Skor (🥮)</label>
+                <div>
+                     <h5 class="font-semibold text-gray-300 mb-2">Puan Değerleri</h5>
+                    <label for="soloNormalValue" class="block text-sm font-medium text-gray-400">Düşük Skor (🥮)</label>
                     <input type="number" id="soloNormalValue" class="box-setting-input mt-1 mb-3">
-                    
-                    <label for="soloGoldValue" class="block text-sm font-medium text-gray-300">Yüksek Skor (💰)</label>
+                    <label for="soloGoldValue" class="block text-sm font-medium text-gray-400">Yüksek Skor (💰)</label>
                     <input type="number" id="soloGoldValue" class="box-setting-input mt-1 mb-3">
-
-                    <label for="soloBombValue" class="block text-sm font-medium text-gray-300">Bomba Cezası (💣)</label>
+                    <label for="soloBombValue" class="block text-sm font-medium text-gray-400">Bomba Cezası (💣)</label>
                     <input type="number" id="soloBombValue" class="box-setting-input mt-1 mb-3">
-                    
-                    <label for="soloTimeValue" class="block text-sm font-medium text-gray-300">Süre Bonusu (⏰)</label>
+                    <label for="soloTimeValue" class="block text-sm font-medium text-gray-400">Süre Bonusu (⏰)</label>
                     <input type="number" id="soloTimeValue" class="box-setting-input mt-1">
                 </div>
-                <div id="selectWinnerPrizeModal" class="modal-overlay fixed inset-0 bg-black bg-opacity-70 flex justify-center items-center z-[10000] hidden">
+                <div class="col-span-1 md:col-span-2">
+                    <h5 class="font-semibold text-gray-300 mb-2">Çıkma İhtimalleri (Toplamı 100 olmalı)</h5>
+                    <div class="grid grid-cols-2 md:grid-cols-5 gap-4">
+                        <div>
+                            <label for="soloNormalChance" class="block text-sm font-medium text-gray-400">🥮 (%)</label>
+                            <input type="number" id="soloNormalChance" class="box-setting-input mt-1">
+                        </div>
+                        <div>
+                            <label for="soloGoldChance" class="block text-sm font-medium text-gray-400">💰 (%)</label>
+                            <input type="number" id="soloGoldChance" class="box-setting-input mt-1">
+                        </div>
+                        <div>
+                            <label for="soloBombChance" class="block text-sm font-medium text-gray-400">💣 (%)</label>
+                            <input type="number" id="soloBombChance" class="box-setting-input mt-1">
+                        </div>
+                        <div>
+                            <label for="soloTimeChance" class="block text-sm font-medium text-gray-400">⏰ (%)</label>
+                            <input type="number" id="soloTimeChance" class="box-setting-input mt-1">
+                        </div>
+                         <div>
+                            <label for="soloSpecialChance" class="block text-sm font-medium text-gray-400">🎁 (%)</label>
+                            <input type="number" id="soloSpecialChance" class="box-setting-input mt-1">
+                        </div>
+                    </div>
+                </div>
+                <div class="col-span-1 md:col-span-2">
+                    <h5 class="font-semibold text-gray-300 mb-2">Çıkacak Özel Hedef</h5>
+                    <div class="grid grid-cols-2 gap-4">
+                        <select id="soloSpecialItemType" class="box-setting-input">
+                            <option value="boxRight">Kutu Hakkı (📦)</option>
+                            <option value="iflasShield">İflas Kalkanı (🛡️)</option>
+                            <option value="wheelTicket">Çark Bileti (🎫️)</option>
+                        </select>
+                        <input type="number" id="soloSpecialValue" class="box-setting-input" placeholder="Adet (örn: 1, 5)">
+                    </div>
+                </div>
+            </div>
+            
+            <div class="mt-4">
+                <button onclick="saveSoloGameSettings()" class="w-full py-2 bg-green-700 hover:bg-green-600 text-white font-bold rounded-lg shadow-md">Tekli Oyun Ayarlarını Kaydet</button>
+            </div>
+
+            <div class="mt-6 pt-4 border-t-2 border-dashed border-purple-400">
+                <h4 class="text-lg font-semibold text-purple-300 mb-3 text-center">🏆 Haftalık Otomatik Sıfırlama Yönetimi</h4>
+                <div class="bg-gray-900 p-4 rounded-lg border border-gray-700 space-y-4">
+                    <div>
+                        <label for="weeklyResetEndDateInput" class="block text-sm font-medium text-gray-300 mb-1">Haftalık Sıfırlama Bitiş Tarihi ve Saati:</label>
+                        <input type="datetime-local" id="weeklyResetEndDateInput" class="box-setting-input">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-gray-300 mb-1">Şampiyon Ödülü:</label>
+                        <div class="grid grid-cols-2 gap-4">
+                            <select id="weeklyPrizeType" class="box-setting-input">
+                                <option value="points">Puan</option>
+                                <option value="boxRights">Kutu Hakkı</option>
+                                <option value="wheelTicket">Çark Bileti</option>
+                                <option value="iflasShield">İflas Kalkanı</option>
+                            </select>
+                            <input type="number" id="weeklyPrizeAmount" class="box-setting-input" value="1000" min="1" placeholder="Miktar">
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+                         <button onclick="saveWeeklyResetSettings()" class="w-full py-2 bg-purple-700 hover:bg-purple-600 text-white font-bold rounded-lg shadow-md">Haftalık Geri Sayımı Başlat/Kaydet</button>
+                         <button onclick="stopWeeklyReset()" class="w-full py-2 bg-orange-700 hover:bg-orange-600 text-white font-bold rounded-lg shadow-md">Geri Sayımı İptal Et</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="selectWinnerPrizeModal" class="modal-overlay fixed inset-0 bg-black bg-opacity-70 flex justify-center items-center z-[10000] hidden">
   <div class="modal-content bg-gray-800 p-8 rounded-xl shadow-2xl border border-green-500 w-11/12 max-w-lg text-left relative">
     <button class="modal-close-button" onclick="closeSelectWinnerModal()">&times;</button>
     <h3 class="text-green-300 text-3xl font-bold mb-6 text-center">Haftanın Kazananını Ödüllendir</h3>
-    
     <div id="winnerInfoForAdmin" class="bg-gray-900 p-4 rounded-lg border border-gray-700 mb-4 text-center">
       <p class="text-gray-400">Lider bilgisi yükleniyor...</p>
     </div>
-
     <div class="space-y-4">
       <div>
         <label for="prizeType" class="block text-sm font-medium text-gray-300 mb-1">Ödül Türü:</label>
@@ -1359,7 +1428,6 @@ body.modal-open .modal-content {
         <input type="number" id="prizeAmount" class="box-setting-input" value="1" min="1">
       </div>
     </div>
-    
     <div class="mt-6 pt-4 border-t border-gray-700">
       <button onclick="confirmAndAwardPrize()" class="w-full py-3 bg-green-700 hover:bg-green-600 text-white font-bold rounded-lg shadow-md">
         Ödülü Ver ve Haftayı Sıfırla
@@ -2237,10 +2305,175 @@ auth.onAuthStateChanged(user => {
   }
 });
 
-  // DEĞİŞTİRİLECEK FONKSİYON
-// MEVCUT afterLogin FONKSİYONUNU SİLİP BUNU YAPIŞTIRIN
+async function saveWeeklyResetSettings() {
+    if (!isAdmin) return;
 
-async function afterLogin() {
+    const dateInput = document.getElementById('weeklyResetEndDateInput').value;
+    const prizeType = document.getElementById('weeklyPrizeType').value;
+    const prizeAmount = parseInt(document.getElementById('weeklyPrizeAmount').value);
+
+    if (!dateInput || isNaN(prizeAmount) || prizeAmount <= 0) {
+        displayMessage("Lütfen geçerli bir bitiş tarihi ve ödül miktarı girin.");
+        return;
+    }
+    
+    const settings = {
+        endDate: new Date(dateInput).getTime(),
+        prize: {
+            type: prizeType,
+            amount: prizeAmount
+        }
+    };
+    
+    await db.ref('gameConfig/weeklyClickCatchReset').set(settings);
+    
+    displayMessage("Haftalık otomatik sıfırlama ayarları kaydedildi. Geri sayım başlayacak.");
+    closeSoloGameSettingsModal();
+}
+
+async function stopWeeklyReset() {
+    if (!isAdmin) return;
+
+    const confirmed = await customConfirm("Mevcut haftalık geri sayımı durdurmak ve ayarları silmek istediğinizden emin misiniz?");
+    if (!confirmed) return;
+
+    await db.ref('gameConfig/weeklyClickCatchReset').remove();
+    displayMessage("Haftalık otomatik sıfırlama iptal edildi.");
+    closeSoloGameSettingsModal();
+}
+
+function listenForWeeklyCountdown() {
+    const countdownContainer = document.getElementById('weeklyResetCountdownContainer');
+    const countdownEl = document.getElementById('weeklyResetCountdown');
+    const ref = db.ref('gameConfig/weeklyClickCatchReset');
+
+    const callback = snap => {
+        if (weeklyCountdownInterval) clearInterval(weeklyCountdownInterval);
+
+        const settings = snap.val();
+
+        if (!settings || !settings.endDate || settings.endDate < Date.now()) {
+            countdownContainer.classList.add('hidden');
+            return;
+        }
+
+        countdownContainer.classList.remove('hidden');
+
+        const updateTimer = () => {
+            const now = Date.now();
+            const timeLeft = settings.endDate - now;
+
+            if (timeLeft <= 0) {
+                countdownEl.textContent = "HAFTA BİTTİ!";
+                clearInterval(weeklyCountdownInterval);
+                if (isAdmin) { 
+                   executeWeeklyReset();
+                }
+                return;
+            }
+
+            const days = Math.floor(timeLeft / (1000 * 60 * 60 * 24));
+            const hours = Math.floor((timeLeft % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const minutes = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
+            const seconds = Math.floor((timeLeft % (1000 * 60)) / 1000);
+
+            countdownEl.textContent = `${days}g ${hours}s ${minutes}d ${seconds}sn`;
+        };
+
+        updateTimer();
+        weeklyCountdownInterval = setInterval(updateTimer, 1000);
+    };
+
+    if (activeListeners.weeklyCountdown) {
+        activeListeners.weeklyCountdown.ref.off('value', activeListeners.weeklyCountdown.callback);
+    }
+    activeListeners.weeklyCountdown = { ref, event: 'value', callback };
+    ref.on('value', callback);
+}
+
+async function executeWeeklyReset() {
+    if (!isAdmin) return;
+
+    console.log("Haftalık sıfırlama işlemi tetiklendi...");
+
+    // *** ÖNCELİK KONTROLÜ ***
+    const seasonEndDateSnap = await db.ref('gameConfig/seasonEndDate').once('value');
+    if (seasonEndDateSnap.exists()) {
+        const seasonEndDate = seasonEndDateSnap.val();
+        if (seasonEndDate - Date.now() < 5 * 60 * 1000) {
+            console.log("Aylık sezon sıfırlaması yakın. Haftalık sıfırlama atlandı.");
+            await db.ref('gameConfig/weeklyClickCatchReset').remove();
+            return;
+        }
+    }
+
+    const weeklyScoresSnap = await db.ref('clickCatchWeeklyScores').once('value');
+    if (!weeklyScoresSnap.exists()) {
+        console.log("Sıralama boş, sıfırlama işlemi iptal edildi.");
+        await db.ref('gameConfig/weeklyClickCatchReset').remove();
+        return;
+    }
+    
+    const scores = [];
+    weeklyScoresSnap.forEach(child => {
+        scores.push({ username: child.key, score: child.val() });
+    });
+    scores.sort((a, b) => b.score - a.score);
+    
+    const winner = scores[0];
+    const participants = scores.map(s => s.username);
+    
+    const settingsSnap = await db.ref('gameConfig/weeklyClickCatchReset').once('value');
+    const settings = settingsSnap.val();
+    if (!settings || !settings.prize) {
+        console.error("Ödül ayarları bulunamadı, sıfırlama iptal edildi.");
+        return;
+    }
+    const prize = settings.prize;
+    const prizeNames = { boxRights: "Kutu Hakkı", points: "Puan", wheelTicket: "Çark Bileti", iflasShield: "İflas Kalkanı" };
+    const prizeName = prizeNames[prize.type];
+
+    await db.ref('gameStats/weeklyClickCatchWinner').set({
+        winnerName: winner.username,
+        winningScore: winner.score,
+        prizeAwarded: `${prize.amount} ${prizeName}`,
+        timestamp: firebase.database.ServerValue.TIMESTAMP
+    });
+
+    const allUsersSnap = await db.ref('users').once('value');
+    const allUsers = allUsersSnap.val();
+    const updates = {};
+
+    for (const username in allUsers) {
+        if (!allUsers[username].approved) continue;
+        const userPath = `/users/${username}`;
+        if (allUsers[username].clickCatchHighestScore) {
+            updates[`${userPath}/clickCatchHighestScore`] = 0;
+        }
+        if (participants.includes(username)) {
+            updates[`${userPath}/clickCatchTickets`] = (allUsers[username].clickCatchTickets || 0) + 1;
+        }
+        if (username === winner.username) {
+            if (prize.type === 'points') {
+                updates[`${userPath}/balance`] = (allUsers[username].balance || 0) + prize.amount;
+            } else {
+                const prizeKey = prize.type === 'iflasShield' ? 'iflasShieldUses' : prize.type;
+                updates[`${userPath}/${prizeKey}`] = (allUsers[username][prizeKey] || 0) + prize.amount;
+            }
+        }
+    }
+    
+    updates['/clickCatchWeeklyScores'] = null;
+    updates['/gameConfig/weeklyClickCatchReset'] = null;
+    await db.ref().update(updates);
+
+    const notificationMessage = `Tıkla-Yakala haftasının şampiyonu ${winner.username} oldu! Yeni hafta başladı ve tüm katılımcılara +1 bilet hediye edildi!`;
+    db.ref('globalNotifications').push({ message: notificationMessage, timestamp: firebase.database.ServerValue.TIMESTAMP });
+    
+    console.log("Haftalık sıfırlama başarıyla tamamlandı.");
+}
+
+  async function afterLogin() {
     document.getElementById("loginContainer").style.display = "none";
     document.getElementById("gameDiv").style.display = "block";
     
@@ -2279,8 +2512,9 @@ async function afterLogin() {
     initActivityFeed();
     listenForGlobalNotifications();
     listenForLobbyChanges();
-    listenForWeeklyWinner(); // HAFTANIN KAZANANINI DİNLE
+    listenForWeeklyWinner(); 
     listenForSeasonCountdown();
+    listenForWeeklyCountdown(); // YENİ HAFTALIK SAYAÇ LİSTENER'I BURADA ÇAĞIRILIYOR
     listenForPersistentAnnouncement();
     
     if (!isAdmin) {
@@ -2302,6 +2536,7 @@ async function afterLogin() {
         });
     }
 }
+
   function switchStoreTab(tab) {
     const gameStoreContainer = document.getElementById('gameStoreItemsContainer');
     const specialStoreContainer = document.getElementById('specialStoreItemsContainer');
@@ -6599,18 +6834,18 @@ historyRef.orderByChild('timestamp').once('value', (snapshot) => {
     }, 5100);
 }
 
-function openSoloGameSettingsModal() {
-    soloGameSettingsModal.style.display = 'flex';
-}
 function closeSoloGameSettingsModal() {
     soloGameSettingsModal.style.display = 'none';
 }
+
 function openLobbySettingsModal() {
     lobbySettingsModal.style.display = 'flex';
 }
+
 function closeLobbySettingsModal() {
     lobbySettingsModal.style.display = 'none';
 }
+
 // --- YENİ FONKSİYONLAR BİTİŞ ---
   let lobbyGameSettings = {};
   let lobbyListener = null;
@@ -7528,15 +7763,43 @@ async function setWinner(username) {
     }, 5000);
 }
 
-  function openSoloGameSettingsModal() {
-      soloGameSettingsModal.style.display = 'flex';
-  }
+let weeklyCountdownInterval = null
+
+  async function openSoloGameSettingsModal() {
+    // Mevcut tekli oyun ayarlarını yükle
+    await loadSoloGameSettings();
+
+    // Haftalık otomatik sıfırlama ayarlarını yükle
+    const settingsSnap = await db.ref('gameConfig/weeklyClickCatchReset').once('value');
+    if (settingsSnap.exists()) {
+        const settings = settingsSnap.val();
+        if (settings.endDate) {
+            const date = new Date(settings.endDate);
+            date.setMinutes(date.getMinutes() - date.getTimezoneOffset());
+            document.getElementById('weeklyResetEndDateInput').value = date.toISOString().slice(0, 16);
+        }
+        if (settings.prize) {
+            document.getElementById('weeklyPrizeType').value = settings.prize.type || 'points';
+            document.getElementById('weeklyPrizeAmount').value = settings.prize.amount || 1000;
+        }
+    } else {
+        // Eğer ayar yoksa alanları temizle/varsayılana ayarla
+        document.getElementById('weeklyResetEndDateInput').value = '';
+        document.getElementById('weeklyPrizeType').value = 'points';
+        document.getElementById('weeklyPrizeAmount').value = 1000;
+    }
+
+    soloGameSettingsModal.style.display = 'flex';
+}
+  
   function closeSoloGameSettingsModal() {
       soloGameSettingsModal.style.display = 'none';
   }
-  function openLobbySettingsModal() {
-      lobbySettingsModal.style.display = 'flex';
-  }
+  
+  function closeSoloGameSettingsModal() {
+    soloGameSettingsModal.style.display = 'none';
+}
+
   function closeLobbySettingsModal() {
       lobbySettingsModal.style.display = 'none';
   }
