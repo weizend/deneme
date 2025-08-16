@@ -736,17 +736,7 @@ body.modal-open .modal-content {
     <h4 class="text-green-300 text-xl font-semibold mb-4 border-b border-gray-600 pb-2">🏆 Sezon Yönetimi</h4>
     <button onclick="openSeasonManagementModal()" class="w-full py-3 bg-green-800 hover:bg-green-700 text-white font-bold rounded-lg">Sezon Ayarlarını Aç</button>
 </div>
-            <div class="bg-gray-800/80 p-6 rounded-xl border border-gray-700">
-    <h4 class="text-green-400 text-xl font-semibold mb-4 border-b border-gray-600 pb-2">Sezon Geri Sayım Ayarı</h4>
-    <div class="space-y-3">
-        <div>
-            <label for="seasonEndDateInput" class="block text-gray-300 mb-1 text-sm">Sezon Bitiş Tarih ve Saati:</label>
-            <input type="datetime-local" id="seasonEndDateInput" class="w-full p-3 bg-gray-700 border border-gray-600 rounded-lg text-white">
-        </div>
-        <button onclick="saveSeasonEndDate()" class="flex-1 py-2 bg-green-700 hover:bg-green-600 text-white font-bold rounded-lg">Kaydet</button>
-    <button onclick="stopSeasonCountdown()" class="flex-1 py-2 bg-red-800 hover:bg-red-700 text-white font-bold rounded-lg">Geri Sayımı Durdur</button>
-    </div>
-</div>
+          
             <button onclick="restartSystem()" class="flex-1 py-2 px-3 bg-red-800 hover:bg-red-700 text-white font-bold rounded-lg text-sm">Sistemi Sıfırla</button>
             <button onclick="clearAllTotalSpentPoints()" class="flex-1 py-2 px-3 bg-purple-800 hover:bg-purple-700 text-white font-bold rounded-lg text-sm">Harcanan Puanları Temizle</button>
             <button onclick="clearPurchaseHistory()" class="flex-1 py-2 px-3 bg-pink-800 hover:bg-pink-700 text-white font-bold rounded-lg text-sm">Satın Alma Geçmişini Sil</button>
@@ -9119,21 +9109,6 @@ function closeClickCatchInfoModal() {
     document.getElementById('clickCatchInfoModal').style.display = 'none';
 }
 
-    // YENİ EKLENECEK FONKSİYON
-async function saveSeasonEndDate() {
-    if (!isAdmin) return;
-    const dateInput = document.getElementById('seasonEndDateInput').value;
-    if (!dateInput) {
-        displayMessage("Lütfen geçerli bir tarih ve saat seçin.");
-        return;
-    }
-
-    const endDateTimestamp = new Date(dateInput).getTime();
-    
-    await db.ref('gameConfig/seasonEndDate').set(endDateTimestamp);
-    displayMessage("Sezon bitiş tarihi başarıyla ayarlandı. Geri sayım tüm kullanıcılarda başlayacak.");
-}
-
     // YENİ EKLENECEK GERİ SAYIM FONKSİYONU
 let seasonCountdownInterval = null;
 
@@ -9186,24 +9161,6 @@ function listenForSeasonCountdown() {
     ref.on('value', callback);
 }
 
-    // YENİ EKLENECEK GERİ SAYIMI DURDURMA FONKSİYONU
-// YENİ EKLENECEK GERİ SAYIMI DURDURMA FONKSİYONU
-async function stopSeasonCountdown() {
-    if (!isAdmin) return;
-    
-    const confirmed = await customConfirm("Sezon geri sayımını durdurmak ve planlanmış otomatik sıfırlamayı tamamen iptal etmek istediğinize emin misiniz?");
-    if (!confirmed) return;
-
-    // GÜNCELLEME: Artık hem sayacı hem de ana ayarları siliyoruz.
-    // Tek bir update işlemi ile iki farklı veriyi silmek daha verimlidir.
-    const updates = {};
-    updates['/gameConfig/seasonEndDate'] = null;      // Görsel sayacı durdurur.
-    updates['/gameConfig/seasonSettings'] = null; // Asıl sıfırlama görevini iptal eder.
-
-    await db.ref().update(updates);
-    
-    displayMessage("Geri sayım durduruldu ve planlanmış sezon sıfırlama görevi başarıyla iptal edildi.");
-}
    async function openSeasonManagementModal() {
     document.body.classList.add('modal-open');
     // Kayıtlı ayarları çek ve inputları doldur
@@ -9230,7 +9187,6 @@ function closeSeasonManagementModal() {
 async function saveAutomaticResetSettings() {
     if (!isAdmin) return;
 
-    // DEĞİŞEN SATIR: Artık doğru ve benzersiz ID'ye sahip input'tan değeri okuyoruz.
     const dateInput = document.getElementById('seasonManagementEndDateInput').value;
     const puanAvatarUrl = document.getElementById('puanLeaderAvatarUrl').value.trim();
     const rozetAvatarUrl = document.getElementById('rozetLeaderAvatarUrl').value.trim();
@@ -9252,20 +9208,12 @@ async function saveAutomaticResetSettings() {
     await db.ref('gameConfig/seasonSettings').set(settings);
     await db.ref('gameConfig/seasonEndDate').set(settings.endDate);
     
-    // Tehlikeli Bölge'deki input'u da senkronize et.
-    // Bu kod doğru, çünkü o bölümün ID'si hala 'seasonEndDateInput'
-    const tehlikeliBolgeDateInput = document.getElementById('seasonEndDateInput');
-    if (tehlikeliBolgeDateInput) {
-        const date = new Date(settings.endDate);
-        date.setMinutes(date.getMinutes() - date.getTimezoneOffset());
-        tehlikeliBolgeDateInput.value = date.toISOString().slice(0, 16);
-    }
+    // SİLİNEN KISIM: Artık var olmayan input'u güncellemeye çalışan kod kaldırıldı.
 
     displayMessage("Otomatik sezon sonu ayarları kaydedildi. Geri sayım başlayacak.");
     closeSeasonManagementModal();
 }
 
-// ...VE YERİNE BU YENİ VERSİYONU YAPIŞTIR
 async function executeSeasonReset(isManual = false) {
     if (!isAdmin) return;
     
