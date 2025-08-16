@@ -1352,40 +1352,6 @@ body.modal-open .modal-content {
     </div>
   </div>
 </div>
-              <div id="clickCatchInfoModal" class="modal-overlay fixed inset-0 bg-black bg-opacity-70 flex justify-center items-center z-[9999] hidden">
-  <div class="modal-content bg-gray-800 p-8 rounded-xl shadow-2xl border border-blue-500 w-11/12 max-w-2xl text-left relative max-h-[90vh] flex flex-col">
-    
-    <div class="flex-shrink-0 mb-4 pb-4 border-b border-gray-700">
-        <button class="modal-close-button" onclick="closeClickCatchInfoModal()">&times;</button>
-        <h4 class="text-blue-300 text-2xl font-bold text-center">Tıkla-Yakala Oyun Bilgileri</h4>
-    </div>
-
-    <div class="overflow-y-auto scrollable-list pr-4 space-y-6 text-gray-300">
-        <div>
-            <h5 class="text-xl font-bold text-purple-400 mb-2">Tekli Oyun (Haftalık Skor Yarışması)</h5>
-            <p class="mb-2">Bu mod, haftalık liderlik tablosunda en yüksek skoru elde etme yarışmasıdır.</p>
-            <ul class="list-disc list-inside space-y-1 pl-2">
-                <li>Oyuna girmek <strong>1 Tıkla-Yakala Bileti</strong> gerektirir.</li>
-                <li>Oyun sırasında topladığınız skorlar, ana Puanınıza değil, o haftaki toplam skorunuza eklenir.</li>
-                <li>Ekranda beliren özel hedefleri (Kutu Hakkı, Kalkan vb.) yakalayarak envanterinize ekleyebilirsiniz.</li>
-                <li>Hafta sonunda, en yüksek skoru yapan oyuncu "Haftanın Şampiyonu" seçilir ve admin tarafından belirlenen <strong>özel bir ödül</strong> kazanır.</li>
-                <li>Kazanan seçildikten sonra, o hafta yarışmaya katılmış olan <strong>tüm oyunculara +1 Bilet</strong> hediye edilir.</li>
-                <li>Sıralama ve tüm kişisel skorlar sıfırlanarak yeni bir haftaya başlanır.</li>
-            </ul>
-        </div>
-        <div>
-            <h5 class="text-xl font-bold text-green-400 mb-2">Lobi Oyunu (Rekabetçi Mod)</h5>
-            <p class="mb-2">Admin tarafından kurulan bu mod, diğer oyuncularla gerçek zamanlı bir skor yarışıdır.</p>
-            <ul class="list-disc list-inside space-y-1 pl-2">
-                <li>Lobiye katılmak için admin tarafından belirlenen bir <strong>giriş ücreti</strong> (Puan veya Bilet) ödenir.</li>
-                <li>Oyun başladığında, adminin belirlediği <strong>hedef skora ilk ulaşan oyuncu</strong> oyunu anında kazanır.</li>
-                <li>Kazanan oyuncu, tüm katılımcıların giriş ücretlerinden oluşan veya adminin belirlediği <strong>büyük ödülün</strong> sahibi olur.</li>
-                <li>Bu modda bomba hedefleri de bulunur. Bombalara tıklamak, mevcut skorunuzdan 1 puan düşürür.</li>
-            </ul>
-        </div>
-    </div>
-  </div>
-</div>
 
                 <div class="bg-gray-900 p-4 rounded-lg border border-gray-700 col-span-1 md:col-span-2">
                     <h4 class="text-lg font-semibold text-yellow-300 mb-3">Çıkma İhtimalleri (Toplamı 100 olmalı)</h4>
@@ -1596,6 +1562,55 @@ body.modal-open .modal-content {
       <h4 class="text-blue-300 text-2xl font-bold mb-6">Çark Simgeleri ve Anlamları</h4>
       <div id="wheelLegendContent" class="space-y-3 text-left scrollable-list max-h-80 overflow-y-auto">
           </div>
+  </div>
+</div>
+
+  <div id="clickCatchInfoModal" class="modal-overlay fixed inset-0 bg-black bg-opacity-70 flex justify-center items-center z-[9999] hidden">
+  <div class="modal-content bg-gray-800 p-8 rounded-xl shadow-2xl border border-blue-500 w-11/12 max-w-2xl text-left relative max-h-[90vh] flex flex-col">
+    
+    <div class="flex-shrink-0 mb-4 pb-4 border-b border-gray-700">
+        <button class="modal-close-button" onclick="closeClickCatchInfoModal()">&times;</button>
+        <h4 class="text-blue-300 text-2xl font-bold text-center">Tıkla-Yakala Oyun Bilgileri</h4>
+    </div>
+
+    <div class="overflow-y-auto scrollable-list pr-4 space-y-6 text-gray-300">
+        <div>
+            <h5 class="text-xl font-bold text-purple-400 mb-2">Tekli Oyun (Haftalık Skor Yarışması)</h5>
+            <p class="mb-2">Bu mod, haftalık liderlik tablosunda en yüksek skoru elde etme yarışmasıdır.</p>
+            <ul class="list-disc list-inside space-y-1 pl-2">
+                <li>Oyuna girmek <strong>1 Tıkla-Yakala Bileti</strong> gerektirir.</li>
+                <li>Oyun sırasında topladığınız skorlar, ana Puanınıza değil, o haftaki toplam skorunuza eklenir.</li>
+                <li>Hafta sonunda, en yüksek skoru yapan oyuncu "Haftanın Şampiyonu" seçilir ve <strong>özel bir ödül</strong> kazanır.</li>
+                <li>Kazanan seçildikten sonra, o hafta yarışmaya katılmış olan <strong>tüm oyunculara +1 Bilet</strong> hediye edilir.</li>
+                <li>Sıralama ve tüm kişisel skorlar sıfırlanarak yeni bir haftaya başlanır.</li>
+            </ul>
+        </div>
+        <div>
+            <h5 class="text-xl font-bold text-green-400 mb-2">Lobi Oyunu (Rekabetçi Mod)</h5>
+            <p class="mb-2">Admin tarafından kurulan bu mod, diğer oyuncularla gerçek zamanlı bir skor yarışıdır.</p>
+            <ul class="list-disc list-inside space-y-1 pl-2">
+                <li>Lobiye katılmak için admin tarafından belirlenen bir <strong>giriş ücreti</strong> (Puan veya Bilet) ödenir.</li>
+                <li>Adminin belirlediği <strong>hedef skora ilk ulaşan oyuncu</strong> oyunu anında kazanır.</li>
+                <li>Kazanan oyuncu, lobideki <strong>büyük ödülün</strong> sahibi olur.</li>
+            </ul>
+        </div>
+
+        <div>
+            <h5 class="text-xl font-bold text-yellow-300 mb-2">Tıklanabilir Hedefler ve Anlamları</h5>
+            <div class="space-y-3">
+                <p class="font-semibold text-purple-400">-- Tekli Oyunda Geçerli --</p>
+                <div class="flex items-center gap-3"><span class="text-2xl w-6 text-center">🥮</span><span><strong>Düşük Skor:</strong> Oyundaki temel skor kaynağınızdır.</span></div>
+                <div class="flex items-center gap-3"><span class="text-2xl w-6 text-center">💰</span><span><strong>Yüksek Skor:</strong> Normal hedeften daha fazla skor kazandırır.</span></div>
+                <div class="flex items-center gap-3"><span class="text-2xl w-6 text-center">💣</span><span><strong>Bomba:</strong> DİKKAT! Tıklanıldığında toplam skorunuzdan -skor düşürür.</span></div>
+                <div class="flex items-center gap-3"><span class="text-2xl w-6 text-center">⏰</span><span><strong>Ekstra Süre:</strong> Kalan oyun sürenize bonus saniyeler ekler.</span></div>
+                <div class="flex items-center gap-3"><span class="text-2xl w-6 text-center">🎁</span><span><strong>Özel Hedef:</strong> Nadiren belirir. Kutu Hakkı (📦) , İflas Kalkanı (🛡️) veya Çark Bilet (🎫️) gibi değerli eşyalar kazandırır.</span></div>
+                <hr class="border-gray-600">
+                <p class="font-semibold text-green-400">-- Lobi Oyununda Geçerli --</p>
+                <div class="flex items-center gap-3"><span class="text-2xl w-6 text-center">🎯</span><span><strong>Hedef:</strong> Hedef skora ulaşmak için tıklamanız gereken ana hedeftir. (+1 Skor)</span></div>
+                <div class="flex items-center gap-3"><span class="text-2xl w-6 text-center">💣</span><span><strong>Bomba:</strong> Bu hedefe tıklamak, o anki lobi skorunuzu bir azaltır. (-1 Skor)</span></div>
+            </div>
+        </div>
+        </div>
   </div>
 </div>
   <script>
@@ -8949,7 +8964,7 @@ function closeWheelLegendModal() {
       }
   });
 
-    // --- YENİ EKLENECEK TIKLA-YAKALA BİLGİ FONKSİYONLARI ---
+    // --- TIKLA-YAKALA BİLGİ FONKSİYONLARI ---
 
 function openClickCatchInfoModal() {
     document.body.classList.add('modal-open');
