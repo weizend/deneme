@@ -473,6 +473,12 @@ body.modal-open .modal-content {
     
             <div class="bg-gray-800 p-6 rounded-xl shadow-lg border border-red-700 text-center">
                 <h3 class="text-yellow-400 text-3xl font-bold mb-4">Tıkla-Yakala</h3>
+                <div id="weeklyWinnerContainer" class="hidden w-full max-w-2xl mx-auto mt-6 mb-4 bg-gray-800 p-4 rounded-xl shadow-lg border-2 border-green-500 text-center relative">
+    <h4 class="text-green-300 text-xl font-bold mb-3">🏆 Haftanın Tıkla-Yakala Şampiyonu 🏆</h4>
+    <div id="weeklyWinnerInfo" class="text-lg text-gray-200 space-y-2">
+        </div>
+    <button id="clearWeeklyWinnerBtn" onclick="clearWeeklyWinnerDisplay()" class="hidden absolute -top-3 -right-3 bg-red-600 hover:bg-red-500 text-white rounded-full h-8 w-8 flex items-center justify-center text-lg font-bold" title="Kazanan Panelini Gizle">&times;</button>
+</div>
         
                 <div id="clickCatchAdminButtonsContainer" class="hidden bg-gray-900/50 p-4 rounded-lg border border-yellow-500 mb-6 flex justify-center gap-4">
                     <button onclick="openSoloGameSettingsModal()" class="py-3 px-6 bg-purple-600 hover:bg-purple-500 text-white font-bold rounded-lg shadow-md">
@@ -497,7 +503,7 @@ body.modal-open .modal-content {
                 
                 <div class="flex justify-around items-center mb-4 bg-gray-900 p-3 rounded-lg">
                     <div id="displayScore" class="hidden">
-                        <p class="text-gray-400 text-sm">Toplanan Puan</p>
+                        <p class="text-gray-400 text-sm">Toplanan Skor</p>
                         <p id="clickCatchScore" class="text-green-400 font-bold text-lg">0</p>
                     </div>
                     <div id="displaySpecials" class="hidden">
@@ -539,7 +545,7 @@ body.modal-open .modal-content {
             </div>
     
             <div class="tableBox bg-gray-800 p-6 rounded-xl shadow-lg border border-red-700 w-full md:flex-1 min-w-[280px] mt-6 mx-auto max-w-2xl">
-              <h3 class="text-yellow-400 text-xl font-bold border-b border-gray-600 pb-3 mb-4">TIKLA-YAKALA TOPLANAN PUAN SIRALAMASI 🎯</h3>
+              <h3 class="text-yellow-400 text-xl font-bold border-b border-gray-600 pb-3 mb-4">TIKLA-YAKALA HAFTALIK SKOR SIRALAMASI 🎯</h3>
               <input type="text" id="searchClickCatchRanking" oninput="loadClickCatchRankings()" placeholder="Sıralamada Kullanıcı Ara..." class="w-full p-3 mb-4 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500 transition duration-300">
               <div id="clickCatchRankings" class="scrollable-list max-h-80 overflow-y-auto border border-gray-600 rounded-lg p-3 bg-gray-900 text-sm leading-relaxed">Yükleniyor...</div>
             </div>
@@ -986,7 +992,7 @@ body.modal-open .modal-content {
         <p><span id="managedBadgeMultiplier" class="inline-block w-6 text-center"></span>Bulunan Çarpan Sayısı: <span id="managedUserMultiplierFoundCount" class="font-bold text-fuchsia-400"></span></p>
         <p><span id="managedBadgeStore" class="inline-block w-6 text-center"></span>Mağazada Harcanan Puan: <span id="managedUserTotalSpent" class="font-bold text-fuchsia-400"></span></p>
         <p><span id="managedBadgeShield" class="inline-block w-6 text-center"></span>Kullanılan Kalkan Sayısı: <span id="managedUserShieldUsedCount" class="font-bold text-fuchsia-400"></span></p>
-        <p><span id="managedBadgeClickCatch" class="inline-block w-6 text-center"></span>Tıkla-Yakala Toplanan Puan: <span id="managedUserClickCatchScore" class="font-bold text-fuchsia-400"></span></p>
+        <p><span id="managedBadgeClickCatch" class="inline-block w-6 text-center"></span>Tıkla-Yakala Rekoru: <span id="managedUserClickCatchScore" class="font-bold text-fuchsia-400"></span></p>
       <p><span id="managedBadgeWheel" class="inline-block w-6 text-center"></span>Çevrilen Çark Sayısı: <span id="managedUserWheelSpins" class="font-bold text-fuchsia-400"></span></p>
     </div>
 
@@ -1295,6 +1301,38 @@ body.modal-open .modal-content {
                     <label for="soloTimeValue" class="block text-sm font-medium text-gray-300">Süre Bonusu (⏰ saniye)</label>
                     <input type="number" id="soloTimeValue" class="box-setting-input mt-1">
                 </div>
+                <div id="selectWinnerPrizeModal" class="modal-overlay fixed inset-0 bg-black bg-opacity-70 flex justify-center items-center z-[10000] hidden">
+  <div class="modal-content bg-gray-800 p-8 rounded-xl shadow-2xl border border-green-500 w-11/12 max-w-lg text-left relative">
+    <button class="modal-close-button" onclick="closeSelectWinnerModal()">&times;</button>
+    <h3 class="text-green-300 text-3xl font-bold mb-6 text-center">Haftanın Kazananını Ödüllendir</h3>
+    
+    <div id="winnerInfoForAdmin" class="bg-gray-900 p-4 rounded-lg border border-gray-700 mb-4 text-center">
+      <p class="text-gray-400">Lider bilgisi yükleniyor...</p>
+    </div>
+
+    <div class="space-y-4">
+      <div>
+        <label for="prizeType" class="block text-sm font-medium text-gray-300 mb-1">Ödül Türü:</label>
+        <select id="prizeType" class="box-setting-input">
+          <option value="boxRights">Kutu Hakkı</option>
+          <option value="points">Puan</option>
+          <option value="wheelTicket">Çark Bileti</option>
+          <option value="iflasShield">İflas Kalkanı</option>
+        </select>
+      </div>
+      <div>
+        <label for="prizeAmount" class="block text-sm font-medium text-gray-300 mb-1">Miktar:</label>
+        <input type="number" id="prizeAmount" class="box-setting-input" value="1" min="1">
+      </div>
+    </div>
+    
+    <div class="mt-6 pt-4 border-t border-gray-700">
+      <button onclick="confirmAndAwardPrize()" class="w-full py-3 bg-green-700 hover:bg-green-600 text-white font-bold rounded-lg shadow-md">
+        Ödülü Ver ve Haftayı Sıfırla
+      </button>
+    </div>
+  </div>
+</div>
 
                 <div class="bg-gray-900 p-4 rounded-lg border border-gray-700 col-span-1 md:col-span-2">
                     <h4 class="text-lg font-semibold text-yellow-300 mb-3">Çıkma İhtimalleri (Toplamı 100 olmalı)</h4>
@@ -1338,6 +1376,7 @@ body.modal-open .modal-content {
         </div>
         <div class="mt-6 pt-4 border-t border-gray-700">
             <button onclick="saveSoloGameSettings()" class="w-full py-3 bg-green-700 hover:bg-green-600 text-white font-bold rounded-lg shadow-md">Ayarları Kaydet</button>
+            <button onclick="openSelectWinnerModal()" class="w-full mt-4 py-3 bg-yellow-600 hover:bg-yellow-500 text-white font-bold rounded-lg shadow-md">Haftanın Kazananını Seç</button>
         </div>
     </div>
 </div>
@@ -2029,7 +2068,8 @@ async function afterLogin() {
     listenForDailyRewardChanges();
     initActivityFeed();
     listenForGlobalNotifications();
-    listenForLobbyChanges(); // LOBİ DİNLEYİCİSİ ARTIK BURADA ÇAĞRILIYOR
+    listenForLobbyChanges();
+    listenForWeeklyWinner(); // HAFTANIN KAZANANINI DİNLE
     
     if (!isAdmin) {
         listenForAdminNotifications();
@@ -6481,7 +6521,7 @@ function handleSoloItemClick(event) {
         case 'points':
             clickCatchScore = Number(clickCatchScore) + value;
             document.getElementById('clickCatchScore').textContent = clickCatchScore;
-            floatingText = (value > 0 ? '+' : '') + value + ' Puan';
+            floatingText = (value > 0 ? '+' : '') + value + ' Skor';
             break;
         case 'time':
             clickCatchTimer += value;
@@ -7334,9 +7374,8 @@ async function startSoloClickCatchGame() {
     showGameCountdown(_actuallyStartSoloGame);
 }
 
-// --- ESKİ endSoloClickCatchGame FONKSİYONUNU SİL, BUNU YAPIŞTIR ---
-
-function endSoloClickCatchGame() {
+// ... VE YERİNE BU YENİ VERSİYONU YAPIŞTIR
+async function endSoloClickCatchGame() {
     clickCatchGameActive = false;
     clearInterval(clickCatchTimerInterval);
     clearInterval(clickCatchItemInterval);
@@ -7352,66 +7391,196 @@ function endSoloClickCatchGame() {
     document.getElementById('displaySpecials').classList.add('hidden');
     document.getElementById('displayTimer').classList.add('hidden');
 
-    // --- İSTEĞİNİ KARŞILAYAN BÖLÜM BAŞLANGICI ---
-
-    // 1. Kazanılan özel hediyeleri bir liste haline getiriyoruz.
     const specialItemsWonLog = [];
-    if (collectedBoxRights > 0) {
-        specialItemsWonLog.push(`+${collectedBoxRights} Kutu Hakkı`);
-    }
-    if (collectedIflasShields > 0) {
-        specialItemsWonLog.push(`+${collectedIflasShields} İflas Kalkanı`);
-    }
-    if (collectedWheelTickets > 0) {
-        specialItemsWonLog.push(`+${collectedWheelTickets} Çark Bileti`);
-    }
+    if (collectedBoxRights > 0) specialItemsWonLog.push(`+${collectedBoxRights} Kutu Hakkı`);
+    if (collectedIflasShields > 0) specialItemsWonLog.push(`+${collectedIflasShields} İflas Kalkanı`);
+    if (collectedWheelTickets > 0) specialItemsWonLog.push(`+${collectedWheelTickets} Çark Bileti`);
 
-    // 2. Oyun sonu bilgilendirme penceresi için mesajı hazırlıyoruz.
-    let endMessage = `Oyun bitti! Toplanan Puan: <b>${clickCatchScore}</b>.`;
+    // --- DEĞİŞİKLİK 1: Mesajdan bilet iadesi yazısını kaldırdım ---
+    let endMessage = `Oyun bitti! Bu turdaki skorun: <b>${clickCatchScore}</b>.`;
     if (specialItemsWonLog.length > 0) {
-        // Eğer hediye yakalandıysa:
         endMessage += `<br>Ayrıca, <b>${specialItemsWonLog.join(', ')}</b> kazandın!`;
-    } else {
-        // Eğer hediye yakalanmadıysa:
-        endMessage += `<br>Bu turda özel hediye yakalayamadın.`;
     }
-    // Hazırlanan mesajı bilgilendirme penceresinde gösteriyoruz.
     displayMessage(endMessage);
 
-    // 3. "Son Eylemler"e gönderilecek veriyi hazırlayıp yolluyoruz.
     logActivity('clickCatchSolo', currentUser, {
         score: clickCatchScore,
-        specialItems: specialItemsWonLog // Özel hediye listesini de gönderiyoruz
+        specialItems: specialItemsWonLog
     });
-
-    // --- İSTEĞİNİ KARŞILAYAN BÖLÜM SONU ---
-
+    
     const userRef = db.ref('users/' + currentUser);
     const weeklyScoreRef = db.ref(`clickCatchWeeklyScores/${currentUser}`);
 
-    weeklyScoreRef.transaction(currentWeeklyScore => {
+    await weeklyScoreRef.transaction(currentWeeklyScore => {
         return (currentWeeklyScore || 0) + Math.max(0, clickCatchScore);
-    }).then(transactionResult => {
-        const newTotalWeeklyScore = transactionResult.snapshot.val();
+    });
 
-        userRef.transaction(user => {
-            if (user) {
-                user.balance = (user.balance || 0) + clickCatchScore;
-                if (user.balance < 0) user.balance = 0;
-                if (user.balance > (user.highestBalanceEver || 0)) user.highestBalanceEver = user.balance;
-                if (newTotalWeeklyScore > (user.clickCatchHighestScore || 0)) {
-                    user.clickCatchHighestScore = newTotalWeeklyScore;
-                }
-                user.kutuHakki = (user.kutuHakki || 0) + collectedBoxRights;
-                user.iflasShieldUses = (user.iflasShieldUses || 0) + collectedIflasShields;
-                user.carkBileti = (user.carkBileti || 0) + collectedWheelTickets;
-            }
-            return user;
-        });
+    await userRef.transaction(user => {
+        if (user) {
+            const newTotalWeeklyScore = (user.clickCatchHighestScore || 0) + Math.max(0, clickCatchScore);
+            user.clickCatchHighestScore = newTotalWeeklyScore;
+
+            // --- DEĞİŞİKLİK 2: Hesaba bilet iadesi yapan satırı kaldırdım ---
+            // user.clickCatchTickets = (user.clickCatchTickets || 0) + 1; // BU SATIR SİLİNDİ
+
+            // Kazanılan diğer ödüller eklenmeye devam ediyor
+            user.kutuHakki = (user.kutuHakki || 0) + collectedBoxRights;
+            user.iflasShieldUses = (user.iflasShieldUses || 0) + collectedIflasShields;
+            user.carkBileti = (user.carkBileti || 0) + collectedWheelTickets;
+        }
+        return user;
     });
 }
 
-// YUKARIDAKİ FONKSİYONU BULUP BUNUNLA DEĞİŞTİR
+  // ... VE YERİNE BU YENİ VERSİYONU YAPIŞTIR
+async function openSelectWinnerModal() {
+    if (!isAdmin) return;
+
+    const winnerInfoDiv = document.getElementById('winnerInfoForAdmin');
+    winnerInfoDiv.innerHTML = '<p class="text-gray-400">Lider bilgisi yükleniyor...</p>';
+    
+    const scoresSnap = await db.ref('clickCatchWeeklyScores').orderByValue().limitToLast(1).once('value');
+    
+    // --- DEĞİŞİKLİK BURADA ---
+    // Eğer sıralama boşsa (scoresSnap.exists() false ise)
+    if (!scoresSnap.exists()) {
+        // Ödül penceresini açmak yerine genel bilgilendirme mesajı göster
+        displayMessage("Ödül verilecek bir lider bulunamadı çünkü Tıkla-Yakala sıralaması şu anda boş.");
+        // ve fonksiyonu burada bitir.
+        return;
+    }
+    
+    const scoresData = scoresSnap.val();
+    const winnerUsername = Object.keys(scoresData)[0];
+    const winnerScore = scoresData[winnerUsername];
+
+    winnerInfoDiv.innerHTML = `
+        <p>Haftanın Lideri: <b class="text-white text-lg">${winnerUsername}</b></p>
+        <p>Toplam Skoru: <b class="text-yellow-300 text-lg">${winnerScore}</b></p>
+    `;
+    
+    window.weeklyWinnerData = { username: winnerUsername, score: winnerScore };
+
+    document.getElementById('selectWinnerPrizeModal').style.display = 'flex';
+}
+
+// Ödül verme penceresini kapatır
+function closeSelectWinnerModal() {
+    document.getElementById('selectWinnerPrizeModal').style.display = 'none';
+    window.weeklyWinnerData = null;
+}
+
+// "Ödülü Ver ve Haftayı Sıfırla" butonuna basıldığında çalışır
+async function confirmAndAwardPrize() {
+    if (!isAdmin || !window.weeklyWinnerData) return;
+
+    const { username, score } = window.weeklyWinnerData;
+    const prizeType = document.getElementById('prizeType').value;
+    const prizeAmount = parseInt(document.getElementById('prizeAmount').value);
+
+    if (isNaN(prizeAmount) || prizeAmount <= 0) {
+        displayMessage("Lütfen geçerli bir ödül miktarı girin.");
+        return;
+    }
+
+    const prizeNames = {
+        boxRights: "Kutu Hakkı",
+        points: "Puan",
+        wheelTicket: "Çark Bileti",
+        iflasShield: "İflas Kalkanı"
+    };
+    const prizeName = prizeNames[prizeType];
+
+    const confirmed = await customConfirm(
+        `<b>${username}</b> adlı kullanıcıya <b>${prizeAmount} ${prizeName}</b> ödülü verilecek ve Tıkla-Yakala haftası sıfırlanacak. Onaylıyor musunuz?`
+    );
+
+    if (!confirmed) return;
+
+    // 1. Kazananın bilgilerini kalıcı olarak kaydet
+    const winnerDataToSave = {
+        winnerName: username,
+        winningScore: score,
+        prizeAwarded: `${prizeAmount} ${prizeName}`,
+        timestamp: firebase.database.ServerValue.TIMESTAMP
+    };
+    await db.ref('gameStats/weeklyClickCatchWinner').set(winnerDataToSave);
+
+    // 2. Kazanan kullanıcıya ödülünü ver
+    const winnerUserRef = db.ref(`users/${username}`);
+    await winnerUserRef.transaction(user => {
+        if (user) {
+            if (prizeType === 'points') user.balance = (user.balance || 0) + prizeAmount;
+            else if (prizeType === 'boxRights') user.kutuHakki = (user.kutuHakki || 0) + prizeAmount;
+            else if (prizeType === 'wheelTicket') user.carkBileti = (user.carkBileti || 0) + prizeAmount;
+            else if (prizeType === 'iflasShield') user.iflasShieldUses = (user.iflasShieldUses || 0) + prizeAmount;
+        }
+        return user;
+    });
+
+    // 3. Haftalık skor tablosunu sil
+    await db.ref('clickCatchWeeklyScores').remove();
+
+    // 4. Tüm kullanıcıların kişisel Tıkla-Yakala skorlarını sıfırla
+    const allUsersSnap = await db.ref('users').once('value');
+    const allUsers = allUsersSnap.val();
+    const updates = {};
+    for (const u in allUsers) {
+        if (allUsers[u].clickCatchHighestScore) {
+            updates[`/users/${u}/clickCatchHighestScore`] = 0;
+        }
+    }
+    if (Object.keys(updates).length > 0) {
+        await db.ref().update(updates);
+    }
+
+    displayMessage(`${username} ödüllendirildi ve Tıkla-Yakala haftası başarıyla sıfırlandı!`);
+    closeSelectWinnerModal();
+}
+
+// Haftanın kazananı verisini dinler ve paneli günceller
+function listenForWeeklyWinner() {
+    const ref = db.ref('gameStats/weeklyClickCatchWinner');
+    const container = document.getElementById('weeklyWinnerContainer');
+    const infoDiv = document.getElementById('weeklyWinnerInfo');
+    const clearBtn = document.getElementById('clearWeeklyWinnerBtn');
+
+    const callback = snap => {
+        const winnerData = snap.val();
+        if (winnerData) {
+            infoDiv.innerHTML = `
+                <p>Kazanan: <b class="text-white">${winnerData.winnerName}</b></p>
+                <p>Skor: <b class="text-white">${winnerData.winningScore}</b></p>
+                <p>Ödül: <b class="text-green-400">${winnerData.prizeAwarded}</b></p>
+            `;
+            container.classList.remove('hidden');
+            if (isAdmin) {
+                clearBtn.classList.remove('hidden');
+            }
+        } else {
+            container.classList.add('hidden');
+        }
+    };
+    
+    // Listener'ı tekrar tekrar eklememek için kontrol
+    if (activeListeners.weeklyWinner) {
+        activeListeners.weeklyWinner.ref.off('value', activeListeners.weeklyWinner.callback);
+    }
+    activeListeners.weeklyWinner = { ref, event: 'value', callback };
+    ref.on('value', callback);
+}
+
+// Adminin kazanan panelini kapatmasını sağlar
+async function clearWeeklyWinnerDisplay() {
+    if (!isAdmin) return;
+    const confirmed = await customConfirm("Haftanın kazananı panelini gizlemek istediğinize emin misiniz? Bu işlem kazananı veya ödülünü silmez, sadece paneli gizler.");
+    if (confirmed) {
+        await db.ref('gameStats/weeklyClickCatchWinner').remove();
+    }
+}
+
+// --- YENİ FONKSİYONLAR BİTİŞ ---
+
 function initActivityFeed() {
     const activityBellContainer = document.getElementById('activityBellContainer');
     const activityCounter = document.getElementById('activityCounter');
