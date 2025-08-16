@@ -7963,7 +7963,10 @@ function initActivityFeed() {
     ref.on('value', callback);
 }
 
+// ...VE YERİNE BU YENİ VERSİYONU YAPIŞTIR
 function openActivityFeed() {
+    const activityFeedPanel = document.getElementById('activityFeedPanel'); // EKLENEN SATIR
+    const activityCounter = document.getElementById('activityCounter');   // EKLENEN SATIR
     activityFeedPanel.classList.remove('hidden');
     setTimeout(() => {
         activityFeedPanel.classList.remove('translate-x-full');
@@ -7973,6 +7976,7 @@ function openActivityFeed() {
 }
 
 function closeActivityFeed() {
+    const activityFeedPanel = document.getElementById('activityFeedPanel'); // EKLENEN SATIR
     activityFeedPanel.classList.add('translate-x-full');
     setTimeout(() => {
         activityFeedPanel.classList.add('hidden');
@@ -7980,6 +7984,7 @@ function closeActivityFeed() {
 }
 
 function toggleActivityFeed() {
+    const activityFeedPanel = document.getElementById('activityFeedPanel'); // EKLENEN SATIR
     if (activityFeedPanel.classList.contains('hidden')) {
         openActivityFeed();
     } else {
