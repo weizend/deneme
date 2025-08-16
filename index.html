@@ -1647,12 +1647,12 @@ body.modal-open .modal-content {
 
     <div class="overflow-y-auto scrollable-list pr-4 space-y-6">
       <div class="bg-gray-900 p-4 rounded-lg border border-gray-700">
-        <h5 class="text-lg font-semibold text-yellow-300 mb-3">Otomatik Sezon Sonu Ayarları</h5>
-        <div>
-          <label for="seasonEndDateInput" class="block text-gray-300 mb-1 text-sm">Sezon Bitiş Tarih ve Saati:</label>
-          <input type="datetime-local" id="seasonEndDateInput" class="w-full p-3 bg-gray-700 border border-gray-600 rounded-lg text-white">
-        </div>
-      </div>
+  <h5 class="text-lg font-semibold text-yellow-300 mb-3">Otomatik Sezon Sonu Ayarları</h5>
+  <div>
+    <label for="seasonManagementEndDateInput" class="block text-gray-300 mb-1 text-sm">Sezon Bitiş Tarih ve Saati:</label>
+    <input type="datetime-local" id="seasonManagementEndDateInput" class="w-full p-3 bg-gray-700 border border-gray-600 rounded-lg text-white">
+  </div>
+</div>
 
       <div class="bg-gray-900 p-4 rounded-lg border border-gray-700">
         <h5 class="text-lg font-semibold text-yellow-300 mb-3">Şampiyon Avatar Ödülleri</h5>
@@ -1673,19 +1673,19 @@ body.modal-open .modal-content {
         <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
             <div>
                 <label for="rewardBoxRights" class="block text-gray-300 mb-1 text-sm">📦 Kutu Hakkı</label>
-                <input type="number" id="rewardBoxRights" value="5" min="0" class="w-full p-2 bg-gray-700 border border-gray-600 rounded-lg text-white">
+                <input type="number" id="rewardBoxRights" value="0" min="0" class="w-full p-2 bg-gray-700 border border-gray-600 rounded-lg text-white">
             </div>
             <div>
                 <label for="rewardWheelTickets" class="block text-gray-300 mb-1 text-sm">🎡 Çark Bileti</label>
-                <input type="number" id="rewardWheelTickets" value="5" min="0" class="w-full p-2 bg-gray-700 border border-gray-600 rounded-lg text-white">
+                <input type="number" id="rewardWheelTickets" value="0" min="0" class="w-full p-2 bg-gray-700 border border-gray-600 rounded-lg text-white">
             </div>
             <div>
                 <label for="rewardClickCatchTickets" class="block text-gray-300 mb-1 text-sm">🎯 T-Y Bileti</label>
-                <input type="number" id="rewardClickCatchTickets" value="5" min="0" class="w-full p-2 bg-gray-700 border border-gray-600 rounded-lg text-white">
+                <input type="number" id="rewardClickCatchTickets" value="0" min="0" class="w-full p-2 bg-gray-700 border border-gray-600 rounded-lg text-white">
             </div>
             <div>
                 <label for="rewardIflasShields" class="block text-gray-300 mb-1 text-sm">🛡️ İflas Kalkanı</label>
-                <input type="number" id="rewardIflasShields" value="5" min="0" class="w-full p-2 bg-gray-700 border border-gray-600 rounded-lg text-white">
+                <input type="number" id="rewardIflasShields" value="0" min="0" class="w-full p-2 bg-gray-700 border border-gray-600 rounded-lg text-white">
             </div>
         </div>
       </div>
@@ -1695,7 +1695,7 @@ body.modal-open .modal-content {
             <button onclick="saveAutomaticResetSettings()" class="w-full py-2 bg-blue-700 hover:bg-blue-600 text-white font-bold rounded-lg">Otomatik Sıfırlamayı Ayarla/Kaydet</button>
             <p class="text-xs text-gray-400 text-center">Yukarıdaki ayarları kaydeder ve geri sayımı başlatır.</p>
             <hr class="border-gray-600">
-            <button onclick="cancelAutomaticReset()" class="w-full py-2 bg-orange-700 hover:bg-orange-600 text-white font-bold rounded-lg">Otomatik Sıfırlamayı İptal Et</button>
+            <button onclick="stopSeasonCountdown()" class="w-full py-2 bg-orange-700 hover:bg-orange-600 text-white font-bold rounded-lg">Otomatik Sıfırlamayı İptal Et</button>
             <p class="text-xs text-gray-400 text-center">Ayarlanmış olan otomatik sıfırlamayı ve geri sayımı durdurur.</p>
             <hr class="border-gray-600">
             <button onclick="executeSeasonReset(true)" class="w-full py-3 bg-red-800 hover:bg-red-700 text-white font-bold rounded-lg">SEZONU ŞİMDİ BİTİR (MANUEL)</button>
@@ -9187,33 +9187,34 @@ function listenForSeasonCountdown() {
 }
 
     // YENİ EKLENECEK GERİ SAYIMI DURDURMA FONKSİYONU
+// YENİ EKLENECEK GERİ SAYIMI DURDURMA FONKSİYONU
 async function stopSeasonCountdown() {
     if (!isAdmin) return;
     
-    const confirmed = await customConfirm("Sezon geri sayımını durdurmak ve ana sayfadan kaldırmak istediğinize emin misiniz?");
+    const confirmed = await customConfirm("Sezon geri sayımını durdurmak ve planlanmış otomatik sıfırlamayı tamamen iptal etmek istediğinize emin misiniz?");
     if (!confirmed) return;
 
-    // Veritabanındaki geri sayım tarih kaydını kaldırıyoruz.
-    await db.ref('gameConfig/seasonEndDate').remove();
+    // GÜNCELLEME: Artık hem sayacı hem de ana ayarları siliyoruz.
+    // Tek bir update işlemi ile iki farklı veriyi silmek daha verimlidir.
+    const updates = {};
+    updates['/gameConfig/seasonEndDate'] = null;      // Görsel sayacı durdurur.
+    updates['/gameConfig/seasonSettings'] = null; // Asıl sıfırlama görevini iptal eder.
+
+    await db.ref().update(updates);
     
-    displayMessage("Geri sayım başarıyla durduruldu ve kaldırıldı.");
+    displayMessage("Geri sayım durduruldu ve planlanmış sezon sıfırlama görevi başarıyla iptal edildi.");
 }
-
-    // --- YENİ SEZON SİSTEMİ FONKSİYONLARI ---
-
-// Admin: Sezon yönetim penceresini açar/kapatır
-async function openSeasonManagementModal() {
+   async function openSeasonManagementModal() {
     document.body.classList.add('modal-open');
     // Kayıtlı ayarları çek ve inputları doldur
     const settingsSnap = await db.ref('gameConfig/seasonSettings').once('value');
     if (settingsSnap.exists()) {
         const settings = settingsSnap.val();
         if (settings.endDate) {
-            // Timestamp'i datetime-local formatına çevir
             const date = new Date(settings.endDate);
-            // Zaman dilimi ofsetini hesaba kat
             date.setMinutes(date.getMinutes() - date.getTimezoneOffset());
-            document.getElementById('seasonEndDateInput').value = date.toISOString().slice(0, 16);
+            // DEĞİŞEN SATIR: Artık doğru ve benzersiz ID'ye sahip input'u hedefliyoruz.
+            document.getElementById('seasonManagementEndDateInput').value = date.toISOString().slice(0, 16);
         }
         document.getElementById('puanLeaderAvatarUrl').value = settings.rewards?.puanLeaderAvatarUrl || '';
         document.getElementById('rozetLeaderAvatarUrl').value = settings.rewards?.rozetLeaderAvatarUrl || '';
@@ -9226,11 +9227,11 @@ function closeSeasonManagementModal() {
     document.getElementById('seasonManagementModal').style.display = 'none';
 }
 
-// Admin: Otomatik sıfırlama ayarlarını veritabanına kaydeder
 async function saveAutomaticResetSettings() {
     if (!isAdmin) return;
 
-    const dateInput = document.getElementById('seasonEndDateInput').value;
+    // DEĞİŞEN SATIR: Artık doğru ve benzersiz ID'ye sahip input'tan değeri okuyoruz.
+    const dateInput = document.getElementById('seasonManagementEndDateInput').value;
     const puanAvatarUrl = document.getElementById('puanLeaderAvatarUrl').value.trim();
     const rozetAvatarUrl = document.getElementById('rozetLeaderAvatarUrl').value.trim();
 
@@ -9238,10 +9239,10 @@ async function saveAutomaticResetSettings() {
         displayMessage("Lütfen geçerli bir sezon bitiş tarihi seçin.");
         return;
     }
-
+    
     const settings = {
         endDate: new Date(dateInput).getTime(),
-        status: 'active', // 'active' veya 'pending_confirmation'
+        status: 'active',
         rewards: {
             puanLeaderAvatarUrl: puanAvatarUrl,
             rozetLeaderAvatarUrl: rozetAvatarUrl
@@ -9249,7 +9250,17 @@ async function saveAutomaticResetSettings() {
     };
     
     await db.ref('gameConfig/seasonSettings').set(settings);
-    await db.ref('gameConfig/seasonEndDate').set(settings.endDate); // Eski geri sayım sayacını tetiklemek için
+    await db.ref('gameConfig/seasonEndDate').set(settings.endDate);
+    
+    // Tehlikeli Bölge'deki input'u da senkronize et.
+    // Bu kod doğru, çünkü o bölümün ID'si hala 'seasonEndDateInput'
+    const tehlikeliBolgeDateInput = document.getElementById('seasonEndDateInput');
+    if (tehlikeliBolgeDateInput) {
+        const date = new Date(settings.endDate);
+        date.setMinutes(date.getMinutes() - date.getTimezoneOffset());
+        tehlikeliBolgeDateInput.value = date.toISOString().slice(0, 16);
+    }
+
     displayMessage("Otomatik sezon sonu ayarları kaydedildi. Geri sayım başlayacak.");
     closeSeasonManagementModal();
 }
