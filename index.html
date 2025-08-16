@@ -266,9 +266,14 @@ body.modal-open .modal-content {
   <header class="w-full max-w-4xl bg-gradient-to-r from-red-700 to-black text-white text-3xl font-extrabold tracking-wider py-4 rounded-xl shadow-xl mb-8 text-center relative">
     WEIZENDTV KUTU OYUNU
     
-    <div id="seasonCountdownContainer" class="text-base font-normal mt-2 text-yellow-300 hidden">
-        Aylık Sezonun Bitmesine: <span id="seasonCountdown" class="font-bold text-white tracking-wider"></span>
-    </div>
+    <div id="seasonCountdownContainer" class="text-base font-normal mt-2 text-yellow-300 hidden flex justify-center items-center gap-2">
+    <span>Sezonun Bitmesine: <span id="seasonCountdown" class="font-bold text-white tracking-wider"></span></span>
+    <button onclick="openSeasonInfoModal()" class="text-blue-400 hover:text-blue-300 transition-colors" title="Sezon Sıfırlaması Hakkında Bilgi">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+    </button>
+</div>
 </header>
 
 <div id="activityFeedPanel" class="fixed top-0 right-0 h-full w-full max-w-md bg-gray-800 border-l-2 border-red-700 shadow-2xl z-[10000] transform translate-x-full transition-transform duration-300 ease-in-out hidden">
@@ -1663,13 +1668,38 @@ body.modal-open .modal-content {
       </div>
 
       <div class="bg-gray-900 p-4 rounded-lg border border-gray-700">
+        <h5 class="text-lg font-semibold text-yellow-300 mb-3">Genel Katılımcı Ödülleri</h5>
+        <p class="text-xs text-gray-400 mb-3">Sıfırlama sonrası TÜM KULLANICILARA (şampiyonlar dahil) verilecek hediye miktarları. Boş bırakılırsa o hediye verilmez.</p>
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            <div>
+                <label for="rewardBoxRights" class="block text-gray-300 mb-1 text-sm">📦 Kutu Hakkı</label>
+                <input type="number" id="rewardBoxRights" value="5" min="0" class="w-full p-2 bg-gray-700 border border-gray-600 rounded-lg text-white">
+            </div>
+            <div>
+                <label for="rewardWheelTickets" class="block text-gray-300 mb-1 text-sm">🎡 Çark Bileti</label>
+                <input type="number" id="rewardWheelTickets" value="5" min="0" class="w-full p-2 bg-gray-700 border border-gray-600 rounded-lg text-white">
+            </div>
+            <div>
+                <label for="rewardClickCatchTickets" class="block text-gray-300 mb-1 text-sm">🎯 T-Y Bileti</label>
+                <input type="number" id="rewardClickCatchTickets" value="5" min="0" class="w-full p-2 bg-gray-700 border border-gray-600 rounded-lg text-white">
+            </div>
+            <div>
+                <label for="rewardIflasShields" class="block text-gray-300 mb-1 text-sm">🛡️ İflas Kalkanı</label>
+                <input type="number" id="rewardIflasShields" value="5" min="0" class="w-full p-2 bg-gray-700 border border-gray-600 rounded-lg text-white">
+            </div>
+        </div>
+      </div>
+      <div class="bg-gray-900 p-4 rounded-lg border border-gray-700">
         <h5 class="text-lg font-semibold text-yellow-300 mb-3">Eylemler</h5>
         <div class="space-y-3">
             <button onclick="saveAutomaticResetSettings()" class="w-full py-2 bg-blue-700 hover:bg-blue-600 text-white font-bold rounded-lg">Otomatik Sıfırlamayı Ayarla/Kaydet</button>
-            <p class="text-xs text-gray-400 text-center">Yukarıdaki ayarları kaydeder ve geri sayımı başlatır. Süre dolduğunda, sizden son bir onay istenecektir.</p>
+            <p class="text-xs text-gray-400 text-center">Yukarıdaki ayarları kaydeder ve geri sayımı başlatır.</p>
+            <hr class="border-gray-600">
+            <button onclick="cancelAutomaticReset()" class="w-full py-2 bg-orange-700 hover:bg-orange-600 text-white font-bold rounded-lg">Otomatik Sıfırlamayı İptal Et</button>
+            <p class="text-xs text-gray-400 text-center">Ayarlanmış olan otomatik sıfırlamayı ve geri sayımı durdurur.</p>
             <hr class="border-gray-600">
             <button onclick="executeSeasonReset(true)" class="w-full py-3 bg-red-800 hover:bg-red-700 text-white font-bold rounded-lg">SEZONU ŞİMDİ BİTİR (MANUEL)</button>
-            <p class="text-xs text-gray-400 text-center">Geri sayımı beklemeden, mevcut liderlere yukarıda ayarlanan ödülleri verir ve her şeyi anında sıfırlar.</p>
+            <p class="text-xs text-gray-400 text-center">Geri sayımı beklemeden, anında her şeyi sıfırlar ve ödülleri dağıtır.</p>
         </div>
       </div>
     </div>
@@ -1682,6 +1712,46 @@ body.modal-open .modal-content {
     <button onclick="markPersistentAnnouncementAsSeen()" class="mt-8 w-full py-3 bg-red-700 hover:bg-red-600 text-white font-bold rounded-lg shadow-md">
       Anladım, Kapat
     </button>
+  </div>
+</div>
+  <div id="seasonInfoModal" class="modal-overlay fixed inset-0 bg-black bg-opacity-70 flex justify-center items-center z-[10001] hidden">
+  <div class="modal-content bg-gray-800 p-8 rounded-xl shadow-2xl border border-blue-500 w-11/12 max-w-2xl text-left relative max-h-[90vh] flex flex-col">
+    
+    <div class="flex-shrink-0 mb-4 pb-4 border-b border-gray-700">
+        <button class="modal-close-button" onclick="closeSeasonInfoModal()">&times;</button>
+        <h4 class="text-blue-300 text-2xl font-bold text-center">🏆 Sezon Sıfırlaması Nedir?</h4>
+    </div>
+
+    <div class="overflow-y-auto scrollable-list pr-4 space-y-4 text-gray-300">
+        <p>Oyunumuz, her ay rekabeti tazelemek ve tüm oyunculara yeni bir başlangıç şansı sunmak için <strong>Sezonluk Sıfırlama</strong> sistemini kullanır. Geri sayım sayacı sona erdiğinde, bir önceki sezon biter ve yeni bir sezon başlar.</p>
+        
+        <div>
+            <h5 class="text-xl font-bold text-yellow-300 mb-2">Sezon Bittiğinde Ne Olur?</h5>
+            <ul class="list-disc list-inside space-y-2 pl-2">
+                <li><strong>Ödüller Dağıtılır:</strong>
+                    <ul class="list-circle list-inside pl-4 mt-1">
+                        <li>"Kullanıcı Puan Sıralaması" birincisi ve "Liderler Sıralaması" birincisi, admin tarafından belirlenen <strong>özel ve kalıcı avatar</strong> ödüllerini kazanır.</li>
+                        <li>Şampiyonlar dahil, oyundaki <strong>tüm oyunculara</strong> admin tarafından belirlenen bir <strong>hediye paketi</strong> (Kutu Hakkı, Biletler, Kalkan vb.) gönderilir.</li>
+                    </ul>
+                </li>
+                <li><strong>Her Şey Sıfırlanır:</strong>
+                    <ul class="list-circle list-inside pl-4 mt-1 text-red-400">
+                        <li>Tüm kullanıcıların <strong>Puanları </strong> sıfırlanır.</li>
+                        <li>Tüm liderlik istatistikleri (açılan kutu sayısı, harcanan puan vb.) sıfırlanır.</li>
+                        <li>Mağaza satın alma geçmişleri ve ürünlerin "kaç kez satın alındığı" bilgisi temizlenir.</li>
+                    </ul>
+                </li>
+                 <li><strong>Neler Kalır?</strong>
+                    <ul class="list-circle list-inside pl-4 mt-1 text-green-400">
+                        <li>Kullanıcı hesaplarınız, şifreleriniz ve PIN'leriniz.</li>
+                        <li>Mağazadan satın aldığınız <strong>Avatarlar</strong> gibi kalıcı kozmetikler.</li>
+                        <li>Sezon sonunda hediye edilen envanter eşyaları (Kutu Hakları, Biletler vb.) yeni sezona aktarılır.</li>
+                    </ul>
+                </li>
+            </ul>
+        </div>
+        <p class="font-bold text-center text-yellow-200 pt-2 border-t border-gray-700">Yeni sezon, yeni bir başlangıç demektir. Herkese bol şans!</p>
+    </div>
   </div>
 </div>
   <script>
@@ -9184,7 +9254,7 @@ async function saveAutomaticResetSettings() {
     closeSeasonManagementModal();
 }
 
-// Beyin Fonksiyonu: Sezonu bitirir, ödülleri dağıtır ve her şeyi sıfırlar
+// ...VE YERİNE BU YENİ VERSİYONU YAPIŞTIR
 async function executeSeasonReset(isManual = false) {
     if (!isAdmin) return;
     
@@ -9207,18 +9277,21 @@ async function executeSeasonReset(isManual = false) {
     const puanLeader = leaders.currentBalanceUser;
     const rozetLeader = (await getTopBadgeHolder(allUsersData, leaders)).username;
     
-    const puanAvatar = seasonSettings?.rewards?.puanLeaderAvatarUrl || null;
-    const rozetAvatar = seasonSettings?.rewards?.rozetLeaderAvatarUrl || null;
+    const puanAvatar = seasonSettings?.rewards?.puanLeaderAvatarUrl || document.getElementById('puanLeaderAvatarUrl').value.trim();
+    const rozetAvatar = seasonSettings?.rewards?.rozetLeaderAvatarUrl || document.getElementById('rozetLeaderAvatarUrl').value.trim();
+
+    // --- DEĞİŞEN KISIM: ÖDÜLLERİ OTOMATİK 5 DEĞİL, İNPUT'LARDAN OKUYORUZ ---
+    const giftPackage = {
+        kutuHakki: parseInt(document.getElementById('rewardBoxRights').value) || 0,
+        carkBileti: parseInt(document.getElementById('rewardWheelTickets').value) || 0,
+        clickCatchTickets: parseInt(document.getElementById('rewardClickCatchTickets').value) || 0,
+        iflasShieldUses: parseInt(document.getElementById('rewardIflasShields').value) || 0
+    };
+    // --- DEĞİŞİKLİK SONU ---
 
     // 2. Ödülleri ve sıfırlamaları hazırla
     const updates = {};
-    const giftPackage = {
-        kutuHakki: 5,
-        carkBileti: 5,
-        clickCatchTickets: 5,
-        iflasShieldUses: 5
-    };
-
+    
     for (const username in allUsersData) {
         if (username.toLowerCase() === 'weizendtv' || !allUsersData[username].approved) continue;
         
@@ -9255,7 +9328,7 @@ async function executeSeasonReset(isManual = false) {
     // Mağaza ve geçmiş verilerini sıfırla
     updates['purchaseHistory'] = null;
     updates['clickCatchWeeklyScores'] = null;
-    updates['gameStats'] = null; // Kutu açma ve kazanan bilgilerini de temizler
+    updates['gameStats'] = null;
 
     const storeItemsSnap = await db.ref('storeItems').once('value');
     if (storeItemsSnap.exists()) {
@@ -9268,13 +9341,13 @@ async function executeSeasonReset(isManual = false) {
     const seasonName = new Date().toLocaleString('tr-TR', { month: 'long', year: 'numeric' }) + " Sezonu";
     updates[`seasonAnnouncements/${Date.now()}`] = {
         title: `${seasonName} Sona Erdi!`,
-        message: `🏆 Puan Lideri: <b>${puanLeader}</b><br>👑 Rozet Lideri: <b>${rozetLeader}</b><br><br>Şampiyonlar özel avatarlarını kazandı! Tüm katılımcılara ise 5'er adet Kutu Hakkı, Çark Bileti, T-Y Bileti ve Kalkan hediye edildi! Yeni sezon başladı, herkese bol şans!`,
+        message: `🏆 Puan Lideri: <b>${puanLeader}</b><br>👑 Rozet Lideri: <b>${rozetLeader}</b><br><br>Şampiyonlar özel avatarlarını kazandı! Tüm katılımcılara ise hediye paketleri gönderildi! Yeni sezon başladı, herkese bol şans!`,
         timestamp: firebase.database.ServerValue.TIMESTAMP
     };
 
     // 4. Tüm işlemleri tek seferde uygula ve oyunu yeniden kur
     await db.ref().update(updates);
-    await createBoxes(); // Yeni kutuları oluştur
+    await createBoxes();
     
     // 5. Sezon ayarlarını temizle
     await db.ref('gameConfig/seasonSettings').remove();
@@ -9345,6 +9418,18 @@ async function getTopBadgeHolder(allUsersData, leaders) {
         }
     }
     return topUser;
+}
+
+    // --- YENİ EKLENECEK SEZON BİLGİ FONKSİYONLARI ---
+
+function openSeasonInfoModal() {
+    document.body.classList.add('modal-open');
+    document.getElementById('seasonInfoModal').style.display = 'flex';
+}
+
+function closeSeasonInfoModal() {
+    document.body.classList.remove('modal-open');
+    document.getElementById('seasonInfoModal').style.display = 'none';
 }
   // YENİ EKLENECEK KOD SONU
     
