@@ -489,7 +489,7 @@ body.modal-open .modal-content {
   <div class="modal-content bg-gray-800 p-8 rounded-xl shadow-2xl border border-orange-500 w-11/12 max-w-lg text-center relative">
     <button class="modal-close-button" onclick="closeSolveProblemsModal()">&times;</button>
     <h4 class="text-orange-300 text-2xl font-bold mb-6">Sorun Giderme Menüsü</h4>
-    <p class="text-gray-400 mb-6">Buradaki araçları kullanarak oyunda oluşabilecek genel sorunları çözebilirsiniz.</p>
+    <p id="solveProblemsMessage" class="text-gray-400 mb-6 transition-colors duration-300">Buradaki araçları kullanarak oyunda oluşabilecek genel sorunları çözebilirsiniz.</p>
     <div class="space-y-4">
         <button onclick="manualUnlockGame()" class="w-full py-3 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-lg shadow-md">
             Oyun Kilidini Manuel Aç
@@ -5486,27 +5486,25 @@ function closeSolveProblemsModal() {
 
 // MEVCUT manualUnlockGame FONKSİYONUNU SİL VE BUNU YAPIŞTIR
 async function manualUnlockGame() {
-    const confirmed = await customConfirm("Oyunun kilitlendiğini düşünüyorsanız, kilidi manuel olarak açmak istediğinizden emin misiniz? Bu işlem, sadece gerçekten bir sorun varsa kullanılmalıdır.");
-    if (confirmed) {
-        // --- YENİ MANTIK: Önce mevcut durumu kontrol et ---
-        const gameLockRef = db.ref('gameLock');
-        const lockSnap = await gameLockRef.once('value');
-        const isCurrentlyLocked = lockSnap.val() === true;
+    // 1. Önce kilit durumunu veritabanından kontrol et.
+    const gameLockRef = db.ref('gameLock');
+    const lockSnap = await gameLockRef.once('value');
+    const isCurrentlyLocked = lockSnap.val() === true;
 
-        // Her iki durumda da bekleme süresini (cooldown) sıfırlamak faydalıdır.
-        await db.ref('gameCooldown/endTime').set(0);
+    // 2. Her durumda genel bekleme süresini sıfırla.
+    await db.ref('gameCooldown/endTime').set(0);
 
-        if (isCurrentlyLocked) {
-            // Oyun gerçekten kilitliyse, kilidi aç ve başarı mesajı göster.
-            await gameLockRef.set(false);
-            displayMessage('Oyun kilidi açıldı, artık kutu açabilirsiniz.');
-        } else {
-            // Oyun kilitli değilse, sadece uyarı mesajı göster.
-            displayMessage('Oyun zaten kilitli değil, kutular şu anda açılabilir durumda.');
-        }
-
-        closeSolveProblemsModal();
+    // 3. Duruma göre ilgili mesaj penceresini göster.
+    if (isCurrentlyLocked) {
+        await gameLockRef.set(false);
+        displayMessage('Oyun kilidi başarıyla açıldı. Artık kutu açabilirsiniz.');
+    } else {
+        displayMessage('Oyun zaten kilitli değil, kutular şu anda açılabilir durumda.');
     }
+
+    // 4. DÜZELTME: "Sorunları Çöz" penceresini EN SON kapat.
+    // Bu, "göz kırpma" efektini ortadan kaldırır.
+    closeSolveProblemsModal();
 }
 
 // ESKİ manualResetAfterSurprise FONKSİYONUNU SİL, BUNU YAPIŞTIR
