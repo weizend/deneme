@@ -3836,8 +3836,8 @@ async function deleteUserAvatar(username, avatarId) {
       }); 
   }
 
+// MEVCUT openBox FONKSİYONUNU SİL VE BU NİHAİ VERSİYONU YAPIŞTIR
 async function openBox(index) {
-    // --- GENEL BEKLEME SÜRESİ KONTROLÜ (SİSTEMİN KALBİ) ---
     const cooldownRef = db.ref('gameCooldown/endTime');
     const cooldownSnap = await cooldownRef.once('value');
     const cooldownEndTime = cooldownSnap.val() || 0;
@@ -3846,7 +3846,6 @@ async function openBox(index) {
         showCooldownModal(cooldownEndTime);
         return;
     }
-    // --- KONTROL SONU ---
 
     if (isGameLocked) {
         displayMessage("Oyun şu an kilitli. Lütfen kısa bir süre sonra tekrar deneyin.");
@@ -3872,20 +3871,6 @@ async function openBox(index) {
     const initialConfirm = await customConfirm(`<b>${boxes[index].id}</b> numaralı kutuyu açmak istediğinize emin misiniz?`);
     if (!initialConfirm) return;
 
-    await db.ref('gameLock').set(true);
-    
-    const boxRef = db.ref('boxes/' + index);
-    let latestBoxSnap = await boxRef.once('value');
-    if (latestBoxSnap.val().opened) {
-        displayMessage(`Seçtiğiniz kutu <b>${latestBoxSnap.val().opener}</b> tarafından açıldı. Geç kaldınız!`);
-        await db.ref('gameLock').set(false);
-        return;
-    }
-    userSnap = await userRef.once('value');
-    user = userSnap.val();
-
-    // ... (Tüm akıllı çarpan mantığı ve diğer kutu içeriği mantıkları burada yer alıyor ve doğru çalışıyor)
-    // Bu kısımda bir değişiklik yapmıyoruz.
     let finalMultiplier = 1;
     let useMultiplier = false;
     const originalMultiplierSource = user.multiplierSource || 'none';
@@ -3901,6 +3886,20 @@ async function openBox(index) {
         }
     }
     
+    // --- DÜZELTME: KİLİT NOKTASI BURAYA TAŞINDI ---
+    // Kilit, tüm onaylar ve seçimler alındıktan sonra, tam işlemden önce devreye giriyor.
+    await db.ref('gameLock').set(true);
+    
+    const boxRef = db.ref('boxes/' + index);
+    let latestBoxSnap = await boxRef.once('value');
+    if (latestBoxSnap.val().opened) {
+        displayMessage(`Seçtiğiniz kutu <b>${latestBoxSnap.val().opener}</b> tarafından açıldı. Geç kaldınız!`);
+        await db.ref('gameLock').set(false);
+        return;
+    }
+    userSnap = await userRef.once('value');
+    user = userSnap.val();
+
     const statsRef = db.ref(`gameStats/boxesOpenedByUsers/${currentUser}`);
     await statsRef.transaction(currentValue => (currentValue || 0) + 1);
 
@@ -3918,6 +3917,7 @@ async function openBox(index) {
         boxOpenInfo.multiplierUsed = finalMultiplier;
     }
     
+    // (Tüm akıllı çarpan mantığı ve diğer kutu içeriği mantıkları burada doğru şekilde çalışmaya devam ediyor)
     if (box.content === 'multiplier') {
         updates['multiplierFoundCount'] = (user.multiplierFoundCount || 0) + 1;
         
@@ -4013,16 +4013,12 @@ async function openBox(index) {
             boxOpenInfo.itemName = itemNames[box.content];
         }
     }
-    // ...
 
     await userRef.update(updates);
     await boxRef.update(boxUpdate);
 
-    // --- YENİ BEKLEME SÜRESİ BAŞLATMA ---
-    // İşlem başarıyla bittiğinde, 3 saniyelik yeni bir genel bekleme süresi başlat
     const newCooldownEndTime = getSyncedTime() + 3000;
     await cooldownRef.set(newCooldownEndTime);
-    // --- BAŞLATMA SONU ---
     
     await db.ref('gameLock').set(false);
 
