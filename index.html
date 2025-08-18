@@ -11,33 +11,6 @@
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
 
 <style>
-    .toast-notification {
-        transition: all 0.5s ease-in-out;
-        opacity: 1;
-        transform: translateX(0);
-    }
-    .toast-notification.fade-out {
-        opacity: 0;
-        transform: translateX(100%);
-    }
-    .toast-progress-container {
-        position: absolute;
-        bottom: 0;
-        left: 0;
-        width: 100%;
-        height: 4px;
-        background-color: rgba(255, 255, 255, 0.2);
-    }
-    .toast-progress-bar {
-        height: 100%;
-        width: 100%;
-        background-color: #fBBF24; /* yellow-400 */
-        animation: shrink 3s linear forwards;
-    }
-    @keyframes shrink {
-        from { width: 100%; }
-        to { width: 0%; }
-    }
 
   .floating-text {
       position: absolute;
@@ -1803,8 +1776,6 @@ body.modal-open .modal-content {
     </div>
   </div>
 </div>
-<div id="toast-container" class="fixed top-5 right-5 z-[100] w-80 space-y-3">
-    </div>
 
 <div id="cooldownModal" class="fixed inset-0 bg-black bg-opacity-70 justify-center items-center z-[999] hidden">
     <div class="bg-gray-800 p-6 rounded-xl shadow-lg border border-red-500 text-center">
@@ -5436,7 +5407,18 @@ async function openUserManagementModal(username) {
   let globalCountdownInterval = null;
 let spectatorCountdownInterval = null;
 
+// MEVCUT listenForGameChanges FONKSİYONUNU SİL VE BUNU YAPIŞTIR
 function listenForGameChanges() {
+    // Dinleyicileri eklemeden önce eskilerini (varsa) kapatıyoruz
+    if (activeListeners.gameLock) {
+        activeListeners.gameLock.ref.off(activeListeners.gameLock.event, activeListeners.gameLock.callback);
+    }
+    if (activeListeners.lastSurprise) {
+        activeListeners.lastSurprise.ref.off(activeListeners.lastSurprise.event, activeListeners.lastSurprise.callback);
+    }
+    // lastOpenedBox dinleyicisi bu versiyonda kaldırılmıştır.
+
+    // Sadece gameLock (anlık kilit) dinleyicisi kalıyor
     const gameLockRef = db.ref('gameLock');
     const gameLockCallback = snap => {
         isGameLocked = snap.val() === true;
@@ -5456,18 +5438,7 @@ function listenForGameChanges() {
     activeListeners.gameLock = { ref: gameLockRef, event: 'value', callback: gameLockCallback };
     gameLockRef.on('value', gameLockCallback);
 
-    const lastOpenedBoxRef = db.ref('lastOpenedBox');
-    const lastOpenedBoxCallback = snap => {
-        const info = snap.val();
-        if (info && (getSyncedTime() - info.timestamp < 10000)) {
-            if (info.content !== 'surpriz') {
-                showToastNotification(info);
-            }
-        }
-    };
-    activeListeners.lastOpenedBox = { ref: lastOpenedBoxRef, event: 'value', callback: lastOpenedBoxCallback };
-    lastOpenedBoxRef.on('value', lastOpenedBoxCallback);
-
+    // Sadece son sürpriz bulan dinleyicisi kalıyor
     const lastSurpriseRef = db.ref('gameStats/lastSurpriseInfo');
     const lastSurpriseCallback = snap => {
         updateLastSurpriseInfoDisplay(snap.val());
@@ -9860,58 +9831,6 @@ async function openWeeklyResetInfoModal() {
 function closeWeeklyResetInfoModal() {
     document.body.classList.remove('modal-open');
     document.getElementById('weeklyResetInfoModal').style.display = 'none';
-}
-
-// BU YEPYENİ FONKSİYONU KODLARINA EKLE
-function showToastNotification(info) {
-    const container = document.getElementById('toast-container');
-    const toast = document.createElement('div');
-    // 'overflow-hidden' ve 'relative' sınıfları eklendi
-    toast.className = 'toast-notification bg-gray-800 border border-gray-700 rounded-lg shadow-xl p-4 w-full relative overflow-hidden';
-
-    let contentHtml = '';
-    const userHtml = `<b class="text-yellow-300">${info.opener}</b>`;
-    
-    // finalPoints ve finalValue gibi değişkenlerin varlığını kontrol et
-    let finalPoints = info.finalPoints || info.points;
-    let finalValue = info.finalValue || info.value;
-    
-    const itemNames = { wheelTicket: 'Şans Çarkı Bileti', clickCatchTicket: 'Tıkla-Yakala Bileti', iflasShield: 'İflas Kalkanı' };
-    const itemName = itemNames[info.content] || info.content;
-
-    switch (info.content) {
-        case 'points':
-            contentHtml = `${userHtml}, <b>${info.boxId}</b> numaralı kutudan <span class="text-green-300 font-bold">+${finalPoints} Puan</span> kazandı.`;
-            break;
-        case 'iflas':
-            contentHtml = info.shieldUsed
-                ? `${userHtml}, <b>${info.boxId}</b> numaralı kutudan bomba buldu ama 🛡️ kalkanı onu korudu.`
-                : `${userHtml}, <b>${info.boxId}</b> numaralı kutudan 💣 bomba buldu ve iflas etti!`;
-            break;
-        default:
-            contentHtml = `${userHtml}, <b>${info.boxId}</b> numaralı kutudan <span class="text-cyan-300 font-bold">+${finalValue} ${itemName}</span> kazandı.`;
-            break;
-    }
-
-    // Geri sayım çubuğu HTML'i eklendi
-    toast.innerHTML = `
-        <p class="text-sm text-gray-200">${contentHtml}</p>
-        <div class="toast-progress-container">
-            <div class="toast-progress-bar"></div>
-        </div>
-    `;
-    
-    container.prepend(toast);
-
-    // 2.5 saniye sonra bildirimi solgunlaştır (Süre 3 saniyeye ayarlandı)
-    setTimeout(() => {
-        toast.classList.add('fade-out');
-    }, 2500);
-
-    // 3 saniye sonra elementi tamamen kaldır
-    setTimeout(() => {
-        toast.remove();
-    }, 3000);
 }
 
 let cooldownInterval = null;
