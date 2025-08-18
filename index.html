@@ -5409,16 +5409,21 @@ function closeSolveProblemsModal() {
     document.getElementById('solveProblemsModal').style.display = 'none';
 }
 
+// MEVCUT manualUnlockGame FONKSİYONUNU SİL VE BUNU YAPIŞTIR
 async function manualUnlockGame() {
-    const gameLockRef = db.ref('gameLock');
-    const lockSnap = await gameLockRef.once('value');
-    if (lockSnap.val() === true) {
-        await gameLockRef.set(false);
-        displayMessage("Oyun kilidi başarıyla kaldırıldı. Artık kutu açabilirsiniz.");
-    } else {
-        displayMessage("Oyun zaten kilitli değil, kutular şu anda açılabilir durumda.");
+    const confirmed = await customConfirm("Oyunun kilitlendiğini düşünüyorsanız, kilidi manuel olarak açmak istediğinizden emin misiniz? Bu işlem, sadece gerçekten bir sorun varsa kullanılmalıdır.");
+    if (confirmed) {
+        // Hem anlık kilidi kaldırıyoruz...
+        await db.ref('gameLock').set(false);
+        
+        // --- YENİ EKLENEN DÜZELTME ---
+        // Hem de genel bekleme süresini sıfırlıyoruz.
+        await db.ref('gameCooldown/endTime').set(0);
+        // --- DÜZELTME SONU ---
+
+        displayMessage('Oyun kilidi ve bekleme süresi manuel olarak sıfırlandı.');
+        closeSolveProblemsModal();
     }
-    closeSolveProblemsModal();
 }
 
 // ESKİ manualResetAfterSurprise FONKSİYONUNU SİL, BUNU YAPIŞTIR
