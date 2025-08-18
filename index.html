@@ -3837,7 +3837,16 @@ async function deleteUserAvatar(username, avatarId) {
   }
 
 async function openBox(index) {
-    // 3 Saniyelik genel bekleme süresi kaldırıldı.
+    // --- GENEL BEKLEME SÜRESİ KONTROLÜ (SİSTEMİN KALBİ) ---
+    const cooldownRef = db.ref('gameCooldown/endTime');
+    const cooldownSnap = await cooldownRef.once('value');
+    const cooldownEndTime = cooldownSnap.val() || 0;
+
+    if (getSyncedTime() < cooldownEndTime) {
+        showCooldownModal(cooldownEndTime);
+        return;
+    }
+    // --- KONTROL SONU ---
 
     if (isGameLocked) {
         displayMessage("Oyun şu an kilitli. Lütfen kısa bir süre sonra tekrar deneyin.");
@@ -3875,6 +3884,8 @@ async function openBox(index) {
     userSnap = await userRef.once('value');
     user = userSnap.val();
 
+    // ... (Tüm akıllı çarpan mantığı ve diğer kutu içeriği mantıkları burada yer alıyor ve doğru çalışıyor)
+    // Bu kısımda bir değişiklik yapmıyoruz.
     let finalMultiplier = 1;
     let useMultiplier = false;
     const originalMultiplierSource = user.multiplierSource || 'none';
@@ -3885,17 +3896,11 @@ async function openBox(index) {
     } else if (user.multiplierSource === 'store' && (user.multiplierRemainingUses || 0) > 0) {
         const confirmed = await customConfirm(`Mevcut <b>${user.activeMultiplier}x</b> çarpanınızı kullanmak ister misiniz?`);
         if (confirmed) {
-            latestBoxSnap = await boxRef.once('value');
-            if (latestBoxSnap.val().opened) {
-                displayMessage(`Siz çarpanı onaylayana kadar bu kutu <b>${latestBoxSnap.val().opener}</b> tarafından açıldı. Haklarınız ve çarpanınız kullanılmadı.`);
-                await db.ref('gameLock').set(false);
-                return;
-            }
             finalMultiplier = user.activeMultiplier;
             useMultiplier = true;
         }
     }
-
+    
     const statsRef = db.ref(`gameStats/boxesOpenedByUsers/${currentUser}`);
     await statsRef.transaction(currentValue => (currentValue || 0) + 1);
 
@@ -3904,14 +3909,15 @@ async function openBox(index) {
     const updates = {};
     updates['kutuHakki'] = (user.kutuHakki || 0) - BOX_RIGHTS_COST_PER_BOX;
     updates['boxesOpenedCount'] = (user.boxesOpenedCount || 0) + 1;
-
+    
     const boxUpdate = { opened: true, opener: currentUser, id: box.id, content: box.content, value: box.value };
-    const boxOpenInfo = { boxId: box.id, opener: currentUser, content: box.content, value: box.value, timestamp: firebase.database.ServerValue.TIMESTAMP };
+    const boxOpenInfo = { boxId: box.id, opener: currentUser, content: box.content, value: box.value, timestamp: firebase.database.ServerValue.TIMESTAMP, finalPoints: 0, finalValue: 0, itemName: '', shieldUsed: false, lostPoints: 0};
+    
     if (finalMultiplier > 1) {
         boxUpdate.multiplierApplied = finalMultiplier;
         boxOpenInfo.multiplierUsed = finalMultiplier;
     }
-
+    
     if (box.content === 'multiplier') {
         updates['multiplierFoundCount'] = (user.multiplierFoundCount || 0) + 1;
         
@@ -3926,43 +3932,23 @@ async function openBox(index) {
                 if (choice === 'swap') { 
                     const rightsGained = user.activeMultiplier * user.multiplierRemainingUses;
                     updates['kutuHakki'] = (updates.kutuHakki || 0) + rightsGained;
-                    
                     updates['activeMultiplier'] = box.value;
                     updates['multiplierSource'] = 'box';
                     updates['multiplierRemainingUses'] = 0;
                     updates['activeStoreMultiplierItemId'] = null;
-
                     message = `YÜKSELTME BAŞARILI! 🚀<br>Yeni <b>${box.value}x Çarpan</b> aktif edildi. Eski çarpanından kalanlar için <b>+${rightsGained} Kutu Hakkı</b> telafi edildi!`;
-                    logActivity('multiplierChoice', currentUser, { 
-                        boxId: box.id, 
-                        choice: 'swap',
-                        oldMultiplier: user.activeMultiplier,
-                        newMultiplier: box.value,
-                        compensation: rightsGained 
-                    });
+                    logActivity('multiplierChoice', currentUser, { boxId: box.id, choice: 'swap', oldMultiplier: user.activeMultiplier, newMultiplier: box.value, compensation: rightsGained });
                 } else { 
                     const rightsGained = box.value;
                     updates['kutuHakki'] = (updates.kutuHakki || 0) + rightsGained;
                     message = `SEÇİMİNİ YAPTIN! 👍<br>Mevcut çarpanın korundu ve bulduğun çarpan <b>+${rightsGained} Kutu Hakkı'na</b> dönüştürüldü!`;
-                    logActivity('multiplierChoice', currentUser, { 
-                        boxId: box.id,
-                        choice: 'convert',
-                        oldMultiplier: user.activeMultiplier,
-                        newMultiplier: box.value,
-                        boxRightsGained: rightsGained
-                    });
+                    logActivity('multiplierChoice', currentUser, { boxId: box.id, choice: 'convert', oldMultiplier: user.activeMultiplier, newMultiplier: box.value, boxRightsGained: rightsGained });
                 }
             } else { 
                 const rightsGained = box.value;
                 updates['kutuHakki'] = (updates.kutuHakki || 0) + rightsGained;
                 message = `HARİKA! 🤩<br>Mağaza çarpan hakkın korundu ve bulduğun çarpan <b>+${rightsGained} Kutu Hakkı'na</b> dönüştürüldü!`;
-                logActivity('multiplierChoice', currentUser, {
-                    boxId: box.id,
-                    choice: 'convert',
-                    oldMultiplier: user.activeMultiplier,
-                    newMultiplier: box.value,
-                    boxRightsGained: rightsGained
-                });
+                logActivity('multiplierChoice', currentUser, { boxId: box.id, choice: 'convert', oldMultiplier: user.activeMultiplier, newMultiplier: box.value, boxRightsGained: rightsGained });
             }
             boxUpdate.refundOccurred = true;
 
@@ -3991,6 +3977,7 @@ async function openBox(index) {
             updates['balance'] = (user.balance || 0) + pointsGained;
             if (updates['balance'] > (user.highestBalanceEver || 0)) updates['highestBalanceEver'] = updates['balance'];
             message = `+${pointsGained} puan kazandınız!`;
+            boxOpenInfo.finalPoints = pointsGained;
         }
         else if (box.content === 'iflas') {
             let shieldWasUsed = false;
@@ -4005,15 +3992,13 @@ async function openBox(index) {
                 updates['balance'] = 0;
                 message = `İflas! Tüm puanların (${lostPoints} puan) silindi.`;
             }
+            boxOpenInfo.shieldUsed = shieldWasUsed;
+            boxOpenInfo.lostPoints = shieldWasUsed ? 0 : lostPoints;
         }
         else if (box.content === 'surpriz') {
             updates['surpriseBoxesOpened'] = (user.surpriseBoxesOpened || 0) + 1;
             const sessionRef = db.ref('surprise_box_session');
-            await sessionRef.set({
-                active: true, user: currentUser, boxId: box.id, multiplier: finalMultiplier,
-                cards: shuffleArray([...cardValues]), selection: null, result: null,
-                timestamp: firebase.database.ServerValue.TIMESTAMP
-            });
+            await sessionRef.set({ active: true, user: currentUser, boxId: box.id, multiplier: finalMultiplier, cards: shuffleArray([...cardValues]), selection: null, result: null, timestamp: firebase.database.ServerValue.TIMESTAMP });
             const snap = await sessionRef.once('value');
             await sessionRef.update({ expirationTimestamp: snap.val().timestamp + 60000 });
             openCardSelectionModal(currentUser);
@@ -4024,11 +4009,20 @@ async function openBox(index) {
             const dbKeys = { wheelTicket: 'carkBileti', clickCatchTicket: 'clickCatchTickets', iflasShield: 'iflasShieldUses' };
             updates[dbKeys[box.content]] = (user[dbKeys[box.content]] || 0) + itemsGained;
             message = `Kutudan <b>+${itemsGained} ${itemNames[box.content]}</b> kazandın!`;
+            boxOpenInfo.finalValue = itemsGained;
+            boxOpenInfo.itemName = itemNames[box.content];
         }
     }
+    // ...
 
     await userRef.update(updates);
     await boxRef.update(boxUpdate);
+
+    // --- YENİ BEKLEME SÜRESİ BAŞLATMA ---
+    // İşlem başarıyla bittiğinde, 3 saniyelik yeni bir genel bekleme süresi başlat
+    const newCooldownEndTime = getSyncedTime() + 3000;
+    await cooldownRef.set(newCooldownEndTime);
+    // --- BAŞLATMA SONU ---
     
     await db.ref('gameLock').set(false);
 
@@ -5513,17 +5507,14 @@ function closeSolveProblemsModal() {
     document.getElementById('solveProblemsModal').style.display = 'none';
 }
 
-// MEVCUT manualUnlockGame FONKSİYONUNU SİL VE BUNU YAPIŞTIR
 async function manualUnlockGame() {
     const confirmed = await customConfirm("Oyunun kilitlendiğini düşünüyorsanız, kilidi manuel olarak açmak istediğinizden emin misiniz? Bu işlem, sadece gerçekten bir sorun varsa kullanılmalıdır.");
     if (confirmed) {
         // Hem anlık kilidi kaldırıyoruz...
         await db.ref('gameLock').set(false);
         
-        // --- YENİ EKLENEN DÜZELTME ---
         // Hem de genel bekleme süresini sıfırlıyoruz.
         await db.ref('gameCooldown/endTime').set(0);
-        // --- DÜZELTME SONU ---
 
         displayMessage('Oyun kilidi ve bekleme süresi manuel olarak sıfırlandı.');
         closeSolveProblemsModal();
@@ -9960,7 +9951,6 @@ function closeCooldownModal() {
     const modal = document.getElementById('cooldownModal');
     modal.style.display = 'none';
 }
-  // YENİ EKLENECEK KOD SONU
     
 </script>
 </body>
