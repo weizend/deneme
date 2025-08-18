@@ -3837,14 +3837,7 @@ async function deleteUserAvatar(username, avatarId) {
   }
 
 async function openBox(index) {
-    const cooldownRef = db.ref('gameCooldown/endTime');
-    const cooldownSnap = await cooldownRef.once('value');
-    const cooldownEndTime = cooldownSnap.val() || 0;
-
-    if (getSyncedTime() < cooldownEndTime) {
-        showCooldownModal(cooldownEndTime);
-        return;
-    }
+    // 3 Saniyelik genel bekleme süresi kaldırıldı.
 
     if (isGameLocked) {
         displayMessage("Oyun şu an kilitli. Lütfen kısa bir süre sonra tekrar deneyin.");
@@ -3892,6 +3885,12 @@ async function openBox(index) {
     } else if (user.multiplierSource === 'store' && (user.multiplierRemainingUses || 0) > 0) {
         const confirmed = await customConfirm(`Mevcut <b>${user.activeMultiplier}x</b> çarpanınızı kullanmak ister misiniz?`);
         if (confirmed) {
+            latestBoxSnap = await boxRef.once('value');
+            if (latestBoxSnap.val().opened) {
+                displayMessage(`Siz çarpanı onaylayana kadar bu kutu <b>${latestBoxSnap.val().opener}</b> tarafından açıldı. Haklarınız ve çarpanınız kullanılmadı.`);
+                await db.ref('gameLock').set(false);
+                return;
+            }
             finalMultiplier = user.activeMultiplier;
             useMultiplier = true;
         }
@@ -3913,18 +3912,123 @@ async function openBox(index) {
         boxOpenInfo.multiplierUsed = finalMultiplier;
     }
 
-    // Çarpan mantığı ve diğer kutu içerikleri
     if (box.content === 'multiplier') {
-        // ... (Tüm akıllı çarpan mantığı burada, önceki cevaplardaki gibi)
+        updates['multiplierFoundCount'] = (user.multiplierFoundCount || 0) + 1;
+        
+        if (useMultiplier && originalMultiplierSource === 'store') {
+            if (box.value > user.activeMultiplier) {
+                const choice = await customChoiceConfirm(
+                    `Harika bir buluş! Mevcut <b>${user.activeMultiplier}x</b> çarpanın varken kutudan daha güçlü bir <b>${box.value}x</b> çarpan buldun.<br>Ne yapmak istersin?`,
+                    `Mevcut Çarpanımı Koru`,
+                    `Yeni ${box.value}x Çarpanına Yükselt`
+                );
+
+                if (choice === 'swap') { 
+                    const rightsGained = user.activeMultiplier * user.multiplierRemainingUses;
+                    updates['kutuHakki'] = (updates.kutuHakki || 0) + rightsGained;
+                    
+                    updates['activeMultiplier'] = box.value;
+                    updates['multiplierSource'] = 'box';
+                    updates['multiplierRemainingUses'] = 0;
+                    updates['activeStoreMultiplierItemId'] = null;
+
+                    message = `YÜKSELTME BAŞARILI! 🚀<br>Yeni <b>${box.value}x Çarpan</b> aktif edildi. Eski çarpanından kalanlar için <b>+${rightsGained} Kutu Hakkı</b> telafi edildi!`;
+                    logActivity('multiplierChoice', currentUser, { 
+                        boxId: box.id, 
+                        choice: 'swap',
+                        oldMultiplier: user.activeMultiplier,
+                        newMultiplier: box.value,
+                        compensation: rightsGained 
+                    });
+                } else { 
+                    const rightsGained = box.value;
+                    updates['kutuHakki'] = (updates.kutuHakki || 0) + rightsGained;
+                    message = `SEÇİMİNİ YAPTIN! 👍<br>Mevcut çarpanın korundu ve bulduğun çarpan <b>+${rightsGained} Kutu Hakkı'na</b> dönüştürüldü!`;
+                    logActivity('multiplierChoice', currentUser, { 
+                        boxId: box.id,
+                        choice: 'convert',
+                        oldMultiplier: user.activeMultiplier,
+                        newMultiplier: box.value,
+                        boxRightsGained: rightsGained
+                    });
+                }
+            } else { 
+                const rightsGained = box.value;
+                updates['kutuHakki'] = (updates.kutuHakki || 0) + rightsGained;
+                message = `HARİKA! 🤩<br>Mağaza çarpan hakkın korundu ve bulduğun çarpan <b>+${rightsGained} Kutu Hakkı'na</b> dönüştürüldü!`;
+                logActivity('multiplierChoice', currentUser, {
+                    boxId: box.id,
+                    choice: 'convert',
+                    oldMultiplier: user.activeMultiplier,
+                    newMultiplier: box.value,
+                    boxRightsGained: rightsGained
+                });
+            }
+            boxUpdate.refundOccurred = true;
+
+        } else {
+            message = `Tebrikler! <b>${box.value}x Çarpan</b> buldun! Bu çarpan, bir sonraki kutu açılışında otomatik olarak kullanılacak.`;
+            updates['activeMultiplier'] = box.value;
+            updates['multiplierSource'] = 'box';
+            logActivity('multiplierFound', currentUser, { boxId: box.id, value: box.value });
+        }
     } else {
-        // ... (Puan, iflas, sürpriz kutu ve diğer eşya mantıkları burada)
+        if (useMultiplier && box.content !== 'surpriz') {
+            if (originalMultiplierSource === 'box') {
+                updates['activeMultiplier'] = 1;
+                updates['multiplierSource'] = 'none';
+            } else if (originalMultiplierSource === 'store') {
+                updates['multiplierRemainingUses'] = (user.multiplierRemainingUses || 0) - 1;
+                if (updates['multiplierRemainingUses'] <= 0) {
+                    updates['multiplierSource'] = 'none';
+                    updates['activeStoreMultiplierItemId'] = null;
+                }
+            }
+        }
+        
+        if (box.content === 'points') {
+            const pointsGained = box.value * finalMultiplier;
+            updates['balance'] = (user.balance || 0) + pointsGained;
+            if (updates['balance'] > (user.highestBalanceEver || 0)) updates['highestBalanceEver'] = updates['balance'];
+            message = `+${pointsGained} puan kazandınız!`;
+        }
+        else if (box.content === 'iflas') {
+            let shieldWasUsed = false;
+            const lostPoints = user.balance || 0;
+            updates['iflasCount'] = (user.iflasCount || 0) + 1;
+            if ((user.iflasShieldUses || 0) > 0) {
+                updates['iflasShieldUses'] = (user.iflasShieldUses || 0) - 1;
+                updates['iflasShieldUsedCount'] = (user.iflasShieldUsedCount || 0) + 1; 
+                shieldWasUsed = true;
+                message = `İflas! 🛡️ Kalkanın seni korudu!`;
+            } else {
+                updates['balance'] = 0;
+                message = `İflas! Tüm puanların (${lostPoints} puan) silindi.`;
+            }
+        }
+        else if (box.content === 'surpriz') {
+            updates['surpriseBoxesOpened'] = (user.surpriseBoxesOpened || 0) + 1;
+            const sessionRef = db.ref('surprise_box_session');
+            await sessionRef.set({
+                active: true, user: currentUser, boxId: box.id, multiplier: finalMultiplier,
+                cards: shuffleArray([...cardValues]), selection: null, result: null,
+                timestamp: firebase.database.ServerValue.TIMESTAMP
+            });
+            const snap = await sessionRef.once('value');
+            await sessionRef.update({ expirationTimestamp: snap.val().timestamp + 60000 });
+            openCardSelectionModal(currentUser);
+        }
+        else {
+            const itemsGained = box.value * finalMultiplier;
+            const itemNames = { wheelTicket: 'Şans Çarkı Bileti', clickCatchTicket: 'Tıkla-Yakala Bileti', iflasShield: 'İflas Kalkanı' };
+            const dbKeys = { wheelTicket: 'carkBileti', clickCatchTicket: 'clickCatchTickets', iflasShield: 'iflasShieldUses' };
+            updates[dbKeys[box.content]] = (user[dbKeys[box.content]] || 0) + itemsGained;
+            message = `Kutudan <b>+${itemsGained} ${itemNames[box.content]}</b> kazandın!`;
+        }
     }
 
     await userRef.update(updates);
     await boxRef.update(boxUpdate);
-
-    const newCooldownEndTime = getSyncedTime() + 3000;
-    await cooldownRef.set(newCooldownEndTime);
     
     await db.ref('gameLock').set(false);
 
