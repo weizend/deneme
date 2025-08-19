@@ -5478,16 +5478,16 @@ async function manualUnlockGame() {
     closeSolveProblemsModal();
 }
 
-// ESKİ manualResetAfterSurprise FONKSİYONUNU SİL, BUNU YAPIŞTIR
+// MEVCUT manualResetAfterSurprise FONKSİYONUNU SİL, BUNU YAPIŞTIR
 async function manualResetAfterSurprise() {
-    // Artık tek bir kaydı ('lastSurpriseInfo') kontrol ediyoruz
+    // Veritabanından en son sürpriz bulanın bilgisini kontrol ediyoruz.
     const surpriseInfoRef = db.ref('gameStats/lastSurpriseInfo');
     const surpriseSnap = await surpriseInfoRef.once('value');
 
     if (surpriseSnap.exists()) {
         const surpriseData = surpriseSnap.val();
         
-        // Eğer sürpriz çarktan geldiyse veya oyun zaten sıfırlandıysa, tekrar sıfırlamaya izin verme
+        // Eğer sürpriz çarktan geldiyse veya oyun zaten sıfırlandıysa, tekrar sıfırlamaya izin verme.
         if (surpriseData.boxId === 'Çark') {
             displayMessage("Bu özellik sadece Kutu Oyunu'nda bulunan Sürpriz Kutular için geçerlidir.");
             closeSolveProblemsModal();
@@ -5499,11 +5499,11 @@ async function manualResetAfterSurprise() {
             return;
         }
 
-        // Kutu oyunundan geldiyse sıfırlama yap
+        // Kutu oyunundan geldiyse sıfırlama işlemini yap.
         await resetGameBoard(); // Oyunu sıfırlayan ana fonksiyon
         
-        // --- YENİ ADIM: SIFIRLAYAN KİŞİNİN ADINI KAYDET ---
-        // Paneli silmek yerine, 'resetBy' alanını o anki kullanıcı adıyla güncelliyoruz.
+        // --- ÇÖZÜM BURADA: Paneli silmek yerine, 'resetBy' alanını güncelliyoruz. ---
+        // Bu, panelin kalıcı olmasını ve üzerinde kimin sıfırladığının yazmasını sağlar.
         await surpriseInfoRef.update({ resetBy: currentUser });
         
         displayMessage("Oyun başarıyla yeniden başlatıldı!");
@@ -6424,7 +6424,7 @@ async function reorderDailyRewardItem(rewardId, newIndex) {
     let surpriseSessionListener = null;
     // listenForSurpriseBox FONKSİYONUNU BU YENİ HALİYLE DEĞİŞTİR
 
-// ESKİ listenForSurpriseBox FONKSİYONUNU SİL, BUNU YAPIŞTIR
+// MEVCUT listenForSurpriseBox FONKSİYONUNU SİL, BUNU YAPIŞTIR
 let isProcessingSurpriseResult = false;
 let spectatorViewingResult = false;
 
@@ -6448,13 +6448,22 @@ function listenForSurpriseBox() {
         }
 
         if (sessionData && sessionData.active) {
+            // Kart seçen kullanıcı için kart seçme ekranını açar.
             if (sessionData.user === currentUser && !sessionData.result && cardSelectionModal.style.display !== 'flex') {
                 openCardSelectionModal(currentUser);
             } 
+            // Diğer kullanıcılar için izleyici ekranını açar.
             else if (sessionData.user !== currentUser && !sessionData.result && spectatorModal.style.display !== 'flex' && !isProcessingSurpriseResult) {
                 openSpectatorModal(sessionData);
             }
 
+            // --- ÇÖZÜM BURADA: Kart seçildiği anda izleyici ekranını günceller. ---
+            if (sessionData.selection && sessionData.result && spectatorModal.style.display === 'flex') {
+                updateSpectatorView(sessionData);
+            }
+            // --- ÇÖZÜM SONU ---
+
+            // Sonuçları işleyen ve kaydeden ana mantık.
             if (sessionData.result && !sessionData.logged && !isProcessingSurpriseResult) {
                 isProcessingSurpriseResult = true;
 
@@ -6471,7 +6480,6 @@ function listenForSurpriseBox() {
                     } else if (committed) {
                         const finalSessionData = snapshot.val();
                         
-                        // --- TEK KİŞİLİK KALICI KAYIT SİSTEMİ ---
                         const userRef = db.ref(`users/${finalSessionData.user}`);
                         const userSnap = await userRef.once('value');
                         const userData = userSnap.val();
@@ -6488,13 +6496,10 @@ function listenForSurpriseBox() {
                             roundBoxCount: roundBoxCount,
                             totalBoxCount: totalBoxCount,
                             timestamp: firebase.database.ServerValue.TIMESTAMP
-                            // resetBy alanı başlangıçta olmayacak
                         };
 
-                        // Artık listeye eklemek yerine, .set() ile üzerine yazıyoruz.
                         await db.ref('gameStats/lastSurpriseInfo').set(surpriseInfo);
-                        // --- YENİ SİSTEM SONU ---
-
+                        
                         logActivity('surpriseBox', finalSessionData.user, { 
                             boxId: finalSessionData.boxId,
                             points: finalSessionData.result.points, 
