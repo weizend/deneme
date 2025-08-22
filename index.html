@@ -1,4 +1,4 @@
-><!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="tr">
 <head>
 <meta charset="UTF-8" />
@@ -5604,12 +5604,19 @@ async function manualUnlockGame() {
 }
 
 // MEVCUT manualResetAfterSurprise FONKSİYONUNU SİL VE BUNUNLA DEĞİŞTİR
+
 async function manualResetAfterSurprise() {
     const surpriseInfoRef = db.ref('gameStats/lastSurpriseInfo');
     const surpriseSnap = await surpriseInfoRef.once('value');
     if (surpriseSnap.exists()) {
+        // 1. Önce kimin sıfırladığını kaydediyoruz.
         await surpriseInfoRef.update({ resettledBy: currentUser });
-        displayMessage("Sıfırlama bilgisi kaydedildi. Lütfen oyunu sıfırlamak için Kutu Ayarları menüsündeki 'Oyunu Sıfırla' butonunu kullanın.");
+
+        // 2. Ardından oyun tahtasını sıfırlıyoruz.
+        await resetGameBoard();
+
+        // 3. Kullanıcıya bilgi veriyoruz.
+        displayMessage("Sürpriz kutu bulunduğu için oyun senin tarafından sıfırlandı!");
     } else {
         displayMessage("Bu özellik sadece bir sürpriz kutu bulunduktan sonra kullanılabilir.");
     }
