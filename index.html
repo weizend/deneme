@@ -771,6 +771,8 @@ body.modal-open .modal-content {
     <h4 class="text-green-300 text-xl font-semibold mb-4 border-b border-gray-600 pb-2">🏆 Aylık Sezon Yönetimi 👑</h4>
     <button onclick="openSeasonManagementModal()" class="w-full py-3 bg-green-800 hover:bg-green-700 text-white font-bold rounded-lg">Sezon Ayarlarını Aç</button>
 </div>
+
+<button onclick="veriGuncellemeKariyerPuani()" class="flex-1 py-2 px-3 bg-teal-800 hover:bg-teal-700 text-white font-bold rounded-lg text-sm">Kariyer Puanlarını Güncelle (Tek Seferlik)</button>
           
             <button onclick="restartSystem()" class="flex-1 py-2 px-3 bg-red-800 hover:bg-red-700 text-white font-bold rounded-lg text-sm">Sistemi Sıfırla</button>
             <button onclick="clearAllTotalSpentPoints()" class="flex-1 py-2 px-3 bg-purple-800 hover:bg-purple-700 text-white font-bold rounded-lg text-sm">Harcanan Puanları Temizle</button>
@@ -2118,8 +2120,8 @@ const defaultWheelSegments = [
     });
   }
 
-  // Kayıt
-  async function register() {
+  // MEVCUT register fonksiyonunu bununla değiştir
+async function register() {
     const username = document.getElementById("registerUsername").value.trim().toLowerCase();
     const password = document.getElementById("registerPassword").value.trim();
     const passwordConfirm = document.getElementById("registerPasswordConfirm").value.trim();
@@ -2159,10 +2161,11 @@ const defaultWheelSegments = [
             pin: pin,
             balance: 0,
             highestBalanceEver: 0,
+            kariyerPuani: 0, // YENİ EKLENEN SATIR
             totalSpentPoints: 0,
             kutuHakki: 0,
             carkBileti: 0,
-            clickCatchTickets: 0, // YENİ EKLENDİ
+            clickCatchTickets: 0,
             clickCatchHighestScore: 0,
             approved: false,
             approvalNotified: null,
@@ -2192,7 +2195,7 @@ const defaultWheelSegments = [
             displayMessage("Kayıt olurken bir hata oluştu.");
         });
     }
-  }
+}
 
   // Şifre Sıfırlama
   function openPasswordResetModal() {
@@ -2419,12 +2422,10 @@ function listenForWeeklyCountdown() {
     ref.on('value', callback);
 }
 
+// MEVCUT executeWeeklyReset fonksiyonunu bununla değiştir
 async function executeWeeklyReset() {
     if (!isAdmin) return;
-
     console.log("Haftalık sıfırlama işlemi tetiklendi...");
-
-    // *** ÖNCELİK KONTROLÜ ***
     const seasonEndDateSnap = await db.ref('gameConfig/seasonEndDate').once('value');
     if (seasonEndDateSnap.exists()) {
         const seasonEndDate = seasonEndDateSnap.val();
@@ -2434,23 +2435,19 @@ async function executeWeeklyReset() {
             return;
         }
     }
-
     const weeklyScoresSnap = await db.ref('clickCatchWeeklyScores').once('value');
     if (!weeklyScoresSnap.exists()) {
         console.log("Sıralama boş, sıfırlama işlemi iptal edildi.");
         await db.ref('gameConfig/weeklyClickCatchReset').remove();
         return;
     }
-    
     const scores = [];
     weeklyScoresSnap.forEach(child => {
         scores.push({ username: child.key, score: child.val() });
     });
     scores.sort((a, b) => b.score - a.score);
-    
     const winner = scores[0];
     const participants = scores.map(s => s.username);
-    
     const settingsSnap = await db.ref('gameConfig/weeklyClickCatchReset').once('value');
     const settings = settingsSnap.val();
     if (!settings || !settings.prize) {
@@ -2460,18 +2457,15 @@ async function executeWeeklyReset() {
     const prize = settings.prize;
     const prizeNames = { boxRights: "Kutu Hakkı", points: "Puan", wheelTicket: "Çark Bileti", iflasShield: "İflas Kalkanı" };
     const prizeName = prizeNames[prize.type];
-
     await db.ref('gameStats/weeklyClickCatchWinner').set({
         winnerName: winner.username,
         winningScore: winner.score,
         prizeAwarded: `${prize.amount} ${prizeName}`,
         timestamp: firebase.database.ServerValue.TIMESTAMP
     });
-
     const allUsersSnap = await db.ref('users').once('value');
     const allUsers = allUsersSnap.val();
     const updates = {};
-
     for (const username in allUsers) {
         if (!allUsers[username].approved) continue;
         const userPath = `/users/${username}`;
@@ -2484,20 +2478,19 @@ async function executeWeeklyReset() {
         if (username === winner.username) {
             if (prize.type === 'points') {
                 updates[`${userPath}/balance`] = (allUsers[username].balance || 0) + prize.amount;
+                // KARİYER PUANI GÜNCELLEMESİ
+                updates[`${userPath}/kariyerPuani`] = (allUsers[username].kariyerPuani || 0) + prize.amount;
             } else {
                 const prizeKey = prize.type === 'iflasShield' ? 'iflasShieldUses' : prize.type;
                 updates[`${userPath}/${prizeKey}`] = (allUsers[username][prizeKey] || 0) + prize.amount;
             }
         }
     }
-    
     updates['/clickCatchWeeklyScores'] = null;
     updates['/gameConfig/weeklyClickCatchReset'] = null;
     await db.ref().update(updates);
-
     const notificationMessage = `Tıkla-Yakala haftasının şampiyonu ${winner.username} oldu! Yeni hafta başladı ve tüm katılımcılara +1 bilet hediye edildi!`;
     db.ref('globalNotifications').push({ message: notificationMessage, timestamp: firebase.database.ServerValue.TIMESTAMP });
-    
     console.log("Haftalık sıfırlama başarıyla tamamlandı.");
 }
 
@@ -3003,7 +2996,7 @@ async function calculateAllLeaders(allUsersData) {
     return leaders;
 }
 
-  // MEVCUT renderUserRankings fonksiyonunu KOMPLE BUNUNLA DEĞİŞTİR
+  // MEVCUT renderUserRankings fonksiyonunu bununla değiştir
 async function renderUserRankings() {
     const searchTerm = document.getElementById('searchUserRanking').value.trim().toLowerCase();
     
@@ -3017,7 +3010,8 @@ async function renderUserRankings() {
     
     const leaders = await calculateAllLeaders(allUsersData);
 
-    filteredUsers.sort((a, b) => (b.highestBalanceEver || 0) - (a.highestBalanceEver || 0));
+    // SIRALAMA Kriteri: 'highestBalanceEver' yerine 'kariyerPuani' oldu.
+    filteredUsers.sort((a, b) => (b.kariyerPuani || 0) - (a.kariyerPuani || 0));
 
     let html = filteredUsers.map((u, i) => {
         const userLeaderStatus = {
@@ -3042,30 +3036,66 @@ async function renderUserRankings() {
             blockedInfo = `<div class="text-red-400 font-bold mt-2">Engelli - Kalan Süre: <span id="countdown-${u.username}">--:--</span></div>`;
         }
 
-        const scoreToShow = u.highestBalanceEver || 0;
+        // GÖSTERİLEN Puan: 'highestBalanceEver' yerine 'kariyerPuani' oldu.
+        const scoreToShow = u.kariyerPuani || 0;
 
-        // --- PUANIN KULLANICI ADININ ALTINA ALINDIĞI FİNAL TASARIM ---
         return `<div class="relative mb-3 p-3 bg-gray-800 rounded-xl border border-gray-700 cursor-pointer hover:bg-gray-700/70 transition-colors" onclick="openPublicUserDetailModal('${u.username}')">
             <div class="flex items-center w-full gap-3">
-                
                 <span class="font-bold text-xl text-gray-400 w-8 text-center flex-shrink-0">${i + 1}.</span>
                 <img src="${avatarUrl}" class="w-14 h-14 rounded-full object-cover flex-shrink-0 border-2 border-gray-600">
                 
                 <div class="flex flex-col min-w-0 flex-grow">
                     <div class="h-6 min-h-[24px] flex items-center">${userIcons}</div>
                     <p class="font-bold text-lg text-white truncate" title="${u.username}">${u.username}</p>
-                    <p class="text-sm font-semibold text-yellow-400/80">${scoreToShow} (En Yüksek Puan)</p>
+                    <p class="text-sm font-semibold text-yellow-400/80">${scoreToShow} (Kariyer Puanı)</p>
                 </div>
-
             </div>
             ${blockedInfo ? `<div class="text-center mt-2">${blockedInfo}</div>` : ''}
         </div>`;
-        // --- FİNAL TASARIM SONU ---
 
     }).join("");
 
     document.getElementById("allUserRankings").innerHTML = html || "<div class='text-center text-gray-400'>Aramayla eşleşen kullanıcı bulunamadı.</div>";
     document.getElementById("totalUsers").textContent = allUsersCache.length;
+}
+
+async function veriGuncellemeKariyerPuani() {
+    if (!isAdmin) {
+        displayMessage("Bu işlemi sadece adminler yapabilir.");
+        return;
+    }
+
+    const confirmed = await customConfirm("Bu işlem, tüm mevcut kullanıcıların 'Kariyer Puanı'nı, 'En Yüksek Puan' rekorlarına eşitleyecektir. Bu, SADECE BİR KEZ çalıştırılmalıdır. Emin misiniz?");
+    if (!confirmed) return;
+
+    displayMessage("Veri güncellemesi başlatıldı... Lütfen bekleyin.");
+
+    const usersRef = db.ref('users');
+    const usersSnap = await usersRef.once('value');
+    const usersData = usersSnap.val();
+    
+    const updates = {};
+    let updatedCount = 0;
+
+    for (const username in usersData) {
+        if (username.toLowerCase() === 'weizendtv') continue;
+        
+        const user = usersData[username];
+        const kariyerPuani = user.kariyerPuani || 0;
+        const enYuksekPuan = user.highestBalanceEver || 0;
+
+        if (kariyerPuani < enYuksekPuan) {
+            updates[`/users/${username}/kariyerPuani`] = enYuksekPuan;
+            updatedCount++;
+        }
+    }
+
+    if (Object.keys(updates).length > 0) {
+        await db.ref().update(updates);
+        displayMessage(`İşlem tamamlandı! ${updatedCount} kullanıcının Kariyer Puanı başarıyla güncellendi.`);
+    } else {
+        displayMessage("Güncelleme gerektiren kullanıcı bulunamadı. Tüm veriler güncel görünüyor.");
+    }
 }
 
 async function loadLeaderboardRanking() {
@@ -3268,7 +3298,8 @@ html += `<div class="flex items-center justify-between p-3 mb-2 bg-gray-700 roun
     if (selectedUserForManagement) openUserManagementModal(selectedUserForManagement);
   }
 
-  function adjustUserPoints(add) {
+  // MEVCUT adjustUserPoints fonksiyonunu bununla değiştir
+function adjustUserPoints(add) {
     const amount = parseInt(document.getElementById('adjAmount').value);
     if (isNaN(amount) || amount <= 0) {
       displayMessage("Geçerli bir miktar girin.");
@@ -3278,11 +3309,19 @@ html += `<div class="flex items-center justify-between p-3 mb-2 bg-gray-700 roun
       let data = snap.val();
       let bal = data.balance || 0;
       let highBal = data.highestBalanceEver || 0;
+      
+      // KARİYER PUANI GÜNCELLEMESİ
+      let kariyerPuani = data.kariyerPuani || 0;
+      if (add) {
+          kariyerPuani += amount;
+      }
+      
       bal = add ? bal + amount : Math.max(0, bal - amount);
       if (bal > highBal) highBal = bal;
       db.ref('users/' + targetUserForAdjustment).update({
         balance: bal,
-        highestBalanceEver: highBal
+        highestBalanceEver: highBal,
+        kariyerPuani: kariyerPuani // Yeni alanı da güncelle
       }).then(() => {
         const message = `Admin tarafından hesabınıza ${amount} puan ${add ? 'eklendi' : 'silindi'}.`;
         notifyUser(targetUserForAdjustment, message);
@@ -3290,7 +3329,7 @@ html += `<div class="flex items-center justify-between p-3 mb-2 bg-gray-700 roun
         closePointAdjustmentModal();
       });
     });
-  }
+}
 
   function openBoxRightAdjustmentModal(username) {
     targetUserForBoxRightAdjustment = username;
@@ -3520,7 +3559,8 @@ function adjustUserClickCatchTickets(add) {
     }
 }
 
-    async function changeAllPoints(add) {
+    // MEVCUT changeAllPoints fonksiyonunu bununla değiştir
+async function changeAllPoints(add) {
     const amount = parseInt(document.getElementById("globalPoint").value);
     if (isNaN(amount) || amount <= 0) { displayMessage("Geçerli miktar girin."); return; }
     const confirmed = await customConfirm(`Tüm kullanıcılara ${amount} puan ${add ? 'eklemek' : 'silmek'} istediğinizden emin misiniz?`);
@@ -3531,19 +3571,25 @@ function adjustUserClickCatchTickets(add) {
                 if (child.val().approved && !child.val().blocked && child.key !== "weizendtv") {
                     let balance = child.val().balance || 0;
                     let highestBalanceEver = child.val().highestBalanceEver || 0;
+                    
+                    // KARİYER PUANI GÜNCELLEMESİ
+                    let kariyerPuani = child.val().kariyerPuani || 0;
+                    if (add) {
+                        kariyerPuani += amount;
+                    }
+
                     balance = add ? balance + amount : Math.max(balance - amount, 0);
                     if (balance > highestBalanceEver) highestBalanceEver = balance;
                     updates['users/' + child.key + '/balance'] = balance;
                     updates['users/' + child.key + '/highestBalanceEver'] = highestBalanceEver;
+                    updates['users/' + child.key + '/kariyerPuani'] = kariyerPuani; // Yeni alanı da güncelle
                 }
             });
             db.ref().update(updates).then(() => {
                 displayMessage("Tüm kullanıcılara puan işlemi başarıyla uygulandı.");
-                // YENİ EKLENEN KOD BAŞLANGICI
                 const actionText = add ? 'ekledi' : 'çıkardı';
                 const notificationMessage = `Admin, tüm kullanıcılara ${amount} Puan ${actionText}.`;
                 db.ref('globalNotifications').push({ message: notificationMessage, timestamp: firebase.database.ServerValue.TIMESTAMP });
-                // YENİ EKLENEN KOD SONU
             });
         });
     }
@@ -3874,7 +3920,7 @@ async function deleteUserAvatar(username, avatarId) {
       }); 
   }
 
-// MEVCUT openBox FONKSİYONUNU SİL VE BUNUNLA DEĞİŞTİR
+// MEVCUT openBox fonksiyonunu bununla değiştir
 async function openBox(index) {
     if (isGameLocked) {
         displayMessage("Kutular 3 saniye arayla açılıyor. Lütfen tekrar deneyin. Sorun devam ediyorsa, sorunları çöz menüsüne göz atabilirsin.");
@@ -4005,6 +4051,10 @@ async function openBox(index) {
             const pointsGained = box.value * finalMultiplier;
             updates['balance'] = (user.balance || 0) + pointsGained;
             if (updates['balance'] > (user.highestBalanceEver || 0)) updates['highestBalanceEver'] = updates['balance'];
+            
+            // KARİYER PUANI GÜNCELLEMESİ
+            updates['kariyerPuani'] = (user.kariyerPuani || 0) + pointsGained;
+
             message = `+${pointsGained} puan kazandınız!`;
             boxUpdate.basePoints = box.value;
             boxUpdate.finalPoints = pointsGained;
@@ -4327,8 +4377,7 @@ function openCardSelectionModal(userId) {
     });
 }
 
-// MEVCUT selectCard FONKSİYONUNU SİLİP BUNUNLA DEĞİŞTİRİN
-
+// MEVCUT selectCard fonksiyonunu bununla değiştir
 async function selectCard(selectedCardDiv, userId) { 
     if (countdownInterval) clearInterval(countdownInterval);
     if (selectedCardDiv.classList.contains('opened')) return; 
@@ -4343,17 +4392,23 @@ async function selectCard(selectedCardDiv, userId) {
     let points = parseInt(selectedCardDiv.dataset.value) * sessionData.multiplier;
     
     const userRef = db.ref('users/' + userId); 
-    const userSnap = await userRef.once('value'); 
-    let user = userSnap.val(); 
-    let newBalance = 0;
-    if (user) { 
-      newBalance = (user.balance || 0) + points; 
-      let newHighest = user.highestBalanceEver || 0;
-      if (newBalance > newHighest) newHighest = newBalance; 
-      await userRef.update({ balance: newBalance, highestBalanceEver: newHighest }); 
-    } 
 
-    // --- DEĞİŞİKLİK: Sonucu ve yeni bakiyeyi birlikte kaydediyoruz ---
+    // KARİYER PUANI GÜNCELLEMESİ (Transaction ile)
+    await userRef.transaction(user => {
+        if (user) {
+            user.balance = (user.balance || 0) + points;
+            if (user.balance > (user.highestBalanceEver || 0)) {
+                user.highestBalanceEver = user.balance;
+            }
+            user.kariyerPuani = (user.kariyerPuani || 0) + points;
+        }
+        return user;
+    });
+
+    const finalUserSnap = await userRef.once('value');
+    const finalUserData = finalUserSnap.val();
+    let newBalance = finalUserData.balance || 0;
+ 
     await sessionRef.child('result').set({ points: points, newBalance: newBalance });
 }
 
@@ -5542,7 +5597,8 @@ async function openUserManagementModal(username) {
       });
   }
 
-  async function denySpecialPurchase(purchaseId, username, itemCost) {
+  // MEVCUT denySpecialPurchase fonksiyonunu bununla değiştir
+async function denySpecialPurchase(purchaseId, username, itemCost) {
       const purchaseItemSnap = await db.ref(`/pendingSpecialPurchases/${purchaseId}`).once('value');
       const purchaseItem = purchaseItemSnap.val();
        if (!purchaseItem) {
@@ -5558,16 +5614,20 @@ async function openUserManagementModal(username) {
       const userSnap = await userRef.once('value');
       const userData = userSnap.val();
       if (userData) {
-          updates[`users/${username}/balance`] = (userData.balance || 0) + itemCost;
-          updates[`users/${username}/totalSpentPoints`] = Math.max(0, (userData.totalSpentPoints || 0) - itemCost);
+          // İade edilen puan hem balance'a hem de kariyer puanına eklenmeli
+          // çünkü bu bir "kazanım" değil, "kaybın geri alınması" durumudur.
+          // Sistemin tutarlılığı için kariyer puanını etkilememesi daha doğru olur.
+          // Bu yüzden burada kariyer puanına dokunmuyoruz. SADECE KASA PUANI'nı iade ediyoruz.
+          updates[`users/${username}/kasaPuani`] = (userData.kasaPuani || 0) + itemCost;
+          // NOT: 'totalSpentPoints' Kasa Puanı harcamalarını saymıyor, o yüzden ona dokunmaya gerek yok.
       }
 
       updates[`/pendingSpecialPurchases/${purchaseId}`] = null;
       updates[`/purchaseHistory/${purchaseId}/status`] = 'denied';
 
       db.ref().update(updates).then(() => {
-          notifyUser(username, `'${purchaseItem.itemName}' adlı özel ürün alımınız reddedildi. ${itemCost} puan hesabınıza iade edildi.`);
-          displayMessage("Özel ürün alımı reddedildi ve puan iadesi yapıldı.");
+          notifyUser(username, `'${purchaseItem.itemName}' adlı özel ürün alımınız reddedildi. ${itemCost} Kasa Puanı hesabınıza iade edildi.`);
+          displayMessage("Özel ürün alımı reddedildi ve Kasa Puanı iadesi yapıldı.");
       }).catch(err => {
           console.error("Reddetme hatası: ", err);
           displayMessage("Reddetme sırasında bir hata oluştu.");
@@ -6298,6 +6358,7 @@ async function openDailyRewardModal() {
     }
 }
 
+// MEVCUT claimDailyReward fonksiyonunu bununla değiştir
 async function claimDailyReward(rewardId) {
     if (isAdmin) return;
 
@@ -6347,14 +6408,13 @@ async function claimDailyReward(rewardId) {
                 const rewardValue = parseInt(reward.value);
                 const userMultiplierValue = parseInt(user.activeMultiplier);
 
-                if (rewardValue === userMultiplierValue) { // Stackleme (Eşitse)
+                if (rewardValue === userMultiplierValue) { 
                     const confirmedStack = await customConfirm(`Zaten ${user.activeMultiplier}x çarpanın var. Bu ödül, mevcut çarpanına <b>+${reward.uses} kullanım hakkı</b> ekleyecek. Onaylıyor musun?`);
                     if (!confirmedStack) {
                         if (claimButton) { claimButton.disabled = false; claimButton.textContent = 'Ödülü Al'; }
                         return;
                     }
                     
-                    // --- YENİ EKLENEN KOD BAŞLANGICI (ÖZEL LOGLAMA) ---
                     const usesAdded = reward.uses;
                     const newTotalUses = (user.multiplierRemainingUses || 0) + usesAdded;
                     
@@ -6370,10 +6430,9 @@ async function claimDailyReward(rewardId) {
                     displayMessage(`Başarılı! ${reward.value}x çarpanına +${usesAdded} kullanım hakkı eklendi.`);
                     closeDailyRewardModal();
                     checkAvailableDailyRewards();
-                    return; // Fonksiyonu burada bitirerek genel loglamayı engelle
-                    // --- YENİ EKLENEN KOD SONU ---
+                    return;
                 } 
-                else if (rewardValue > userMultiplierValue) { // Yükseltme (Yüksekse)
+                else if (rewardValue > userMultiplierValue) { 
                     const kutuHakkiDonusum = user.multiplierRemainingUses || 0;
                     const confirmedUpgrade = await customConfirm(`Mevcut ${user.activeMultiplier}x çarpanını daha yüksek olan <b>${reward.value}x</b> ile değiştirmek üzeresin. Mevcut çarpanının kalan <b>${user.multiplierRemainingUses} kullanım hakkı</b>, envanterine <b>+${kutuHakkiDonusum} Kutu Hakkı</b> olarak eklenecek. Onaylıyor musun?`);
                     if (!confirmedUpgrade) {
@@ -6387,7 +6446,7 @@ async function claimDailyReward(rewardId) {
                         multiplierSource: 'store'
                     });
                 } 
-                else { // Düşükse Kutu Hakkına Dönüştürme
+                else {
                     const kutuHakkiDonusum = reward.uses || 0;
                     const confirmedConvert = await customConfirm(`Mevcut <b>${user.activeMultiplier}x</b> çarpanın bu <b>${reward.value}x</b> ödülünden daha güçlü. Bu ödülü alırsan, çarpanın değişmeyecek ancak ödülün <b>${kutuHakkiDonusum} kullanım hakkı</b>, envanterine <b>+${kutuHakkiDonusum} Kutu Hakkı</b> olarak eklenecek. Onaylıyor musun?`);
                     
@@ -6425,10 +6484,13 @@ async function claimDailyReward(rewardId) {
                 if (updates['balance'] > (user.highestBalanceEver || 0)) {
                     updates['highestBalanceEver'] = updates['balance'];
                 }
+                // KARİYER PUANI GÜNCELLEMESİ
+                updates['kariyerPuani'] = (user.kariyerPuani || 0) + reward.value;
                 break;
             case 'boxRights':
                 updates['kutuHakki'] = (user.kutuHakki || 0) + reward.value;
                 break;
+            // ... diğer case'ler aynı
             case 'wheelTicket':
                 updates['carkBileti'] = (user.carkBileti || 0) + reward.value;
                 break;
@@ -6983,6 +7045,7 @@ function renderWheel() {
     ref.on('value', callback);
 }
 
+// MEVCUT spinWheel fonksiyonunu bununla değiştir
 async function spinWheel() {
     if (isWheelSpinning) return;
     if (isAdmin) {
@@ -7058,11 +7121,15 @@ async function spinWheel() {
                 message = `Tebrikler, çarktan <b>+${winningSegment.value} Puan</b> kazandın!`;
                 updates.balance = (currentUserData.balance || 0) + winningSegment.value;
                 if(updates.balance > (currentUserData.highestBalanceEver || 0)) updates.highestBalanceEver = updates.balance;
+                
+                // KARİYER PUANI GÜNCELLEMESİ
+                updates.kariyerPuani = (currentUserData.kariyerPuani || 0) + winningSegment.value;
                 break;
             case 'boxRights':
                 message = `Tebrikler, çarktan <b>+${winningSegment.value} Kutu Hakkı</b> kazandın!`;
                 updates.kutuHakki = (currentUserData.kutuHakki || 0) + winningSegment.value;
                 break;
+            // ... diğer case'ler aynı kalacak
             case 'iflasShield':
                 message = `Tebrikler, çarktan <b>+${winningSegment.value} İflas Kalkanı</b> kazandın!`;
                 updates.iflasShieldUses = (currentUserData.iflasShieldUses || 0) + winningSegment.value;
@@ -7127,7 +7194,6 @@ async function spinWheel() {
             type: winningSegment.type,
             value: winningSegment.value !== undefined ? winningSegment.value : null
         };
-        // --- DEĞİŞİKLİK: Log kaydına yeni bakiye bilgisini ekliyoruz. ---
         if (winningSegment.type === 'points') {
             logDetails.newBalance = updates.balance;
         }
@@ -7147,8 +7213,7 @@ async function spinWheel() {
     }, 5100);
 }
 
-// MEVCUT setWinner FONKSİYONUNU SİLİP BUNUNLA DEĞİŞTİRİN
-
+// MEVCUT setWinner fonksiyonunu bununla değiştir
 async function setWinner(username) {
     const lobbyRef = db.ref('clickCatchLobby');
     const lobbySnap = await lobbyRef.once('value');
@@ -7164,7 +7229,6 @@ async function setWinner(username) {
         players: lobbyData.players || {}
     };
     
-    // --- DEĞİŞİKLİK: Log'lamadan önce kazananın yeni bakiyesini hesaplıyoruz ---
     const winnerRefBefore = await db.ref(`users/${username}`).once('value');
     const winnerDataBefore = winnerRefBefore.val();
     const finalPrize = lobbyData.prize + (lobbyData.entryTickets > 0 ? 0 : lobbyData.entryFee);
@@ -7172,7 +7236,7 @@ async function setWinner(username) {
 
     logActivity('clickCatchLobby', currentUser, { 
         prize: lobbyData.prize,
-        newBalance: winnerNewBalance // Yeni bakiyeyi log'luyoruz
+        newBalance: winnerNewBalance
     });
     
     await db.ref('clickCatchLobbyLastGameSummary').set(gameSummary);
@@ -7184,6 +7248,7 @@ async function setWinner(username) {
     await lobbyRef.update(updates);
     
     const winnerRef = db.ref(`users/${username}`);
+    // KARİYER PUANI GÜNCELLEMESİ (Transaction ile)
     await winnerRef.transaction(user => {
         if (user) {
             let finalPrize = lobbyData.prize;
@@ -7199,6 +7264,7 @@ async function setWinner(username) {
             if (user.balance > (user.highestBalanceEver || 0)) {
                 user.highestBalanceEver = user.balance;
             }
+            user.kariyerPuani = (user.kariyerPuani || 0) + finalPrize;
         }
         return user;
     });
@@ -9923,10 +9989,10 @@ async function saveAutomaticResetSettings() {
     closeSeasonManagementModal();
 }
 
+// MEVCUT executeSeasonReset fonksiyonunu bununla değiştir
 async function executeSeasonReset(isManual = false) {
     if (!isAdmin) return;
     
-    // 1. Onay Al
     const confirmationText = isManual 
         ? "Sezonu ŞİMDİ MANUEL olarak bitirmek üzeresiniz. Tüm puanlar ve istatistikler sıfırlanacak, ödüller dağıtılacak. Bu işlem geri alınamaz. Emin misiniz?"
         : "Sezon sonu için SON ONAY. Sıfırlama işlemi başlayacak ve geri alınamayacak. Onaylıyor musunuz?";
@@ -9936,14 +10002,13 @@ async function executeSeasonReset(isManual = false) {
 
     displayMessage("Sezon sonu işlemleri başlatıldı... Bu işlem birkaç saniye sürebilir. Lütfen bekleyin.");
 
-    // 2. Gerekli Tüm Verileri Topla
+    // Gerekli tüm verileri topla
     const allUsersSnap = await db.ref('users').once('value');
     const allUsersData = allUsersSnap.val();
     const leaders = await calculateAllLeaders(allUsersData);
     const settingsSnap = await db.ref('gameConfig/seasonSettings').once('value');
     const seasonSettings = settingsSnap.val();
 
-    // Liderleri ve Ödülleri Belirle
     const puanLeader = leaders.currentBalanceUser;
     const rozetLeader = (await getTopBadgeHolder(allUsersData, leaders)).username;
     
@@ -9957,7 +10022,6 @@ async function executeSeasonReset(isManual = false) {
         iflasShieldUses: parseInt(document.getElementById('rewardIflasShields').value) || 0
     };
 
-    // 3. Veritabanı İçin Toplu Güncelleme Objesini Hazırla
     const updates = {};
     
     for (const username in allUsersData) {
@@ -9975,19 +10039,21 @@ async function executeSeasonReset(isManual = false) {
         // B) ŞAMPİYONLARA ÖZEL ÖDÜLLERİ VER VE ŞAMPİYONLUK SAYACINI GÜNCELLE
         if (username === puanLeader) {
             if(puanAvatar) updates[`${userPath}/selectedAvatar`] = { id: `sezon_odul_puan_${Date.now()}`, url: puanAvatar };
-            // Puan şampiyonluğu sayacını 1 artır. Eğer sayaç yoksa 1'den başlar.
             updates[`${userPath}/puanChampionshipsWon`] = firebase.database.ServerValue.increment(1);
         }
         if (username === rozetLeader) {
             if(rozetAvatar) updates[`${userPath}/selectedAvatar`] = { id: `sezon_odul_rozet_${Date.now()}`, url: rozetAvatar };
-            // Rozet şampiyonluğu sayacını 1 artır. Eğer sayaç yoksa 1'den başlar.
             updates[`${userPath}/rozetChampionshipsWon`] = firebase.database.ServerValue.increment(1);
         }
         
         // C) HERKESİN PUAN VE İSTATİSTİKLERİNİ SIFIRLA
-        // *** ÖNEMLİ: kasaPuani alanına DOKUNULMUYOR! ***
         updates[`${userPath}/balance`] = 0;
         updates[`${userPath}/highestBalanceEver`] = 0;
+        
+        // --- DEĞİŞİKLİK BURADA ---
+        // Kariyer Puanı da artık sıfırlanıyor.
+        updates[`${userPath}/kariyerPuani`] = 0; 
+        
         updates[`${userPath}/totalSpentPoints`] = 0;
         updates[`${userPath}/boxesOpenedCount`] = 0;
         updates[`${userPath}/surpriseBoxesOpened`] = 0;
@@ -10003,7 +10069,6 @@ async function executeSeasonReset(isManual = false) {
     updates['clickCatchWeeklyScores'] = null;
     updates['gameStats'] = null;
 
-    // Mağazadaki ürünlerin satın alınma sayılarını sıfırla
     const storeItemsSnap = await db.ref('storeItems').once('value');
     if (storeItemsSnap.exists()) {
         storeItemsSnap.forEach(itemSnap => {
