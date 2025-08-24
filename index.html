@@ -1044,7 +1044,7 @@ body.modal-open .modal-content {
     <div class="overflow-y-auto px-8 pb-8">
         <div id="managedUserDetails" class="text-left text-gray-300 mb-6 space-y-1">
             <p><span id="managedBadgeBalance" class="inline-block w-6 text-center"></span>Mevcut Puan: <span id="managedUserBalance" class="font-bold text-yellow-300"></span></p>
-            <p><span id="managedBadgeHighest" class="inline-block w-6 text-center"></span>Ulaşılan En Yüksek Puan: <span id="managedUserHighestBalance" class="font-bold text-green-400"></span></p>
+            <p><span id="managedBadgeHighest" class="inline-block w-6 text-center"></span>Kariyer Puanı: <span id="managedUserHighestBalance" class="font-bold text-green-400"></span></p>
             <p>Kutu Hakkı: <span id="managedUserBoxRight" class="font-bold text-green-400"></span></p>
             <p>Şans Çarkı Bileti: <span id="managedUserWheelTickets" class="font-bold text-yellow-400"></span></p>
             <p>Tıkla-Yakala Bileti: <span id="managedUserClickCatchTickets" class="font-bold text-fuchsia-400"></span></p>
@@ -1115,7 +1115,7 @@ body.modal-open .modal-content {
     <div class="space-y-3 text-gray-300">
         <p class="flex justify-between items-center"><span> Kasa Puanı:</span> <span id="publicUserKasaBalance" class="font-bold text-purple-400 text-lg"></span></p>
         <p class="flex justify-between items-center"><span><span id="publicBadgeBalance" class="inline-block w-6 text-center"></span>Mevcut Puan:</span> <span id="publicUserBalance" class="font-bold text-yellow-300 text-lg"></span></p>
-        <p class="flex justify-between items-center"><span><span id="publicBadgeHighest" class="inline-block w-6 text-center"></span>Ulaşılan En Yüksek Puan:</span> <span id="publicUserHighestBalance" class="font-bold text-green-400 text-lg"></span></p>
+        <p class="flex justify-between items-center"><span><span id="publicBadgeHighest" class="inline-block w-6 text-center"></span>Kariyer Puanı:</span> <span id="publicUserHighestBalance" class="font-bold text-green-400 text-lg"></span></p>
         <hr class="border-gray-600 !my-2">
                 <p class="flex justify-between items-center"><span> Kutu Hakkı:</span> <span id="publicUserBoxRight" class="font-bold text-green-400 text-lg"></span></p>
                 <p class="flex justify-between items-center"><span> Şans Çarkı Bileti:</span> <span id="publicUserWheelTickets" class="font-bold text-yellow-400 text-lg"></span></p>
@@ -2922,11 +2922,12 @@ function loadUserRankingsAndBoxCounts() {
     });
 }
 
+// MEVCUT calculateAllLeaders fonksiyonunu bununla değiştir
 async function calculateAllLeaders(allUsersData) {
     const currentClickCatchLeader = await getClickCatchLeaderUsername();
     let leaders = {
         highestCurrentBalance: -1, currentBalanceUser: null,
-        highestEverBalance: -1, highEverBalanceUser: null,
+        highestEverBalance: -1, highEverBalanceUser: null, // Bu satırın anlamı artık "En Yüksek Kariyer Puanı" olacak
         maxSurpriseBoxes: -1, surpriseBoxUser: null,
         maxBombCount: -1, bombUser: null,
         maxSpentPoints: -1, spentPointsUser: null,
@@ -2936,7 +2937,6 @@ async function calculateAllLeaders(allUsersData) {
         maxWheelSpins: -1, wheelSpinUser: null,
     };
 
-    // allUsersData bir obje olduğu için for...in döngüsü kullanıyoruz.
     for (const username in allUsersData) {
         if (username.toLowerCase() === 'weizendtv' || !allUsersData[username].approved) continue;
         const userData = allUsersData[username];
@@ -2947,7 +2947,9 @@ async function calculateAllLeaders(allUsersData) {
             leaders.currentBalanceUser = username;
         }
 
-        const userHighestBalance = userData.highestBalanceEver || 0;
+        // --- DEĞİŞİKLİK BURADA ---
+        // Artık 'highestBalanceEver' yerine 'kariyerPuani'nı kontrol ediyoruz.
+        const userHighestBalance = userData.kariyerPuani || 0; 
         if (userHighestBalance > 0 && userHighestBalance > leaders.highestEverBalance) {
             leaders.highestEverBalance = userHighestBalance;
             leaders.highEverBalanceUser = username;
@@ -5277,8 +5279,8 @@ async function openPublicUserDetailModal(username) {
         document.getElementById('publicUserAvatar').src = avatarUrl;
         document.getElementById('publicUserName').textContent = username;
         document.getElementById('publicUserBalance').textContent = userData.balance || 0;
-        document.getElementById('publicUserHighestBalance').textContent = userData.highestBalanceEver || 0;
-        // GÜNCELLENEN SATIR BURADA
+        // --- DEĞİŞİKLİK BURADA ---
+        document.getElementById('publicUserHighestBalance').textContent = userData.kariyerPuani || 0;
         document.getElementById('publicUserKasaBalance').textContent = userData.kasaPuani || 0;
         document.getElementById('publicUserBoxRight').textContent = userData.kutuHakki || 0;
         document.getElementById('publicUserWheelTickets').textContent = userData.carkBileti || 0;
@@ -5322,8 +5324,8 @@ async function openPublicUserDetailModal(username) {
     userRef.on('value', userProfileCallback);
     activeUserProfileListener = { ref: userRef, callback: userProfileCallback };
 }
-  
-  // MEVCUT openUserManagementModal fonksiyonunu bununla değiştir
+
+// MEVCUT openUserManagementModal fonksiyonunu bununla değiştir
 async function openUserManagementModal(username) {
     if (activeBlockedUserTimers[username]) {
         clearInterval(activeBlockedUserTimers[username]);
@@ -5360,8 +5362,8 @@ async function openUserManagementModal(username) {
     document.getElementById('managedUserAvatar').src = avatarUrl;
     document.getElementById('managedUserName').textContent = username;
     document.getElementById('managedUserBalance').textContent = userData.balance || 0;
-    document.getElementById('managedUserHighestBalance').textContent = userData.highestBalanceEver || 0;
-    // GÜNCELLENEN SATIR BURADA
+    // --- DEĞİŞİKLİK BURADA ---
+    document.getElementById('managedUserHighestBalance').textContent = userData.kariyerPuani || 0;
     document.getElementById('managedUserKasaBalance').textContent = userData.kasaPuani || 0;
     document.getElementById('managedUserBoxRight').textContent = userData.kutuHakki || 0;
     document.getElementById('managedUserWheelTickets').textContent = userData.carkBileti || 0;
