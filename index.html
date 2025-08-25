@@ -715,7 +715,7 @@ body.modal-open .modal-content {
         </div>
 </div>
     
-    <<div id="cardCollectionContent" class="w-full hidden">
+    <div id="cardCollectionContent" class="w-full hidden">
 
     <div class="flex justify-between items-center mb-2 px-4">
       <div class="flex items-center gap-4">
@@ -9408,6 +9408,16 @@ function getActivityIcon(type, details = {}) {
     let bgColor = 'bg-gray-500';
 
     switch (type) {
+        // --- YENİ EKLENEN İKONLAR BAŞLANGICI ---
+        case 'tradeOfferCreated':
+            icon = '📤';
+            bgColor = 'bg-blue-500';
+            break;
+        case 'tradeOfferAccepted':
+            icon = '🤝';
+            bgColor = 'bg-green-600';
+            break;
+        // --- YENİ EKLENEN İKONLAR SONU ---
         case 'openBox':
             icon = '💰';
             bgColor = 'bg-green-500';
@@ -9568,7 +9578,7 @@ function renderActivityFeed(activities) {
 
             switch (activity.type) {
                 case 'dailyRewardMultiplierStacked':
-                    message = `${userHtml}, mevcut <b>${details.multiplierValue}x çarpanına</b> günlük ödülden <span class="text-green-300 font-bold">+${details.usesAdded} kullanım hakkı</span> ekledi. Yeni toplam: <span class="text-white font-bold">${details.newTotalUses} kullanım</span>.`;
+                    message = `${userHtml},  <b>${details.multiplierValue}x çarpanına</b> günlük ödülden <span class="text-green-300 font-bold">+${details.usesAdded} kullanım hakkı</span> ekledi. Yeni toplam: <span class="text-white font-bold">${details.newTotalUses} kullanım</span>.`;
                     break;
                 case 'multiplierConvertedToBoxRights':
                     message = `${userHtml}, mevcut <b>${details.keptMultiplierValue}x çarpanını</b> koruyarak, günlük ödülden gelen ${details.rewardValue}x çarpanını <span class="text-cyan-300 font-bold">+${details.boxRights} Kutu Hakkı'na</span> dönüştürdü.`;
@@ -11434,6 +11444,143 @@ function switchMarketTab(tabName) {
     }
 }
 
+// Bir takas teklifini kabul eder
+async function acceptTradeOffer(tradeId) {
+    if (isAdmin) return; // Adminler takas yapamaz
+
+    // 1. Adım: Pazarın açık olup olmadığını ve takas ücretini kontrol et
+    const marketSettingsSnap = await db.ref('gameConfig/marketSettings').once('value');
+    const marketSettings = marketSettingsSnap.val() || {};
+
+    if (marketSettings.isLocked) {
+        displayMessage("Takas Pazarı şu anda bakım nedeniyle geçici olarak kapalıdır.");
+        return;
+    }
+
+    const tradeFee = marketSettings.tradeFee || 0;
+    const tradeRef = db.ref(`trades/${tradeId}`);
+    const tradeSnap = await tradeRef.once('value');
+    const trade = tradeSnap.val();
+
+    // Teklifin hala geçerli olup olmadığını kontrol et
+    if (!trade) {
+        displayMessage("Bu takas teklifi artık geçerli değil.");
+        loadMarketOffers('all'); // Pazar listesini yenile
+        return;
+    }
+
+    // 2. Adım: Kullanıcının takas için yeterli karta ve puana sahip olup olmadığını kontrol et
+    const userRef = db.ref(`users/${currentUser}`);
+    const userSnap = await userRef.once('value');
+    const userData = userSnap.val();
+    const userCards = userData.cardCollection || {};
+
+    if (!userCards[trade.requestedCardId] || userCards[trade.requestedCardId].count < 1) {
+        displayMessage(`Bu takası yapabilmek için istenen karta sahip olmalısın.`);
+        return;
+    }
+
+    if ((userData.balance || 0) < tradeFee) {
+        displayMessage(`Takas için gereken ${tradeFee} Puan işlem ücretine sahip değilsin.`);
+        return;
+    }
+
+    // 3. Adım: Kullanıcıya onayı için bir özet göster
+    const masterCardsSnap = await db.ref('gameConfig/cardCollection').once('value');
+    const masterCards = masterCardsSnap.val();
+    const offeredCard = masterCards[trade.offeredCardId];
+    const requestedCard = masterCards[trade.requestedCardId];
+
+    const confirmationMessage = `
+        <b>${trade.offerer}</b> adlı kullanıcı ile takas yapacaksın.<br><br>
+        Vereceğin Kart: <b class="text-red-400">${requestedCard.cardName}</b><br>
+        Alacağın Kart: <b class="text-green-400">${offeredCard.cardName}</b><br>
+        <hr class="border-gray-600 my-2">
+        İşlem Ücreti: <b class="text-yellow-400">${tradeFee} Puan</b><br><br>
+        Onaylıyor musun?
+    `;
+
+    const confirmed = await customConfirm(confirmationMessage);
+    if (!confirmed) return;
+
+    // 4. Adım: Güvenli Takas İşlemi (Firebase Transaction)
+    // Bu işlem, birden fazla kullanıcının verisini aynı anda güvenli bir şekilde günceller.
+    // İki kişi aynı anda butona bassa bile sadece biri işlemi yapabilir.
+    try {
+        await db.ref().transaction(data => {
+            // Transaction içinde en güncel verileri tekrar kontrol et
+            if (!data.trades || !data.trades[tradeId]) {
+                // Teklif artık mevcut değilse işlemi iptal et
+                return; 
+            }
+
+            const currentTrade = data.trades[tradeId];
+            const accepter = data.users[currentUser];
+            const offerer = data.users[currentTrade.offerer];
+
+            // Son kritik kontroller
+            if (!accepter || !offerer) return;
+            if (!accepter.cardCollection?.[currentTrade.requestedCardId]?.count >= 1) return;
+            if (!offerer.cardCollection?.[currentTrade.offeredCardId]?.count > 1) return;
+            if ((accepter.balance || 0) < tradeFee) return;
+
+            // Kartları Transfer Et (Kabul Eden)
+            accepter.cardCollection[currentTrade.requestedCardId].count--;
+            if (accepter.cardCollection[currentTrade.requestedCardId].count === 0) {
+                accepter.cardCollection[currentTrade.requestedCardId] = null;
+            }
+            if (!accepter.cardCollection[currentTrade.offeredCardId]) {
+                accepter.cardCollection[currentTrade.offeredCardId] = { count: 0 };
+            }
+            accepter.cardCollection[currentTrade.offeredCardId].count++;
+
+            // Kartları Transfer Et (Teklif Eden)
+            offerer.cardCollection[currentTrade.offeredCardId].count--;
+            if (!offerer.cardCollection[currentTrade.requestedCardId]) {
+                offerer.cardCollection[currentTrade.requestedCardId] = { count: 0 };
+            }
+            offerer.cardCollection[currentTrade.requestedCardId].count++;
+
+            // İşlem ücretini düş
+            accepter.balance = (accepter.balance || 0) - tradeFee;
+
+            // Teklifi sil
+            data.trades[tradeId] = null;
+            
+            return data;
+        });
+
+        // 5. Adım: Aktiviteyi ve geçmişi kaydet
+        logActivity('tradeOfferAccepted', currentUser, {
+            offerer: trade.offerer,
+            offeredCardName: offeredCard.cardName,
+            requestedCardName: requestedCard.cardName
+        });
+
+        const historyRef = db.ref('tradeHistory').push();
+        await historyRef.set({
+            offerer: trade.offerer,
+            accepter: currentUser,
+            offeredCardId: trade.offeredCardId,
+            requestedCardId: trade.requestedCardId,
+            offeredCardName: offeredCard.cardName,
+            requestedCardName: requestedCard.cardName,
+            timestamp: firebase.database.ServerValue.TIMESTAMP
+        });
+
+        displayMessage("Takas başarıyla tamamlandı!");
+        loadMarketOffers('all');
+        if (currentActiveSection === 'cardCollection') {
+            loadCollectionAlbum();
+        }
+
+    } catch (error) {
+        console.error("Takas sırasında hata:", error);
+        displayMessage("Takas sırasında bir hata oluştu veya teklif artık geçerli değil. Lütfen tekrar deneyin.");
+        loadMarketOffers('all');
+    }
+}
+
 // Pazara konulmuş takas tekliflerini Firebase'den çeker ve listeler
 async function loadMarketOffers(mode) {
     const listEl = document.getElementById('marketOffersList');
@@ -11608,6 +11755,18 @@ async function submitTradeOffer() {
         timestamp: firebase.database.ServerValue.TIMESTAMP
     };
 
+    // Yeni loglama fonksiyonunu çağırmadan önce kart isimlerini almamız lazım
+    const masterCardsSnap = await db.ref('gameConfig/cardCollection').once('value');
+    const masterCards = masterCardsSnap.val();
+    const offeredCardName = masterCards[offeredCardId]?.cardName || 'Bilinmeyen Kart';
+    const requestedCardName = masterCards[requestedCardId]?.cardName || 'Bilinmeyen Kart';
+
+    // Aktiviteyi logla
+    logActivity('tradeOfferCreated', currentUser, {
+        offeredCardName: offeredCardName,
+        requestedCardName: requestedCardName
+    });
+
     await db.ref('trades').push(newTrade);
     displayMessage("Takas teklifin başarıyla pazara eklendi!");
     closeCreateOfferModal();
@@ -11620,23 +11779,26 @@ async function submitTradeOffer() {
 async function cancelTradeOffer(tradeId, asAdmin = false) {
     if (!tradeId) return;
     
+    const tradeRef = db.ref(`trades/${tradeId}`);
+    
     if (asAdmin) {
-        // Admin olarak iptal etme
+        if (!isAdmin) return;
         const confirmed = await customConfirm("Bu teklifi admin olarak zorla iptal etmek istediğinize emin misiniz?");
         if (!confirmed) return;
-        await db.ref(`trades/${tradeId}`).remove();
+        await tradeRef.remove();
         displayMessage("Teklif admin tarafından iptal edildi.");
+        loadMarketOffers('all');
     } else {
-        // Kullanıcının kendi teklifini iptal etmesi
-        const tradeSnap = await db.ref(`trades/${tradeId}`).once('value');
+        const tradeSnap = await tradeRef.once('value');
         const tradeData = tradeSnap.val();
         if (tradeData && tradeData.offerer === currentUser) {
-            await db.ref(`trades/${tradeId}`).remove();
+            const confirmed = await customConfirm("Bu takas teklifini pazardan kaldırmak istediğinize emin misiniz?");
+            if (!confirmed) return;
+            await tradeRef.remove();
             displayMessage("Teklifin pazardan kaldırıldı.");
+            loadMarketOffers('mine');
         }
     }
-    // Listeyi yenile
-    loadMarketOffers(asAdmin ? 'all' : 'mine');
 }
 
 // =======================================================
