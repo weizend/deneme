@@ -11,6 +11,40 @@
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
 
 <style>
+/* --- TAKAS PAZARI STİLLERİ --- */
+.market-offer-card {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background-color: #1f2937; /* bg-gray-800 */
+    padding: 1rem;
+    border-radius: 0.75rem;
+    border: 1px solid #374151; /* border-gray-700 */
+}
+
+.market-card-info {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    text-align: left;
+}
+
+.market-card-info img {
+    width: 50px;
+    height: 70px;
+    object-fit: cover;
+    border-radius: 0.375rem;
+    border: 2px solid #4b5563;
+}
+
+.market-card-info .card-name {
+    font-weight: bold;
+    color: white;
+}
+.market-card-info .card-owner {
+    font-size: 0.8rem;
+    color: #9ca3af; /* text-gray-400 */
+}
 /* --- KART YÖNETİM BUTONLARI STİLİ --- */
 .card-admin-buttons {
     position: absolute;
@@ -568,24 +602,46 @@ body.modal-open .modal-content {
       </button>
     </div>
     
-    <div id="cardCollectionContent" class="w-full hidden">
-    <div class="flex justify-between items-center mb-6 px-4">
-        <h3 class="text-yellow-400 text-3xl font-bold">Kart Koleksiyonu Albümü</h3>
-        <div class="text-right">
-            <p class="text-lg text-white">Tamamlanan: <span id="collectionProgress" class="font-bold text-green-400">0/20</span></p>
-            <button onclick="openTradeMarket()" class="mt-2 py-2 px-4 bg-purple-600 hover:bg-purple-500 rounded-lg text-sm font-bold">Takas Pazarı</button>
-        </div>
+    <div class="text-right">
+        <p class="text-lg text-white">Tamamlanan: <span id="collectionProgress" class="font-bold text-green-400">0/20</span></p>
+        <button onclick="openTradeMarket()" class="mt-2 py-2 px-4 bg-purple-600 hover:bg-purple-500 rounded-lg text-sm font-bold">Takas Pazarı</button>
     </div>
+</div>
     
-    <div id="adminCardCollectionControls" class="hidden my-4 p-4 bg-gray-800 rounded-lg border border-green-500 max-w-3xl mx-auto text-center">
-    <h4 class="text-lg font-bold text-green-300 mb-3">Koleksiyon Yönetim Paneli</h4>
-    <div class="flex justify-center gap-4">
-        <button onclick="openCardCreatorModal()" class="py-2 px-6 bg-green-700 hover:bg-green-600 text-white font-bold rounded-lg">
-            Yeni Kart Ekle
-        </button>
-        <button onclick="resetWholeCollection()" class="py-2 px-6 bg-red-800 hover:bg-red-700 text-white font-bold rounded-lg">
-            Tüm Koleksiyonu Sıfırla
-        </button>
+    <div id="adminCardCollectionControls" class="hidden my-4 p-6 bg-gray-800 rounded-lg border border-purple-500 max-w-4xl mx-auto">
+    <h4 class="text-lg font-bold text-purple-300 mb-4 text-center border-b border-gray-700 pb-2">KOLEKSİYON & PAZAR YÖNETİM PANELİ</h4>
+    
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
+        
+        <div class="space-y-3">
+            <h5 class="font-semibold text-yellow-300">Kart Yönetimi</h5>
+            <button onclick="openCardCreatorModal()" class="w-full py-2 px-6 bg-green-700 hover:bg-green-600 text-white font-bold rounded-lg">
+                Yeni Kart Ekle
+            </button>
+            <button onclick="resetWholeCollection()" class="w-full py-2 px-6 bg-red-800 hover:bg-red-700 text-white font-bold rounded-lg">
+                Tüm Koleksiyonu Sıfırla
+            </button>
+        </div>
+
+        <div class="space-y-3">
+            <h5 class="font-semibold text-yellow-300">Pazar Ayarları</h5>
+            <div>
+                <label for="tradeFeeInput" class="block text-sm text-gray-400 mb-1">Takas İşlem Ücreti (Puan):</label>
+                <input type="number" id="tradeFeeInput" placeholder="Örn: 50" class="box-setting-input">
+            </div>
+            <div class="flex gap-4">
+                 <button onclick="saveMarketSettings()" class="w-full py-2 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-lg">
+                    Ayarları Kaydet
+                </button>
+                <button id="marketLockBtn" onclick="toggleMarketLock()" class="w-full py-2 bg-gray-600 hover:bg-gray-500 text-white font-bold rounded-lg">
+                    Pazarı Kilitle
+                </button>
+            </div>
+            <button onclick="openTradeHistoryModal()" class="w-full mt-2 py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-lg">
+                Takas Geçmişini Görüntüle
+            </button>
+        </div>
+
     </div>
 </div>
     
@@ -889,16 +945,16 @@ body.modal-open .modal-content {
             <textarea id="newItemDescription" placeholder="Ürün Açıklaması" rows="3" class="w-full p-2 mb-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500 transition duration-300"></textarea>
             <input type="number" id="newItemCost" placeholder="Maliyet (Puan)" min="1" class="w-full p-2 mb-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500 transition duration-300">
             <input type="number" id="newItemStock" placeholder="Stok Durumu (Opsiyonel, boş bırakılırsa sınırsız)" min="0" class="w-full p-2 mb-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500 transition duration-300">
-            <select id="newItemType" class="w-full p-2 mb-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500 transition duration-300">
-              <option value="">Ürün Tipi Seçin</option>
-              <option value="boxRights">Kutu Hakkı</option>
-              <option value="wheelTicket">Çark Bileti</option>
-              <option value="clickCatchTicket">Tıkla-Yakala Bileti</option>
-              <option value="tempMultiplier">Geçici Çarpan</option>
-              <option value="iflasShield">İflas Kalkanı</option>
-              <option value="special">Özel Ürün (Onay Gerektirir)</option>
-              <option value="avatar">Avatar</option>
-            </select>
+            <select id="newItemType" class="w-full p-2 mb-2 bg-gray-700 border border-gray-600 rounded-lg text-white ...">
+  <option value="">Ürün Tipi Seçin</option>
+  <option value="boxRights">Kutu Hakkı</option>
+  <option value="wheelTicket">Çark Bileti</option>
+  <option value="clickCatchTicket">Tıkla-Yakala Bileti</option>
+  <option value="tempMultiplier">Geçici Çarpan</option>
+  <option value="iflasShield">İflas Kalkanı</option>
+  <option value="wildcard">Joker Kart</option> <option value="special">Özel Ürün (Onay Gerektirir)</option>
+  <option value="avatar">Avatar</option>
+</select>
             <input type="number" id="newItemValue" placeholder="Değer (Kutu Hakkı Adedi / Çarpan Değeri / Kalkan Sayısı)" class="w-full p-2 mb-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500 transition duration-300">
             <input type="number" id="newItemMultiplierDuration" placeholder="Çarpan Süresi (Kutu Sayısı)" min="1" class="w-full p-2 mb-2 bg-gray-700 border border-gray-600 rounded-lg text-white hidden focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500 transition duration-300">
             
@@ -2041,6 +2097,60 @@ body.modal-open .modal-content {
     </div>
   </div>
 </div>
+
+<div id="tradeHistoryModal" class="modal-overlay fixed inset-0 bg-black bg-opacity-70 flex justify-center items-center z-[10000] hidden">
+  <div class="modal-content bg-gray-800 p-8 rounded-xl shadow-2xl border border-indigo-500 w-11/12 max-w-3xl text-left relative max-h-[90vh] flex flex-col">
+    <button class="modal-close-button" onclick="closeTradeHistoryModal()">&times;</button>
+    <h3 class="text-indigo-300 text-3xl font-bold mb-6 text-center">Takas Geçmişi Kayıtları</h3>
+    <div id="tradeHistoryList" class="flex-grow overflow-y-auto scrollable-list pr-4">
+      <p class="text-center text-gray-400">Takas kayıtları yükleniyor...</p>
+    </div>
+  </div>
+</div>
+
+<div id="tradeMarketModal" class="modal-overlay fixed inset-0 bg-black bg-opacity-80 flex justify-center items-center z-[10001] hidden">
+  <div class="modal-content bg-gray-900/95 backdrop-blur-sm p-4 sm:p-6 rounded-2xl shadow-2xl border border-purple-500 w-11/12 max-w-4xl h-[90vh] text-center relative flex flex-col">
+    <button class="modal-close-button" onclick="closeTradeMarketModal()">&times;</button>
+    <h3 class="text-purple-300 text-3xl font-bold mb-4 flex-shrink-0">Takas Pazarı</h3>
+    
+    <div class="flex-shrink-0 mb-4 flex flex-col sm:flex-row justify-between items-center gap-4 p-2 bg-gray-800/50 rounded-lg">
+        <div class="flex border-b border-gray-700">
+            <button id="marketTabAll" onclick="switchMarketTab('all')" class="market-tab-btn flex-1 py-2 px-6 text-base font-bold border-b-2 border-purple-500 text-white">Pazardaki Teklifler</button>
+            <button id="marketTabMine" onclick="switchMarketTab('mine')" class="market-tab-btn flex-1 py-2 px-6 text-base font-bold border-b-2 border-transparent text-gray-400">Benim Tekliflerim</button>
+        </div>
+        <button onclick="openCreateOfferModal()" class="py-2 px-5 bg-green-600 hover:bg-green-500 rounded-lg font-bold text-sm">
+            + Yeni Takas Teklifi Oluştur
+        </button>
+    </div>
+
+    <div id="marketOffersList" class="flex-grow overflow-y-auto scrollable-list pr-2 space-y-3">
+        </div>
+  </div>
+</div>
+
+
+<div id="createOfferModal" class="modal-overlay fixed inset-0 bg-black bg-opacity-70 flex justify-center items-center z-[10002] hidden">
+    <div class="modal-content bg-gray-800 p-8 rounded-xl shadow-2xl border border-green-500 w-11/12 max-w-xl text-left relative">
+        <button class="modal-close-button" onclick="closeCreateOfferModal()">&times;</button>
+        <h3 class="text-green-300 text-3xl font-bold mb-6 text-center">Takas Teklifi Oluştur</h3>
+        
+        <div class="flex justify-around items-center gap-4">
+            <div class="flex-1 text-center">
+                <h4 class="font-bold text-yellow-300 mb-2">Teklif Ettiğim Kart:</h4>
+                <select id="offerMyCardSelect" class="box-setting-input"></select>
+            </div>
+            
+            <span class="text-3xl font-bold text-gray-500">⇄</span>
+
+            <div class="flex-1 text-center">
+                <h4 class="font-bold text-yellow-300 mb-2">İstediğim Kart:</h4>
+                <select id="offerRequestCardSelect" class="box-setting-input"></select>
+            </div>
+        </div>
+        <p id="tradeFeeInfo" class="text-center text-sm text-gray-400 mt-6"></p>
+        <button onclick="submitTradeOffer()" class="w-full mt-2 py-3 bg-green-700 hover:bg-green-600 text-white font-bold rounded-lg shadow-md">TEKLİFİ PAZARA KOY</button>
+    </div>
+</div>
   <script>
       document.addEventListener('DOMContentLoaded', () => {
     const typeSelect = document.getElementById('soloSpecialItemType');
@@ -2840,12 +2950,10 @@ function showSection(sectionId) {
     if (clickCatchAdminButtonsContainer) {
         clickCatchAdminButtonsContainer.classList.add('hidden');
     }
-    // YENİ: Kart koleksiyonu admin panelini de gizle
     const cardAdminControls = document.getElementById('adminCardCollectionControls');
     if (cardAdminControls) {
         cardAdminControls.classList.add('hidden');
     }
-
 
     // 4. Tüm sekme butonlarını varsayılan (pasif) stile döndür
     tabButtonIds.forEach(btnId => {
@@ -2905,8 +3013,8 @@ function showSection(sectionId) {
     } else if (sectionId === 'cardCollection') {
         loadCollectionAlbum();
         if (isAdmin) {
-            // Admin olarak girince kart yönetim panelini göster
             document.getElementById('adminCardCollectionControls').classList.remove('hidden');
+            loadMarketSettingsForAdmin();
         }
     }
     
@@ -4133,7 +4241,7 @@ async function deleteUserAvatar(username, avatarId) {
       }); 
   }
 
-// MEVCUT openBox fonksiyonunu bununla değiştir
+// =OTOMATİK-OLUŞTURULDU-
 async function openBox(index) {
     if (isGameLocked) {
         displayMessage("Kutular 3 saniye arayla açılıyor. Lütfen tekrar deneyin. Sorun devam ediyorsa, sorunları çöz menüsüne göz atabilirsin.");
@@ -4265,7 +4373,6 @@ async function openBox(index) {
             updates['balance'] = (user.balance || 0) + pointsGained;
             if (updates['balance'] > (user.highestBalanceEver || 0)) updates['highestBalanceEver'] = updates['balance'];
             
-            // KARİYER PUANI GÜNCELLEMESİ
             updates['kariyerPuani'] = (user.kariyerPuani || 0) + pointsGained;
 
             message = `+${pointsGained} puan kazandınız!`;
@@ -4322,6 +4429,14 @@ async function openBox(index) {
             await sessionRef.update({ expirationTimestamp: snap.val().timestamp + 60000 });
             openCardSelectionModal(currentUser);
         }
+        // YENİ ELSE IF BLOĞU: Joker Kart bulunduğunda çalışacak kod
+        else if (box.content === 'wildcard') {
+            const itemsGained = box.value * finalMultiplier;
+            updates['wildcards'] = (user.wildcards || 0) + itemsGained;
+            message = `İNANILMAZ! Kutudan <b class="text-purple-400">+${itemsGained} JOKER KART</b> kazandın!`;
+            logActivity('newItemFound', currentUser, { itemName: `+${itemsGained} Joker Kart`, itemType: 'wildcard', boxId: box.id, multiplier: finalMultiplier });
+        }
+        // YENİ BLOK SONU
         else {
             const itemsGained = box.value * finalMultiplier;
             const itemNames = { wheelTicket: 'Şans Çarkı Bileti', clickCatchTicket: 'Tıkla-Yakala Bileti', iflasShield: 'İflas Kalkanı' };
@@ -4935,6 +5050,7 @@ function renderStoreItems(items) {
     }
 }
 
+// =OTOMATİK-OLUŞTURULDU-
 async function buyItem(itemId) {
     if (isAdmin) {
         displayMessage("Adminler alışveriş yapamaz.");
@@ -4948,27 +5064,21 @@ async function buyItem(itemId) {
 
     if (!user || !item) return;
 
-    // --- ÖZEL ÜRÜN SATIN ALMA KONTROLÜ (KASA PUANI İLE) ---
-    // DEĞİŞİKLİK BURADA BAŞLIYOR
     if (item.type === 'special') {
-        // 1. Kasa Puanı'nı kontrol et
         const kasaPuani = user.kasaPuani || 0;
         if (kasaPuani < item.cost) {
             displayMessage(`Bu özel ürünü almak için yeterli Kasa Puanınız yok! (Gereken: ${item.cost} KP, Mevcut: ${kasaPuani} KP)`);
             return;
         }
 
-        // 2. Stok kontrolü
         if (item.stock !== undefined && item.stock <= 0) {
             displayMessage("Bu ürünün stoğu tükenmiştir.");
             return;
         }
         
-        // 3. Onay al
         const confirmed = await customConfirm(`'${item.name}' ürününü ${item.cost} Kasa Puanı'na almak istiyor musunuz? Bu puanlar Kasa'nızdan düşülecektir.`);
         if (!confirmed) return;
 
-        // 4. Admin onayı için talep oluştur
         const purchaseId = db.ref('pendingSpecialPurchases').push().key;
         await db.ref(`pendingSpecialPurchases/${purchaseId}`).set({
             username: currentUser,
@@ -4977,23 +5087,20 @@ async function buyItem(itemId) {
             timestamp: firebase.database.ServerValue.TIMESTAMP
         });
 
-        // 5. Kasa Puanı'nı düş
         await userRef.update({
             kasaPuani: kasaPuani - item.cost
         });
 
-        // 6. Satın alma geçmişine "beklemede" olarak kaydet
         await db.ref(`purchaseHistory/${purchaseId}`).set({
             username: currentUser,
             itemName: item.name,
             itemCost: item.cost,
             imageUrl: item.imageUrl,
             status: 'pending',
-            purchaseType: 'kasaPuani', // Alımın türünü belirtiyoruz
+            purchaseType: 'kasaPuani',
             timestamp: firebase.database.ServerValue.TIMESTAMP
         });
 
-        // 7. Ürün istatistiklerini güncelle
         let itemUpdates = {};
         if (item.stock !== undefined && item.stock !== null) {
             itemUpdates.stock = item.stock - 1;
@@ -5001,23 +5108,16 @@ async function buyItem(itemId) {
         itemUpdates.purchaseCount = (item.purchaseCount || 0) + 1;
         await itemRef.update(itemUpdates);
 
-        // 8. Loglama ve kullanıcı bilgilendirme
         logActivity('buyItem', currentUser, {
             itemName: item.name,
-            itemCost: `${item.cost} KP`, // Logda KP olarak belirt
+            itemCost: `${item.cost} KP`,
             itemType: item.type,
             newKasaBalance: kasaPuani - item.cost
         });
         
         displayMessage(`'${item.name}' talebiniz admine iletildi. Onaylandığında hesabınıza eklenecek. Kasa'nızdan ${item.cost} KP düşüldü.`);
-        return; // İşlem bittiği için fonksiyondan çık
+        return;
     }
-    // DEĞİŞİKLİK BURADA BİTİYOR
-    // --- ÖZEL ÜRÜN KONTROLÜ SONU ---
-
-
-    // --- NORMAL ÜRÜN SATIN ALMA (STANDART PUAN İLE) ---
-    // Bu kısım eskisi gibi çalışmaya devam ediyor.
 
     if (item.type === 'tempMultiplier') {
         if (typeof item.value !== 'number' || typeof item.duration !== 'number') {
@@ -5097,6 +5197,9 @@ async function buyItem(itemId) {
         } else if (item.type === 'iflasShield') {
             if (itemValue <= 0) { displayMessage("Ürün hatası: Geçersiz Kalkan değeri."); return; }
             updates.iflasShieldUses = (user.iflasShieldUses || 0) + itemValue;
+        } else if (item.type === 'wildcard') { // YENİ EKLENEN BLOK
+            if (itemValue <= 0) { displayMessage("Ürün hatası: Geçersiz Joker Kart değeri."); return; }
+            updates.wildcards = (user.wildcards || 0) + itemValue;
         } else if (item.type === 'avatar') {
             const newAvatar = { id: itemId, name: item.name, imageUrl: item.imageUrl };
             updates[`avatars/${itemId}`] = newAvatar;
@@ -7258,7 +7361,7 @@ function renderWheel() {
     ref.on('value', callback);
 }
 
-// MEVCUT spinWheel fonksiyonunu bununla değiştir
+// =OTOMATİK-OLUŞTURULDU-
 async function spinWheel() {
     if (isWheelSpinning) return;
     if (isAdmin) {
@@ -7334,15 +7437,12 @@ async function spinWheel() {
                 message = `Tebrikler, çarktan <b>+${winningSegment.value} Puan</b> kazandın!`;
                 updates.balance = (currentUserData.balance || 0) + winningSegment.value;
                 if(updates.balance > (currentUserData.highestBalanceEver || 0)) updates.highestBalanceEver = updates.balance;
-                
-                // KARİYER PUANI GÜNCELLEMESİ
                 updates.kariyerPuani = (currentUserData.kariyerPuani || 0) + winningSegment.value;
                 break;
             case 'boxRights':
                 message = `Tebrikler, çarktan <b>+${winningSegment.value} Kutu Hakkı</b> kazandın!`;
                 updates.kutuHakki = (currentUserData.kutuHakki || 0) + winningSegment.value;
                 break;
-            // ... diğer case'ler aynı kalacak
             case 'iflasShield':
                 message = `Tebrikler, çarktan <b>+${winningSegment.value} İflas Kalkanı</b> kazandın!`;
                 updates.iflasShieldUses = (currentUserData.iflasShieldUses || 0) + winningSegment.value;
@@ -7375,6 +7475,12 @@ async function spinWheel() {
                  openCardSelectionModal(currentUser);
                  message = "Vay canına! Çarktan Sürpriz Kutu çıktı! Şimdi bir kart seç.";
                  break;
+            // YENİ CASE: Joker Kart kazanıldığında çalışacak kod
+            case 'wildcard':
+                message = `HARİKA! Çarktan en nadir ödül olan <b class="text-purple-400">+${winningSegment.value} JOKER KART</b> kazandın!`;
+                updates.wildcards = (currentUserData.wildcards || 0) + winningSegment.value;
+                break;
+            // YENİ CASE SONU
             case 'pas':
                 message = "Bu seferlik pas! Bir dahaki sefere daha şanslı olabilirsin.";
                 break;
@@ -9313,15 +9419,14 @@ function formatRelativeTime(timestamp) {
   }
 }
 
-// Yeni bir ayar satırı (Puan, Bilet vb.) oluşturup ekrana ekler.
+// Kutu Ayarları için yeni satır ekler
 function addBoxSettingRow(item = {}) {
     const container = document.getElementById('boxSettingsRowsContainer');
     const row = document.createElement('div');
     row.className = 'box-setting-row flex items-center gap-3 p-3 bg-gray-900 rounded-lg';
 
-    // Değerleri önceden doldurmak için (kayıtlı ayarları yüklerken kullanılır)
     const type = item.type || 'points';
-    const value = item.value || '';
+    const value = item.value === 0 ? 0 : (item.value || '');
     const count = item.count || '';
 
     row.innerHTML = `
@@ -9333,35 +9438,36 @@ function addBoxSettingRow(item = {}) {
             <option value="wheelTicket" ${type === 'wheelTicket' ? 'selected' : ''}>Çark Bileti</option>
             <option value="clickCatchTicket" ${type === 'clickCatchTicket' ? 'selected' : ''}>Tıkla-Yakala Bileti</option>
             <option value="iflasShield" ${type === 'iflasShield' ? 'selected' : ''}>İflas Kalkanı</option>
-        </select>
+            <option value="wildcard" ${type === 'wildcard' ? 'selected' : ''}>Joker Kart</option> </select>
         <input type="number" value="${value}" class="setting-value w-28 bg-gray-700 p-2 rounded-md text-white border border-gray-600" placeholder="Değer">
         <input type="number" value="${count}" class="setting-count w-28 bg-gray-700 p-2 rounded-md text-white border border-gray-600" placeholder="Adet" oninput="updateTotalBoxCount()">
         <button class="bg-red-700 hover:bg-red-600 text-white p-2 rounded-md" onclick="this.parentElement.remove(); updateTotalBoxCount();">Sil</button>
     `;
     
     container.appendChild(row);
-    handleRowTypeChange(row.querySelector('.setting-type')); // Satırın ilk durumunu ayarla
-    updateTotalBoxCount(); // Eklendikten sonra toplam sayıyı güncelle
+    handleRowTypeChange(row.querySelector('.setting-type'));
+    updateTotalBoxCount();
 }
 
-// Bir satırda tür seçimi değiştiğinde "Değer" input'unu aktif/pasif yapar.
+// Kutu Ayarları'nda seçilen türe göre "Değer" alanını yönetir
 function handleRowTypeChange(selectElement) {
     const row = selectElement.parentElement;
     const valueInput = row.querySelector('.setting-value');
     const selectedType = selectElement.value;
 
-    // Puan ve Çarpan dışındaki her şey için "Değer" alanı gereksizdir.
-    if (selectedType === 'points' || selectedType === 'multiplier') {
+    const typesWithValue = ['points', 'multiplier'];
+    // YENİ: Joker kart da otomatik değeri olanlar listesine eklendi
+    const typesWithAutoValue = ['wheelTicket', 'clickCatchTicket', 'iflasShield', 'wildcard'];
+
+    if (typesWithValue.includes(selectedType)) {
         valueInput.disabled = false;
         valueInput.placeholder = 'Değer';
         if(selectedType === 'multiplier') valueInput.placeholder = 'Değer (2, 3 vb.)';
-
     } else {
         valueInput.disabled = true;
         valueInput.placeholder = 'N/A';
-        // Biletler için değeri otomatik 1 yapalım, diğerleri 0 kalabilir.
-        if(selectedType === 'wheelTicket' || selectedType === 'clickCatchTicket' || selectedType === 'iflasShield'){
-             valueInput.value = 1;
+        if(typesWithAutoValue.includes(selectedType)){
+             valueInput.value = 1; // Joker kart için de değeri 1 olacak
         } else {
              valueInput.value = 0;
         }
@@ -9474,17 +9580,17 @@ function closeWheelSettingsModal() {
     wheelSettingsModal.style.display = 'none';
 }
 
+// Çark Ayarları için yeni satır ekler
 function addWheelSettingRow(item = {}) {
     const container = document.getElementById('wheelSettingsRowsContainer');
     const row = document.createElement('div');
-    // DÜZENLEME: Grid yapısı 7 sütuna çıkarıldı
     row.className = 'wheel-setting-row grid grid-cols-1 sm:grid-cols-7 items-center gap-3 p-3 bg-gray-900 rounded-lg';
 
     const type = item.type || 'points';
     const value = item.value || '';
     const duration = item.duration || '';
     const label = item.label || '';
-    const imageUrl = item.imageUrl || ''; // YENİ: Resim URL'i eklendi
+    const imageUrl = item.imageUrl || '';
     const color = item.color || '#f44336';
     const weight = item.weight || 10;
 
@@ -9497,12 +9603,10 @@ function addWheelSettingRow(item = {}) {
             <option value="surpriseBox" ${type === 'surpriseBox' ? 'selected' : ''}>Sürpriz Kutu</option>
             <option value="clickCatchTicket" ${type === 'clickCatchTicket' ? 'selected' : ''}>Tıkla-Yakala Bileti</option>
             <option value="wheelTicket" ${type === 'wheelTicket' ? 'selected' : ''}>Çark Bileti</option>
-            <option value="pas" ${type === 'pas' ? 'selected' : ''}>Pas</option>
+            <option value="wildcard" ${type === 'wildcard' ? 'selected' : ''}>Joker Kart</option> <option value="pas" ${type === 'pas' ? 'selected' : ''}>Pas</option>
         </select>
-        <input type="text" value="${label}" class="setting-label col-span-1 sm:col-span-2 bg-gray-700 p-2 rounded-md text-white" placeholder="Etiket (Örn: 100 Puan)">
-        
+        <input type="text" value="${label}" class="setting-label col-span-1 sm:col-span-2 bg-gray-700 p-2 rounded-md text-white" placeholder="Etiket (Örn: JOKER!)">
         <input type="text" value="${imageUrl}" class="setting-image-url col-span-1 sm:col-span-2 bg-gray-700 p-2 rounded-md text-white" placeholder="Resim URL (Opsiyonel)">
-
         <input type="number" value="${value}" class="setting-value bg-gray-700 p-2 rounded-md text-white" placeholder="Değer">
         <input type="number" value="${duration}" class="setting-duration bg-gray-700 p-2 rounded-md text-white" placeholder="Süre/Kullanım">
         <div class="col-span-1 flex items-center gap-2">
@@ -9515,6 +9619,7 @@ function addWheelSettingRow(item = {}) {
     handleWheelRowTypeChange(row.querySelector('.setting-type'));
 }
     
+// Çark Ayarları'nda seçilen türe göre "Değer" ve "Süre" alanlarını yönetir
 function handleWheelRowTypeChange(selectElement) {
     const row = selectElement.closest('.wheel-setting-row');
     const valueInput = row.querySelector('.setting-value');
@@ -9523,11 +9628,16 @@ function handleWheelRowTypeChange(selectElement) {
 
     valueInput.disabled = false;
     durationInput.disabled = true;
+    durationInput.value = ''; // Süreyi temizle
 
-    if (selectedType === 'pas') {
+    if (selectedType === 'pas' || selectedType === 'surpriseBox') {
         valueInput.disabled = true;
+        valueInput.value = ''; // Değeri temizle
     } else if (selectedType === 'tempMultiplier') {
         durationInput.disabled = false;
+    } else if (selectedType === 'wildcard') { // YENİ EKLENDİ
+        valueInput.disabled = false;
+        valueInput.value = 1; // Değeri otomatik 1 yap
     }
 }
 
@@ -10530,13 +10640,12 @@ async function kasaTransferEt() {
     document.getElementById('kasaTransferInput').value = '';
 }
 
-/**
- * Kart koleksiyonu albümünü Firebase'den gelen verilere göre dinamik olarak oluşturur ve ekrana çizer.
- * Adminler için düzenleme ve silme butonları ekler.
- */
+// =OTOMATİK-OLUŞTURULDU-
 async function loadCollectionAlbum() {
     const albumContainer = document.getElementById('cardCollectionAlbum');
     const progressSpan = document.getElementById('collectionProgress');
+    const wildcardIndicator = document.getElementById('wildcardIndicator');
+    const wildcardCountSpan = document.getElementById('wildcardCount');
     albumContainer.innerHTML = '<p class="text-center text-gray-400 col-span-full">Koleksiyon yükleniyor...</p>';
 
     // 1. ADIM: Tüm kartların ana listesini (tanımlarını) sıralı bir şekilde çek
@@ -10551,16 +10660,27 @@ async function loadCollectionAlbum() {
     const masterList = masterListSnap.val();
     const totalCardCount = Object.keys(masterList).length;
 
-    // 2. ADIM: Oyuncunun sahip olduğu kartları çek
-    const userListRef = db.ref(`users/${currentUser}/cardCollection`);
-    const userListSnap = await userListRef.once('value');
-    const userCards = userListSnap.val() || {};
-    const userOwnedCardCount = Object.keys(userCards).length;
+    // 2. ADIM: Oyuncunun sahip olduğu kartları VE JOKER KART SAYISINI ÇEK
+    const userRef = db.ref(`users/${currentUser}`);
+    const userSnap = await userRef.once('value');
+    const userData = userSnap.val() || {};
+    const userCards = userData.cardCollection || {};
+    const userWildcards = userData.wildcards || 0;
     
-    // Koleksiyon ilerlemesini güncelle
+    // Joker Kart göstergesini güncelle
+    if (wildcardIndicator) {
+        if (userWildcards > 0 || isAdmin) {
+            wildcardCountSpan.textContent = userWildcards;
+            wildcardIndicator.style.display = 'flex';
+        } else {
+            wildcardIndicator.style.display = 'none';
+        }
+    }
+
+    const userOwnedCardCount = Object.keys(userCards).length;
     if(progressSpan) progressSpan.textContent = `${userOwnedCardCount}/${totalCardCount}`;
     
-    albumContainer.innerHTML = ''; // Temizle ve kartları doldurmaya başla
+    albumContainer.innerHTML = ''; 
 
     // 3. ADIM: Ana listedeki her kart için albümde bir yer oluştur
     for (const cardId in masterList) {
@@ -10570,43 +10690,31 @@ async function loadCollectionAlbum() {
         const slot = document.createElement('div');
         slot.className = 'card-slot';
 
-        if (userHasCard || isAdmin) { // Oyuncu karta sahipse VEYA admin ise kartı dolu göster
+        if (userHasCard || isAdmin) { 
+            // ... (Bu kısım öncekiyle aynı, değişiklik yok)
             const cardItem = document.createElement('div');
             cardItem.className = `card-item rarity-${cardInfo.rarity || 'normal'}`;
-            
-            let duplicateBadge = '';
-            if (userHasCard && userHasCard.count > 1) {
-                duplicateBadge = `<div class="duplicate-badge">x${userHasCard.count}</div>`;
-            }
-
-            // Admin butonları
-            let adminCardControls = '';
-            if (isAdmin) {
-                adminCardControls = `
-                    <div class="card-admin-buttons">
-                        <button onclick="openCardCreatorModal('${cardId}')" title="Düzenle">✏️</button>
-                        <button onclick="deleteCard('${cardId}')" title="Sil">🗑️</button>
-                    </div>
-                `;
-            }
-
-            cardItem.innerHTML = `
-                ${duplicateBadge}
-                ${adminCardControls}
-                <img class="card-image" src="${cardInfo.imageUrl}">
-                <h4 class="card-name">${cardInfo.cardName}</h4>
-            `;
-            
-            if (userHasCard && userHasCard.count > 1) {
-                cardItem.onclick = () => openTradeMenu(cardId, cardInfo.cardName);
-            }
+            let duplicateBadge = userHasCard && userHasCard.count > 1 ? `<div class="duplicate-badge">x${userHasCard.count}</div>` : '';
+            let adminCardControls = isAdmin ? `<div class="card-admin-buttons"><button onclick="openCardCreatorModal('${cardId}')" title="Düzenle">✏️</button><button onclick="deleteCard('${cardId}')" title="Sil">🗑️</button></div>` : '';
+            cardItem.innerHTML = `${duplicateBadge}${adminCardControls}<img class="card-image" src="${cardInfo.imageUrl}"><h4 class="card-name">${cardInfo.cardName}</h4>`;
+            if (userHasCard && userHasCard.count > 1) { cardItem.onclick = () => openTradeMenu(cardId, cardInfo.cardName); }
             slot.appendChild(cardItem);
 
         } else {
-            // KULLANICI KARTA SAHİP DEĞİLSE: Boş kart şablonunu oluştur
+            // KULLANICI KARTA SAHİP DEĞİLSE:
+            // YENİ EKLENEN KISIM: Joker kartı varsa, kullanma butonu ekle
+            let wildcardButton = '';
+            if (userWildcards > 0) {
+                wildcardButton = `<button class="absolute bottom-2 left-1/2 -translate-x-1/2 w-11/12 py-2 bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs rounded-lg animate-pulse" onclick="useWildcard('${cardId}', '${cardInfo.cardName}')">Joker Kullan</button>`;
+            }
+
             slot.innerHTML = `
-                <div class="card-item missing">
-                    <span class="missing-text">?</span>
+                <div class="card-item missing relative">
+                    <div class="card-image flex items-center justify-center">
+                         <span class="missing-text">?</span>
+                    </div>
+                    <h4 class="card-name text-gray-500">${cardInfo.cardName}</h4>
+                    ${wildcardButton}
                 </div>
             `;
         }
@@ -10614,14 +10722,51 @@ async function loadCollectionAlbum() {
     }
 }
 
-// Takas menüsünü açacak olan örnek fonksiyon (şimdilik boş)
+// Kullanıcı koleksiyonundaki fazla karta tıkladığında teklif oluşturma penceresini açar
 function openTradeMenu(cardId, cardName) {
-    displayMessage(`'${cardName}' kartı için takas menüsü burada açılacak. ID: ${cardId}`);
+    if (!cardId) return;
+    // Teklif penceresini, bu kart önceden seçili olacak şekilde aç
+    openCreateOfferModal(cardId);
 }
 
-// =======================================================
-// YENİ ÖZELLİK: ADMİN KART YÖNETİM FONKSİYONLARI
-// =======================================================
+// JOKER KART KULLANMA FONKSİYONU
+
+async function useWildcard(cardIdToGet, cardNameToGet) {
+    if (isAdmin) return;
+
+    const confirmed = await customConfirm(`'${cardNameToGet}' kartını tamamlamak için 1 Joker Kart kullanmak istediğine emin misin? Bu işlem geri alınamaz!`);
+    if (!confirmed) return;
+
+    const userRef = db.ref('users/' + currentUser);
+    
+    // Güvenli işlem için transaction kullanıyoruz
+    await userRef.transaction(userData => {
+        if (userData) {
+            // Kullanıcının joker kartı olup olmadığını tekrar kontrol et
+            if ((userData.wildcards || 0) > 0) {
+                // Joker kart sayısını 1 azalt
+                userData.wildcards = userData.wildcards - 1;
+
+                // Koleksiyona yeni kartı ekle
+                if (!userData.cardCollection) {
+                    userData.cardCollection = {};
+                }
+                // Eğer bu karttan daha önce (başka yolla) kazanmışsa sayısını artır, yoksa 1 olarak ekle
+                if (userData.cardCollection[cardIdToGet]) {
+                    userData.cardCollection[cardIdToGet].count = (userData.cardCollection[cardIdToGet].count || 0) + 1;
+                } else {
+                    userData.cardCollection[cardIdToGet] = { count: 1 };
+                }
+                return userData;
+            }
+        }
+        // Eğer joker kartı yoksa veya kullanıcı verisi bulunamazsa, işlemi iptal et
+        return; 
+    });
+
+    displayMessage(`Tebrikler! Joker Kart kullanarak '${cardNameToGet}' kartını koleksiyonuna ekledin!`);
+    loadCollectionAlbum(); // Değişikliği anında görmek için albümü yenile
+}
 
 let editingCardId = null; // Hangi kartın düzenlendiğini tutar
 
@@ -10734,6 +10879,350 @@ async function resetWholeCollection() {
         displayMessage("Tüm koleksiyon ve kullanıcı ilerlemeleri başarıyla sıfırlandı.");
         loadCollectionAlbum();
     }
+}
+
+// =======================================================
+// YENİ ÖZELLİK: PAZAR YÖNETİM FONKSİYONLARI
+// =======================================================
+
+// Admin, Kartlar sekmesine girdiğinde mevcut pazar ayarlarını input'lara yükler
+async function loadMarketSettingsForAdmin() {
+    if (!isAdmin) return;
+    const settingsRef = db.ref('gameConfig/marketSettings');
+    const settingsSnap = await settingsRef.once('value');
+    const settings = settingsSnap.val() || {};
+
+    document.getElementById('tradeFeeInput').value = settings.tradeFee || 0;
+
+    const lockBtn = document.getElementById('marketLockBtn');
+    if (settings.isLocked) {
+        lockBtn.textContent = 'Pazarın Kilidini Aç';
+        lockBtn.classList.remove('bg-gray-600', 'hover:bg-gray-500');
+        lockBtn.classList.add('bg-green-600', 'hover:bg-green-500');
+    } else {
+        lockBtn.textContent = 'Pazarı Kilitle';
+        lockBtn.classList.remove('bg-green-600', 'hover:bg-green-500');
+        lockBtn.classList.add('bg-gray-600', 'hover:bg-gray-500');
+    }
+}
+
+// Input'taki ayarları Firebase'e kaydeder
+async function saveMarketSettings() {
+    if (!isAdmin) return;
+    const tradeFee = parseInt(document.getElementById('tradeFeeInput').value);
+
+    if (isNaN(tradeFee) || tradeFee < 0) {
+        displayMessage("Lütfen geçerli bir takas ücreti girin (0 veya daha büyük bir sayı).");
+        return;
+    }
+
+    await db.ref('gameConfig/marketSettings/tradeFee').set(tradeFee);
+    displayMessage("Pazar ayarları başarıyla kaydedildi.");
+}
+
+// Pazarın kilitli olup olmadığını değiştirir
+async function toggleMarketLock() {
+    if (!isAdmin) return;
+    const lockRef = db.ref('gameConfig/marketSettings/isLocked');
+    const lockSnap = await lockRef.once('value');
+    const isCurrentlyLocked = lockSnap.val() || false;
+
+    await lockRef.set(!isCurrentlyLocked);
+    displayMessage(`Takas Pazarı başarıyla ${!isCurrentlyLocked ? 'kilitlendi' : 'açıldı'}.`);
+    loadMarketSettingsForAdmin(); // Butonun rengini ve yazısını güncelle
+}
+
+// Takas geçmişi penceresini açar ve kayıtları yükler
+function openTradeHistoryModal() {
+    loadTradeHistory();
+    document.getElementById('tradeHistoryModal').style.display = 'flex';
+}
+
+// Takas geçmişi penceresini kapatır
+function closeTradeHistoryModal() {
+    document.getElementById('tradeHistoryModal').style.display = 'none';
+}
+
+// Firebase'den takas geçmişini çeker ve listeler
+async function loadTradeHistory() {
+    const listEl = document.getElementById('tradeHistoryList');
+    listEl.innerHTML = '<p class="text-center text-gray-400">Yükleniyor...</p>';
+
+    const historyRef = db.ref('tradeHistory').orderByChild('timestamp').limitToLast(100);
+    const historySnap = await historyRef.once('value');
+    const history = historySnap.val();
+
+    if (!history) {
+        listEl.innerHTML = '<p class="text-center text-gray-400">Henüz tamamlanmış bir takas yok.</p>';
+        return;
+    }
+
+    const sortedHistory = Object.values(history).sort((a, b) => b.timestamp - a.timestamp);
+
+    let html = '';
+    sortedHistory.forEach(trade => {
+        const date = new Date(trade.timestamp).toLocaleString('tr-TR');
+        html += `
+            <div class="p-3 bg-gray-900 rounded-lg mb-3">
+                <p class="text-white">
+                    <b class="text-green-400">${trade.accepter}</b>, 
+                    <b class="text-yellow-400">${trade.offerer}</b> adlı kullanıcıdan 
+                    <span class="text-cyan-300">'${trade.offeredCardName}'</span> kartını alıp karşılığında 
+                    <span class="text-pink-300">'${trade.requestedCardName}'</span> kartını verdi.
+                </p>
+                <div class="text-xs text-gray-500 mt-1 text-right">${date}</div>
+            </div>
+        `;
+    });
+    listEl.innerHTML = html;
+}
+
+// =======================================================
+// YENİ ÖZELLİK: TAKAS PAZARI SİSTEMİ FONKSİYONLARI
+// =======================================================
+
+// Takas pazarı ana penceresini açar
+async function openTradeMarket() {
+    // Önce pazarın kilitli olup olmadığını kontrol et
+    const lockSnap = await db.ref('gameConfig/marketSettings/isLocked').once('value');
+    if (lockSnap.val() === true && !isAdmin) {
+        displayMessage("Takas Pazarı şu anda bakım nedeniyle geçici olarak kapalıdır.");
+        return;
+    }
+
+    document.getElementById('tradeMarketModal').style.display = 'flex';
+    // Varsayılan olarak her zaman "Pazardaki Teklifler" sekmesini aç
+    switchMarketTab('all');
+}
+
+// Takas pazarı ana penceresini kapatır
+function closeTradeMarketModal() {
+    document.getElementById('tradeMarketModal').style.display = 'none';
+}
+
+// "Pazardaki Teklifler" ve "Benim Tekliflerim" sekmeleri arasında geçiş yapar
+function switchMarketTab(tabName) {
+    const allTab = document.getElementById('marketTabAll');
+    const mineTab = document.getElementById('marketTabMine');
+    
+    if (tabName === 'all') {
+        allTab.classList.add('border-purple-500', 'text-white');
+        allTab.classList.remove('border-transparent', 'text-gray-400');
+        mineTab.classList.add('border-transparent', 'text-gray-400');
+        mineTab.classList.remove('border-purple-500', 'text-white');
+        loadMarketOffers('all'); // Herkesin tekliflerini yükle
+    } else { // 'mine'
+        mineTab.classList.add('border-purple-500', 'text-white');
+        mineTab.classList.remove('border-transparent', 'text-gray-400');
+        allTab.classList.add('border-transparent', 'text-gray-400');
+        allTab.classList.remove('border-purple-500', 'text-white');
+        loadMarketOffers('mine'); // Sadece benim tekliflerimi yükle
+    }
+}
+
+// Pazara konulmuş takas tekliflerini Firebase'den çeker ve listeler
+async function loadMarketOffers(mode) {
+    const listEl = document.getElementById('marketOffersList');
+    listEl.innerHTML = '<p class="text-center text-gray-400">Teklifler yükleniyor...</p>';
+
+    let tradesRef = db.ref('trades');
+    // Eğer "Benim Tekliflerim" sekmesindeysek, sadece mevcut kullanıcının tekliflerini sorgula
+    if (mode === 'mine') {
+        tradesRef = tradesRef.orderByChild('offerer').equalTo(currentUser);
+    }
+
+    const [tradesSnap, masterCardsSnap, userCardsSnap] = await Promise.all([
+        tradesRef.once('value'),
+        db.ref('gameConfig/cardCollection').once('value'),
+        db.ref(`users/${currentUser}/cardCollection`).once('value')
+    ]);
+
+    const trades = tradesSnap.val();
+    const masterCards = masterCardsSnap.val();
+    const userCards = userCardsSnap.val() || {};
+
+    if (!trades || Object.keys(trades).length === 0) {
+        listEl.innerHTML = `<p class="text-center text-gray-400">${mode === 'all' ? 'Şu anda pazarda aktif bir takas teklifi bulunmuyor.' : 'Henüz bir takas teklifi oluşturmadın.'}</p>`;
+        return;
+    }
+
+    listEl.innerHTML = ''; // Listeyi temizle
+    const sortedTrades = Object.entries(trades).sort((a, b) => (b[1].timestamp || 0) - (a[1].timestamp || 0));
+
+    for (const [tradeId, trade] of sortedTrades) {
+        const offeredCard = masterCards[trade.offeredCardId];
+        const requestedCard = masterCards[trade.requestedCardId];
+
+        if (!offeredCard || !requestedCard) continue; // Tanımsız kart varsa bu teklifi atla
+
+        let actionButton = '';
+        if (mode === 'all') {
+            const userHasRequestedCard = userCards[trade.requestedCardId] && userCards[trade.requestedCardId].count > 0;
+            const isMyOwnOffer = trade.offerer === currentUser;
+            
+            if (isMyOwnOffer) {
+                 actionButton = `<button disabled class="py-2 px-5 bg-gray-600 text-gray-400 rounded-lg text-sm font-bold cursor-not-allowed">Kendi Teklifin</button>`;
+            } else {
+                 actionButton = `
+                    <button onclick="acceptTradeOffer('${tradeId}')" 
+                            class="py-2 px-5 rounded-lg text-sm font-bold transition-colors ${userHasRequestedCard ? 'bg-green-600 hover:bg-green-500 text-white' : 'bg-gray-600 text-gray-400 cursor-not-allowed'}"
+                            ${!userHasRequestedCard ? 'disabled' : ''}>
+                        Takası Yap
+                    </button>
+                `;
+            }
+        } else { // mode === 'mine'
+            actionButton = `<button onclick="cancelTradeOffer('${tradeId}')" class="py-2 px-5 bg-red-700 hover:bg-red-600 rounded-lg font-bold text-sm">Teklifi İptal Et</button>`;
+        }
+        
+        // Admin her teklifi iptal edebilir
+        if (isAdmin && mode === 'all' && trade.offerer !== currentUser) {
+             actionButton += `<button onclick="cancelTradeOffer('${tradeId}', true)" class="ml-2 py-2 px-3 bg-red-800 hover:bg-red-700 rounded-lg text-xs" title="Admin Olarak İptal Et">X</button>`;
+        }
+
+        const offerHtml = `
+            <div class="market-offer-card">
+                <div class="market-card-info">
+                    <img src="${offeredCard.imageUrl}" alt="${offeredCard.cardName}">
+                    <div>
+                        <p class="card-name">${offeredCard.cardName}</p>
+                        <p class="card-owner">Teklif Sahibi: <b class="text-yellow-400">${trade.offerer}</b></p>
+                    </div>
+                </div>
+
+                <span class="text-2xl font-bold text-gray-500 mx-4">⇄</span>
+
+                <div class="market-card-info">
+                    <img src="${requestedCard.imageUrl}" alt="${requestedCard.cardName}">
+                    <div>
+                        <p class="card-name">${requestedCard.cardName}</p>
+                        <p class="card-owner">İstenen Kart</p>
+                    </div>
+                </div>
+
+                <div class="ml-auto pl-4">${actionButton}</div>
+            </div>
+        `;
+        listEl.innerHTML += offerHtml;
+    }
+}
+
+// Yeni teklif oluşturma penceresini açar
+async function openCreateOfferModal(preselectedCardId = null) {
+    const myCardSelect = document.getElementById('offerMyCardSelect');
+    const requestCardSelect = document.getElementById('offerRequestCardSelect');
+    myCardSelect.innerHTML = '<option>Yükleniyor...</option>';
+    requestCardSelect.innerHTML = '<option>Yükleniyor...</option>';
+
+    // Pazar ayarlarından takas ücretini çek
+    const feeSnap = await db.ref('gameConfig/marketSettings/tradeFee').once('value');
+    const tradeFee = feeSnap.val() || 0;
+    document.getElementById('tradeFeeInfo').textContent = tradeFee > 0 
+        ? `Not: Bu teklifi kabul eden oyuncudan ${tradeFee} Puan işlem ücreti alınacaktır.`
+        : `Not: Takas işlemleri şu anda ücretsizdir.`;
+
+    // Kullanıcının fazla kartlarını ve tüm kartların listesini aynı anda çek
+    const [userCardsSnap, masterCardsSnap] = await Promise.all([
+        db.ref(`users/${currentUser}/cardCollection`).once('value'),
+        db.ref('gameConfig/cardCollection').orderByChild('order').once('value')
+    ]);
+
+    const userCards = userCardsSnap.val() || {};
+    const masterCards = masterCardsSnap.val() || {};
+
+    // 1. "Teklif Ettiğim Kart" listesini doldur (sadece count > 1 olanlar)
+    myCardSelect.innerHTML = '';
+    let hasDuplicates = false;
+    for (const cardId in userCards) {
+        if (userCards[cardId].count > 1) {
+            const cardInfo = masterCards[cardId];
+            if (cardInfo) {
+                const option = document.createElement('option');
+                option.value = cardId;
+                option.textContent = cardInfo.cardName;
+                myCardSelect.appendChild(option);
+                hasDuplicates = true;
+            }
+        }
+    }
+    if (!hasDuplicates) {
+        myCardSelect.innerHTML = '<option value="">Takas edilecek kartın yok</option>';
+    }
+    // Eğer koleksiyondan bir kart seçilerek gelinmişse, onu otomatik olarak seçili yap
+    if (preselectedCardId) {
+        myCardSelect.value = preselectedCardId;
+    }
+
+    // 2. "İstediğim Kart" listesini doldur (tüm kartlar)
+    requestCardSelect.innerHTML = '';
+    for (const cardId in masterCards) {
+        const cardInfo = masterCards[cardId];
+        const option = document.createElement('option');
+        option.value = cardId;
+        option.textContent = cardInfo.cardName;
+        requestCardSelect.appendChild(option);
+    }
+    
+    document.getElementById('createOfferModal').style.display = 'flex';
+}
+
+
+// Yeni teklif oluşturma penceresini kapatır
+function closeCreateOfferModal() {
+    document.getElementById('createOfferModal').style.display = 'none';
+}
+
+// Formdaki bilgileri alıp yeni bir takas teklifi oluşturur
+async function submitTradeOffer() {
+    const offeredCardId = document.getElementById('offerMyCardSelect').value;
+    const requestedCardId = document.getElementById('offerRequestCardSelect').value;
+
+    if (!offeredCardId) {
+        displayMessage("Teklif etmek için en az bir karttan 2 adet veya daha fazlasına sahip olmalısın.");
+        return;
+    }
+
+    if (offeredCardId === requestedCardId) {
+        displayMessage("Bir kartı kendisiyle takas edemezsin.");
+        return;
+    }
+
+    const newTrade = {
+        offerer: currentUser,
+        offeredCardId: offeredCardId,
+        requestedCardId: requestedCardId,
+        timestamp: firebase.database.ServerValue.TIMESTAMP
+    };
+
+    await db.ref('trades').push(newTrade);
+    displayMessage("Takas teklifin başarıyla pazara eklendi!");
+    closeCreateOfferModal();
+    // Pazarı yenilemek için "Benim Tekliflerim" sekmesine geç
+    switchMarketTab('mine');
+}
+
+
+// Bir takas teklifini iptal eder
+async function cancelTradeOffer(tradeId, asAdmin = false) {
+    if (!tradeId) return;
+    
+    if (asAdmin) {
+        // Admin olarak iptal etme
+        const confirmed = await customConfirm("Bu teklifi admin olarak zorla iptal etmek istediğinize emin misiniz?");
+        if (!confirmed) return;
+        await db.ref(`trades/${tradeId}`).remove();
+        displayMessage("Teklif admin tarafından iptal edildi.");
+    } else {
+        // Kullanıcının kendi teklifini iptal etmesi
+        const tradeSnap = await db.ref(`trades/${tradeId}`).once('value');
+        const tradeData = tradeSnap.val();
+        if (tradeData && tradeData.offerer === currentUser) {
+            await db.ref(`trades/${tradeId}`).remove();
+            displayMessage("Teklifin pazardan kaldırıldı.");
+        }
+    }
+    // Listeyi yenile
+    loadMarketOffers(asAdmin ? 'all' : 'mine');
 }
   // YENİ EKLENECEK KOD SONU
     
