@@ -4984,7 +4984,44 @@ async function handleSurpriseBoxCleanup(sessionData) {
     ref.on('value', callback);
   }
   
-  function searchUsers() { const term = document.getElementById("searchUser").value.trim().toLowerCase(); db.ref('users').once('value').then(snap => { const data = snap.val(); let html = ""; for (const u in data) { if (u.toLowerCase().includes(term) && u !== 'weizendtv') { html += `<div class="flex items-center justify-between p-3 mb-2 bg-gray-700 rounded-md border-l-4 border-blue-500 cursor-pointer" onclick="openUserManagementModal('${u}')"><span>${u}</span></div>`; } } document.getElementById("allUsers").innerHTML = html || "Kullanıcı bulunamadı."; }); }
+  // YENİ VE DÜZGÜN ÇALIŞAN KOD (Bununla değiştir)
+function searchUsers() {
+    const term = document.getElementById("searchUser").value.trim().toLowerCase();
+    db.ref('users').once('value').then(snap => {
+        const data = snap.val();
+        let html = "";
+        if (data) {
+            for (const u in data) {
+                if (u.toLowerCase() === "weizendtv") continue;
+
+                // Arama terimine göre filtreleme
+                if (u.toLowerCase().includes(term)) {
+                    const user = data[u];
+                    let blockedStatusHtml = '';
+                    const isCurrentlyBlocked = user.blocked && user.blockedUntil && Date.now() < user.blockedUntil;
+
+                    if (isCurrentlyBlocked) {
+                        blockedStatusHtml = `<span class="text-red-400">(Engelli - <span id="admin-countdown-${u}">--:--</span>)</span>`;
+                        // Not: Bu arama fonksiyonu anlık olduğu için geri sayım sayacını burada yeniden başlatmak 
+                        // karmaşık olabilir, ancak en azından "Engelli" durumu doğru görünecektir.
+                    } else if (user.blocked) {
+                        blockedStatusHtml = `<span class="text-green-400">(Engel Süresi Doldu)</span>`;
+                    }
+
+                    const avatarUrl = user.selectedAvatar ? user.selectedAvatar.url : defaultAvatarUrl;
+                    html += `<div class="flex items-center justify-between p-3 mb-2 bg-gray-700 rounded-md border-l-4 border-blue-500 cursor-pointer hover:bg-gray-600 transition-colors" onclick="openUserManagementModal('${u}')">
+                        <div class="flex items-center">
+                            <img src="${avatarUrl}" class="w-12 h-12 rounded-md mr-3 object-contain">
+                            <span class="text-gray-200">${u} ${blockedStatusHtml}</span>
+                        </div>
+                        <span class="text-yellow-300">Puan: ${user.balance || 0}</span>
+                    </div>`;
+                }
+            }
+        }
+        document.getElementById("allUsers").innerHTML = html || "<div class='text-center text-gray-400'>Aramayla eşleşen kullanıcı bulunamadı.</div>";
+    });
+}
   
   function displayBlockedMessage(blockedUntil, username) {
       blockedMessageModal.style.display = 'flex';
@@ -12241,6 +12278,15 @@ async function toggleCollectionPause() {
     } else {
         displayMessage("Sezon sadece 'aktif' veya 'duraklatılmış' durumdayken bu işlem yapılabilir.");
     }
+}
+
+// EKSİK OLAN VE EKLENMESİ GEREKEN FONKSİYON
+function formatNumber(num) {
+  // Bu fonksiyon sayıları 1.000, 10.000 gibi daha okunaklı hale getirir.
+  if (num === null || num === undefined) {
+    return 0;
+  }
+  return num.toLocaleString('tr-TR');
 }
 
 </script>
