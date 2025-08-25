@@ -11123,7 +11123,7 @@ async function loadCollectionAlbum() {
         }
         if (currentStatus === 'inactive') {
             statusTitle.textContent = '🚀 Yeni Sezon Çok Yakında! 🚀';
-            statusMessage.textContent = 'Mevcut sezon sona erdi. Adminin yeni kartları hazırlayıp yeni sezonu başlatmasını bekle. Takipte kal!';
+            statusMessage.textContent = 'Adminin yeni kartları hazırlayıp yeni sezonu başlatmasını bekle. Takipte kal!';
             statusOverlay.classList.remove('hidden');
             albumContainer.classList.add('hidden');
             grandPrizeDisplay.classList.add('hidden');
@@ -11363,26 +11363,29 @@ async function deleteCard(cardId) {
 
 async function resetWholeCollection() {
     if (!isAdmin) return;
-    // ... (confirm mesajı aynı kalabilir) ...
-    const confirmed = await customConfirm("...");
+    // Onay mesajı aynı kalabilir, kullanıcı zaten bunu görüyor.
+    const confirmed = await customConfirm("Bu işlem mevcut tüm kartları, kullanıcı ilerlemelerini ve şampiyonlukları SİLEREK yepyeni bir sezon başlatacaktır. Emin misiniz?");
     if (confirmed) {
         const updates = {};
-        updates['/gameConfig/cardCollection'] = null;
+        // updates['/gameConfig/cardCollection'] = null; // <<<--- BU SATIR SİLİNDİ! ANA KART LİSTESİ ARTIK GÜVENDE.
         updates['/gameConfig/collectionWinner'] = null;
-        updates['/gameConfig/collectionGrandPrize'] = null;
-        updates['/gameConfig/cardCollectionStatus'] = 'inactive'; // YENİ: Durumu 'bitti' olarak ayarla
+        // Ödülü silmek yerine sıfırlanmasını beklemek daha mantıklı olabilir, ama şimdilik kalsın.
+        // updates['/gameConfig/collectionGrandPrize'] = null; 
+        updates['/gameConfig/cardCollectionStatus'] = 'inactive'; 
 
         const usersSnap = await db.ref('users').once('value');
         if (usersSnap.exists()) {
             usersSnap.forEach(userSnap => {
                 const username = userSnap.key;
+                // Sadece kullanıcıların kart ilerlemesini ve durumunu sıfırlıyoruz.
                 updates[`/users/${username}/cardCollection`] = null;
                 updates[`/users/${username}/completedCollection`] = null;
+                // Şampiyonluklar bir başarı olduğu için kalıcı olabilir, ama isteğe göre bu satır da kalabilir.
                 updates[`/users/${username}/achievements/collectionChampion`] = null;
             });
         }
         await db.ref().update(updates);
-        displayMessage("Tüm koleksiyon ve kullanıcı ilerlemeleri başarıyla sıfırlandı.");
+        displayMessage("Tüm kullanıcıların koleksiyon ilerlemeleri başarıyla sıfırlandı. Yeni sezon hazırlanıyor...");
         loadCollectionAlbum();
     }
 }
