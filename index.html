@@ -752,6 +752,7 @@ body.modal-open .modal-content {
             
             <div class="space-y-3">
                 <button onclick="toggleCollectionPause()" id="pauseResumeButton" class="w-full py-3 bg-orange-600 hover:bg-orange-500 text-white font-bold rounded-lg">Sezonu Duraklat</button>
+                <button onclick="endCurrentSeason()" class="w-full py-3 bg-red-700 hover:bg-red-600 text-white font-bold rounded-lg">⛔ Sezonu Bitir</button>
                 <button onclick="openTradeHistoryModal()" class="w-full py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-lg">Takas Geçmişi</button>
             </div>
 
@@ -12344,6 +12345,48 @@ function formatNumber(num) {
     return 0;
   }
   return num.toLocaleString('tr-TR');
+}
+
+      // YENİ EKLENEN SEZONU BİTİRME FONKSİYONU
+async function endCurrentSeason() {
+    if (!isAdmin) return;
+
+    const confirmed = await customConfirm("Bu işlem mevcut sezonu sonlandıracak. Tüm kullanıcıların topladığı kartlar, joker kartları ve koleksiyon tamamlama durumları sıfırlanacak. ANA KART LİSTENİZ SİLİNMEZ. Emin misiniz?");
+    if (!confirmed) return;
+
+    try {
+        const updates = {};
+        
+        // 1. Sezon durumunu 'inactive' olarak ayarla. Bu, kullanıcılara "Yeni Sezon Çok Yakında" panelini gösterir.
+        updates['/gameConfig/cardCollectionStatus'] = 'inactive';
+        
+        // 2. Varsa, bir önceki sezonun kazanan bilgisini temizle.
+        updates['/gameConfig/collectionWinner'] = null;
+
+        // 3. Tüm kullanıcıları gezerek sadece onların koleksiyon ilerlemesini sıfırla.
+        const usersSnap = await db.ref('users').once('value');
+        if (usersSnap.exists()) {
+            usersSnap.forEach(userSnap => {
+                const username = userSnap.key;
+                // Kullanıcının topladığı kartları sil
+                updates[`/users/${username}/cardCollection`] = null;
+                // Koleksiyonu tamamlama durumunu sıfırla
+                updates[`/users/${username}/completedCollection`] = null;
+                // Joker kartlarını sıfırla
+                updates[`/users/${username}/wildcards`] = 0;
+            });
+        }
+        
+        // 4. Tüm güncellemeleri tek seferde veritabanına uygula.
+        await db.ref().update(updates);
+
+        displayMessage("Sezon başarıyla bitirildi! Tüm kullanıcıların kart ilerlemesi sıfırlandı.");
+        loadCollectionAlbum(); // Değişikliği anında görmek için albüm görünümünü yenile.
+
+    } catch (error) {
+        console.error("Sezon bitirilirken hata oluştu:", error);
+        displayMessage("Sezon bitirilirken bir hata meydana geldi.");
+    }
 }
 
 </script>
