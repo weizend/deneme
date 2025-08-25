@@ -6162,7 +6162,7 @@ async function openPublicUserDetailModal(username) {
         let championshipsHtml = '';
         if (userData.rozetChampionshipsWon > 0) championshipsHtml += `<p>👑 ${userData.rozetChampionshipsWon} kez 'LİDERLER SIRALAMASI' şampiyonu oldu.</p>`;
         if (userData.puanChampionshipsWon > 0) championshipsHtml += `<p>🏆 ${userData.puanChampionshipsWon} kez 'KARİYER PUAN SIRALAMASI' şampiyonu oldu.</p>`;
-        if (userData.achievements && userData.achievements.collectionChampion) championshipsHtml += `<p>🃏 1 kez 'KART KOLEKSİYONU' şampiyonu oldu. (İlk tamamlayan)</p>`;
+        if (userData.collectionChampionshipsWon > 0) championshipsHtml += `<p>🃏 ${userData.collectionChampionshipsWon} kez 'KART KOLEKSİYONU' şampiyonu oldu.</p>`;
         
         if (championshipsHtml) {
             championshipsDiv.innerHTML = championshipsHtml;
@@ -12101,27 +12101,44 @@ async function checkAndGrantPrize(username) {
         const prizeData = prizeSnap.val();
         if (!prizeData) return; // Ödül tanımlanmamışsa çık.
 
+        // --- YENİ EKLENEN KISIM BAŞLANGICI ---
+        // Koleksiyonu tamamlayan ilk kişi mi, onu kontrol et
+        const winnerRef = db.ref('gameConfig/collectionWinner');
+        const winnerSnap = await winnerRef.once('value');
+        const isFirstWinner = !winnerSnap.exists();
+
+        if (isFirstWinner) {
+            await winnerRef.set({ username: username, timestamp: firebase.database.ServerValue.TIMESTAMP });
+        }
+        // --- YENİ EKLENEN KISIM SONU ---
+
         const updates = {};
         // Standart ödülleri hazırla (her tamamlayan alacak)
-updates.balance = (userData.balance || 0) + (prizeData.points || 0);
-updates.kutuHakki = (userData.kutuHakki || 0) + (prizeData.boxRights || 0);
-updates.iflasShieldUses = (userData.iflasShieldUses || 0) + (prizeData.iflasShields || 0); // DEĞİŞTİ
-updates.carkBileti = (userData.carkBileti || 0) + (prizeData.wheelTickets || 0);
-updates.clickCatchTickets = (userData.clickCatchTickets || 0) + (prizeData.clickCatchTickets || 0);
-updates.completedCollection = true; // Kullanıcıyı "tamamladı" olarak işaretle.
+        updates.balance = (userData.balance || 0) + (prizeData.points || 0);
+        updates.kutuHakki = (userData.kutuHakki || 0) + (prizeData.boxRights || 0);
+        updates.iflasShieldUses = (userData.iflasShieldUses || 0) + (prizeData.iflasShields || 0);
+        updates.carkBileti = (userData.carkBileti || 0) + (prizeData.wheelTickets || 0);
+        updates.clickCatchTickets = (userData.clickCatchTickets || 0) + (prizeData.clickCatchTickets || 0);
+        updates.completedCollection = true; // Kullanıcıyı "tamamladı" olarak işaretle.
 
-// YENİ EKLENEN AVATAR VERME MANTIĞI
-if (prizeData.avatarName && prizeData.avatarImageUrl) {
-    const newAvatarId = db.ref().push().key; // Avatar için benzersiz bir ID oluştur
-    updates[`avatars/${newAvatarId}`] = {
-        id: newAvatarId,
-        name: prizeData.avatarName,
-        imageUrl: prizeData.avatarImageUrl
-    };
-}
+        if (prizeData.avatarName && prizeData.avatarImageUrl) {
+            const newAvatarId = db.ref().push().key; 
+            updates[`avatars/${newAvatarId}`] = {
+                id: newAvatarId,
+                name: prizeData.avatarName,
+                imageUrl: prizeData.avatarImageUrl
+            };
+        }
         
-        // Tüm ödülleri ve güncellemeleri kullanıcıya işle
+        // --- DEĞİŞEN KISIM: Şampiyonluk sayacını artır ---
+        // Transaction ile güvenli bir şekilde sayacı artırıyoruz.
+        await userRef.child('collectionChampionshipsWon').transaction(currentCount => {
+            return (currentCount || 0) + 1;
+        });
+
+        // Diğer güncellemeleri yap
         await userRef.update(updates);
+
 
         // Ekranda büyük bir tebrik mesajı göster
         let prizeMessage = ``;
@@ -12134,19 +12151,21 @@ if (prizeData.avatarName && prizeData.avatarImageUrl) {
         let prizeParts = [];
         if (prizeData.points > 0) prizeParts.push(` ${formatNumber(prizeData.points)} Puan`);
         if (prizeData.boxRights > 0) prizeParts.push(` ${formatNumber(prizeData.boxRights)} Kutu Hakkı`);
-        if (prizeData.wildcards > 0) prizeParts.push(` ${formatNumber(prizeData.wildcards)} Joker Kart`);
+        if (prizeData.iflasShields > 0) prizeParts.push(` ${formatNumber(prizeData.iflasShields)} İflas Kalkanı`);
         if (prizeData.wheelTickets > 0) prizeParts.push(` ${formatNumber(prizeData.wheelTickets)} Çark Bileti`);
         if (prizeData.clickCatchTickets > 0) prizeParts.push(` ${formatNumber(prizeData.clickCatchTickets)} T-Y Bileti`);
+        if (prizeData.avatarName) prizeParts.push(` '${prizeData.avatarName}' Avatarı`);
         
         prizeMessage += prizeParts.join(',');
 
-        if (isFirstWinner && prizeData.description) {
+        if (prizeData.description) {
             prizeMessage += ` ve "${prizeData.description}" unvanı!`;
         } else {
             prizeMessage += `!`;
         }
         
-        await customAlert(prizeMessage, 'success');
+        // Bu customAlert fonksiyonu sizde olmayabilir, displayMessage ile değiştirebilirsiniz.
+        displayMessage(prizeMessage);
 
         // Son Eylemler akışına duyur
         logActivity('collectionCompleted', username, { 
