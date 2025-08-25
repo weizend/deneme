@@ -11,6 +11,174 @@
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
 
 <style>
+/* --- KART YÖNETİM BUTONLARI STİLİ --- */
+.card-admin-buttons {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    z-index: 2;
+    display: flex;
+    gap: 4px;
+    background: rgba(0,0,0,0.5);
+    padding: 4px;
+    border-radius: 8px;
+}
+.card-admin-buttons button {
+    background: #4a5568;
+    border: none;
+    color: white;
+    border-radius: 50%;
+    width: 28px;
+    height: 28px;
+    cursor: pointer;
+    font-size: 16px;
+    line-height: 28px;
+    transition: background-color 0.2s;
+}
+.card-admin-buttons button:hover {
+    background: #718096;
+}
+/* --- YENİ: KART KOLEKSİYONU SİSTEMİ STİLLERİ --- */
+
+/* Kart albümünün genel yerleşimi */
+#cardCollectionAlbum {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 1.5rem;
+    padding: 1rem;
+}
+
+/* Tek bir kartın (hem dolu hem boş) kapladığı alan */
+.card-slot {
+    perspective: 1000px;
+}
+
+/* Kartın kendisi - temel stil */
+.card-item {
+    width: 100%;
+    aspect-ratio: 7 / 10; /* Kart en boy oranı */
+    border-radius: 12px;
+    padding: 8px;
+    background-color: #1f2937; /* bg-gray-800 */
+    position: relative;
+    box-shadow: 0 10px 15px -3px rgba(0,0,0,0.4);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    cursor: pointer;
+}
+
+.card-item:hover {
+    transform: translateY(-10px) rotateX(5deg);
+    box-shadow: 0 25px 50px -12px rgba(0,0,0,0.5);
+}
+
+/* Kartın içindeki resim */
+.card-image {
+    width: 100%;
+    height: 70%;
+    object-fit: cover;
+    border-radius: 6px;
+    border: 2px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Kartın adı */
+.card-name {
+    text-align: center;
+    font-weight: bold;
+    color: white;
+    font-size: 0.9rem;
+    padding: 8px 4px 0 4px;
+    text-shadow: 1px 1px 2px black;
+}
+
+/* Fazla kartları gösteren rozet */
+.duplicate-badge {
+    position: absolute;
+    top: -10px;
+    right: -10px;
+    background-color: #fde047; /* yellow-400 */
+    color: #111827; /* gray-900 */
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 0.9rem;
+    border: 2px solid white;
+}
+
+/* --- NADİRLİK ÇERÇEVELERİ --- */
+
+/* Normal Kart (Basit çerçeve) */
+.rarity-normal {
+    border: 4px solid #4b5563; /* gray-600 */
+}
+
+/* Gümüş Kart */
+.rarity-gumus {
+    background: linear-gradient(145deg, #4a5568, #2d3748);
+    border: 4px solid;
+    border-image: linear-gradient(145deg, #e5e7eb, #9ca3af, #e5e7eb) 1;
+    box-shadow: 0 0 15px rgba(200, 200, 220, 0.4);
+}
+
+/* Altın Kart */
+.rarity-altin {
+    background: linear-gradient(145deg, #422006, #2a1a08);
+    border: 4px solid;
+    border-image: linear-gradient(145deg, #fef08a, #eab308, #fef08a) 1;
+    box-shadow: 0 0 25px rgba(250, 204, 21, 0.5);
+}
+
+/* Efsanevi Kart (Hareketli Gökkuşağı Çerçeve) */
+@keyframes legendary-glow {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+.rarity-efsanevi {
+    position: relative;
+    border: 4px solid transparent;
+    background: linear-gradient(145deg, #1e1b4b, #172554);
+    overflow: hidden;
+}
+.rarity-efsanevi::before {
+    content: '';
+    position: absolute;
+    top: -50%; left: -50%;
+    width: 200%; height: 200%;
+    background: conic-gradient(
+        #a855f7, #ec4899, #22d3ee, #84cc16, #fde047, #a855f7
+    );
+    animation: legendary-glow 4s linear infinite;
+    z-index: 0;
+}
+.rarity-efsanevi > * {
+    position: relative; /* Kart içeriğinin çerçevenin üstünde kalmasını sağlar */
+    z-index: 1;
+}
+
+
+/* Eksik Kart Stili */
+.card-item.missing {
+    background-color: #374151; /* gray-700 */
+    border: 4px dashed #6b7280; /* gray-500 */
+    align-items: center;
+    justify-content: center;
+    cursor: default;
+}
+
+.card-item.missing:hover {
+    transform: none;
+    box-shadow: 0 10px 15px -3px rgba(0,0,0,0.4);
+}
+
+.missing-text {
+    font-size: 4rem;
+    color: #4b5563; /* gray-600 */
+    font-weight: bold;
+}
 /* --- MOBİL İZLEME PENCERESİ DÜZELTMESİ --- */
 #spectatorModal .modal-content {
     max-height: 85vh; /* İçeriğin ekran yüksekliğinin %85'ini geçmesini engeller */
@@ -376,6 +544,10 @@ body.modal-open .modal-content {
               class="relative py-3 px-8 bg-red-700 hover:bg-red-600 text-white font-bold rounded-lg shadow-md hover:shadow-lg transform hover:-translate-y-1 transition duration-300">
         Kutu Oyunu
       </button>
+      <button id="cardCollectionTabBtn" onclick="showSection('cardCollection')"
+        class="relative py-3 px-8 bg-gray-700 hover:bg-gray-600 text-white font-bold rounded-lg shadow-md hover:shadow-lg transform hover:-translate-y-1 transition duration-300">
+  Kart Koleksiyonu
+</button>
        <button id="chanceWheelTabBtn" onclick="showSection('chanceWheel')"
               class="relative py-3 px-8 bg-gray-700 hover:bg-gray-600 text-white font-bold rounded-lg shadow-md hover:shadow-lg transform hover:-translate-y-1 transition duration-300">
         Şans Çarkı
@@ -396,6 +568,30 @@ body.modal-open .modal-content {
       </button>
     </div>
     
+    <div id="cardCollectionContent" class="w-full hidden">
+    <div class="flex justify-between items-center mb-6 px-4">
+        <h3 class="text-yellow-400 text-3xl font-bold">Kart Koleksiyonu Albümü</h3>
+        <div class="text-right">
+            <p class="text-lg text-white">Tamamlanan: <span id="collectionProgress" class="font-bold text-green-400">0/20</span></p>
+            <button onclick="openTradeMarket()" class="mt-2 py-2 px-4 bg-purple-600 hover:bg-purple-500 rounded-lg text-sm font-bold">Takas Pazarı</button>
+        </div>
+    </div>
+    
+    <div id="adminCardCollectionControls" class="hidden my-4 p-4 bg-gray-800 rounded-lg border border-green-500 max-w-3xl mx-auto text-center">
+    <h4 class="text-lg font-bold text-green-300 mb-3">Koleksiyon Yönetim Paneli</h4>
+    <div class="flex justify-center gap-4">
+        <button onclick="openCardCreatorModal()" class="py-2 px-6 bg-green-700 hover:bg-green-600 text-white font-bold rounded-lg">
+            Yeni Kart Ekle
+        </button>
+        <button onclick="resetWholeCollection()" class="py-2 px-6 bg-red-800 hover:bg-red-700 text-white font-bold rounded-lg">
+            Tüm Koleksiyonu Sıfırla
+        </button>
+    </div>
+</div>
+    
+    <div id="cardCollectionAlbum" class="grid grid-cols-[repeat(auto-fill,minmax(150px,1fr))] gap-6 p-4 bg-gray-900/50 rounded-xl border border-gray-700">
+        </div>
+</div>
     <div id="mainContentArea" class="w-full">
     <div id="gameContent" class="w-full">
       <div class="text-lg text-gray-300 mb-6 text-center flex flex-wrap justify-center items-center gap-4">
@@ -478,6 +674,29 @@ body.modal-open .modal-content {
         <button onclick="manualResetAfterSurprise()" class="w-full py-3 bg-green-700 hover:bg-green-600 text-white font-bold rounded-lg shadow-md">
             Kutuları sıfırla (Sürpriz Kutu Bulunduysa)
         </button>
+    </div>
+  </div>
+</div>
+<div id="cardCreatorModal" class="modal-overlay fixed inset-0 bg-black bg-opacity-70 flex justify-center items-center z-[9999] hidden">
+  <div class="modal-content bg-gray-800 p-8 rounded-xl shadow-2xl border border-yellow-500 w-11/12 max-w-lg text-left relative">
+    <button class="modal-close-button" onclick="closeCardCreatorModal()">&times;</button>
+    <h3 id="cardFormTitle" class="text-yellow-300 text-3xl font-bold mb-6 text-center">Yeni Kart Oluştur</h3>
+    <div class="space-y-4">
+      <input type="text" id="cardNameInput" placeholder="Kart Adı (Örn: Efsanevi Mikrofon)" class="box-setting-input">
+      <input type="text" id="cardImageUrlInput" placeholder="Kart Resim URL'si (hizliresim.com linki)" class="box-setting-input">
+
+      <div>
+        <label class="block text-sm font-medium text-gray-300 mb-1">Nadirlik Seviyesi:</label>
+        <select id="cardRarityInput" class="box-setting-input">
+          <option value="normal">Normal (Gri Çerçeve)</option>
+          <option value="gumus">Gümüş (Gümüş Çerçeve)</option>
+          <option value="altin">Altın (Altın Çerçeve)</option>
+          <option value="efsanevi">Efsanevi (Hareketli Çerçeve)</option>
+        </select>
+      </div>
+    </div>
+    <div class="mt-6">
+      <button id="saveCardBtn" onclick="saveCard()" class="w-full py-3 bg-yellow-600 hover:bg-yellow-500 text-black font-bold rounded-lg shadow-md">KARTI KAYDET</button>
     </div>
   </div>
 </div>
@@ -2581,68 +2800,96 @@ async function afterLogin() {
         gameTabBtn.classList.remove('border-red-500', 'text-white');
     }
   }
-  // MEVCUT showSection FONKSİYONUNU SİLİP BUNU YAPIŞTIRIN
-
+  /**
+ * Ana içerik alanındaki bölümleri (oyun, mağaza, kartlar vb.) yönetir.
+ * Önce tüm bölümleri gizler, sonra sadece isteneni gösterir.
+ * İlgili sekme butonunu aktif olarak işaretler ve bölüme özel fonksiyonları çalıştırır.
+ * @param {string} sectionId - Gösterilecek bölümün kimliği (örn: 'game', 'store', 'cardCollection').
+ */
 function showSection(sectionId) {
-    document.getElementById('gameContent').classList.add('hidden');
-    document.getElementById('storeSection').classList.add('hidden');
-    document.getElementById('announcementsContent').classList.add('hidden');
-    document.getElementById('chanceWheelContent').classList.add('hidden');
-    document.getElementById('clickCatchContent').classList.add('hidden');
+    // 1. Yönetilecek tüm içerik alanlarının ve sekme butonlarının ID'lerini tanımla
+    const contentIds = [
+        'gameContent', 
+        'storeSection', 
+        'announcementsContent', 
+        'chanceWheelContent', 
+        'clickCatchContent',
+        'cardCollectionContent' // Kart Koleksiyonu içerik alanı
+    ];
+    const tabButtonIds = [
+        'gameTabBtn', 
+        'storeTabBtn', 
+        'announcementsTabBtn', 
+        'chanceWheelTabBtn', 
+        'clickCatchTabBtn',
+        'cardCollectionTabBtn' // Kart Koleksiyonu sekme butonu
+    ];
+
+    // 2. Önce tüm içerik alanlarını gizle
+    contentIds.forEach(id => {
+        const element = document.getElementById(id);
+        if (element) {
+            element.classList.add('hidden');
+        }
+    });
+
+    // 3. Admin'e özel kontrol butonlarını da her seferinde gizle
     document.getElementById('adminStoreManagementButtonContainer').classList.add('hidden');
     document.getElementById('adminAnnouncementControls').classList.add('hidden');
-    
     const clickCatchAdminButtonsContainer = document.getElementById('clickCatchAdminButtonsContainer');
-    if(clickCatchAdminButtonsContainer) clickCatchAdminButtonsContainer.classList.add('hidden');
+    if (clickCatchAdminButtonsContainer) {
+        clickCatchAdminButtonsContainer.classList.add('hidden');
+    }
+    // YENİ: Kart koleksiyonu admin panelini de gizle
+    const cardAdminControls = document.getElementById('adminCardCollectionControls');
+    if (cardAdminControls) {
+        cardAdminControls.classList.add('hidden');
+    }
 
-    const tabButtons = ['gameTabBtn', 'storeTabBtn', 'announcementsTabBtn', 'chanceWheelTabBtn', 'clickCatchTabBtn'];
-    tabButtons.forEach(btnId => {
+
+    // 4. Tüm sekme butonlarını varsayılan (pasif) stile döndür
+    tabButtonIds.forEach(btnId => {
         const btn = document.getElementById(btnId);
-        btn.classList.remove('bg-red-700', 'hover:bg-red-600');
-        btn.classList.add('bg-gray-700', 'hover:bg-gray-600');
+        if (btn) {
+            btn.classList.remove('bg-red-700', 'hover:bg-red-600');
+            btn.classList.add('bg-gray-700', 'hover:bg-gray-600');
+        }
     });
     
-    const activeBtn = document.getElementById(`${sectionId}TabBtn`);
+    // 5. Tıklanan sekmeye ait içerik alanını görünür yap
     const activeContent = document.getElementById(`${sectionId}Content`) || document.getElementById(`${sectionId}Section`);
+    if (activeContent) {
+        activeContent.classList.remove('hidden');
+    }
 
-    if(activeContent) activeContent.classList.remove('hidden');
-    if(activeBtn) {
+    // 6. Tıklanan sekme butonunu aktif olarak işaretle (kırmızı yap)
+    const activeBtn = document.getElementById(`${sectionId}TabBtn`);
+    if (activeBtn) {
         activeBtn.classList.add('bg-red-700', 'hover:bg-red-600');
         activeBtn.classList.remove('bg-gray-700', 'hover:bg-gray-600');
     }
 
+    // 7. Her sekmeye özel, o an çalışması gereken fonksiyonları tetikle
     if (sectionId === 'store') {
         loadStoreItems();
         if (isAdmin) {
             document.getElementById('adminStoreManagementButtonContainer').classList.remove('hidden');
         } else {
-            // YENİ: Mağaza sekmesi görüldüğünde, zaman damgasını güncelle ve bildirimi kaldır
             document.getElementById('storeIndicator').classList.add('hidden');
             db.ref(`users/${currentUser}/lastSeenStoreTimestamp`).set(latestStoreItemTimestamp);
         }
         switchStoreTab('game'); 
     } else if (sectionId === 'announcements') {
+        loadAnnouncements();
         if (isAdmin) {
             document.getElementById('adminAnnouncementControls').classList.remove('hidden');
         } else {
-            // YENİ: Duyuru sekmesi görüldüğünde, zaman damgasını güncelle ve bildirimi kaldır
             document.getElementById('announcementIndicator').classList.add('hidden');
             db.ref(`users/${currentUser}/lastSeenAnnouncementTimestamp`).set(latestAnnouncementTimestamp);
         }
     } else if (sectionId === 'clickCatch') {
         loadClickCatchRankings();
-        // listenForLobbyChanges(); // BU SATIR ARTIK BURADA DEĞİL
         listenForLastGameSummary(); 
-        
-        if (currentUser && !isAdmin) {
-            db.ref('users/' + currentUser).once('value').then(snap => {
-                const userData = snap.val();
-                if (userData) {
-                    document.getElementById('clickCatchScore').textContent = userData.clickCatchHighestScore || 0;
-                }
-            });
-        }
-
         if (isAdmin) {
             document.getElementById('clickCatchAdminButtonsContainer').classList.remove('hidden');
             loadSoloGameSettings(); 
@@ -2655,8 +2902,15 @@ function showSection(sectionId) {
         } else {
             wheelSettingsBtn.classList.add('hidden');
         }
+    } else if (sectionId === 'cardCollection') {
+        loadCollectionAlbum();
+        if (isAdmin) {
+            // Admin olarak girince kart yönetim panelini göster
+            document.getElementById('adminCardCollectionControls').classList.remove('hidden');
+        }
     }
     
+    // 8. Son olarak, global değişkeni güncelleyerek sistemin hangi sekmede olduğunu bilmesini sağla
     currentActiveSection = sectionId;
 }
   
@@ -10274,6 +10528,212 @@ async function kasaTransferEt() {
     logActivity('kasaTransfer', currentUser, { amount: miktar, newKasaBalance: yeniKasaPuani });
     displayMessage(`Başarılı! <b>${miktar} Puan</b>, Kasa'ya aktarıldı.`);
     document.getElementById('kasaTransferInput').value = '';
+}
+
+/**
+ * Kart koleksiyonu albümünü Firebase'den gelen verilere göre dinamik olarak oluşturur ve ekrana çizer.
+ * Adminler için düzenleme ve silme butonları ekler.
+ */
+async function loadCollectionAlbum() {
+    const albumContainer = document.getElementById('cardCollectionAlbum');
+    const progressSpan = document.getElementById('collectionProgress');
+    albumContainer.innerHTML = '<p class="text-center text-gray-400 col-span-full">Koleksiyon yükleniyor...</p>';
+
+    // 1. ADIM: Tüm kartların ana listesini (tanımlarını) sıralı bir şekilde çek
+    const masterListRef = db.ref('gameConfig/cardCollection');
+    const masterListSnap = await masterListRef.orderByChild('order').once('value');
+    
+    if (!masterListSnap.exists()) {
+        albumContainer.innerHTML = '<p class="text-center text-gray-400 col-span-full">Yönetici henüz bir koleksiyon oluşturmadı.</p>';
+        if(progressSpan) progressSpan.textContent = '0/0';
+        return;
+    }
+    const masterList = masterListSnap.val();
+    const totalCardCount = Object.keys(masterList).length;
+
+    // 2. ADIM: Oyuncunun sahip olduğu kartları çek
+    const userListRef = db.ref(`users/${currentUser}/cardCollection`);
+    const userListSnap = await userListRef.once('value');
+    const userCards = userListSnap.val() || {};
+    const userOwnedCardCount = Object.keys(userCards).length;
+    
+    // Koleksiyon ilerlemesini güncelle
+    if(progressSpan) progressSpan.textContent = `${userOwnedCardCount}/${totalCardCount}`;
+    
+    albumContainer.innerHTML = ''; // Temizle ve kartları doldurmaya başla
+
+    // 3. ADIM: Ana listedeki her kart için albümde bir yer oluştur
+    for (const cardId in masterList) {
+        const cardInfo = masterList[cardId];
+        const userHasCard = userCards[cardId];
+
+        const slot = document.createElement('div');
+        slot.className = 'card-slot';
+
+        if (userHasCard || isAdmin) { // Oyuncu karta sahipse VEYA admin ise kartı dolu göster
+            const cardItem = document.createElement('div');
+            cardItem.className = `card-item rarity-${cardInfo.rarity || 'normal'}`;
+            
+            let duplicateBadge = '';
+            if (userHasCard && userHasCard.count > 1) {
+                duplicateBadge = `<div class="duplicate-badge">x${userHasCard.count}</div>`;
+            }
+
+            // Admin butonları
+            let adminCardControls = '';
+            if (isAdmin) {
+                adminCardControls = `
+                    <div class="card-admin-buttons">
+                        <button onclick="openCardCreatorModal('${cardId}')" title="Düzenle">✏️</button>
+                        <button onclick="deleteCard('${cardId}')" title="Sil">🗑️</button>
+                    </div>
+                `;
+            }
+
+            cardItem.innerHTML = `
+                ${duplicateBadge}
+                ${adminCardControls}
+                <img class="card-image" src="${cardInfo.imageUrl}">
+                <h4 class="card-name">${cardInfo.cardName}</h4>
+            `;
+            
+            if (userHasCard && userHasCard.count > 1) {
+                cardItem.onclick = () => openTradeMenu(cardId, cardInfo.cardName);
+            }
+            slot.appendChild(cardItem);
+
+        } else {
+            // KULLANICI KARTA SAHİP DEĞİLSE: Boş kart şablonunu oluştur
+            slot.innerHTML = `
+                <div class="card-item missing">
+                    <span class="missing-text">?</span>
+                </div>
+            `;
+        }
+        albumContainer.appendChild(slot);
+    }
+}
+
+// Takas menüsünü açacak olan örnek fonksiyon (şimdilik boş)
+function openTradeMenu(cardId, cardName) {
+    displayMessage(`'${cardName}' kartı için takas menüsü burada açılacak. ID: ${cardId}`);
+}
+
+// =======================================================
+// YENİ ÖZELLİK: ADMİN KART YÖNETİM FONKSİYONLARI
+// =======================================================
+
+let editingCardId = null; // Hangi kartın düzenlendiğini tutar
+
+// Kart oluşturma/düzenleme penceresini açar
+async function openCardCreatorModal(cardId = null) {
+    const modal = document.getElementById('cardCreatorModal');
+    const title = document.getElementById('cardFormTitle');
+    const saveBtn = document.getElementById('saveCardBtn');
+
+    // Formu temizle
+    document.getElementById('cardNameInput').value = '';
+    document.getElementById('cardImageUrlInput').value = '';
+    document.getElementById('cardRarityInput').value = 'normal';
+
+    if (cardId) {
+        // Eğer bir cardId geldiyse, bu DÜZENLEME modudur
+        editingCardId = cardId;
+        title.textContent = 'Kartı Düzenle';
+        saveBtn.textContent = 'KARTI GÜNCELLE';
+
+        // Kartın mevcut bilgilerini Firebase'den çek ve formu doldur
+        const cardSnap = await db.ref(`gameConfig/cardCollection/${cardId}`).once('value');
+        const cardData = cardSnap.val();
+        if (cardData) {
+            document.getElementById('cardNameInput').value = cardData.cardName;
+            document.getElementById('cardImageUrlInput').value = cardData.imageUrl;
+            document.getElementById('cardRarityInput').value = cardData.rarity;
+        }
+    } else {
+        // Eğer cardId gelmediyse, bu YENİ KART EKLEME modudur
+        editingCardId = null;
+        title.textContent = 'Yeni Kart Oluştur';
+        saveBtn.textContent = 'KARTI KAYDET';
+    }
+
+    modal.style.display = 'flex';
+}
+
+// Kart oluşturma/düzenleme penceresini kapatır
+function closeCardCreatorModal() {
+    document.getElementById('cardCreatorModal').style.display = 'none';
+    editingCardId = null;
+}
+
+// Formdaki bilgileri alıp Firebase'e kaydeder veya günceller
+async function saveCard() {
+    if (!isAdmin) return;
+
+    const cardData = {
+        cardName: document.getElementById('cardNameInput').value.trim(),
+        imageUrl: document.getElementById('cardImageUrlInput').value.trim(),
+        rarity: document.getElementById('cardRarityInput').value
+    };
+
+    if (!cardData.cardName || !cardData.imageUrl) {
+        displayMessage("Kart Adı ve Resim URL'si boş bırakılamaz.");
+        return;
+    }
+
+    if (editingCardId) {
+        // Var olan kartı güncelle
+        await db.ref(`gameConfig/cardCollection/${editingCardId}`).update(cardData);
+        displayMessage("Kart başarıyla güncellendi.");
+    } else {
+        // Yeni kart oluştur
+        // Kartların sıralı görünmesi için bir 'order' alanı ekleyelim
+        const collectionRef = db.ref('gameConfig/cardCollection');
+        const lastCardSnap = await collectionRef.orderByChild('order').limitToLast(1).once('value');
+        let nextOrder = 0;
+        if (lastCardSnap.exists()) {
+            nextOrder = Object.values(lastCardSnap.val())[0].order + 1;
+        }
+        cardData.order = nextOrder;
+
+        await collectionRef.push(cardData);
+        displayMessage("Yeni kart başarıyla koleksiyona eklendi.");
+    }
+
+    closeCardCreatorModal();
+    loadCollectionAlbum(); // Değişikliği anında görmek için albümü yenile
+}
+
+// Bir kartı koleksiyondan kalıcı olarak siler
+async function deleteCard(cardId) {
+    if (!isAdmin) return;
+    const confirmed = await customConfirm("Bu kartı koleksiyondan kalıcı olarak silmek istediğinize emin misiniz? (Bu işlem kullanıcıların ilerlemesini etkilemez, sadece ana listeden kaldırır)");
+    if (confirmed) {
+        await db.ref(`gameConfig/cardCollection/${cardId}`).remove();
+        displayMessage("Kart başarıyla silindi.");
+        loadCollectionAlbum(); // Değişikliği anında görmek için albümü yenile
+    }
+}
+
+// Tüm koleksiyonu ve kullanıcıların ilerlemesini sıfırlar
+async function resetWholeCollection() {
+    if (!isAdmin) return;
+    const confirmed = await customConfirm("!!! ÇOK TEHLİKELİ İŞLEM !!!\nTüm kart tanımlarını, tüm kullanıcıların topladığı kartları ve ilerlemelerini kalıcı olarak silmek istediğinize emin misiniz? Bu işlem geri alınamaz!");
+    if (confirmed) {
+        // 1. Ana kart listesini sil
+        await db.ref('gameConfig/cardCollection').remove();
+
+        // 2. Tüm kullanıcıların koleksiyonlarını sil
+        const usersSnap = await db.ref('users').once('value');
+        const updates = {};
+        usersSnap.forEach(userSnap => {
+            updates[`/users/${userSnap.key}/cardCollection`] = null;
+        });
+        await db.ref().update(updates);
+
+        displayMessage("Tüm koleksiyon ve kullanıcı ilerlemeleri başarıyla sıfırlandı.");
+        loadCollectionAlbum();
+    }
 }
   // YENİ EKLENECEK KOD SONU
     
