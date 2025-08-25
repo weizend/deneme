@@ -875,7 +875,13 @@ body.modal-open .modal-content {
           <option value="efsanevi">Efsanevi (Hareketli Çerçeve)</option>
         </select>
       </div>
-    </div>
+
+      <div>
+        <label class="block text-sm font-medium text-gray-300 mb-1">Şans Ağırlığı:</label>
+        <input type="number" id="cardChanceInput" placeholder="Örn: Normal=100, Efsanevi=5" class="box-setting-input">
+        <p class="text-xs text-gray-500 mt-1">Bu sayının yüksek olması, kartın paketten çıkma ihtimalini artırır.</p>
+      </div>
+      </div>
     <div class="mt-6">
       <button id="saveCardBtn" onclick="saveCard()" class="w-full py-3 bg-yellow-600 hover:bg-yellow-500 text-black font-bold rounded-lg shadow-md">KARTI KAYDET</button>
     </div>
@@ -4586,7 +4592,7 @@ async function openBox(index) {
                 updates['activeMultiplier'] = box.value;
                 updates['multiplierSource'] = 'box';
                 updates['multiplierRemainingUses'] = 0;
-                message = `İNANILMAZ! Mevcut ${user.activeMultiplier}x çarpanın, kutudan çıkan daha güçlü <b>${box.value}x çarpan</b> ile değiştirildi. Eski çarpanının kalan ${user.multiplierUses} hakkı, envanterine <b>+${kutuHakkiDonusum} Kutu Hakkı</b> olarak eklendi!`;
+                message = `İNANILMAZ! Mevcut ${user.activeMultiplier}x çarpanın, kutudan çıkan daha güçlü <b>${box.value}x çarpan</b> ile değiştirildi. Eski çarpanının kalan ${user.multiplierRemainingUses} hakkı, envanterine <b>+${kutuHakkiDonusum} Kutu Hakkı</b> olarak eklendi!`;
                 logActivity('multiplierUpgraded', currentUser, { 
                     oldValue: user.activeMultiplier, 
                     newValue: box.value, 
@@ -9564,7 +9570,7 @@ function renderActivityFeed(activities) {
             const details = activity.details || {};
             let iconHtml = getActivityIcon(activity.type, details);
             let message = '';
-            const timeAgo = formatRelativeTime(activity.timestamp);
+            const timeAgo = formatTimeAgo(activity.timestamp);
             const deleteButtonHtml = isAdmin ? `<button onclick="deleteActivity('${activity.id}')" class="ml-2 p-1 rounded-full text-gray-500 hover:text-red-500 hover:bg-white/10 transition-colors" title="Bu Eylemi Sil"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1-1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" /></svg></button>` : '';
             const userHtml = `<b class="text-yellow-300 cursor-pointer hover:underline" onclick="openPublicUserDetailModal('${activity.username}')">${activity.username}</b>`;
 
@@ -9828,26 +9834,27 @@ async function clearAllActivities() {
     }
 }
 
-function formatRelativeTime(timestamp) {
-  const now = new Date();
-  const activityDate = new Date(timestamp);
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const activityDay = new Date(timestamp);
-  activityDay.setHours(0, 0, 0, 0);
-  const dayDifference = Math.floor((today - activityDay) / (1000 * 60 * 60 * 24));
-  const timeString = activityDate.toLocaleTimeString('tr-TR', {
-    hour: '2-digit',
-    minute: '2-digit'
-  });
+function formatTimeAgo(timestamp) {
+    const now = getSyncedTime();
+    const seconds = Math.floor((now - timestamp) / 1000);
 
-  if (dayDifference === 0) {
-    return `Bugün, ${timeString}`;
-  } else if (dayDifference === 1) {
-    return `Dün, ${timeString}`;
-  } else {
-    return `${dayDifference} gün önce, ${timeString}`;
-  }
+    if (seconds < 60) {
+        return `az önce`;
+    }
+    const minutes = Math.floor(seconds / 60);
+    if (minutes < 60) {
+        return `${minutes} dakika önce`;
+    }
+    const hours = Math.floor(minutes / 60);
+    if (hours < 24) {
+        return `${hours} saat önce`;
+    }
+    const days = Math.floor(hours / 24);
+    if (days < 7) {
+        return `${days} gün önce`;
+    }
+    
+    return new Date(timestamp).toLocaleDateString('tr-TR');
 }
 
 // "Adet" inputlarından biri her değiştiğinde toplam kutu sayısını hesaplar ve gösterir.
@@ -11213,6 +11220,8 @@ async function openCardCreatorModal(cardId = null) {
             document.getElementById('cardNameInput').value = cardData.cardName;
             document.getElementById('cardImageUrlInput').value = cardData.imageUrl;
             document.getElementById('cardRarityInput').value = cardData.rarity;
+            // YENİ EKLENEN SATIR
+            document.getElementById('cardChanceInput').value = cardData.chance || 100; // Eğer şans belirtilmemişse varsayılan 100 olsun
         }
     } else {
         // Eğer cardId gelmediyse, bu YENİ KART EKLEME modudur
@@ -11237,7 +11246,9 @@ async function saveCard() {
     const cardData = {
         cardName: document.getElementById('cardNameInput').value.trim(),
         imageUrl: document.getElementById('cardImageUrlInput').value.trim(),
-        rarity: document.getElementById('cardRarityInput').value
+        rarity: document.getElementById('cardRarityInput').value,
+        // YENİ EKLENEN SATIR
+        chance: parseInt(document.getElementById('cardChanceInput').value) || 100 // Eğer boş bırakılırsa varsayılan 100
     };
 
     if (!cardData.cardName || !cardData.imageUrl) {
@@ -11421,6 +11432,11 @@ async function openTradeMarket() {
 
 // Takas pazarı ana penceresini kapatır
 function closeTradeMarketModal() {
+    // Pazar kapatıldığında, arka planda veri çekmeye devam etmemesi için dinleyiciyi durdur.
+    if (activeListeners.marketOffers) {
+        activeListeners.marketOffers.ref.off('value', activeListeners.marketOffers.callback);
+        delete activeListeners.marketOffers;
+    }
     document.getElementById('tradeMarketModal').style.display = 'none';
 }
 
@@ -11577,91 +11593,97 @@ async function acceptTradeOffer(tradeId) {
     }
 }
 
-// Pazara konulmuş takas tekliflerini Firebase'den çeker ve listeler
+// Pazara konulmuş takas tekliflerini Firebase'den CANLI olarak çeker ve listeler
 async function loadMarketOffers(mode) {
     const listEl = document.getElementById('marketOffersList');
     listEl.innerHTML = '<p class="text-center text-gray-400">Teklifler yükleniyor...</p>';
 
+    // Önceki "canlı" dinleyiciyi kapat (sekme değiştirirken önemlidir)
+    if (activeListeners.marketOffers) {
+        activeListeners.marketOffers.ref.off('value', activeListeners.marketOffers.callback);
+    }
+
     let tradesRef = db.ref('trades');
-    // Eğer "Benim Tekliflerim" sekmesindeysek, sadece mevcut kullanıcının tekliflerini sorgula
     if (mode === 'mine') {
         tradesRef = tradesRef.orderByChild('offerer').equalTo(currentUser);
     }
 
-    const [tradesSnap, masterCardsSnap, userCardsSnap] = await Promise.all([
-        tradesRef.once('value'),
-        db.ref('gameConfig/cardCollection').once('value'),
-        db.ref(`users/${currentUser}/cardCollection`).once('value')
-    ]);
+    // Yeni "canlı" dinleyiciyi oluştur
+    const callback = async (tradesSnap) => {
+        const [masterCardsSnap, userCardsSnap] = await Promise.all([
+            db.ref('gameConfig/cardCollection').once('value'),
+            db.ref(`users/${currentUser}/cardCollection`).once('value')
+        ]);
 
-    const trades = tradesSnap.val();
-    const masterCards = masterCardsSnap.val();
-    const userCards = userCardsSnap.val() || {};
+        const trades = tradesSnap.val();
+        const masterCards = masterCardsSnap.val();
+        const userCards = userCardsSnap.val() || {};
 
-    if (!trades || Object.keys(trades).length === 0) {
-        listEl.innerHTML = `<p class="text-center text-gray-400">${mode === 'all' ? 'Şu anda pazarda aktif bir takas teklifi bulunmuyor.' : 'Henüz bir takas teklifi oluşturmadın.'}</p>`;
-        return;
-    }
+        if (!trades || Object.keys(trades).length === 0) {
+            listEl.innerHTML = `<p class="text-center text-gray-400">${mode === 'all' ? 'Şu anda pazarda aktif bir takas teklifi bulunmuyor.' : 'Henüz bir takas teklifi oluşturmadın.'}</p>`;
+            return;
+        }
 
-    listEl.innerHTML = ''; // Listeyi temizle
-    const sortedTrades = Object.entries(trades).sort((a, b) => (b[1].timestamp || 0) - (a[1].timestamp || 0));
+        listEl.innerHTML = ''; // Listeyi temizle
+        const sortedTrades = Object.entries(trades).sort((a, b) => (b[1].timestamp || 0) - (a[1].timestamp || 0));
 
-    for (const [tradeId, trade] of sortedTrades) {
-        const offeredCard = masterCards[trade.offeredCardId];
-        const requestedCard = masterCards[trade.requestedCardId];
+        for (const [tradeId, trade] of sortedTrades) {
+            const offeredCard = masterCards[trade.offeredCardId];
+            const requestedCard = masterCards[trade.requestedCardId];
 
-        if (!offeredCard || !requestedCard) continue; // Tanımsız kart varsa bu teklifi atla
+            if (!offeredCard || !requestedCard) continue;
 
-        let actionButton = '';
-        if (mode === 'all') {
-            const userHasRequestedCard = userCards[trade.requestedCardId] && userCards[trade.requestedCardId].count > 0;
-            const isMyOwnOffer = trade.offerer === currentUser;
-            
-            if (isMyOwnOffer) {
-                 actionButton = `<button disabled class="py-2 px-5 bg-gray-600 text-gray-400 rounded-lg text-sm font-bold cursor-not-allowed">Kendi Teklifin</button>`;
-            } else {
-                 actionButton = `
-                    <button onclick="acceptTradeOffer('${tradeId}')" 
-                            class="py-2 px-5 rounded-lg text-sm font-bold transition-colors ${userHasRequestedCard ? 'bg-green-600 hover:bg-green-500 text-white' : 'bg-gray-600 text-gray-400 cursor-not-allowed'}"
-                            ${!userHasRequestedCard ? 'disabled' : ''}>
-                        Takası Yap
-                    </button>
-                `;
+            let actionButton = '';
+            if (mode === 'all') {
+                const userHasRequestedCard = userCards[trade.requestedCardId] && userCards[trade.requestedCardId].count > 0;
+                const isMyOwnOffer = trade.offerer === currentUser;
+                
+                if (isMyOwnOffer) {
+                     actionButton = `<button disabled class="py-2 px-5 bg-gray-600 text-gray-400 rounded-lg text-sm font-bold cursor-not-allowed">Kendi Teklifin</button>`;
+                } else {
+                     actionButton = `
+                        <button onclick="acceptTradeOffer('${tradeId}')" 
+                                class="py-2 px-5 rounded-lg text-sm font-bold transition-colors ${userHasRequestedCard ? 'bg-green-600 hover:bg-green-500 text-white' : 'bg-gray-600 text-gray-400 cursor-not-allowed'}"
+                                ${!userHasRequestedCard ? 'disabled' : ''}>
+                            Takası Yap
+                        </button>
+                    `;
+                }
+            } else { // mode === 'mine'
+                actionButton = `<button onclick="cancelTradeOffer('${tradeId}')" class="py-2 px-5 bg-red-700 hover:bg-red-600 rounded-lg font-bold text-sm">Teklifi İptal Et</button>`;
             }
-        } else { // mode === 'mine'
-            actionButton = `<button onclick="cancelTradeOffer('${tradeId}')" class="py-2 px-5 bg-red-700 hover:bg-red-600 rounded-lg font-bold text-sm">Teklifi İptal Et</button>`;
-        }
-        
-        // Admin her teklifi iptal edebilir
-        if (isAdmin && mode === 'all' && trade.offerer !== currentUser) {
-             actionButton += `<button onclick="cancelTradeOffer('${tradeId}', true)" class="ml-2 py-2 px-3 bg-red-800 hover:bg-red-700 rounded-lg text-xs" title="Admin Olarak İptal Et">X</button>`;
-        }
+            
+            if (isAdmin && mode === 'all' && trade.offerer !== currentUser) {
+                 actionButton += `<button onclick="cancelTradeOffer('${tradeId}', true)" class="ml-2 py-2 px-3 bg-red-800 hover:bg-red-700 rounded-lg text-xs" title="Admin Olarak İptal Et">X</button>`;
+            }
 
-        const offerHtml = `
-            <div class="market-offer-card">
-                <div class="market-card-info">
-                    <img src="${offeredCard.imageUrl}" alt="${offeredCard.cardName}">
-                    <div>
-                        <p class="card-name">${offeredCard.cardName}</p>
-                        <p class="card-owner">Teklif Sahibi: <b class="text-yellow-400">${trade.offerer}</b></p>
+            const offerHtml = `
+                <div class="market-offer-card">
+                    <div class="market-card-info">
+                        <img src="${offeredCard.imageUrl}" alt="${offeredCard.cardName}">
+                        <div>
+                            <p class="card-name">${offeredCard.cardName}</p>
+                            <p class="card-owner">Teklif Sahibi: <b class="text-yellow-400">${trade.offerer}</b></p>
+                        </div>
                     </div>
-                </div>
-
-                <span class="text-2xl font-bold text-gray-500 mx-4">⇄</span>
-
-                <div class="market-card-info">
-                    <img src="${requestedCard.imageUrl}" alt="${requestedCard.cardName}">
-                    <div>
-                        <p class="card-name">${requestedCard.cardName}</p>
-                        <p class="card-owner">İstenen Kart</p>
+                    <span class="text-2xl font-bold text-gray-500 mx-4">⇄</span>
+                    <div class="market-card-info">
+                        <img src="${requestedCard.imageUrl}" alt="${requestedCard.cardName}">
+                        <div>
+                            <p class="card-name">${requestedCard.cardName}</p>
+                            <p class="card-owner">İstenen Kart</p>
+                        </div>
                     </div>
+                    <div class="ml-auto pl-4">${actionButton}</div>
                 </div>
-
-                <div class="ml-auto pl-4">${actionButton}</div>
-            </div>
-        `;
-        listEl.innerHTML += offerHtml;
-    }
+            `;
+            listEl.innerHTML += offerHtml;
+        }
+    };
+    
+    // Yeni dinleyiciyi aktif dinleyiciler listesine kaydet
+    activeListeners.marketOffers = { ref: tradesRef, event: 'value', callback };
+    tradesRef.on('value', callback);
 }
 
 // Yeni teklif oluşturma penceresini açar
@@ -11827,7 +11849,6 @@ async function cancelTradeOffer(tradeId, asAdmin = false) {
 let packsToReveal = [];
 let packsRevealedCount = 0;
 
-// MEVCUT startCardPackOpening FONKSİYONUNU SİLİP BUNU YAPIŞTIR
 async function startCardPackOpening(packCount, source = 'Bilinmeyen Kaynak', multiplier = 1) {
     if (packCount <= 0) return;
     
@@ -11843,13 +11864,12 @@ async function startCardPackOpening(packCount, source = 'Bilinmeyen Kaynak', mul
             kariyerPuani: newKariyerPuani
         });
 
-        // Loglama koduna çarpan bilgisi eklendi
         logActivity('cardPackConverted', currentUser, { 
             source: source, 
             packs: packCount, 
             points: pointsToGain, 
             newBalance: newBalance,
-            multiplier: multiplier // YENİ EKLENDİ
+            multiplier: multiplier
         });
 
         displayMessage(`Tebrikler! Koleksiyonu zaten tamamladığın için kazandığın ${packCount} Kart Paketi, hesabına <b class="text-green-400">+${pointsToGain} Puan</b> olarak eklendi!`);
@@ -11862,18 +11882,39 @@ async function startCardPackOpening(packCount, source = 'Bilinmeyen Kaynak', mul
         displayMessage("Kart paketi açılamadı: Oyunda hiç kart tanımlanmamış.");
         return;
     }
-    const allCardIds = Object.keys(masterCards);
+
+    // --- YENİ AĞIRLIKLI ÇEKİLİŞ MANTIĞI BAŞLANGICI ---
+    const weightedCardList = [];
+    let totalWeight = 0;
+    for (const cardId in masterCards) {
+        const card = masterCards[cardId];
+        const chance = card.chance || 1; // Eğer bir karta şans atanmamışsa, en düşük ihtimal (1) olarak kabul et
+        weightedCardList.push({ id: cardId, ...card, chance: chance });
+        totalWeight += chance;
+    }
+
+    if (totalWeight === 0) {
+        displayMessage("Kart paketi açılamadı: Kartların şans ağırlıkları toplamı sıfır.");
+        return;
+    }
 
     packsToReveal = [];
     packsRevealedCount = 0;
 
     for (let i = 0; i < packCount; i++) {
-        const randomCardId = allCardIds[Math.floor(Math.random() * allCardIds.length)];
-        packsToReveal.push({
-            id: randomCardId,
-            ...masterCards[randomCardId]
-        });
+        let randomWeight = Math.random() * totalWeight;
+        let chosenCard = null;
+
+        for (const card of weightedCardList) {
+            randomWeight -= card.chance;
+            if (randomWeight <= 0) {
+                chosenCard = card;
+                break;
+            }
+        }
+        packsToReveal.push(chosenCard || weightedCardList[weightedCardList.length - 1]); // Nadir bir hata olursa son kartı seç
     }
+    // --- YENİ AĞIRLIKLI ÇEKİLİŞ MANTIĞI SONU ---
 
     const modal = document.getElementById('cardPackOpeningModal');
     const area = document.getElementById('cardPackOpeningArea');
