@@ -952,15 +952,15 @@ body.modal-open .modal-content {
             <textarea id="newItemDescription" placeholder="Ürün Açıklaması" rows="3" class="w-full p-2 mb-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500 transition duration-300"></textarea>
             <input type="number" id="newItemCost" placeholder="Maliyet (Puan)" min="1" class="w-full p-2 mb-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500 transition duration-300">
             <input type="number" id="newItemStock" placeholder="Stok Durumu (Opsiyonel, boş bırakılırsa sınırsız)" min="0" class="w-full p-2 mb-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500 transition duration-300">
-            <select id="newItemType" class="w-full p-2 mb-2 bg-gray-700 border border-gray-600 rounded-lg text-white ...">
+            <select id="newItemType" class="w-full p-2 mb-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-yellow-500">
   <option value="">Ürün Tipi Seçin</option>
   <option value="boxRights">Kutu Hakkı</option>
   <option value="wheelTicket">Çark Bileti</option>
   <option value="clickCatchTicket">Tıkla-Yakala Bileti</option>
   <option value="tempMultiplier">Geçici Çarpan</option>
   <option value="iflasShield">İflas Kalkanı</option>
-  <option value="wildcard">Joker Kart</option> <option value="special">Özel Ürün (Onay Gerektirir)</option>
-  <option value="avatar">Avatar</option>
+  <option value="wildcard">Joker Kart</option>      <option value="card_pack">Kart Paketi</option>
+  <option value="special">Özel Ürün (Onay Gerektirir)</option>
 </select>
             <input type="number" id="newItemValue" placeholder="Değer (Kutu Hakkı Adedi / Çarpan Değeri / Kalkan Sayısı)" class="w-full p-2 mb-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500 transition duration-300">
             <input type="number" id="newItemMultiplierDuration" placeholder="Çarpan Süresi (Kutu Sayısı)" min="1" class="w-full p-2 mb-2 bg-gray-700 border border-gray-600 rounded-lg text-white hidden focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500 transition duration-300">
@@ -5262,27 +5262,40 @@ async function buyItem(itemId) {
         const itemValue = parseInt(item.value) || 0;
         const itemDuration = parseInt(item.duration) || 0;
         if (item.type === 'boxRights') {
-            if (itemValue <= 0) { displayMessage("Ürün hatası: Geçersiz Kutu Hakkı değeri."); return; }
             updates.kutuHakki = (user.kutuHakki || 0) + itemValue;
         } else if (item.type === 'wheelTicket') {
-            if (itemValue <= 0) { displayMessage("Ürün hatası: Geçersiz Bilet değeri."); return; }
             updates.carkBileti = (user.carkBileti || 0) + itemValue;
         } else if (item.type === 'clickCatchTicket') {
-            if (itemValue <= 0) { displayMessage("Ürün hatası: Geçersiz Bilet değeri."); return; }
             updates.clickCatchTickets = (user.clickCatchTickets || 0) + itemValue;
         } else if (item.type === 'tempMultiplier') {
-            if (itemValue <= 1) { displayMessage("Ürün hatası: Geçersiz Çarpan değeri (1'den büyük olmalı)."); return; }
-            if (itemDuration <= 0) { displayMessage("Ürün hatası: Geçersiz Çarpan kullanım hakkı."); return; }
             updates.activeMultiplier = itemValue;
             updates.multiplierSource = 'store';
             updates.multiplierRemainingUses = itemDuration;
             updates.activeStoreMultiplierItemId = itemId;
         } else if (item.type === 'iflasShield') {
-            if (itemValue <= 0) { displayMessage("Ürün hatası: Geçersiz Kalkan değeri."); return; }
             updates.iflasShieldUses = (user.iflasShieldUses || 0) + itemValue;
-        } else if (item.type === 'wildcard') { // YENİ EKLENEN BLOK
-            if (itemValue <= 0) { displayMessage("Ürün hatası: Geçersiz Joker Kart değeri."); return; }
+        } else if (item.type === 'wildcard') {
             updates.wildcards = (user.wildcards || 0) + itemValue;
+            message = `Tebrikler! Mağazadan ${itemValue} adet Joker Kart satın aldın!`;
+        } else if (item.type === 'card_pack') {
+            const masterCardsSnap = await db.ref('gameConfig/cardCollection').once('value');
+            const masterCards = masterCardsSnap.val();
+            if (masterCards) {
+                const allCardIds = Object.keys(masterCards);
+                let wonCardsNames = [];
+                for(let i = 0; i < itemValue; i++) {
+                    const randomCardId = allCardIds[Math.floor(Math.random() * allCardIds.length)];
+                    const wonCardInfo = masterCards[randomCardId];
+                    updates[`cardCollection/${randomCardId}/count`] = (user.cardCollection?.[randomCardId]?.count || 0) + 1;
+                    user.cardCollection = user.cardCollection || {};
+                    user.cardCollection[randomCardId] = user.cardCollection[randomCardId] || { count: 0 };
+                    user.cardCollection[randomCardId].count++;
+                    wonCardsNames.push(`<b class="text-cyan-400">'${wonCardInfo.cardName}'</b>`);
+                }
+                message = `Satın aldığın ${itemValue} adet Kart Paketini açtın! İçinden çıkanlar: ${wonCardsNames.join(', ')}`;
+            } else {
+                message = "Bir Kart Paketi satın aldın ama henüz oyuna hiç kart eklenmemiş!";
+            }
         } else if (item.type === 'avatar') {
             const newAvatar = { id: itemId, name: item.name, imageUrl: item.imageUrl };
             updates[`avatars/${itemId}`] = newAvatar;
@@ -7444,7 +7457,8 @@ function renderWheel() {
     ref.on('value', callback);
 }
 
-// =OTOMATİK-OLUŞTURULDU-
+// MEVCUT spinWheel FONKSİYONUNU SİLİP BUNU YAPIŞTIR
+
 async function spinWheel() {
     if (isWheelSpinning) return;
     if (isAdmin) {
@@ -7558,12 +7572,32 @@ async function spinWheel() {
                  openCardSelectionModal(currentUser);
                  message = "Vay canına! Çarktan Sürpriz Kutu çıktı! Şimdi bir kart seç.";
                  break;
-            // YENİ CASE: Joker Kart kazanıldığında çalışacak kod
             case 'wildcard':
                 message = `HARİKA! Çarktan en nadir ödül olan <b class="text-purple-400">+${winningSegment.value} JOKER KART</b> kazandın!`;
                 updates.wildcards = (currentUserData.wildcards || 0) + winningSegment.value;
                 break;
-            // YENİ CASE SONU
+            case 'card_pack':
+                const packsToOpen = winningSegment.value || 1;
+                message = `Tebrikler! Çarktan ${packsToOpen} adet Kart Paketi kazandın! İçinden çıkanlar: `;
+                const masterCardsSnap = await db.ref('gameConfig/cardCollection').once('value');
+                const masterCards = masterCardsSnap.val();
+                if (masterCards) {
+                    const allCardIds = Object.keys(masterCards);
+                    let wonCardsNames = [];
+                    for(let i = 0; i < packsToOpen; i++) {
+                        const randomCardId = allCardIds[Math.floor(Math.random() * allCardIds.length)];
+                        const wonCardInfo = masterCards[randomCardId];
+                        updates[`cardCollection/${randomCardId}/count`] = (currentUserData.cardCollection?.[randomCardId]?.count || 0) + 1;
+                        currentUserData.cardCollection = currentUserData.cardCollection || {};
+                        currentUserData.cardCollection[randomCardId] = currentUserData.cardCollection[randomCardId] || { count: 0 };
+                        currentUserData.cardCollection[randomCardId].count++;
+                        wonCardsNames.push(`<b class="text-cyan-400">'${wonCardInfo.cardName}'</b>`);
+                    }
+                    message += wonCardsNames.join(', ');
+                } else {
+                     message = "Bir Kart Paketi buldun ama henüz oyuna hiç kart eklenmemiş!";
+                }
+                break;
             case 'pas':
                 message = "Bu seferlik pas! Bir dahaki sefere daha şanslı olabilirsin.";
                 break;
@@ -7613,67 +7647,6 @@ async function spinWheel() {
         wheel.style.transform = `rotate(${normalizedRotation}deg)`;
 
     }, 5100);
-}
-
-// MEVCUT setWinner fonksiyonunu bununla değiştir
-async function setWinner(username) {
-    const lobbyRef = db.ref('clickCatchLobby');
-    const lobbySnap = await lobbyRef.once('value');
-    const lobbyData = lobbySnap.val();
-    if (!lobbyData || lobbyData.state !== 'active') return;
-
-    const gameSummary = {
-        winner: username,
-        prize: lobbyData.prize,
-        target: lobbyData.target,
-        startTimestamp: lobbyData.startTimestamp || null,
-        endTimestamp: firebase.database.ServerValue.TIMESTAMP,
-        players: lobbyData.players || {}
-    };
-    
-    const winnerRefBefore = await db.ref(`users/${username}`).once('value');
-    const winnerDataBefore = winnerRefBefore.val();
-    const finalPrize = lobbyData.prize + (lobbyData.entryTickets > 0 ? 0 : lobbyData.entryFee);
-    const winnerNewBalance = (winnerDataBefore.balance || 0) + finalPrize;
-
-    logActivity('clickCatchLobby', currentUser, { 
-        prize: lobbyData.prize,
-        newBalance: winnerNewBalance
-    });
-    
-    await db.ref('clickCatchLobbyLastGameSummary').set(gameSummary);
-    
-    const updates = {
-        state: 'finished',
-        winner: username
-    };
-    await lobbyRef.update(updates);
-    
-    const winnerRef = db.ref(`users/${username}`);
-    // KARİYER PUANI GÜNCELLEMESİ (Transaction ile)
-    await winnerRef.transaction(user => {
-        if (user) {
-            let finalPrize = lobbyData.prize;
-            if (lobbyData.prize === 500) {
-                if (lobbyData.entryTickets > 0) {
-                    user.clickCatchTickets = (user.clickCatchTickets || 0) + lobbyData.entryTickets;
-                } 
-                else {
-                    finalPrize += lobbyData.entryFee;
-                }
-            }
-            user.balance = (user.balance || 0) + finalPrize;
-            if (user.balance > (user.highestBalanceEver || 0)) {
-                user.highestBalanceEver = user.balance;
-            }
-            user.kariyerPuani = (user.kariyerPuani || 0) + finalPrize;
-        }
-        return user;
-    });
-
-    setTimeout(() => {
-        db.ref('clickCatchLobby').remove();
-    }, 5000);
 }
 
 function closeSoloGameSettingsModal() {
@@ -9608,6 +9581,8 @@ function closeWheelSettingsModal() {
     wheelSettingsModal.style.display = 'none';
 }
 
+// MEVCUT addWheelSettingRow FONKSİYONUNU SİLİP BUNU YAPIŞTIR
+
 // Çark Ayarları için yeni satır ekler
 function addWheelSettingRow(item = {}) {
     const container = document.getElementById('wheelSettingsRowsContainer');
@@ -9631,7 +9606,9 @@ function addWheelSettingRow(item = {}) {
             <option value="surpriseBox" ${type === 'surpriseBox' ? 'selected' : ''}>Sürpriz Kutu</option>
             <option value="clickCatchTicket" ${type === 'clickCatchTicket' ? 'selected' : ''}>Tıkla-Yakala Bileti</option>
             <option value="wheelTicket" ${type === 'wheelTicket' ? 'selected' : ''}>Çark Bileti</option>
-            <option value="wildcard" ${type === 'wildcard' ? 'selected' : ''}>Joker Kart</option> <option value="pas" ${type === 'pas' ? 'selected' : ''}>Pas</option>
+            <option value="wildcard" ${type === 'wildcard' ? 'selected' : ''}>Joker Kart</option>
+            <option value="card_pack" ${type === 'card_pack' ? 'selected' : ''}>Kart Paketi</option>
+            <option value="pas" ${type === 'pas' ? 'selected' : ''}>Pas</option>
         </select>
         <input type="text" value="${label}" class="setting-label col-span-1 sm:col-span-2 bg-gray-700 p-2 rounded-md text-white" placeholder="Etiket (Örn: JOKER!)">
         <input type="text" value="${imageUrl}" class="setting-image-url col-span-1 sm:col-span-2 bg-gray-700 p-2 rounded-md text-white" placeholder="Resim URL (Opsiyonel)">
@@ -9663,7 +9640,7 @@ function handleWheelRowTypeChange(selectElement) {
         valueInput.value = ''; // Değeri temizle
     } else if (selectedType === 'tempMultiplier') {
         durationInput.disabled = false;
-    } else if (selectedType === 'wildcard') { // YENİ EKLENDİ
+    } else if (selectedType === 'wildcard' || selectedType === 'card_pack') { // YENİ EKLENDİ
         valueInput.disabled = false;
         valueInput.value = 1; // Değeri otomatik 1 yap
     }
