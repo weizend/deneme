@@ -715,7 +715,7 @@ body.modal-open .modal-content {
         </div>
 </div>
     
-    <div id="cardCollectionContent" class="w-full hidden">
+    <<div id="cardCollectionContent" class="w-full hidden">
 
     <div class="flex justify-between items-center mb-2 px-4">
       <div class="flex items-center gap-4">
@@ -1990,6 +1990,7 @@ body.modal-open .modal-content {
                   <option value="iflasShield">İflas Kalkanı</option>
                   <option value="tempMultiplier">Çarpan</option>
                   <option value="avatar">Avatar</option>
+                  <option value="wildcard">Joker Kart</option> <option value="card_pack">Kart Paketi</option> </select>
               </select>
               
               <div id="dailyRewardAvatarFields" class="hidden space-y-2">
@@ -7233,13 +7234,11 @@ async function claimDailyReward(rewardId) {
                 if (updates['balance'] > (user.highestBalanceEver || 0)) {
                     updates['highestBalanceEver'] = updates['balance'];
                 }
-                // KARİYER PUANI GÜNCELLEMESİ
                 updates['kariyerPuani'] = (user.kariyerPuani || 0) + reward.value;
                 break;
             case 'boxRights':
                 updates['kutuHakki'] = (user.kutuHakki || 0) + reward.value;
                 break;
-            // ... diğer case'ler aynı
             case 'wheelTicket':
                 updates['carkBileti'] = (user.carkBileti || 0) + reward.value;
                 break;
@@ -7263,6 +7262,35 @@ async function claimDailyReward(rewardId) {
                 };
                 message = `Tebrikler! <b>${reward.avatarName}</b> avatarı koleksiyonuna eklendi!`;
                 break;
+            
+            // --- YENİ EKLENEN KOD BAŞLANGICI ---
+            case 'wildcard':
+                // Eğer kullanıcı koleksiyonu zaten tamamladıysa, Joker Kart yerine Kutu Hakkı ver
+                if (user.completedCollection === true) {
+                    const boxRightsToGain = (reward.value || 1) * 5; // Her joker kart için 5 kutu hakkı
+                    updates['kutuHakki'] = (user.kutuHakki || 0) + boxRightsToGain;
+                    message = `Harika! Koleksiyonu zaten tamamladığın için kazandığın ${reward.value} Joker Kart, hesabına <b class="text-green-400">+${boxRightsToGain} Kutu Hakkı</b> olarak eklendi!`;
+                } else {
+                    updates['wildcards'] = (user.wildcards || 0) + reward.value;
+                    message = `İNANILMAZ! Günlük ödülden <b class="text-purple-400">+${reward.value} JOKER KART</b> kazandın!`;
+                }
+                break;
+
+            case 'card_pack':
+                // Eğer kullanıcı koleksiyonu zaten tamamladıysa, Kart Paketi yerine Puan ver
+                if (user.completedCollection === true) {
+                    const pointsToGain = (reward.value || 1) * 500; // Her kart paketi için 500 puan
+                    updates['balance'] = (user.balance || 0) + pointsToGain;
+                    updates['kariyerPuani'] = (user.kariyerPuani || 0) + pointsToGain;
+                    message = `Tebrikler! Koleksiyonu zaten tamamladığın için kazandığın ${reward.value} Kart Paketi, hesabına <b class="text-green-400">+${pointsToGain} Puan</b> olarak eklendi!`;
+                } else {
+                    // Koleksiyonu tamamlamadıysa, kart paketi açma seremonisini başlat
+                    startCardPackOpening(reward.value || 1, 'Günlük Ödül');
+                    // Bu durumda 'updates' objesine bir şey eklemiyoruz çünkü ödül anında verilmiyor, seremoni sonunda veriliyor.
+                    message = `Tebrikler! Günlük ödülden ${reward.value} adet Kart Paketi kazandın!`;
+                }
+                break;
+            // --- YENİ EKLENEN KOD SONU ---
         }
 
         const logDetails = { 
@@ -9462,6 +9490,12 @@ function getActivityIcon(type, details = {}) {
             if (details.rewardType === 'avatar') {
                 icon = '👤';
                 bgColor = 'bg-sky-500';
+            } else if (details.rewardType === 'wildcard') { // YENİ EKLENDİ
+                icon = '🃏';
+                bgColor = 'bg-purple-600';
+            } else if (details.rewardType === 'card_pack') { // YENİ EKLENDİ
+                icon = '🎴';
+                bgColor = 'bg-indigo-600';
             } else {
                 icon = '📅';
                 bgColor = 'bg-teal-500';
@@ -9506,7 +9540,9 @@ function renderActivityFeed(activities) {
         iflasShield: 'İflas Kalkanı',
         wheelTicket: 'Çark Bileti',
         clickCatchTicket: 'Tıkla-Yakala Bileti',
-        tempMultiplier: 'Çarpan'
+        tempMultiplier: 'Çarpan',
+        wildcard: 'Joker Kart', // YENİ EKLENDİ
+        card_pack: 'Kart Paketi' // YENİ EKLENDİ
     };
 
     activities.forEach(activity => {
