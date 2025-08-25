@@ -2528,7 +2528,7 @@ const defaultWheelSegments = [
     { type: 'pas', label: '☠️', prizeName: 'Pas', color: '#6b7280', weight: 10 },
 
     // Orta Seviye Ödüller
-    { type: 'card_pack', value: 1, label: '🎴', prizeName: '+1 Kart Paketi', imageUrl: 'https://i.hizliresim.com/pmof81n.png', color: '#14b8a6', weight: 12 }, // YENİ EKLENDİ (İyi Şans Oranı)
+    { type: 'card_pack', value: 1, label: '🎴', prizeName: '+1 Kart Paketi', color: '#14b8a6', weight: 12 }, // YENİ EKLENDİ (İyi Şans Oranı)
     { type: 'points', value: 250, label: '🍐', prizeName: '+250 Puan', color: '#22c55e', weight: 10 },
     { type: 'iflasShield', value: 1, label: '🛡️', prizeName: '+1 İflas Kalkanı', color: '#3b82f6', weight: 8 },
     { type: 'clickCatchTicket', value: 1, label: '🎟️', prizeName: '+1 T-Y Bileti', color: '#ec4899', weight: 8 },
@@ -2537,7 +2537,7 @@ const defaultWheelSegments = [
     // Nadir ve Efsanevi Ödüller
     { type: 'wheelTicket', value: 1, label: '🎡', prizeName: 'Bedava Çevirme', color: '#f97316', weight: 5 },
     { type: 'boxRights', value: 3, label: '🎁', prizeName: '+3 Kutu Hakkı', color: '#f59e0b', weight: 4 },
-    { type: 'wildcard', value: 1, label: '🃏', prizeName: '+1 Joker Kart', imageUrl: 'https://i.hizliresim.com/sbq5dG.png', color: '#d946ef', weight: 4 }, // YENİ EKLENDİ (Nadir Ama Mümkün)
+    { type: 'wildcard', value: 1, label: '🃏', prizeName: '+1 Joker Kart', color: '#d946ef', weight: 4 }, // YENİ EKLENDİ (Nadir Ama Mümkün)
     { type: 'points', value: 1000, label: '🎂', prizeName: '+1000 Puan', color: '#ef4444', weight: 2 },
     { type: 'tempMultiplier', value: 5, duration: 1, label: '✖️', prizeName: '5X Çarpan', color: '#06b6d4', weight: 1 },
     { type: 'surpriseBox', value: 1, label: '🎉', prizeName: 'Sürpriz Kutu', color: '#eab308', weight: 1 }
@@ -10713,6 +10713,8 @@ async function saveAutomaticResetSettings() {
 }
 
 async function executeSeasonReset(isManual = false) {
+    // Bu fonksiyon, bir oyuncunun tarayıcısı tarafından otomatik olarak tetiklenirse,
+    // işlemin sadece bir kez yapılmasını sağlamak için bir durum kontrolü yapar.
     if (!isAdmin) {
         const resetStatus = await db.ref('gameConfig/seasonResetStatus').once('value');
         if (resetStatus.val() === 'in_progress' || resetStatus.val() === 'completed') {
@@ -10722,6 +10724,7 @@ async function executeSeasonReset(isManual = false) {
         await db.ref('gameConfig/seasonResetStatus').set('in_progress');
     }
     
+    // Admin manuel olarak tetiklerse onay istenir.
     const confirmationText = isManual 
         ? "Sezonu ŞİMDİ MANUEL olarak bitirmek üzeresiniz. Tüm puanlar, istatistikler ve KART KOLEKSİYONU sıfırlanacak, ödüller dağıtılacak. Bu işlem geri alınamaz. Emin misiniz?"
         : "Sezon sonu için SON ONAY. Sıfırlama işlemi başlayacak ve geri alınamayacak. Onaylıyor musunuz?";
@@ -10733,40 +10736,47 @@ async function executeSeasonReset(isManual = false) {
 
     displayMessage("Sezon sonu işlemleri başlatıldı... Bu işlem birkaç saniye sürebilir. Lütfen bekleyin.");
 
+    // Gerekli tüm verileri topla
     const allUsersSnap = await db.ref('users').once('value');
     const allUsersData = allUsersSnap.val();
     const leaders = await calculateAllLeaders(allUsersData);
     const settingsSnap = await db.ref('gameConfig/seasonSettings').once('value');
     const seasonSettings = settingsSnap.val();
 
+    // Liderleri belirle
     const puanLeader = leaders.highEverBalanceUser;
     const rozetLeader = (await getTopBadgeHolder(allUsersData, leaders)).username;
     
+    // Ödülleri hazırla
     const puanAvatar = seasonSettings?.rewards?.puanLeaderAvatarUrl;
     const rozetAvatar = seasonSettings?.rewards?.rozetLeaderAvatarUrl;
-
     const giftPackage = seasonSettings?.rewards?.general || {
         kutuHakki: 0, carkBileti: 0, clickCatchTickets: 0, iflasShieldUses: 0
     };
 
+    // Tüm veritabanı güncellemelerini tek bir objede topla
     const updates = {};
     
+    // Ana kart koleksiyonu ayarlarını sıfırla
     updates['/gameConfig/cardCollection'] = null;
     updates['/gameConfig/collectionWinner'] = null;
     updates['/gameConfig/collectionGrandPrize'] = null;
     updates['/gameConfig/cardCollectionStatus'] = 'inactive';
 
+    // Her bir kullanıcı için işlemleri yap
     for (const username in allUsersData) {
         if (username.toLowerCase() === 'weizendtv' || !allUsersData[username].approved) continue;
         
         const userPath = `users/${username}`;
         const userData = allUsersData[username];
 
+        // 1. Genel hediye paketini her kullanıcıya ekle
         updates[`${userPath}/kutuHakki`] = (userData.kutuHakki || 0) + giftPackage.kutuHakki;
         updates[`${userPath}/carkBileti`] = (userData.carkBileti || 0) + giftPackage.carkBileti;
         updates[`${userPath}/clickCatchTickets`] = (userData.clickCatchTickets || 0) + giftPackage.clickCatchTickets;
         updates[`${userPath}/iflasShieldUses`] = (userData.iflasShieldUses || 0) + giftPackage.iflasShieldUses;
 
+        // 2. Şampiyon ödüllerini ve kalıcı şampiyonluk sayaçlarını güncelle
         if (username === puanLeader) {
             if(puanAvatar) updates[`${userPath}/selectedAvatar`] = { id: `sezon_odul_puan_${Date.now()}`, url: puanAvatar };
             updates[`${userPath}/puanChampionshipsWon`] = (userData.puanChampionshipsWon || 0) + 1;
@@ -10775,7 +10785,10 @@ async function executeSeasonReset(isManual = false) {
             if(rozetAvatar) updates[`${userPath}/selectedAvatar`] = { id: `sezon_odul_rozet_${Date.now()}`, url: rozetAvatar };
             updates[`${userPath}/rozetChampionshipsWon`] = (userData.rozetChampionshipsWon || 0) + 1;
         }
+        // ÖNEMLİ: Kalıcı şampiyonluk sayaçları (`puanChampionshipsWon`, `rozetChampionshipsWon`
+        // ve daha önce eklediğimiz `collectionChampionshipsWon`) burada SIFIRLANMAZ! Sadece artırılır.
         
+        // 3. Sezonluk ilerlemeyi ve istatistikleri sıfırla
         updates[`${userPath}/balance`] = 0;
         updates[`${userPath}/kariyerPuani`] = 0;
         updates[`${userPath}/totalSpentPoints`] = 0;
@@ -10786,15 +10799,18 @@ async function executeSeasonReset(isManual = false) {
         updates[`${userPath}/iflasShieldUsedCount`] = 0;
         updates[`${userPath}/wheelSpinsCount`] = 0;
         updates[`${userPath}/clickCatchHighestScore`] = 0;
+        
+        // Sezonluk kart ilerlemesi ve tamamlanma durumu sıfırlanır.
         updates[`${userPath}/cardCollection`] = null;
         updates[`${userPath}/completedCollection`] = null;
-        updates[`${userPath}/achievements/collectionChampion`] = null;
     }
 
+    // Diğer genel sezonluk verileri sıfırla
     updates['purchaseHistory'] = null;
     updates['clickCatchWeeklyScores'] = null;
     updates['gameStats'] = null;
 
+    // Mağazadaki ürünlerin "satın alınma sayısını" sıfırla
     const storeItemsSnap = await db.ref('storeItems').once('value');
     if (storeItemsSnap.exists()) {
         storeItemsSnap.forEach(itemSnap => {
@@ -10802,6 +10818,7 @@ async function executeSeasonReset(isManual = false) {
         });
     }
 
+    // Sezon sonu duyurusunu oluştur
     const seasonName = new Date().toLocaleString('tr-TR', { month: 'long', year: 'numeric' }) + " Sezonu";
     updates[`seasonAnnouncements/${Date.now()}`] = {
         title: `${seasonName} Sona Erdi!`,
@@ -10809,11 +10826,16 @@ async function executeSeasonReset(isManual = false) {
         timestamp: firebase.database.ServerValue.TIMESTAMP
     };
 
+    // Tüm güncellemeleri tek seferde veritabanına uygula
     await db.ref().update(updates);
+    
+    // Yeni sezon için kutuları yeniden oluştur
     await createBoxes();
     
+    // Sezon ayarlarını temizle
     await db.ref('gameConfig/seasonSettings').remove();
     await db.ref('gameConfig/seasonEndDate').remove();
+    
     if (isAdmin) {
         await db.ref('gameConfig/seasonResetStatus').remove();
     } else {
