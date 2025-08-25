@@ -11,6 +11,26 @@
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
 
 <style>
+/* --- BİLGİ BUTONU STİLİ --- */
+.info-button {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background-color: #3b82f6; /* bg-blue-600 */
+    color: white;
+    font-weight: bold;
+    font-size: 1.1rem;
+    border: 2px solid white;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.2s;
+}
+.info-button:hover {
+    transform: scale(1.1);
+    background-color: #2563eb; /* bg-blue-700 */
+}
 /* MEVCUT .wildcard ve .card_pack STİLLERİNİ SİLİP BUNLARI YAPIŞTIR */
 
 /* Joker Kart içeren açılmış kutu stili */
@@ -669,7 +689,23 @@ body.modal-open .modal-content {
       </button>
     </div>
     
+    <div id="grandPrizeDisplay" class="my-6 p-6 bg-gradient-to-br from-yellow-500/80 to-amber-600/80 rounded-xl shadow-lg border-2 border-yellow-300 max-w-4xl mx-auto text-center hidden">
+    <h3 class="text-2xl font-bold text-white mb-4 text-shadow-lg">Tüm Kartları Topla ve Bu Ödülleri Kazan!</h3>
+    <div id="prizeList" class="flex flex-wrap justify-center items-center gap-x-8 gap-y-4">
+        </div>
+</div>
+    
     <div id="cardCollectionContent" class="w-full hidden">
+        
+        <div class="flex justify-between items-center mb-6 px-4">
+    <div class="flex items-center gap-4"> <h3 class="text-yellow-400 text-3xl font-bold">Kart Koleksiyonu Albümü</h3>
+        <button onclick="openCollectionInfoModal()" class="info-button" title="Oyun Hakkında Bilgi">?</button>
+    </div>
+    <div class="text-right">
+        <p class="text-lg text-white">Tamamlanan: <span id="collectionProgress" class="font-bold text-green-400">0/20</span></p>
+        <button onclick="openTradeMarket()" class="mt-2 py-2 px-4 bg-purple-600 hover:bg-purple-500 rounded-lg text-sm font-bold">Takas Pazarı</button>
+    </div>
+</div>
             
             <div class="flex justify-between items-center mb-6 px-4">
                 <div>
@@ -685,38 +721,58 @@ body.modal-open .modal-content {
                 </div>
             </div>
             
-            <div id="adminCardCollectionControls" class="hidden my-4 p-6 bg-gray-800 rounded-lg border border-purple-500 max-w-4xl mx-auto">
-                <h4 class="text-lg font-bold text-purple-300 mb-4 text-center border-b border-gray-700 pb-2">KOLEKSİYON &amp; PAZAR YÖNETİM PANELİ</h4>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
-                    <div class="space-y-3">
-                        <h5 class="font-semibold text-yellow-300">Kart Yönetimi</h5>
-                        <button onclick="openCardCreatorModal()" class="w-full py-2 px-6 bg-green-700 hover:bg-green-600 text-white font-bold rounded-lg">
-                            Yeni Kart Ekle
-                        </button>
-                        <button onclick="resetWholeCollection()" class="w-full py-2 px-6 bg-red-800 hover:bg-red-700 text-white font-bold rounded-lg">
-                            Tüm Koleksiyonu Sıfırla
-                        </button>
-                    </div>
-                    <div class="space-y-3">
-                        <h5 class="font-semibold text-yellow-300">Pazar Ayarları</h5>
-                        <div>
-                            <label for="tradeFeeInput" class="block text-sm text-gray-400 mb-1">Takas İşlem Ücreti (Puan):</label>
-                            <input type="number" id="tradeFeeInput" placeholder="Örn: 50" class="box-setting-input">
-                        </div>
-                        <div class="flex gap-4">
-                            <button onclick="saveMarketSettings()" class="w-full py-2 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-lg">
-                                Ayarları Kaydet
-                            </button>
-                            <button id="marketLockBtn" onclick="toggleMarketLock()" class="w-full py-2 bg-gray-600 hover:bg-gray-500 text-white font-bold rounded-lg">
-                                Pazarı Kilitle
-                            </button>
-                        </div>
-                        <button onclick="openTradeHistoryModal()" class="w-full mt-2 py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-lg">
-                            Takas Geçmişini Görüntüle
-                        </button>
-                    </div>
-                </div>
+            <div id="adminCardCollectionControls" class="hidden my-4 p-6 bg-gray-800 rounded-lg border border-purple-500 max-w-5xl mx-auto">
+    <h4 class="text-lg font-bold text-purple-300 mb-4 text-center border-b border-gray-700 pb-2">KOLEKSİYON & PAZAR YÖNETİM PANELİ</h4>
+    
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
+        
+        <div class="space-y-3">
+            <h5 class="font-semibold text-yellow-300">Kart Yönetimi</h5>
+            <button onclick="openCardCreatorModal()" class="w-full py-2 px-6 bg-green-700 hover:bg-green-600 text-white font-bold rounded-lg">
+                Yeni Kart Ekle
+            </button>
+            <button onclick="resetWholeCollection()" class="w-full py-2 px-6 bg-red-800 hover:bg-red-700 text-white font-bold rounded-lg">
+                Tüm Koleksiyonu Sıfırla
+            </button>
+        </div>
+
+        <div class="space-y-3">
+            <h5 class="font-semibold text-yellow-300">Pazar Ayarları</h5>
+            <div>
+                <label for="tradeFeeInput" class="block text-sm text-gray-400 mb-1">Takas İşlem Ücreti (Puan):</label>
+                <input type="number" id="tradeFeeInput" placeholder="Örn: 50" class="box-setting-input">
             </div>
+            <div class="flex gap-4">
+                 <button onclick="saveMarketSettings()" class="w-full py-2 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-lg">
+                    Ayarları Kaydet
+                </button>
+                <button id="marketLockBtn" onclick="toggleMarketLock()" class="w-full py-2 bg-gray-600 hover:bg-gray-500 text-white font-bold rounded-lg">
+                    Pazarı Kilitle
+                </button>
+            </div>
+            <button onclick="openTradeHistoryModal()" class="w-full mt-2 py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-lg">
+                Takas Geçmişini Görüntüle
+            </button>
+        </div>
+
+    </div>
+    
+    <div class="mt-6 pt-4 border-t border-gray-700">
+        <h5 class="font-semibold text-yellow-300 text-center mb-3">Büyük Ödül Ayarları</h5>
+        <div class="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-6 gap-4">
+             <input type="number" id="prizePoints" placeholder="Puan" class="box-setting-input">
+             <input type="number" id="prizeBoxRights" placeholder="Kutu Hakkı" class="box-setting-input">
+             <input type="number" id="prizeWildcards" placeholder="Joker Kart" class="box-setting-input">
+             <input type="number" id="prizeWheelTickets" placeholder="Çark Bileti" class="box-setting-input">
+             <input type="number" id="prizeClickCatchTickets" placeholder="T-Y Bileti" class="box-setting-input">
+             <input type="text" id="prizeDescription" placeholder="Diğer Ödül" class="box-setting-input">
+        </div>
+        <button onclick="saveGrandPrize()" class="w-full mt-3 py-2 bg-yellow-600 hover:bg-yellow-500 text-black font-bold rounded-lg">
+            Büyük Ödülü Kaydet
+        </button>
+    </div>
+
+</div>
             
             <div id="cardCollectionAlbum" class="grid grid-cols-[repeat(auto-fill,minmax(150px,1fr))] gap-6 p-4 bg-gray-900/50 rounded-xl border border-gray-700">
                 </div>
@@ -2230,6 +2286,41 @@ body.modal-open .modal-content {
     <h2 id="cardPackOpeningTitle" class="text-3xl font-bold text-yellow-300 mb-8 animate-pulse">Kart Paketlerini Aç!</h2>
     <div id="cardPackOpeningArea" class="flex flex-wrap justify-center items-center gap-8">
         </div>
+</div>
+
+<div id="collectionInfoModal" class="modal-overlay fixed inset-0 bg-black bg-opacity-80 flex justify-center items-center z-[10001] hidden">
+  <div class="modal-content bg-gray-800 p-8 rounded-xl shadow-2xl border border-blue-500 w-11/12 max-w-2xl text-left relative max-h-[90vh] flex flex-col">
+    <button class="modal-close-button" onclick="closeCollectionInfoModal()">&times;</button>
+    <h3 class="text-blue-300 text-3xl font-bold mb-6 text-center">Kart Koleksiyonu Rehberi</h3>
+    
+    <div class="space-y-4 text-gray-300 overflow-y-auto scrollable-list pr-4">
+        <div_>
+            <h4 class="font-bold text-lg text-yellow-300">🏆 Amaç Nedir?</h4>
+            <p>Oyunun amacı, tüm kartları toplayarak koleksiyon albümünü tamamlamaktır. Albümü tamamlayan herkes, admin tarafından belirlenen büyük ödülleri kazanır!</p>
+        </div_>
+        
+        <div>
+            <h4 class="font-bold text-lg text-yellow-300">🎴 Nasıl Kart Kazanılır?</h4>
+            <p>Koleksiyon kartları doğrudan bulunmaz. Bunun yerine, oyunun çeşitli yerlerinden **"Kart Paketi"** kazanırsın. Her paket, içinden rastgele bir koleksiyon kartı çıkarır.</p>
+            <ul class="list-disc list-inside ml-4 mt-2">
+                <li><b>Kutu Oyunu:</b> Kutuları açarak Kart Paketi bulabilirsin.</li>
+                <li><b>Şans Çarkı:</b> Çarkı çevirerek Kart Paketi kazanabilirsin.</li>
+                <li><b>Mağaza:</b> Puanlarınla Mağaza'dan Kart Paketi satın alabilirsin.</li>
+            </ul>
+        </div>
+        
+        <div>
+            <h4 class="font-bold text-lg text-yellow-300">⇄ Fazla Kartlar ve Takas</h4>
+            <p>Aynı karttan birden fazla kazandığında, bu kartlar "fazla" olarak birikir. Fazla kartların en önemli amacı takas yapmaktır! **"Takas Pazarı"**'na giderek elindeki fazla kartları, koleksiyonundaki eksik kartlar karşılığında diğer oyuncularla takas edebilirsin.</p>
+        </div>
+
+        <div>
+            <h4 class="font-bold text-lg text-yellow-300">🃏 Joker Kart Nedir?</h4>
+            <p>Joker Kart, oyundaki en nadir ve en özel karttır. Bu kart, koleksiyonundaki herhangi bir eksik kartın yerine geçer. Eksik bir kartın üzerine tıklayarak Joker Kart'ını kullanabilir ve o kartı anında koleksiyonuna ekleyebilirsin!</p>
+        </div>
+
+    </div>
+  </div>
 </div>
   <script>
       document.addEventListener('DOMContentLoaded', () => {
@@ -4612,7 +4703,7 @@ async function openBox(index) {
     }
 }
 
-// MEVCUT listenForActivityFeed FONKSİYONUNU SİLİP BU YENİ VERSİYONU YAPIŞTIR
+// MEVCUT listenForActivityFeed FONKSİYONUNU SİLİP BUNU YAPIŞTIR
 function listenForActivityFeed() {
     const ref = db.ref('activityFeed').orderByChild('timestamp').limitToLast(15);
     const callback = (snapshot) => {
@@ -4629,59 +4720,24 @@ function listenForActivityFeed() {
             const timeAgo = formatTimeAgo(activity.timestamp);
             let icon = '💬';
 
-            // İSTEĞİNE GÖRE YENİ, DETAYLI MESAJ FORMATLARI
             switch (activity.type) {
-                case 'buyItem':
-                    icon = '🛒';
-                    const isKP = details.itemCost.toString().includes('KP');
-                    const costText = isKP ? details.itemCost : `${formatNumber(details.itemCost)} Puan`;
-                    const balance = isKP ? details.newKasaBalance : details.newBalance;
-                    const balanceUnit = isKP ? 'KP' : 'Puan';
-                    
-                    message = `<b class="text-yellow-300">${activity.username}</b>, mağazadan <b class="text-red-500">-${costText}</b> harcayarak <b class="text-green-400">${details.itemName}</b> aldı. (Mevcut ${balanceUnit}: ${formatNumber(balance)})`;
-                    break;
-                case 'spinWheel':
-                    icon = '🎡';
-                    const prizeText = details.type === 'pas' 
-                        ? 'Pas geçti' 
-                        : `<b class="text-green-400">${details.result}</b> kazandı`;
-                    message = `<b class="text-yellow-300">${activity.username}</b>, çarkı çevirerek ${prizeText}.`;
-                    break;
-                case 'openBox':
-                case 'iflas':
-                case 'multiplierFound':
-                case 'newItemFound':
-                    const multiplierText = details.multiplier > 1 
-                        ? `(<b>${details.multiplier}x</b> çarpan kullandı)` 
-                        : `(çarpan kullanmadı)`;
-                    let prizeHtml = '';
-
-                    if (activity.type === 'openBox') { // Puan
-                        icon = '📦';
-                        prizeHtml = `<b class="text-green-400">+${details.points} Puan</b>`;
-                    } else if (activity.type === 'iflas') { // Bomba
-                        icon = '📦';
-                        prizeHtml = details.shieldUsed 
-                            ? '<b class="text-blue-400">İflas etti ama kalkanı korudu</b>' 
-                            : '<b class="text-red-500">İflas etti</b>';
-                    } else if (activity.type === 'multiplierFound') { // Çarpan
-                        icon = '📦';
-                        prizeHtml = `<b class="text-yellow-400">${details.value}x Çarpan</b>`;
-                    } else if (activity.type === 'newItemFound') { // Diğer Eşyalar
-                        icon = '📦';
-                        if (details.itemType === 'wildcard') icon = '🃏';
-                        if (details.itemType === 'card_pack') icon = '🎴';
-                        prizeHtml = `<b class="text-cyan-400">${details.itemName}</b>`;
+                // ... (Diğer tüm case'ler aynı kalacak) ...
+                
+                // YENİ CASE: Koleksiyon tamamlama eylemi
+                case 'collectionCompleted':
+                    icon = '🏆';
+                    if (details.isFirst) {
+                        message = `<b class="text-yellow-300">${activity.username}</b>, koleksiyonu tamamlayan <b class="text-amber-400">İLK KİŞİ</b> oldu ve büyük ödülü kazandı!`;
+                    } else {
+                        message = `<b class="text-yellow-300">${activity.username}</b>, koleksiyonu tamamlayarak büyük ödülü kazandı!`;
                     }
-                    
-                    message = `<b class="text-yellow-300">${activity.username}</b>, ${details.boxId} numaralı kutudan ${prizeHtml} kazandı. ${multiplierText}`;
                     break;
+                // ... (Diğer tüm case'ler aynı kalacak) ...
+
                 default:
-                    // Diğer logları göstermemek için boş bırakabilir veya genel bir mesaj yazabiliriz.
-                    message = ``; // Şimdilik boş bırakalım, akış temiz kalsın.
+                    message = ``; 
             }
             
-            // Sadece message doluysa eylemi göster
             if (message) {
                 feed.innerHTML += `
                     <div class="activity-item">
@@ -11453,6 +11509,228 @@ async function revealCard(cardElement) {
                 loadCollectionAlbum();
             }
         }, 2000); // 2 saniye bekle ve kapat
+    }
+}
+
+// MEVCUT saveGrandPrize ve loadPrizeSettingsForAdmin FONKSİYONLARINI SİLİP BUNLARI YAPIŞTIR
+
+async function saveGrandPrize() {
+    if (!isAdmin) return;
+    const prizeData = {
+        points: parseInt(document.getElementById('prizePoints').value) || 0,
+        boxRights: parseInt(document.getElementById('prizeBoxRights').value) || 0,
+        wildcards: parseInt(document.getElementById('prizeWildcards').value) || 0,
+        wheelTickets: parseInt(document.getElementById('prizeWheelTickets').value) || 0,         // YENİ
+        clickCatchTickets: parseInt(document.getElementById('prizeClickCatchTickets').value) || 0, // YENİ
+        description: document.getElementById('prizeDescription').value.trim() || ''
+    };
+
+    await db.ref('gameConfig/collectionGrandPrize').set(prizeData);
+    displayMessage("Büyük Ödül başarıyla kaydedildi!");
+    loadGrandPrizeDisplay();
+}
+
+async function loadPrizeSettingsForAdmin() {
+    if (!isAdmin) return;
+    const prizeSnap = await db.ref('gameConfig/collectionGrandPrize').once('value');
+    const prizeData = prizeSnap.val() || {};
+    
+    document.getElementById('prizePoints').value = prizeData.points || '';
+    document.getElementById('prizeBoxRights').value = prizeData.boxRights || '';
+    document.getElementById('prizeWildcards').value = prizeData.wildcards || '';
+    document.getElementById('prizeWheelTickets').value = prizeData.wheelTickets || '';         // YENİ
+    document.getElementById('prizeClickCatchTickets').value = prizeData.clickCatchTickets || ''; // YENİ
+    document.getElementById('prizeDescription').value = prizeData.description || '';
+}
+
+// MEVCUT loadGrandPrizeDisplay FONKSİYONUNU SİLİP BUNU YAPIŞTIR
+async function loadGrandPrizeDisplay() {
+    const prizeRef = db.ref('gameConfig/collectionGrandPrize');
+    const prizeSnap = await prizeRef.once('value');
+    const prizeData = prizeSnap.val();
+    
+    const displayContainer = document.getElementById('grandPrizeDisplay');
+    const prizeList = document.getElementById('prizeList');
+
+    if (!prizeData || (prizeData.points === 0 && prizeData.boxRights === 0 && prizeData.wildcards === 0 && prizeData.wheelTickets === 0 && prizeData.clickCatchTickets === 0 && prizeData.description === '')) {
+        displayContainer.classList.add('hidden');
+        return;
+    }
+
+    prizeList.innerHTML = '';
+    if (prizeData.points > 0) prizeList.innerHTML += `<div class="text-white font-bold text-lg">💰 ${formatNumber(prizeData.points)} Puan</div>`;
+    if (prizeData.boxRights > 0) prizeList.innerHTML += `<div class="text-white font-bold text-lg">🎁 ${formatNumber(prizeData.boxRights)} Kutu Hakkı</div>`;
+    if (prizeData.wildcards > 0) prizeList.innerHTML += `<div class="text-white font-bold text-lg">🃏 ${formatNumber(prizeData.wildcards)} Joker Kart</div>`;
+    if (prizeData.wheelTickets > 0) prizeList.innerHTML += `<div class="text-white font-bold text-lg">🎡 ${formatNumber(prizeData.wheelTickets)} Çark Bileti</div>`; // YENİ
+    if (prizeData.clickCatchTickets > 0) prizeList.innerHTML += `<div class="text-white font-bold text-lg">🖱️ ${formatNumber(prizeData.clickCatchTickets)} T-Y Bileti</div>`; // YENİ
+    if (prizeData.description) prizeList.innerHTML += `<div class="text-white font-bold text-lg">🏆 ${prizeData.description}</div>`;
+    
+    displayContainer.classList.remove('hidden');
+}
+
+// =======================================================
+// BÜYÜK ÖDÜLÜ KONTROL ETME VE VERME FONKSİYONU
+// =======================================================
+async function checkAndGrantPrize(username) {
+    const userRef = db.ref(`users/${username}`);
+    const userSnap = await userRef.once('value');
+    const userData = userSnap.val();
+
+    // 1. Kontrol: Kullanıcı bu koleksiyonu daha önce tamamlamış mı?
+    if (userData.completedCollection === true) {
+        return; // Zaten tamamlamış, tekrar ödül alamaz.
+    }
+
+    const userCards = userData.cardCollection || {};
+    const ownedCardCount = Object.keys(userCards).length;
+
+    const masterListSnap = await db.ref('gameConfig/cardCollection').once('value');
+    const masterList = masterListSnap.val();
+    if (!masterList) return; // Koleksiyon yoksa çık
+    const totalCardCount = Object.keys(masterList).length;
+
+    // 2. Kontrol: Kullanıcının kart sayısı toplam kart sayısına eşit mi?
+    if (ownedCardCount >= totalCardCount) {
+        // Evet, koleksiyon tamamlandı! Şimdi ödülleri hazırla.
+        const prizeSnap = await db.ref('gameConfig/collectionGrandPrize').once('value');
+        const prizeData = prizeSnap.val();
+        if (!prizeData) return; // Ödül tanımlanmamışsa çık.
+
+        const updates = {};
+        // Standart ödülleri hazırla (her tamamlayan alacak)
+        updates.balance = (userData.balance || 0) + (prizeData.points || 0);
+        updates.kutuHakki = (userData.kutuHakki || 0) + (prizeData.boxRights || 0);
+        updates.wildcards = (userData.wildcards || 0) + (prizeData.wildcards || 0);
+        updates.carkBileti = (userData.carkBileti || 0) + (prizeData.wheelTickets || 0);
+        updates.clickCatchTickets = (userData.clickCatchTickets || 0) + (prizeData.clickCatchTickets || 0);
+        updates.completedCollection = true; // Kullanıcıyı "tamamladı" olarak işaretle.
+
+        // 3. Kontrol: Bu koleksiyonu tamamlayan İLK KİŞİ Mİ?
+        const winnerRef = db.ref('gameConfig/collectionWinner');
+        const winnerSnap = await winnerRef.once('value');
+        let isFirstWinner = false;
+        
+        if (winnerSnap.val() === null) {
+            // Henüz bir kazanan yok, bu demek oluyor ki bu kullanıcı İLK!
+            isFirstWinner = true;
+            await winnerRef.set(username); // Kazananı kaydet.
+            
+            // İstediğin özel başarı yazısını ekle
+            updates['achievements/collectionChampion'] = "🃏 1x Kart Koleksiyonu şampiyonu oldu. (İlk tamamlayan)";
+        }
+        
+        // Tüm ödülleri ve güncellemeleri kullanıcıya işle
+        await userRef.update(updates);
+
+        // Ekranda büyük bir tebrik mesajı göster
+        let prizeMessage = ``;
+        if (isFirstWinner) {
+            prizeMessage += `İNANILMAZ! Koleksiyonu tamamlayan İLK KİŞİ oldun ve büyük ödülleri kazandın:`;
+        } else {
+            prizeMessage += `TEBRİKLER! Tüm koleksiyonu tamamladın ve büyük ödülleri kazandın:`;
+        }
+        
+        let prizeParts = [];
+        if (prizeData.points > 0) prizeParts.push(` ${formatNumber(prizeData.points)} Puan`);
+        if (prizeData.boxRights > 0) prizeParts.push(` ${formatNumber(prizeData.boxRights)} Kutu Hakkı`);
+        if (prizeData.wildcards > 0) prizeParts.push(` ${formatNumber(prizeData.wildcards)} Joker Kart`);
+        if (prizeData.wheelTickets > 0) prizeParts.push(` ${formatNumber(prizeData.wheelTickets)} Çark Bileti`);
+        if (prizeData.clickCatchTickets > 0) prizeParts.push(` ${formatNumber(prizeData.clickCatchTickets)} T-Y Bileti`);
+        
+        prizeMessage += prizeParts.join(',');
+
+        if (isFirstWinner && prizeData.description) {
+            prizeMessage += ` ve "${prizeData.description}" unvanı!`;
+        } else {
+            prizeMessage += `!`;
+        }
+        
+        await customAlert(prizeMessage, 'success');
+
+        // Son Eylemler akışına duyur
+        logActivity('collectionCompleted', username, { 
+            prizeText: prizeData.description || 'Büyük Ödül',
+            isFirst: isFirstWinner 
+        });
+    }
+}
+
+function openCollectionInfoModal() {
+    document.getElementById('collectionInfoModal').style.display = 'flex';
+}
+
+function closeCollectionInfoModal() {
+    document.getElementById('collectionInfoModal').style.display = 'none';
+}
+
+// MEVCUT openUserProfile FONKSİYONUNU SİLİP BUNU YAPIŞTIR
+async function openUserProfile(username) {
+    if (!username) {
+        console.error("Profil açma hatası: Kullanıcı adı belirtilmedi.");
+        return;
+    }
+
+    const modal = document.getElementById('userProfileModal');
+    if (!modal) {
+        console.error("Profil açma hatası: userProfileModal elementi bulunamadı.");
+        return;
+    }
+
+    // Modal içeriğini temizle ve yükleniyor göstergesi ekle
+    document.getElementById('profileUsername').textContent = 'Yükleniyor...';
+    document.getElementById('profileAvatar').src = 'default_avatar.png'; // Varsayılan avatar
+    document.getElementById('profileBalance').textContent = '...';
+    document.getElementById('profileKutuHakki').textContent = '...';
+    document.getElementById('profileCarkBileti').textContent = '...';
+    document.getElementById('profileClickCatchTickets').textContent = '...';
+    document.getElementById('profileIflasShield').textContent = '...';
+    document.getElementById('profileKariyerPuani').textContent = '...';
+    document.getElementById('profileAchievementsSection').classList.add('hidden');
+    document.getElementById('profileAchievementsList').innerHTML = '';
+    
+    modal.style.display = 'flex'; // Önce modalı göster
+
+    const userSnap = await db.ref('users/' + username).once('value');
+    const user = userSnap.val();
+
+    if (!user) {
+        displayMessage(`${username} adlı kullanıcı bulunamadı.`);
+        closeUserProfileModal(); // Kullanıcı yoksa modalı kapat
+        return;
+    }
+
+    document.getElementById('profileUsername').textContent = username;
+    document.getElementById('profileAvatar').src = user.avatarUrl || 'default_avatar.png';
+    document.getElementById('profileBalance').textContent = formatNumber(user.balance || 0);
+    document.getElementById('profileKutuHakki').textContent = formatNumber(user.kutuHakki || 0);
+    document.getElementById('profileCarkBileti').textContent = formatNumber(user.carkBileti || 0);
+    document.getElementById('profileClickCatchTickets').textContent = formatNumber(user.clickCatchTickets || 0);
+    document.getElementById('profileIflasShield').textContent = formatNumber(user.iflasShieldUses || 0);
+    document.getElementById('profileKariyerPuani').textContent = formatNumber(user.kariyerPuani || 0);
+
+    // Başarımlar bölümünü yönet
+    const achievementsSection = document.getElementById('profileAchievementsSection');
+    const achievementsList = document.getElementById('profileAchievementsList');
+    if (user.achievements && Object.keys(user.achievements).length > 0) {
+        achievementsList.innerHTML = '';
+        for(const key in user.achievements) {
+            achievementsList.innerHTML += `<li>${user.achievements[key]}</li>`;
+        }
+        achievementsSection.classList.remove('hidden');
+    } else {
+        achievementsSection.classList.add('hidden');
+    }
+
+    // Admin kontrol butonlarını ayarla
+    const adminControls = document.getElementById('adminProfileControls');
+    if (isAdmin && adminControls) {
+        adminControls.classList.remove('hidden');
+        adminControls.innerHTML = `
+            <input type="number" id="adminPointsInput" class="box-setting-input" placeholder="Puan Ekle/Çıkar">
+            <button onclick="adjustUserPoints('${username}')" class="py-2 px-4 bg-green-600 rounded-lg">Uygula</button>
+            <input type="number" id="adminKasaPointsInput" class="box-setting-input" placeholder="Kasa Puanı Ekle/Çıkar">
+            <button onclick="adjustUserKasaPoints('${username}')" class="py-2 px-4 bg-blue-600 rounded-lg">Uygula</button>
+        `;
     }
 }
   // YENİ EKLENECEK KOD SONU
