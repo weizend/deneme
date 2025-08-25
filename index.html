@@ -5062,27 +5062,28 @@ function searchUsers() {
   }
   
   // YENİ VE GÜNCELLENMİŞ FONKSİYON
+// YENİ VE DÜZGÜN ÇALIŞAN KOD (Bununla değiştir)
 function showOpenedBoxInfo(box) {
     let contentDisplay = '';
 
     const itemNames = {
         wheelTicket: 'Şans Çarkı Bileti',
         clickCatchTicket: 'Tıkla-Yakala Bileti',
-        iflasShield: 'İflas Kalkanı'
+        iflasShield: 'İflas Kalkanı',
+        wildcard: 'Joker Kart',
+        card_pack: 'Kart Paketi'
     };
 
     if (box.content === 'points') {
         let multiplierText = ` (Çarpan kullanılmadı)`;
-        if (box.multiplierUsed && box.multiplierUsed > 1) {
-            multiplierText = ` (${box.basePoints} Puan x ${box.multiplierUsed} Çarpan)`;
+        // DEĞİŞİKLİK BURADA: 'multiplierUsed' yerine 'multiplierApplied' kullanıldı
+        if (box.multiplierApplied && box.multiplierApplied > 1) { 
+            multiplierText = ` (${box.basePoints} Puan x ${box.multiplierApplied} Çarpan)`;
         }
         contentDisplay = `<b>+${box.finalPoints} Puan</b><br><span class="text-sm text-gray-400">${multiplierText}</span>`;
     } 
     else if (box.content === 'iflas') {
         contentDisplay = box.shieldUsed ? 'İflas (Kalkanla Korundu)' : (box.lostPoints ? `İflas (-${box.lostPoints} Puan)` : 'İflas');
-    } 
-    else if (box.content === 'multiplier' && box.refundOccurred) {
-        contentDisplay = `<b>${box.value}x Çarpan</b><br><span class="text-sm text-blue-300">Bu kutu açılırken ${box.refundedMultiplier}x çarpan hakkı iade edildi.</span>`;
     } 
     else if (box.content === 'multiplier') {
         contentDisplay = `<b>${box.value}X Çarpan</b>`;
@@ -5090,13 +5091,14 @@ function showOpenedBoxInfo(box) {
     else if (box.content === 'surpriz') {
         contentDisplay = 'Sürpriz Kutu';
     } 
-    else if (itemNames[box.content]) { // Bilet veya Kalkan ise
+    else if (itemNames[box.content]) { // Diğer tüm eşyalar için (Bilet, Kalkan, Joker, Kart Paketi)
         const itemName = itemNames[box.content];
         const finalValue = box.finalValue || box.value || 1;
         contentDisplay = `<b>+${finalValue} Adet ${itemName}</b>`;
-        if (box.multiplierUsed && box.multiplierUsed > 1) {
+        // DEĞİŞİKLİK BURADA: 'multiplierUsed' yerine 'multiplierApplied' kullanıldı
+        if (box.multiplierApplied && box.multiplierApplied > 1) {
             const baseValue = box.baseValue || 1;
-            contentDisplay += `<br><span class="text-sm text-gray-400">(${baseValue} Adet x ${box.multiplierUsed} Çarpan)</span>`;
+            contentDisplay += `<br><span class="text-sm text-gray-400">(${baseValue} Adet x ${box.multiplierApplied} Çarpan)</span>`;
         }
     }
 
