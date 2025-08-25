@@ -11,6 +11,73 @@
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
 
 <style>
+/* MEVCUT .wildcard ve .card_pack STİLLERİNİ SİLİP BUNLARI YAPIŞTIR */
+
+/* Joker Kart içeren açılmış kutu stili */
+.box.opened.wildcard {
+    background: linear-gradient(145deg, #a855f7, #7e22ce); /* purple */
+    border-color: #d8b4fe;
+}
+.box.opened.wildcard .box-content::before {
+    content: '🃏'; /* GÜNCELLENDİ */
+    font-size: 2.5rem;
+}
+
+/* Kart Paketi içeren açılmış kutu stili */
+.box.opened.card_pack {
+    background: linear-gradient(145deg, #6d28d9, #4c1d95); /* purple */
+    border-color: #a78bfa;
+}
+.box.opened.card_pack .box-content::before {
+    content: '🎴'; /* GÜNCELLENDİ */
+    font-size: 2.5rem;
+}
+/* --- KART ÇEVİRME ANİMASYONU STİLLERİ --- */
+.card-flip-container {
+    perspective: 1000px;
+    width: 150px;
+    height: 210px;
+    cursor: pointer;
+}
+
+.card-flipper {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    transition: transform 0.6s;
+    transform-style: preserve-3d;
+}
+
+.card-flip-container.flipped .card-flipper {
+    transform: rotateY(180deg);
+}
+
+.card-front, .card-back {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    -webkit-backface-visibility: hidden;
+    backface-visibility: hidden;
+    border-radius: 12px;
+}
+
+/* Kapalı Kartın Görünümü (Arka Yüzü) */
+.card-front {
+    background: linear-gradient(145deg, #4f46e5, #7c3aed);
+    border: 4px solid #a78bfa;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 5rem;
+    font-weight: bold;
+    color: #c4b5fd;
+    text-shadow: 0 0 10px rgba(255,255,255,0.5);
+}
+
+/* Açılmış Kartın Görünümü (Ön Yüzü) */
+.card-back {
+    transform: rotateY(180deg);
+}
 /* --- TAKAS PAZARI STİLLERİ --- */
 .market-offer-card {
     display: flex;
@@ -2157,6 +2224,12 @@ body.modal-open .modal-content {
         <p id="tradeFeeInfo" class="text-center text-sm text-gray-400 mt-6"></p>
         <button onclick="submitTradeOffer()" class="w-full mt-2 py-3 bg-green-700 hover:bg-green-600 text-white font-bold rounded-lg shadow-md">TEKLİFİ PAZARA KOY</button>
     </div>
+</div>
+
+<div id="cardPackOpeningModal" class="modal-overlay fixed inset-0 bg-black bg-opacity-80 flex-col justify-center items-center z-[10003] hidden">
+    <h2 id="cardPackOpeningTitle" class="text-3xl font-bold text-yellow-300 mb-8 animate-pulse">Kart Paketlerini Aç!</h2>
+    <div id="cardPackOpeningArea" class="flex flex-wrap justify-center items-center gap-8">
+        </div>
 </div>
   <script>
       document.addEventListener('DOMContentLoaded', () => {
@@ -4308,7 +4381,7 @@ function handleRowTypeChange(selectElement) {
     }
 }
 
-// 3. Bir kutu açıldığında ne olacağını belirleyen ana fonksiyon (Joker Kart VE Kart Paketi dahil)
+// MEVCUT openBox FONKSİYONUNU SİLİP BUNU YAPIŞTIR
 async function openBox(index) {
     if (isGameLocked) {
         displayMessage("Kutular 3 saniye arayla açılıyor. Lütfen tekrar deneyin. Sorun devam ediyorsa, sorunları çöz menüsüne göz atabilirsin.");
@@ -4326,11 +4399,6 @@ async function openBox(index) {
 
     if (!user) { displayMessage("Kullanıcı verisi bulunamadı."); return; }
 
-    const isCurrentlyBlocked = user.blocked && user.blockedUntil && Date.now() < user.blockedUntil;
-    if (isCurrentlyBlocked) {
-        displayBlockedMessage(user.blockedUntil, currentUser);
-        return;
-    }
     if ((user.kutuHakki || 0) < BOX_RIGHTS_COST_PER_BOX) {
         displayMessage("Yetersiz kutu hakkı.");
         return;
@@ -4387,6 +4455,9 @@ async function openBox(index) {
         boxOpenInfo.multiplierUsed = finalMultiplier;
     }
     
+    let shouldLockGame = true;
+    let shouldDisplayMessage = true;
+
     if (box.content === 'multiplier') {
         updates['multiplierFoundCount'] = (user.multiplierFoundCount || 0) + 1;
         
@@ -4422,7 +4493,7 @@ async function openBox(index) {
         }
     }
     else {
-        if (useMultiplier && box.content !== 'surpriz') {
+        if (useMultiplier && box.content !== 'surpriz' && box.content !== 'card_pack') {
             if (originalMultiplierSource === 'box') {
                 updates['activeMultiplier'] = 1;
                 updates['multiplierSource'] = 'none';
@@ -4481,16 +4552,14 @@ async function openBox(index) {
         }
         else if (box.content === 'surpriz') {
             updates['surpriseBoxesOpened'] = (user.surpriseBoxesOpened || 0) + 1;
-            
-            const statsSnap = await db.ref(`gameStats/boxesOpenedByUsers/${currentUser}`).once('value');
-            const boxesOpenedThisRound = statsSnap.val() || 0;
+            shouldLockGame = false;
+            shouldDisplayMessage = false;
 
             const sessionRef = db.ref('surprise_box_session');
             await sessionRef.set({
                 active: true, user: currentUser, boxId: box.id, multiplier: finalMultiplier,
                 cards: shuffleArray([...cardValues]), selection: null, result: null,
-                timestamp: firebase.database.ServerValue.TIMESTAMP,
-                boxesOpenedThisRound: boxesOpenedThisRound
+                timestamp: firebase.database.ServerValue.TIMESTAMP
             });
             const snap = await sessionRef.once('value');
             await sessionRef.update({ expirationTimestamp: snap.val().timestamp + 60000 });
@@ -4503,22 +4572,16 @@ async function openBox(index) {
             logActivity('newItemFound', currentUser, { itemName: `+${itemsGained} Joker Kart`, itemType: 'wildcard', boxId: box.id, multiplier: finalMultiplier });
         }
         else if (box.content === 'card_pack') {
-            const masterCardsSnap = await db.ref('gameConfig/cardCollection').once('value');
-            const masterCards = masterCardsSnap.val();
+            const packsToOpen = (box.value || 1) * finalMultiplier;
+            message = `Tebrikler! Kutudan ${packsToOpen} adet Kart Paketi buldun!`;
+            logActivity('newItemFound', currentUser, { itemName: `${packsToOpen} Kart Paketi`, itemType: 'card_pack', boxId: box.id, multiplier: finalMultiplier });
             
-            if (masterCards) {
-                const allCardIds = Object.keys(masterCards);
-                const randomCardId = allCardIds[Math.floor(Math.random() * allCardIds.length)];
-                const wonCardInfo = masterCards[randomCardId];
-                
-                const cardRef = userRef.child(`cardCollection/${randomCardId}/count`);
-                updates[`cardCollection/${randomCardId}/count`] = (user.cardCollection?.[randomCardId]?.count || 0) + 1;
+            boxUpdate.value = `+${packsToOpen} Kart Paketi`;
+            boxOpenInfo.value = `+${packsToOpen} Kart Paketi`;
 
-                message = `Harika! Kutudan çıkan Kart Paketini açtın ve içinden <b class="text-cyan-400">'${wonCardInfo.cardName}'</b> kartı çıktı!`;
-                logActivity('newItemFound', currentUser, { itemName: `Kart: ${wonCardInfo.cardName}`, itemType: 'card_pack', boxId: box.id });
-            } else {
-                message = "Bir Kart Paketi buldun ama henüz oyuna hiç kart eklenmemiş!";
-            }
+            shouldLockGame = false; 
+            shouldDisplayMessage = true; 
+            startCardPackOpening(packsToOpen);
         }
         else {
             const itemsGained = box.value * finalMultiplier;
@@ -4539,12 +4602,138 @@ async function openBox(index) {
     await userRef.update(updates);
     await boxRef.update(boxUpdate);
 
-    if (box.content !== 'surpriz') {
+    if (shouldDisplayMessage) {
         await db.ref('lastOpenedBox').set(boxOpenInfo);
         displayMessage(message);
     }
     
-    await db.ref('gameLock').set(true);
+    if (shouldLockGame) {
+        await db.ref('gameLock').set(true);
+    }
+}
+
+// MEVCUT listenForActivityFeed FONKSİYONUNU SİLİP BU YENİ VERSİYONU YAPIŞTIR
+function listenForActivityFeed() {
+    const ref = db.ref('activityFeed').orderByChild('timestamp').limitToLast(15);
+    const callback = (snapshot) => {
+        const feed = document.getElementById('activityFeed');
+        feed.innerHTML = '';
+        const activities = [];
+        snapshot.forEach(child => {
+            activities.push({ key: child.key, ...child.val() });
+        });
+        
+        activities.reverse().forEach(activity => {
+            let message = '';
+            const details = activity.details || {};
+            const timeAgo = formatTimeAgo(activity.timestamp);
+            let icon = '💬';
+
+            // İSTEĞİNE GÖRE YENİ, DETAYLI MESAJ FORMATLARI
+            switch (activity.type) {
+                case 'buyItem':
+                    icon = '🛒';
+                    const isKP = details.itemCost.toString().includes('KP');
+                    const costText = isKP ? details.itemCost : `${formatNumber(details.itemCost)} Puan`;
+                    const balance = isKP ? details.newKasaBalance : details.newBalance;
+                    const balanceUnit = isKP ? 'KP' : 'Puan';
+                    
+                    message = `<b class="text-yellow-300">${activity.username}</b>, mağazadan <b class="text-red-500">-${costText}</b> harcayarak <b class="text-green-400">${details.itemName}</b> aldı. (Mevcut ${balanceUnit}: ${formatNumber(balance)})`;
+                    break;
+                case 'spinWheel':
+                    icon = '🎡';
+                    const prizeText = details.type === 'pas' 
+                        ? 'Pas geçti' 
+                        : `<b class="text-green-400">${details.result}</b> kazandı`;
+                    message = `<b class="text-yellow-300">${activity.username}</b>, çarkı çevirerek ${prizeText}.`;
+                    break;
+                case 'openBox':
+                case 'iflas':
+                case 'multiplierFound':
+                case 'newItemFound':
+                    const multiplierText = details.multiplier > 1 
+                        ? `(<b>${details.multiplier}x</b> çarpan kullandı)` 
+                        : `(çarpan kullanmadı)`;
+                    let prizeHtml = '';
+
+                    if (activity.type === 'openBox') { // Puan
+                        icon = '📦';
+                        prizeHtml = `<b class="text-green-400">+${details.points} Puan</b>`;
+                    } else if (activity.type === 'iflas') { // Bomba
+                        icon = '📦';
+                        prizeHtml = details.shieldUsed 
+                            ? '<b class="text-blue-400">İflas etti ama kalkanı korudu</b>' 
+                            : '<b class="text-red-500">İflas etti</b>';
+                    } else if (activity.type === 'multiplierFound') { // Çarpan
+                        icon = '📦';
+                        prizeHtml = `<b class="text-yellow-400">${details.value}x Çarpan</b>`;
+                    } else if (activity.type === 'newItemFound') { // Diğer Eşyalar
+                        icon = '📦';
+                        if (details.itemType === 'wildcard') icon = '🃏';
+                        if (details.itemType === 'card_pack') icon = '🎴';
+                        prizeHtml = `<b class="text-cyan-400">${details.itemName}</b>`;
+                    }
+                    
+                    message = `<b class="text-yellow-300">${activity.username}</b>, ${details.boxId} numaralı kutudan ${prizeHtml} kazandı. ${multiplierText}`;
+                    break;
+                default:
+                    // Diğer logları göstermemek için boş bırakabilir veya genel bir mesaj yazabiliriz.
+                    message = ``; // Şimdilik boş bırakalım, akış temiz kalsın.
+            }
+            
+            // Sadece message doluysa eylemi göster
+            if (message) {
+                feed.innerHTML += `
+                    <div class="activity-item">
+                        <div class="activity-icon">${icon}</div>
+                        <div class="activity-text">${message}</div>
+                        <div class="activity-time">${timeAgo}</div>
+                    </div>`;
+            }
+        });
+    };
+    activeListeners.activityFeed = { ref, event: 'value', callback };
+    ref.on('value', callback);
+}
+
+// MEVCUT listenForLastOpenedBox FONKSİYONUNU SİLİP BUNU YAPIŞTIR
+function listenForLastOpenedBox() {
+    const ref = db.ref('lastOpenedBox');
+    const callback = (snap) => {
+        const data = snap.val();
+        const infoDiv = document.getElementById('lastOpenedBoxInfo');
+        if (data && data.opener) {
+            let contentHtml = '';
+            if (data.content === 'points') {
+                contentHtml = `<span class="text-green-400 font-bold">${data.finalPoints} Puan</span> kazandı!`;
+            } else if (data.content === 'iflas') {
+                contentHtml = data.shieldUsed 
+                    ? `<span class="text-blue-400 font-bold">İflas etti ama Kalkanı onu korudu!</span>`
+                    : `<span class="text-red-500 font-bold">İflas etti!</span>`;
+            } else if (data.content === 'multiplier') {
+                contentHtml = `<span class="text-yellow-400 font-bold">${data.value}X Çarpan</span> buldu!`;
+            } 
+            else if (data.content === 'card_pack') {
+                 contentHtml = `<span class="text-purple-400 font-bold">${data.value}</span> buldu!`;
+            }
+            else {
+                const itemsGained = data.finalValue || data.value;
+                const itemNames = { wheelTicket: 'Çark Bileti', clickCatchTicket: 'T-Y Bileti', iflasShield: 'İflas Kalkanı', wildcard: 'Joker Kart' };
+                const friendlyName = itemNames[data.content] || 'bir eşya';
+                contentHtml = `<span class="text-cyan-400 font-bold">+${itemsGained} ${friendlyName}</span> kazandı!`;
+            }
+
+            infoDiv.innerHTML = `
+                <span class="font-bold text-yellow-300">${data.opener}</span> adlı oyuncu 
+                <span class="font-bold text-gray-300">${data.boxId}</span> numaralı kutudan 
+                ${contentHtml}
+            `;
+        } else {
+            infoDiv.textContent = 'Henüz kimse kutu açmadı.';
+        }
+    };
+    activeListeners.lastOpenedBox = { ref, event: 'value', callback };
+    ref.on('value', callback);
 }
 
   async function revealAll() { const confirmed = await customConfirm("Tüm kutuları açmak istiyor musunuz?"); if(confirmed) { boxes.forEach(b => { if (!b.opened) { b.opened = true; b.opener = 'Admin'; } }); db.ref('boxes').set(boxes).then(() => displayMessage("Tüm kutular başarıyla açıldı.")) } }
@@ -5133,7 +5322,7 @@ function renderStoreItems(items) {
     }
 }
 
-// =OTOMATİK-OLUŞTURULDU-
+// MEVCUT buyItem FONKSİYONUNU SİLİP BUNU YAPIŞTIR
 async function buyItem(itemId) {
     if (isAdmin) {
         displayMessage("Adminler alışveriş yapamaz.");
@@ -5256,11 +5445,22 @@ async function buyItem(itemId) {
     }
     const confirmed = await customConfirm(`${item.name} ürününü ${item.cost} puana almak istiyor musunuz?`);
     if (confirmed) {
+        const itemValue = parseInt(item.value) || 0;
+        
+        // Kart paketi satın alınıyorsa, kart açılış seremonisi başlar ve fonksiyon biter
+        if (item.type === 'card_pack') {
+            await userRef.update({ balance: user.balance - item.cost, totalSpentPoints: (user.totalSpentPoints || 0) + item.cost });
+            await itemRef.transaction(currentItem => { if (currentItem) { if (currentItem.stock !== undefined && currentItem.stock !== null) { currentItem.stock--; } currentItem.purchaseCount = (currentItem.purchaseCount || 0) + 1; } return currentItem; });
+            displayMessage(`${item.cost} puan harcandı. Kart paketlerin açılıyor...`);
+            startCardPackOpening(itemValue || 1);
+            return;
+        }
+
         logActivity('buyItem', currentUser, { itemName: item.name, itemCost: item.cost, itemType: item.type, itemValue: item.value || null, itemDuration: item.duration || null, newBalance: user.balance - item.cost });
         let updates = { balance: user.balance - item.cost, totalSpentPoints: (user.totalSpentPoints || 0) + item.cost, storePurchasesCount: (user.storePurchasesCount || 0) + 1 };
         let message = 'Satın alma başarılı!';
-        const itemValue = parseInt(item.value) || 0;
         const itemDuration = parseInt(item.duration) || 0;
+
         if (item.type === 'boxRights') {
             updates.kutuHakki = (user.kutuHakki || 0) + itemValue;
         } else if (item.type === 'wheelTicket') {
@@ -5277,30 +5477,12 @@ async function buyItem(itemId) {
         } else if (item.type === 'wildcard') {
             updates.wildcards = (user.wildcards || 0) + itemValue;
             message = `Tebrikler! Mağazadan ${itemValue} adet Joker Kart satın aldın!`;
-        } else if (item.type === 'card_pack') {
-            const masterCardsSnap = await db.ref('gameConfig/cardCollection').once('value');
-            const masterCards = masterCardsSnap.val();
-            if (masterCards) {
-                const allCardIds = Object.keys(masterCards);
-                let wonCardsNames = [];
-                for(let i = 0; i < itemValue; i++) {
-                    const randomCardId = allCardIds[Math.floor(Math.random() * allCardIds.length)];
-                    const wonCardInfo = masterCards[randomCardId];
-                    updates[`cardCollection/${randomCardId}/count`] = (user.cardCollection?.[randomCardId]?.count || 0) + 1;
-                    user.cardCollection = user.cardCollection || {};
-                    user.cardCollection[randomCardId] = user.cardCollection[randomCardId] || { count: 0 };
-                    user.cardCollection[randomCardId].count++;
-                    wonCardsNames.push(`<b class="text-cyan-400">'${wonCardInfo.cardName}'</b>`);
-                }
-                message = `Satın aldığın ${itemValue} adet Kart Paketini açtın! İçinden çıkanlar: ${wonCardsNames.join(', ')}`;
-            } else {
-                message = "Bir Kart Paketi satın aldın ama henüz oyuna hiç kart eklenmemiş!";
-            }
         } else if (item.type === 'avatar') {
             const newAvatar = { id: itemId, name: item.name, imageUrl: item.imageUrl };
             updates[`avatars/${itemId}`] = newAvatar;
             message = `'${item.name}' avatarı koleksiyonuna eklendi!`;
         }
+        
         let itemUpdates = {};
         if (item.stock !== undefined && item.stock !== null) {
             itemUpdates.stock = item.stock - 1;
@@ -7458,7 +7640,6 @@ function renderWheel() {
 }
 
 // MEVCUT spinWheel FONKSİYONUNU SİLİP BUNU YAPIŞTIR
-
 async function spinWheel() {
     if (isWheelSpinning) return;
     if (isAdmin) {
@@ -7528,6 +7709,7 @@ async function spinWheel() {
 
         let message = '';
         let updates = {};
+        let shouldLogActivity = true;
         
         switch(winningSegment.type) {
             case 'points':
@@ -7571,6 +7753,7 @@ async function spinWheel() {
                  await sessionRef.update({ expirationTimestamp: serverTimestamp + 60000 });
                  openCardSelectionModal(currentUser);
                  message = "Vay canına! Çarktan Sürpriz Kutu çıktı! Şimdi bir kart seç.";
+                 shouldLogActivity = false;
                  break;
             case 'wildcard':
                 message = `HARİKA! Çarktan en nadir ödül olan <b class="text-purple-400">+${winningSegment.value} JOKER KART</b> kazandın!`;
@@ -7578,25 +7761,9 @@ async function spinWheel() {
                 break;
             case 'card_pack':
                 const packsToOpen = winningSegment.value || 1;
-                message = `Tebrikler! Çarktan ${packsToOpen} adet Kart Paketi kazandın! İçinden çıkanlar: `;
-                const masterCardsSnap = await db.ref('gameConfig/cardCollection').once('value');
-                const masterCards = masterCardsSnap.val();
-                if (masterCards) {
-                    const allCardIds = Object.keys(masterCards);
-                    let wonCardsNames = [];
-                    for(let i = 0; i < packsToOpen; i++) {
-                        const randomCardId = allCardIds[Math.floor(Math.random() * allCardIds.length)];
-                        const wonCardInfo = masterCards[randomCardId];
-                        updates[`cardCollection/${randomCardId}/count`] = (currentUserData.cardCollection?.[randomCardId]?.count || 0) + 1;
-                        currentUserData.cardCollection = currentUserData.cardCollection || {};
-                        currentUserData.cardCollection[randomCardId] = currentUserData.cardCollection[randomCardId] || { count: 0 };
-                        currentUserData.cardCollection[randomCardId].count++;
-                        wonCardsNames.push(`<b class="text-cyan-400">'${wonCardInfo.cardName}'</b>`);
-                    }
-                    message += wonCardsNames.join(', ');
-                } else {
-                     message = "Bir Kart Paketi buldun ama henüz oyuna hiç kart eklenmemiş!";
-                }
+                message = `Tebrikler! Çarktan ${packsToOpen} adet Kart Paketi kazandın!`;
+                startCardPackOpening(packsToOpen);
+                shouldLogActivity = false;
                 break;
             case 'pas':
                 message = "Bu seferlik pas! Bir dahaki sefere daha şanslı olabilirsin.";
@@ -7634,7 +7801,7 @@ async function spinWheel() {
             logDetails.newBalance = updates.balance;
         }
         
-        if (winningSegment.type !== 'surpriseBox') {
+        if (shouldLogActivity) {
             logActivity('spinWheel', currentUser, logDetails);
         }
         
@@ -11197,6 +11364,96 @@ async function cancelTradeOffer(tradeId, asAdmin = false) {
     }
     // Listeyi yenile
     loadMarketOffers(asAdmin ? 'all' : 'mine');
+}
+
+// =======================================================
+// YENİ ÖZELLİK: KART PAKETİ AÇMA SEREMONİSİ
+// =======================================================
+let packsToReveal = [];
+let packsRevealedCount = 0;
+
+// Kart paketi açma işlemini başlatan ana fonksiyon
+async function startCardPackOpening(packCount) {
+    if (packCount <= 0) return;
+    
+    // Gerekli tüm kart verilerini önceden çek
+    const masterCardsSnap = await db.ref('gameConfig/cardCollection').once('value');
+    const masterCards = masterCardsSnap.val();
+    if (!masterCards) {
+        displayMessage("Kart paketi açılamadı: Oyunda hiç kart tanımlanmamış.");
+        return;
+    }
+    const allCardIds = Object.keys(masterCards);
+
+    packsToReveal = [];
+    packsRevealedCount = 0;
+
+    // Her paket için rastgele bir kart seç ve bir listeye ata
+    for (let i = 0; i < packCount; i++) {
+        const randomCardId = allCardIds[Math.floor(Math.random() * allCardIds.length)];
+        packsToReveal.push({
+            id: randomCardId,
+            ...masterCards[randomCardId]
+        });
+    }
+
+    // Modal pencereyi ve kapalı kartları hazırla
+    const modal = document.getElementById('cardPackOpeningModal');
+    const area = document.getElementById('cardPackOpeningArea');
+    const title = document.getElementById('cardPackOpeningTitle');
+    title.textContent = `${packCount} Kart Paketini Aç!`;
+    area.innerHTML = '';
+
+    packsToReveal.forEach((card, index) => {
+        const cardHtml = `
+            <div class="card-flip-container" data-index="${index}" onclick="revealCard(this)">
+                <div class="card-flipper">
+                    <div class="card-front">?</div>
+                    <div class="card-back">
+                        </div>
+                </div>
+            </div>
+        `;
+        area.innerHTML += cardHtml;
+    });
+
+    modal.style.display = 'flex';
+}
+
+// Bir karta tıklandığında onu çevirir ve ödülü verir
+async function revealCard(cardElement) {
+    if (cardElement.classList.contains('flipped')) return; // Zaten çevrilmişse bir şey yapma
+
+    cardElement.classList.add('flipped');
+    const index = cardElement.getAttribute('data-index');
+    const wonCard = packsToReveal[index];
+
+    // Kartın arka yüzünü gerçek kart bilgileriyle doldur
+    const cardBack = cardElement.querySelector('.card-back');
+    const cardItemHtml = `
+        <div class="card-item rarity-${wonCard.rarity || 'normal'}" style="width:100%; height:100%;">
+            <img class="card-image" src="${wonCard.imageUrl}">
+            <h4 class="card-name">${wonCard.cardName}</h4>
+        </div>
+    `;
+    cardBack.innerHTML = cardItemHtml;
+
+    // Ödülü veritabanına işle
+    const userCardRef = db.ref(`users/${currentUser}/cardCollection/${wonCard.id}/count`);
+    await userCardRef.transaction(currentCount => (currentCount || 0) + 1);
+
+    packsRevealedCount++;
+    
+    // Tüm kartlar açıldıysa, pencereyi kapat
+    if (packsRevealedCount >= packsToReveal.length) {
+        setTimeout(() => {
+            document.getElementById('cardPackOpeningModal').style.display = 'none';
+            // Albümün güncel halini göster
+            if (currentActiveSection === 'cardCollection') {
+                loadCollectionAlbum();
+            }
+        }, 2000); // 2 saniye bekle ve kapat
+    }
 }
   // YENİ EKLENECEK KOD SONU
     
