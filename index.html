@@ -715,84 +715,75 @@ body.modal-open .modal-content {
         </div>
 </div>
     
-    <div id="cardCollectionContent" class="w-full hidden">
-        
-        <div class="flex justify-between items-center mb-6 px-4">
+    <div class="flex justify-between items-center mb-2 px-4">
     <div class="flex items-center gap-4">
         <div>
             <div class="flex items-center gap-3">
                 <h3 class="text-yellow-400 text-3xl font-bold">Kart Koleksiyonu Albümü</h3>
                 <button onclick="openCollectionInfoModal()" class="info-button" title="Oyun Hakkında Bilgi">?</button>
             </div>
-            <div id="wildcardIndicator" class="hidden items-center gap-2 mt-2">
-                <img src="https://i.hizliresim.com/sbq5dG.png" alt="Joker Kart" class="w-8 h-8">
-                <span class="text-white font-bold text-lg">x <span id="wildcardCount">0</span></span>
+            <div id="seasonCountdownContainer_cards" class="text-sm font-normal mt-2 text-yellow-300 hidden flex justify-center items-center gap-2">
+                <span>Sezonun Bitmesine: <span id="seasonCountdown_cards" class="font-bold text-white tracking-wider"></span></span>
             </div>
         </div>
     </div>
     <div class="text-right">
-        <p class="text-lg text-white">Tamamlanan: <span id="collectionProgress" class="font-bold text-green-400">0/20</span></p>
+        <p class="text-lg text-white">Tamamlanan: <span id="collectionProgress" class="font-bold text-green-400">0/0</span></p>
         <button onclick="openTradeMarket()" class="mt-2 py-2 px-4 bg-purple-600 hover:bg-purple-500 rounded-lg text-sm font-bold">Takas Pazarı</button>
     </div>
 </div>
-            
-            <div id="adminCardCollectionControls" class="hidden my-4 p-6 bg-gray-800 rounded-lg border border-purple-500 max-w-5xl mx-auto">
-    <h4 class="text-lg font-bold text-purple-300 mb-4 text-center border-b border-gray-700 pb-2">KOLEKSİYON & PAZAR YÖNETİM PANELİ</h4>
+
+<div id="collectionStatusOverlay" class="hidden w-full text-center bg-gray-800 border-2 border-yellow-500 rounded-xl p-12 my-6 max-w-4xl mx-auto">
+    <h3 id="collectionStatusTitle" class="text-3xl font-bold text-yellow-300 mb-4"></h3>
+    <p id="collectionStatusMessage" class="text-lg text-gray-300"></p>
+</div>
+
+    <div id="grandPrizeDisplay" class="my-6 p-6 bg-gradient-to-br from-yellow-500/80 to-amber-600/80 rounded-xl shadow-lg border-2 border-yellow-300 max-w-4xl mx-auto text-center hidden">
+        <h3 class="text-2xl font-bold text-white mb-4 text-shadow-lg">Tüm Kartları Topla ve Bu Ödülleri Kazan!</h3>
+        <div id="prizeList" class="flex flex-wrap justify-center items-center gap-x-8 gap-y-4">
+            </div>
+    </div>
     
-    <div class="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
+    <div id="adminCardCollectionControls" class="hidden my-4 p-6 bg-gray-800 rounded-lg border border-purple-500 max-w-4xl mx-auto">
+    <h4 class="text-lg font-bold text-purple-300 mb-4 text-center border-b border-gray-700 pb-2">KOLEKSİYON SEZON YÖNETİMİ</h4>
+    <p class="text-center text-gray-400 text-sm mb-4">Mevcut Sezon Durumu: <b id="collectionStatusText" class="text-white">Bilinmiyor</b></p>
+    
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div class="space-y-3">
+            <button onclick="openCardCreatorModal()" class="w-full py-3 bg-gray-700 hover:bg-gray-600 text-white font-bold rounded-lg">Kart Ekle/Düzenle</button>
+            <button onclick="openGrandPrizeSettings()" class="w-full py-3 bg-gray-700 hover:bg-gray-600 text-white font-bold rounded-lg">Büyük Ödülü Ayarla</button>
+        </div>
         
         <div class="space-y-3">
-            <h5 class="font-semibold text-yellow-300">Kart Yönetimi</h5>
-            <button onclick="openCardCreatorModal()" class="w-full py-2 px-6 bg-green-700 hover:bg-green-600 text-white font-bold rounded-lg">
-                Yeni Kart Ekle
-            </button>
-            <button onclick="resetWholeCollection()" class="w-full py-2 px-6 bg-red-800 hover:bg-red-700 text-white font-bold rounded-lg">
-                Tüm Koleksiyonu Sıfırla
-            </button>
+            <button onclick="toggleCollectionPause()" id="pauseResumeButton" class="w-full py-3 bg-orange-600 hover:bg-orange-500 text-white font-bold rounded-lg">Sezonu Duraklat</button>
+            <button onclick="openTradeHistoryModal()" class="w-full py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-lg">Takas Geçmişi</button>
         </div>
 
         <div class="space-y-3">
-            <h5 class="font-semibold text-yellow-300">Pazar Ayarları</h5>
-            <div>
-                <label for="tradeFeeInput" class="block text-sm text-gray-400 mb-1">Takas İşlem Ücreti (Puan):</label>
-                <input type="number" id="tradeFeeInput" placeholder="Örn: 50" class="box-setting-input">
-            </div>
-            <div class="flex gap-4">
-                 <button onclick="saveMarketSettings()" class="w-full py-2 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-lg">
-                    Ayarları Kaydet
-                </button>
-                <button id="marketLockBtn" onclick="toggleMarketLock()" class="w-full py-2 bg-gray-600 hover:bg-gray-500 text-white font-bold rounded-lg">
-                    Pazarı Kilitle
-                </button>
-            </div>
-            <button onclick="openTradeHistoryModal()" class="w-full mt-2 py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-lg">
-                Takas Geçmişini Görüntüle
+            <button onclick="startNewCollection()" class="w-full h-full py-3 bg-green-700 hover:bg-green-600 text-white font-bold rounded-lg text-lg animate-pulse">
+                💥 YENİ SEZONU BAŞLAT 💥
             </button>
         </div>
-
+    </div>
+</div>
+        <div class="mt-6 pt-4 border-t border-gray-700">
+            <h5 class="font-semibold text-yellow-300 text-center mb-3">Büyük Ödül Ayarları</h5>
+            <div class="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-6 gap-4">
+                <input type="number" id="prizePoints" placeholder="Puan" class="box-setting-input">
+                <input type="number" id="prizeBoxRights" placeholder="Kutu Hakkı" class="box-setting-input">
+                <input type="number" id="prizeWildcards" placeholder="Joker Kart" class="box-setting-input">
+                <input type="number" id="prizeWheelTickets" placeholder="Çark Bileti" class="box-setting-input">
+                <input type="number" id="prizeClickCatchTickets" placeholder="T-Y Bileti" class="box-setting-input">
+                <input type="text" id="prizeDescription" placeholder="Diğer Ödül" class="box-setting-input">
+            </div>
+            <button onclick="saveGrandPrize()" class="w-full mt-3 py-2 bg-yellow-600 hover:bg-yellow-500 text-black font-bold rounded-lg">Büyük Ödülü Kaydet</button>
+        </div>
     </div>
     
-    <div class="mt-6 pt-4 border-t border-gray-700">
-        <h5 class="font-semibold text-yellow-300 text-center mb-3">Büyük Ödül Ayarları</h5>
-        <div class="grid grid-cols-1 sm:grid-cols-3 lg:grid-cols-6 gap-4">
-             <input type="number" id="prizePoints" placeholder="Puan" class="box-setting-input">
-             <input type="number" id="prizeBoxRights" placeholder="Kutu Hakkı" class="box-setting-input">
-             <input type="number" id="prizeWildcards" placeholder="Joker Kart" class="box-setting-input">
-             <input type="number" id="prizeWheelTickets" placeholder="Çark Bileti" class="box-setting-input">
-             <input type="number" id="prizeClickCatchTickets" placeholder="T-Y Bileti" class="box-setting-input">
-             <input type="text" id="prizeDescription" placeholder="Diğer Ödül" class="box-setting-input">
+    <div id="cardCollectionAlbum" class="grid grid-cols-[repeat(auto-fill,minmax(150px,1fr))] gap-6 p-4 bg-gray-900/50 rounded-xl border border-gray-700">
         </div>
-        <button onclick="saveGrandPrize()" class="w-full mt-3 py-2 bg-yellow-600 hover:bg-yellow-500 text-black font-bold rounded-lg">
-            Büyük Ödülü Kaydet
-        </button>
-    </div>
-
+    
 </div>
-            
-            <div id="cardCollectionAlbum" class="grid grid-cols-[repeat(auto-fill,minmax(150px,1fr))] gap-6 p-4 bg-gray-900/50 rounded-xl border border-gray-700">
-                </div>
-            
-        </div>
     <div id="mainContentArea" class="w-full">
     <div id="gameContent" class="w-full">
       <div class="text-lg text-gray-300 mb-6 text-center flex flex-wrap justify-center items-center gap-4">
@@ -6128,6 +6119,7 @@ async function openPublicUserDetailModal(username) {
     activeUserProfileListener = { ref: userRef, callback: userProfileCallback };
 }
 
+// BU EKSİK FONKSİYONU SCRIPT BLOĞUNUN İÇİNE EKLE
 async function openUserManagementModal(username) {
     if (activeBlockedUserTimers[username]) {
         clearInterval(activeBlockedUserTimers[username]);
@@ -6141,7 +6133,10 @@ async function openUserManagementModal(username) {
     ]);
 
     const userData = userSnap.val();
-    if (!userData) { displayMessage("Kullanıcı bulunamadı."); return; }
+    if (!userData) {
+        displayMessage("Kullanıcı bulunamadı.");
+        return;
+    }
 
     const leaders = await calculateAllLeaders(allUsersSnap.val());
 
@@ -6163,12 +6158,12 @@ async function openUserManagementModal(username) {
     const avatarUrl = userData.selectedAvatar ? userData.selectedAvatar.url : defaultAvatarUrl;
     document.getElementById('managedUserAvatar').src = avatarUrl;
     document.getElementById('managedUserName').textContent = username;
-    document.getElementById('managedUserBalance').textContent = userData.balance || 0;
-    document.getElementById('managedUserHighestBalance').textContent = userData.kariyerPuani || 0;
-    document.getElementById('managedUserBoxRight').textContent = userData.kutuHakki || 0;
-    document.getElementById('managedUserWheelTickets').textContent = userData.carkBileti || 0;
-    document.getElementById('managedUserClickCatchTickets').textContent = userData.clickCatchTickets || 0;
-    document.getElementById('managedUserIflasShield').textContent = userData.iflasShieldUses || 0;
+    document.getElementById('managedUserBalance').textContent = formatNumber(userData.balance || 0);
+    document.getElementById('managedUserHighestBalance').textContent = formatNumber(userData.kariyerPuani || 0);
+    document.getElementById('managedUserBoxRight').textContent = formatNumber(userData.kutuHakki || 0);
+    document.getElementById('managedUserWheelTickets').textContent = formatNumber(userData.carkBileti || 0);
+    document.getElementById('managedUserClickCatchTickets').textContent = formatNumber(userData.clickCatchTickets || 0);
+    document.getElementById('managedUserIflasShield').textContent = formatNumber(userData.iflasShieldUses || 0);
     let multiplierText = 'Yok';
     if (userData.multiplierSource === 'store') multiplierText = `${userData.activeMultiplier}x (Mağaza - ${userData.multiplierRemainingUses} kullanım)`;
     else if (userData.multiplierSource === 'box') multiplierText = `${userData.activeMultiplier}x (Kutu - Otomatik)`;
@@ -6179,20 +6174,20 @@ async function openUserManagementModal(username) {
     const countdownContainer = document.getElementById('managedUserBlockedCountdownContainer');
     const countdownEl = document.getElementById('managedUserBlockedCountdown');
     document.getElementById('managedUserBlockedStatus').textContent = isCurrentlyBlocked ? 'Engelli' : 'Aktif';
-    if(isCurrentlyBlocked) {
+    if (isCurrentlyBlocked) {
         countdownContainer.classList.remove('hidden');
         const updateCountdown = () => {
-              const timeLeft = userData.blockedUntil - Date.now();
-              if (timeLeft <= 0) {
-                  clearInterval(activeBlockedUserTimers[username]);
-                  delete activeBlockedUserTimers[username];
-                  countdownEl.textContent = 'Engel Kalktı';
-              } else {
-                  const minutes = Math.floor(timeLeft / 60000);
-                  const seconds = Math.floor((timeLeft % 60000) / 1000).toString().padStart(2, '0');
-                  countdownEl.textContent = `${minutes}:${seconds}`;
-              }
-          };
+            const timeLeft = userData.blockedUntil - Date.now();
+            if (timeLeft <= 0) {
+                clearInterval(activeBlockedUserTimers[username]);
+                delete activeBlockedUserTimers[username];
+                countdownEl.textContent = 'Engel Kalktı';
+            } else {
+                const minutes = Math.floor(timeLeft / 60000);
+                const seconds = Math.floor((timeLeft % 60000) / 1000).toString().padStart(2, '0');
+                countdownEl.textContent = `${minutes}:${seconds}`;
+            }
+        };
         updateCountdown();
         activeBlockedUserTimers[username] = setInterval(updateCountdown, 1000);
     } else {
@@ -6202,18 +6197,18 @@ async function openUserManagementModal(username) {
     toggleBtn.textContent = isCurrentlyBlocked ? 'Engeli Kaldır' : 'Engelle';
     toggleBtn.onclick = () => toggleBlockUser(username, userData.blocked, userData.blockedUntil);
 
-    document.getElementById('managedUserBoxesOpened').textContent = userData.boxesOpenedCount || 0;
-    document.getElementById('managedUserSurpriseBoxes').textContent = userData.surpriseBoxesOpened || 0;
-    document.getElementById('managedUserBombCount').textContent = userData.iflasCount || 0;
-    document.getElementById('managedUserMultiplierFoundCount').textContent = userData.multiplierFoundCount || 0;
-    document.getElementById('managedUserTotalSpent').textContent = userData.totalSpentPoints || 0;
-    document.getElementById('managedUserShieldUsedCount').textContent = userData.iflasShieldUsedCount || 0;
-    document.getElementById('managedUserClickCatchScore').textContent = userData.clickCatchHighestScore || 0;
-    document.getElementById('managedUserWheelSpins').textContent = userData.wheelSpinsCount || 0;
+    document.getElementById('managedUserBoxesOpened').textContent = formatNumber(userData.boxesOpenedCount || 0);
+    document.getElementById('managedUserSurpriseBoxes').textContent = formatNumber(userData.surpriseBoxesOpened || 0);
+    document.getElementById('managedUserBombCount').textContent = formatNumber(userData.iflasCount || 0);
+    document.getElementById('managedUserMultiplierFoundCount').textContent = formatNumber(userData.multiplierFoundCount || 0);
+    document.getElementById('managedUserTotalSpent').textContent = formatNumber(userData.totalSpentPoints || 0);
+    document.getElementById('managedUserShieldUsedCount').textContent = formatNumber(userData.iflasShieldUsedCount || 0);
+    document.getElementById('managedUserClickCatchScore').textContent = formatNumber(userData.clickCatchHighestScore || 0);
+    document.getElementById('managedUserWheelSpins').textContent = formatNumber(userData.wheelSpinsCount || 0);
 
     ['managedBadgeWheel', 'managedBadgeBox', 'managedBadgeSurprise', 'managedBadgeBomb', 'managedBadgeMultiplier', 'managedBadgeStore', 'managedBadgeShield', 'managedBadgeClickCatch'].forEach(id => {
         const el = document.getElementById(id);
-        if(el) el.innerHTML = '';
+        if (el) el.innerHTML = '';
     });
 
     if (userLeaderStatus.isBoxLeader) document.getElementById('managedBadgeBox').innerHTML = '📦';
@@ -6234,7 +6229,7 @@ async function openUserManagementModal(username) {
             historyList.innerHTML = '<div class="text-center text-gray-400">Bu kullanıcının satın alma geçmişi yok.</div>';
             return;
         }
-        const sorted = Object.values(history).sort((a,b) => b.timestamp - a.timestamp);
+        const sorted = Object.values(history).sort((a, b) => b.timestamp - a.timestamp);
         sorted.forEach(r => {
             html += `<div class="p-2 bg-gray-900 mb-2 rounded text-sm"><b>Ürün:</b> ${r.itemName}, <b>Maliyet:</b> ${r.itemCost} Puan, <b>Tarih:</b> ${new Date(r.timestamp).toLocaleString()}</div>`;
         });
@@ -10495,6 +10490,8 @@ let seasonCountdownInterval = null;
 function listenForSeasonCountdown() {
     const countdownContainer = document.getElementById('seasonCountdownContainer');
     const countdownEl = document.getElementById('seasonCountdown');
+    const countdownContainerCards = document.getElementById('seasonCountdownContainer_cards'); // Kartlar için yeni container
+    const countdownElCards = document.getElementById('seasonCountdown_cards'); // Kartlar için yeni sayaç
     const ref = db.ref('gameConfig/seasonEndDate');
 
     const callback = snap => {
@@ -10506,10 +10503,12 @@ function listenForSeasonCountdown() {
 
         if (!endDateTimestamp || endDateTimestamp < getSyncedTime()) {
             countdownContainer.classList.add('hidden');
+            if (countdownContainerCards) countdownContainerCards.classList.add('hidden');
             return;
         }
 
         countdownContainer.classList.remove('hidden');
+        if (countdownContainerCards) countdownContainerCards.classList.remove('hidden');
 
         const updateTimer = () => {
             const now = getSyncedTime();
@@ -10517,13 +10516,10 @@ function listenForSeasonCountdown() {
 
             if (timeLeft <= 0) {
                 countdownEl.textContent = "SEZON BİTTİ!";
+                if (countdownElCards) countdownElCards.textContent = "SEZON BİTTİ!";
                 clearInterval(seasonCountdownInterval);
                 
-                // YENİ EKLENEN KOD: Süre dolduğunda sıfırlamayı otomatik tetikle
-                // Bu kodun çalışması için adminin online olmasına gerek YOKTUR.
-                // Herhangi bir kullanıcı online ise tetiklenir.
                 executeSeasonReset();
-                // --- KOD SONU ---
                 
                 return;
             }
@@ -10533,7 +10529,9 @@ function listenForSeasonCountdown() {
             const minutes = Math.floor((timeLeft % (1000 * 60 * 60)) / (1000 * 60));
             const seconds = Math.floor((timeLeft % (1000 * 60)) / 1000);
 
-            countdownEl.textContent = `${days} Gün ${hours} Saat ${minutes} Dakika ${seconds} Saniye`;
+            const timeString = `${days} Gün ${hours} Saat ${minutes} Dakika ${seconds} Saniye`;
+            countdownEl.textContent = timeString;
+            if (countdownElCards) countdownElCards.textContent = timeString;
         };
 
         updateTimer();
@@ -10611,11 +10609,8 @@ async function saveAutomaticResetSettings() {
     closeSeasonManagementModal();
 }
 
-// MEVCUT executeSeasonReset FONKSİYONUNU SİLİP BU YENİ VERSİYONU YAPIŞTIR
-
 async function executeSeasonReset(isManual = false) {
     if (!isAdmin) {
-        // Otomatik tetiklendiğinde, işlemin zaten yapılıp yapılmadığını kontrol et
         const resetStatus = await db.ref('gameConfig/seasonResetStatus').once('value');
         if (resetStatus.val() === 'in_progress' || resetStatus.val() === 'completed') {
             console.log("Sezon sıfırlama zaten başka bir tarayıcı tarafından başlatılmış veya tamamlanmış.");
@@ -10641,7 +10636,7 @@ async function executeSeasonReset(isManual = false) {
     const settingsSnap = await db.ref('gameConfig/seasonSettings').once('value');
     const seasonSettings = settingsSnap.val();
 
-    const puanLeader = leaders.highEverBalanceUser; // Kariyer Puanı Lideri
+    const puanLeader = leaders.highEverBalanceUser;
     const rozetLeader = (await getTopBadgeHolder(allUsersData, leaders)).username;
     
     const puanAvatar = seasonSettings?.rewards?.puanLeaderAvatarUrl;
@@ -10653,11 +10648,10 @@ async function executeSeasonReset(isManual = false) {
 
     const updates = {};
     
-    // YENİ EKLENEN KART SİSTEMİ SIFIRLAMA KODLARI
     updates['/gameConfig/cardCollection'] = null;
     updates['/gameConfig/collectionWinner'] = null;
     updates['/gameConfig/collectionGrandPrize'] = null;
-    // KOD SONU
+    updates['/gameConfig/cardCollectionStatus'] = 'inactive';
 
     for (const username in allUsersData) {
         if (username.toLowerCase() === 'weizendtv' || !allUsersData[username].approved) continue;
@@ -10665,13 +10659,11 @@ async function executeSeasonReset(isManual = false) {
         const userPath = `users/${username}`;
         const userData = allUsersData[username];
 
-        // A) HERKESE HEDİYE PAKETİNİ VER
         updates[`${userPath}/kutuHakki`] = (userData.kutuHakki || 0) + giftPackage.kutuHakki;
         updates[`${userPath}/carkBileti`] = (userData.carkBileti || 0) + giftPackage.carkBileti;
         updates[`${userPath}/clickCatchTickets`] = (userData.clickCatchTickets || 0) + giftPackage.clickCatchTickets;
         updates[`${userPath}/iflasShieldUses`] = (userData.iflasShieldUses || 0) + giftPackage.iflasShieldUses;
 
-        // B) ŞAMPİYONLARA ÖZEL ÖDÜLLERİ VER
         if (username === puanLeader) {
             if(puanAvatar) updates[`${userPath}/selectedAvatar`] = { id: `sezon_odul_puan_${Date.now()}`, url: puanAvatar };
             updates[`${userPath}/puanChampionshipsWon`] = (userData.puanChampionshipsWon || 0) + 1;
@@ -10681,7 +10673,6 @@ async function executeSeasonReset(isManual = false) {
             updates[`${userPath}/rozetChampionshipsWon`] = (userData.rozetChampionshipsWon || 0) + 1;
         }
         
-        // C) HERKESİN PUAN, İSTATİSTİK VE KART VERİLERİNİ SIFIRLA
         updates[`${userPath}/balance`] = 0;
         updates[`${userPath}/kariyerPuani`] = 0;
         updates[`${userPath}/totalSpentPoints`] = 0;
@@ -10692,18 +10683,15 @@ async function executeSeasonReset(isManual = false) {
         updates[`${userPath}/iflasShieldUsedCount`] = 0;
         updates[`${userPath}/wheelSpinsCount`] = 0;
         updates[`${userPath}/clickCatchHighestScore`] = 0;
-        // YENİ EKLENEN KART SIFIRLAMA KODLARI
         updates[`${userPath}/cardCollection`] = null;
         updates[`${userPath}/completedCollection`] = null;
         updates[`${userPath}/achievements/collectionChampion`] = null;
-        // KOD SONU
     }
 
-    // D) GENEL OYUN VERİLERİNİ SIFIRLA
     updates['purchaseHistory'] = null;
     updates['clickCatchWeeklyScores'] = null;
     updates['gameStats'] = null;
-    // Mağaza ürünlerinin satın alınma sayılarını sıfırla
+
     const storeItemsSnap = await db.ref('storeItems').once('value');
     if (storeItemsSnap.exists()) {
         storeItemsSnap.forEach(itemSnap => {
@@ -10711,7 +10699,6 @@ async function executeSeasonReset(isManual = false) {
         });
     }
 
-    // E) Kalıcı Sezon Sonu Duyurusunu Oluştur
     const seasonName = new Date().toLocaleString('tr-TR', { month: 'long', year: 'numeric' }) + " Sezonu";
     updates[`seasonAnnouncements/${Date.now()}`] = {
         title: `${seasonName} Sona Erdi!`,
@@ -10719,11 +10706,9 @@ async function executeSeasonReset(isManual = false) {
         timestamp: firebase.database.ServerValue.TIMESTAMP
     };
 
-    // F) Tüm işlemleri tek seferde uygula ve oyunu yeniden kur
     await db.ref().update(updates);
     await createBoxes();
     
-    // G) Sezon ayarlarını temizle
     await db.ref('gameConfig/seasonSettings').remove();
     await db.ref('gameConfig/seasonEndDate').remove();
     if (isAdmin) {
@@ -10961,19 +10946,71 @@ async function kasaTransferEt() {
     document.getElementById('kasaTransferInput').value = '';
 }
 
-// MEVCUT loadCollectionAlbum FONKSİYONUNU SİLİP BUNU YAPIŞTIR
 async function loadCollectionAlbum() {
     const albumContainer = document.getElementById('cardCollectionAlbum');
+    const statusOverlay = document.getElementById('collectionStatusOverlay');
+    const statusTitle = document.getElementById('collectionStatusTitle');
+    const statusMessage = document.getElementById('collectionStatusMessage');
+    const grandPrizeDisplay = document.getElementById('grandPrizeDisplay');
+
+    const statusRef = db.ref('gameConfig/cardCollectionStatus');
+    const statusSnap = await statusRef.once('value');
+    const currentStatus = statusSnap.val() || 'inactive';
+
+    if(isAdmin) {
+        const statusTextEl = document.getElementById('collectionStatusText');
+        const pauseBtn = document.getElementById('pauseResumeButton');
+        if (statusTextEl && pauseBtn) {
+            statusTextEl.textContent = {
+                'active': 'Aktif',
+                'paused': 'Duraklatıldı (Bakımda)',
+                'inactive': 'Bitti / Başlamadı'
+            }[currentStatus];
+            
+            if(currentStatus === 'paused') {
+                pauseBtn.textContent = 'Sezonu Devam Ettir';
+                pauseBtn.classList.replace('bg-orange-600', 'bg-green-600');
+                pauseBtn.classList.replace('hover:bg-orange-500', 'hover:bg-green-500');
+            } else {
+                pauseBtn.textContent = 'Sezonu Duraklat';
+                pauseBtn.classList.replace('bg-green-600', 'bg-orange-600');
+                pauseBtn.classList.replace('hover:bg-green-500', 'hover:bg-orange-500');
+            }
+        }
+    }
+
+    if (!isAdmin) {
+        if (currentStatus === 'paused') {
+            statusTitle.textContent = '🔧 Bakımdayız 🔧';
+            statusMessage.textContent = 'Kart Koleksiyonu sezonu şu anda kısa bir bakımda. Lütfen daha sonra tekrar kontrol et.';
+            statusOverlay.classList.remove('hidden');
+            albumContainer.classList.add('hidden');
+            grandPrizeDisplay.classList.add('hidden');
+            return;
+        }
+        if (currentStatus === 'inactive') {
+            statusTitle.textContent = '🚀 Yeni Sezon Çok Yakında! 🚀';
+            statusMessage.textContent = 'Mevcut sezon sona erdi. Adminin yeni kartları hazırlayıp yeni sezonu başlatmasını bekle. Takipte kal!';
+            statusOverlay.classList.remove('hidden');
+            albumContainer.classList.add('hidden');
+            grandPrizeDisplay.classList.add('hidden');
+            return;
+        }
+    }
+    
+    statusOverlay.classList.add('hidden');
+    albumContainer.classList.remove('hidden');
+    
     const progressSpan = document.getElementById('collectionProgress');
     const wildcardIndicator = document.getElementById('wildcardIndicator');
     const wildcardCountSpan = document.getElementById('wildcardCount');
-    albumContainer.innerHTML = '<p class="text-center text-gray-400 col-span-full">Koleksiyon yükleniyor...</p>';
+    albumContainer.innerHTML = '<p class="text-center col-span-full text-gray-400">Koleksiyon yükleniyor...</p>';
 
     const masterListRef = db.ref('gameConfig/cardCollection');
     const masterListSnap = await masterListRef.orderByChild('order').once('value');
     
     if (!masterListSnap.exists()) {
-        albumContainer.innerHTML = '<p class="text-center text-gray-400 col-span-full">Yönetici henüz bir koleksiyon oluşturmadı.</p>';
+        albumContainer.innerHTML = '<p class="text-center col-span-full text-gray-400">Yönetici henüz bir koleksiyon oluşturmadı.</p>';
         if(progressSpan) progressSpan.textContent = '0/0';
         return;
     }
@@ -11187,22 +11224,27 @@ async function deleteCard(cardId) {
     }
 }
 
-// Tüm koleksiyonu ve kullanıcıların ilerlemesini sıfırlar
 async function resetWholeCollection() {
     if (!isAdmin) return;
-    const confirmed = await customConfirm("!!! ÇOK TEHLİKELİ İŞLEM !!!\nTüm kart tanımlarını, tüm kullanıcıların topladığı kartları ve ilerlemelerini kalıcı olarak silmek istediğinize emin misiniz? Bu işlem geri alınamaz!");
+    // ... (confirm mesajı aynı kalabilir) ...
+    const confirmed = await customConfirm("...");
     if (confirmed) {
-        // 1. Ana kart listesini sil
-        await db.ref('gameConfig/cardCollection').remove();
-
-        // 2. Tüm kullanıcıların koleksiyonlarını sil
-        const usersSnap = await db.ref('users').once('value');
         const updates = {};
-        usersSnap.forEach(userSnap => {
-            updates[`/users/${userSnap.key}/cardCollection`] = null;
-        });
-        await db.ref().update(updates);
+        updates['/gameConfig/cardCollection'] = null;
+        updates['/gameConfig/collectionWinner'] = null;
+        updates['/gameConfig/collectionGrandPrize'] = null;
+        updates['/gameConfig/cardCollectionStatus'] = 'inactive'; // YENİ: Durumu 'bitti' olarak ayarla
 
+        const usersSnap = await db.ref('users').once('value');
+        if (usersSnap.exists()) {
+            usersSnap.forEach(userSnap => {
+                const username = userSnap.key;
+                updates[`/users/${username}/cardCollection`] = null;
+                updates[`/users/${username}/completedCollection`] = null;
+                updates[`/users/${username}/achievements/collectionChampion`] = null;
+            });
+        }
+        await db.ref().update(updates);
         displayMessage("Tüm koleksiyon ve kullanıcı ilerlemeleri başarıyla sıfırlandı.");
         loadCollectionAlbum();
     }
@@ -11883,14 +11925,50 @@ async function openUserProfile(username) {
     }
 }
 
-// BU EKSİK FONKSİYONU SCRIPT BLOĞUNUN İÇİNE EKLE
-
-function formatNumber(num) {
-    if (num === undefined || num === null) return '0';
-    return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+// =======================================================
+// YENİ ÖZELLİK: KOLEKSİYON SEZON YÖNETİMİ
+// =======================================================
+// Admin panelindeki "Büyük Ödül Ayarları"nı ayrı bir modalda açar
+function openGrandPrizeSettings() {
+    // Bu fonksiyon, mevcut adminCardCollectionControls içindeki inputları alıp
+    // yeni bir modal'a taşıyabilir veya direkt burada bırakabiliriz.
+    // Şimdilik basitlik adına, adminin sayfayı aşağı kaydırarak ayar yapacağını varsayalım.
+    // Eğer ayrı bir pencere istersen onu da yaparız.
+    document.getElementById('prizePoints').focus(); // İlgili alana odaklan
 }
-  // YENİ EKLENECEK KOD SONU
+
+// Yeni sezonu başlatır. Önce her şeyi sıfırlar, sonra sezonu "aktif" yapar.
+async function startNewCollection() {
+    if(!isAdmin) return;
+    const confirmed = await customConfirm("Bu işlem mevcut tüm kartları, kullanıcı ilerlemelerini ve şampiyonlukları SİLEREK yepyeni bir sezon başlatacaktır. Emin misiniz?");
+    if(!confirmed) return;
     
+    // resetWholeCollection fonksiyonu artık her şeyi siliyor ve durumu 'inactive' yapıyor.
+    await resetWholeCollection();
+    
+    // Şimdi yeni sezonu 'aktif' olarak işaretleyelim.
+    await db.ref('gameConfig/cardCollectionStatus').set('active');
+    displayMessage("YENİ KOLEKSİYON SEZONU BAŞLATILDI!");
+}
+
+// Sezonu duraklatır veya devam ettirir.
+async function toggleCollectionPause() {
+    if(!isAdmin) return;
+    const statusRef = db.ref('gameConfig/cardCollectionStatus');
+    const statusSnap = await statusRef.once('value');
+    const currentStatus = statusSnap.val();
+
+    if(currentStatus === 'active') {
+        await statusRef.set('paused');
+        displayMessage("Koleksiyon sezonu duraklatıldı. Oyuncular bakım bilgilendirmesi görecek.");
+    } else if (currentStatus === 'paused') {
+        await statusRef.set('active');
+        displayMessage("Koleksiyon sezonu devam ettiriliyor.");
+    } else {
+        displayMessage("Sezon sadece 'aktif' veya 'duraklatılmış' durumdayken bu işlem yapılabilir.");
+    }
+}
+
 </script>
 </body>
 </html>
