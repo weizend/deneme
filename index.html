@@ -5912,7 +5912,7 @@ async function reorderStoreItem(itemId, newIndex) {
                         <img src="${r.imageUrl || 'https://via.placeholder.com/150'}" alt="${r.itemName}" class="w-12 h-12 rounded-md mr-4 object-cover">
                         <div>
                             <p class="font-bold text-lg text-yellow-300">${r.itemName}</p>
-                            <p class="text-sm text-gray-300">Maliyet: ${r.itemCost} Puan</p>
+                            <p class="text-sm text-gray-300">Maliyet: ${r.itemCost} ${r.purchaseType === 'kasaPuani' ? 'KP' : 'Puan'}</p>
                         </div>
                     </div>
                     <div class="flex items-center w-full sm:w-auto">
@@ -11504,14 +11504,10 @@ async function acceptTradeOffer(tradeId) {
     if (!confirmed) return;
 
     // 4. Adım: Güvenli Takas İşlemi (Firebase Transaction)
-    // Bu işlem, birden fazla kullanıcının verisini aynı anda güvenli bir şekilde günceller.
-    // İki kişi aynı anda butona bassa bile sadece biri işlemi yapabilir.
     try {
         await db.ref().transaction(data => {
-            // Transaction içinde en güncel verileri tekrar kontrol et
             if (!data.trades || !data.trades[tradeId]) {
-                // Teklif artık mevcut değilse işlemi iptal et
-                return; 
+                return; // Teklif artık mevcut değilse işlemi iptal et
             }
 
             const currentTrade = data.trades[tradeId];
@@ -11780,23 +11776,47 @@ async function cancelTradeOffer(tradeId, asAdmin = false) {
     if (!tradeId) return;
     
     const tradeRef = db.ref(`trades/${tradeId}`);
+    const tradeSnap = await tradeRef.once('value');
+    const tradeData = tradeSnap.val();
+
+    // Eğer teklif zaten silinmişse bir şey yapma
+    if (!tradeData) {
+        displayMessage("Bu teklif zaten pazarda mevcut değil.");
+        loadMarketOffers(asAdmin ? 'all' : 'mine');
+        return;
+    }
     
     if (asAdmin) {
-        if (!isAdmin) return;
+        if (!isAdmin) return; // Sadece adminler bu işlemi yapabilir
         const confirmed = await customConfirm("Bu teklifi admin olarak zorla iptal etmek istediğinize emin misiniz?");
         if (!confirmed) return;
+        
+        // Adminin iptal ettiğini logla
+        const masterCardsSnap = await db.ref('gameConfig/cardCollection').once('value');
+        const masterCards = masterCardsSnap.val();
+        const offeredCardName = masterCards[tradeData.offeredCardId]?.cardName || 'Bilinmeyen Kart';
+        
+        logActivity('tradeOfferCancelledByAdmin', 'WeizendTv', { 
+            offerer: tradeData.offerer, 
+            offeredCardName: offeredCardName 
+        });
+        
         await tradeRef.remove();
         displayMessage("Teklif admin tarafından iptal edildi.");
-        loadMarketOffers('all');
+        loadMarketOffers('all'); // Admin olduğu için tüm pazar listesini yenile
+
     } else {
-        const tradeSnap = await tradeRef.once('value');
-        const tradeData = tradeSnap.val();
-        if (tradeData && tradeData.offerer === currentUser) {
-            const confirmed = await customConfirm("Bu takas teklifini pazardan kaldırmak istediğinize emin misiniz?");
+        // Kullanıcının kendi teklifini iptal etmesi
+        if (tradeData.offerer === currentUser) {
+            const confirmed = await customConfirm("Bu takas teklifini pazardan kaldırmak istediğinizden emin misiniz?");
             if (!confirmed) return;
+            
+            // Not: Kart oluşturulduğunda envanterden düşülmediği için, iptal edildiğinde de iadeye gerek yoktur.
+            // Sadece teklifin kendisi silinir.
+            
             await tradeRef.remove();
             displayMessage("Teklifin pazardan kaldırıldı.");
-            loadMarketOffers('mine');
+            loadMarketOffers('mine'); // Kullanıcının kendi teklif listesini yenile
         }
     }
 }
