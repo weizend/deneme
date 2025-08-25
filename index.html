@@ -1659,53 +1659,66 @@ body.modal-open .modal-content {
 </div>
 
 <div id="helpModal" class="modal-overlay fixed inset-0 bg-black bg-opacity-70 flex justify-center items-center z-50 hidden">
-  <div class="modal-content bg-gray-800 p-8 rounded-xl shadow-2xl border border-red-700 w-11/12 max-w-2xl text-left relative max-h-[90vh] overflow-y-auto scrollable-list">
-      <button class="modal-close-button" onclick="closeHelpModal()">&times;</button>
-      <h3 class="text-yellow-400 text-3xl font-bold mb-6 text-center">Yardım / Nasıl Oynanır?</h3>
-      <div class="space-y-6 text-gray-300">
-    <div>
-        <h4 class="text-xl font-bold text-yellow-300 mb-2">Oyunun Amacı</h4>
-        <p>Oyunun temel amacı, kutuları açarak puan toplamak, çeşitli mini oyunlarda en yüksek skoru elde etmek ve diğer kullanıcılarla liderlik sıralamasında yarışmaktır. Kazandığınız puanlarla mağazadan çeşitli oyun içi avantajlar ve kozmetik ürünler satın alabilirsiniz.</p>
-    </div>
+  <div class="modal-content bg-gray-800 rounded-xl shadow-2xl border border-red-700 w-11/12 max-w-2xl text-left relative max-h-[90vh] flex flex-col">
+      
+      <div class="flex-shrink-0 p-6 border-b border-gray-700 relative">
+          <h3 class="text-yellow-400 text-3xl font-bold text-center">Yardım / Nasıl Oynanır?</h3>
+          <button class="modal-close-button" onclick="closeHelpModal()">&times;</button>
+      </div>
+      <div class="overflow-y-auto scrollable-list p-6">
+        <div class="space-y-6 text-gray-300">
+            <div>
+                <h4 class="text-xl font-bold text-yellow-300 mb-2">Oyunun Amacı</h4>
+                <p>Oyunun temel amacı puan toplayarak liderlik sıralamasında yükselmek ve mini oyunlarda en yüksek skorları elde etmektir. Asıl büyük hedef ise, sezon boyunca tüm koleksiyon kartlarını toplayarak albümü tamamlamak ve büyük ödülleri kazanmaktır.</p>
+            </div>
 
-    <div>
-        <h4 class="text-xl font-bold text-yellow-300 mb-2">Nasıl Kutu Hakkı Kazanırım?</h4>
-        <p>Oyuna başlarken size hediye olarak kutu hakkı verilir. Daha fazla hak kazanmak için:</p>
-        <ul class="list-disc list-inside mt-2 space-y-1 pl-4">
-            <li>Mağazadan puanlarınızla "Kutu Hakkı" satın alabilirsiniz.</li>
-            <li>Günlük ödüllerinizi toplayarak kazanabilirsiniz.</li>
-            <li>Şans Çarkı'nı çevirerek elde edebilirsiniz.</li>
-            <li>Tıkla-Yakala oyununda özel hedefleri yakalayarak kazanabilirsiniz.</li>
-        </ul>
-    </div>
+            <div>
+                <h4 class="text-xl font-bold text-yellow-300 mb-2">Nasıl Kutu Hakkı Kazanırım?</h4>
+                <ul class="list-disc list-inside mt-2 space-y-1 pl-4">
+                    <li>Mağazadan puanlarınızla "Kutu Hakkı" satın alabilirsiniz.</li>
+                    <li>Günlük ödüllerinizi toplayarak kazanabilirsiniz.</li>
+                    <li>Şans Çarkı'nı çevirerek elde edebilirsiniz.</li>
+                    <li>Tıkla-Yakala oyununda özel hedefleri yakalayarak kazanabilirsiniz.</li>
+                </ul>
+            </div>
+            
+            <div>
+                <h4 class="text-xl font-bold text-yellow-300 mb-2">Kutu İçerikleri</h4>
+                <ul class="list-disc list-inside mt-2 space-y-1 pl-4">
+                    <li><strong class="text-green-400">Puan:</strong> Farklı miktarlarda puanlar içerir.</li>
+                    <li><strong class="text-red-500">İflas (Bomba 💣):</strong> Tüm puanlarınızı sıfırlar!</li>
+                    <li><strong class="text-yellow-400">Sürpriz Kutu 🎉:</strong> İçinden yüksek puanlar çıkan özel bir kart seçme oyunu başlatır.</li>
+                    <li><strong class="text-blue-400">Çarpan ✖️:</strong> Bir sonraki açacağınız kutudan çıkacak puanı veya eşyayı katlar.</li>
+                    <li><strong class="text-purple-400">Kart Paketi 🎴:</strong> Koleksiyon albümün için rastgele bir kart çıkarır.</li>
+                    <li><strong class="text-fuchsia-400">Joker Kart 🃏:</strong> Çok nadirdir! Koleksiyonundaki herhangi bir eksik kartın yerine kullanabilirsin.</li>
+                    <li><strong class="text-cyan-400">İflas Kalkanı 🛡️:</strong> Bomba bulduğunda puanlarını korur. Tek kullanımlıktır.</li>
+                    <li><strong class="text-pink-400">Çark Bileti 🎟️:</strong> Şans Çarkı'nı çevirmen için bilet verir.</li>
+                    <li><strong class="text-orange-400">Tıkla-Yakala Bileti 🎫:</strong> Tıkla-Yakala oyununu oynaman için bilet verir.</li>
+                </ul>
+            </div>
+            
+            <div>
+                <h4 class="text-xl font-bold text-yellow-300 mb-2">Kart Koleksiyonu ve Takas</h4>
+                <p>Oyunun en önemli parçasıdır. Amacın, tüm kartları toplayarak koleksiyonu tamamlamaktır. Albümü tamamlayan herkes büyük ödülü kazanır!</p>
+                <ul class="list-disc list-inside mt-2 space-y-1 pl-4">
+                    <li><b>Kart Paketleri (🎴):</b> Kartlar doğrudan bulunmaz. Kutu, Çark ve Mağaza'dan "Kart Paketi" elde edersin. Her paket sana rastgele bir kart verir.</li>
+                    <li><b>Fazla Kartlar ve Takas Pazarı (⇄):</b> Aynı karttan birden fazla kazandığında, bu kartları "Takas Pazarı"nda diğer oyuncularla takas ederek eksiklerini tamamlayabilirsin.</li>
+                    <li><b>Joker Kart (🃏):</b> Bu özel kart, koleksiyonundaki herhangi bir eksik kartın yerine geçer. Eksik bir kartın üzerine tıklayarak Joker'i kullanabilirsin.</li>
+                </ul>
+            </div>
 
-    <div>
-        <h4 class="text-xl font-bold text-yellow-300 mb-2">Kutu İçerikleri</h4>
-        <ul class="list-disc list-inside mt-2 space-y-1 pl-4">
-            <li><strong class="text-green-400">Puan:</strong> Farklı miktarlarda puanlar içerir.</li>
-            <li><strong class="text-red-500">İflas (Bomba 💣):</strong> Tüm puanlarınızı sıfırlar! Dikkatli olun.</li>
-            <li><strong class="text-yellow-400">Sürpriz Kutu  🎉:</strong> İçinden yüksek puanlar çıkan özel bir kart seçme oyunu başlatır. Sürpriz kutu bulunduğunda mevcut turdaki tüm kutular sıfırlanır ve karıştırılır.</li>
-            <li><strong class="text-blue-400">Çarpan ✖️:</strong> Bir sonraki açacağınız kutudan çıkacak puanı veya eşyayı katlar. <b class="text-yellow-200">ÖNEMLİ:</b> Eğer mağazadan alınmış aktif bir çarpanla kutu açar ve kutudan yeni bir çarpan bulursanız, mağaza çarpanınız size iade edilir ve yeni bulduğunuz çarpan aktif olur!</li>
-            <li><strong class="text-cyan-400">İflas Kalkanı 🛡️:</strong> Bomba bulduğunuzda puanlarınızı korur. Tek kullanımlıktır.</li>
-            <li><strong class="text-pink-400">Çark Bileti 🎟️:</strong> Şans Çarkı'nı çevirmeniz için bilet verir.</li>
-            <li><strong class="text-orange-400">Tıkla-Yakala Bileti 🎫:</strong> Tıkla-Yakala oyununu oynamanız için bilet verir.</li>
-        </ul>
-    </div>
-    
-     <div>
-        <h4 class="text-xl font-bold text-yellow-300 mb-2">Mini Oyunlar</h4>
-        <ul class="list-disc list-inside mt-2 space-y-1 pl-4">
-            <li><strong class="text-yellow-200">Şans Çarkı:</strong> Biletinizle çarkı çevirerek puan, kutu hakkı, kalkan, yeni biletler ve hatta sürpriz kutu gibi çeşitli ödüller kazanabilirsiniz.</li>
-            <li><strong class="text-orange-300">Tıkla-Yakala:</strong> Biletinizle oyuna girerek ekrandaki hedefleri yakalayıp puan ve özel ödüller (kutu hakkı, bilet vb.) toplayabilirsiniz. Lobi oyunlarında ise diğer oyuncularla yarışarak büyük ödülü kazanmaya çalışırsınız.</li>
-        </ul>
-    </div>
-
-    <div>
-        <h4 class="text-xl font-bold text-yellow-300 mb-2">Mağaza</h4>
-        <p>Oyun içinde kazandığınız puanları kullanarak mağazadan Kutu Hakkı, Çark Bileti, Tıkla-Yakala Bileti, İflas Kalkanı ve özel avatar gibi birçok faydalı ürün satın alabilirsiniz.</p>
-    </div>
-</div>
-  </div>
+            <div>
+                <h4 class="text-xl font-bold text-yellow-300 mb-2">Puan Kasası ve Sezon Sıfırlaması</h4>
+                <p>Oyun, rekabeti taze tutmak için aylık sezonlara ayrılmıştır. Sezon sonunda birçok ilerleme sıfırlanır.</p>
+                <ul class="list-disc list-inside mt-2 space-y-1 pl-4">
+                    <li><strong class="text-purple-400">Puan Kasası:</strong> Sezon sıfırlamasından etkilenmeyen puanlarını buraya aktarabilirsin. Kasa puanları sadece "Özel Ürün Mağazası"nda geçerlidir ve liderlik sıralamasını etkilemez.</li>
+                    <li><strong class="text-red-400">Neler Sıfırlanır?:</strong> Sezon sonunda tüm oyuncuların Puanları, Kariyer Puanları, istatistikleri ve Kart Koleksiyonu ilerlemeleri sıfırlanır.</li>
+                    <li><strong class="text-green-400">Neler Kalır?:</strong> Kasa Puanların, satın aldığın avatarlar ve kazandığın Şampiyonluk unvanları kalıcıdır.</li>
+                </ul>
+            </div>
+        </div>
+      </div>
+      </div>
 </div>
 
 <div id="avatarSelectionModal" class="modal-overlay fixed inset-0 bg-black bg-opacity-70 flex justify-center items-center z-50 hidden">
@@ -10444,21 +10457,20 @@ function closeWheelLegendModal() {
     document.getElementById('wheelLegendModal').style.display = 'none';
 }
 
-// BU İKİ FONKSİYONU KOPYALAYIP MEVCUT OLANLARLA DEĞİŞTİR
-
 function openWheelLegendModal() {
     document.body.classList.add('modal-open');
     const contentDiv = document.getElementById('wheelLegendContent');
     contentDiv.innerHTML = '';
 
-    // En son konuştuğumuz, güncel ve doğru ödül listesi
+    // Yeni eklenen Joker Kart ve Kart Paketi ile güncellenmiş ve sıraya konulmuş liste
     const legendData = [
         { icon: '🎉', title: 'SÜRPRİZ KUTU', description: 'En nadir ödül! İçinden çok yüksek puanlar çıkan özel bir kart seçme oyunu başlatır.' },
+        { icon: '🃏', title: 'JOKER KART', description: 'Çok nadir! Kart koleksiyonundaki herhangi bir eksik kartı tamamlamanı sağlar.' },
         { icon: '✖️', title: '5X ÇARPAN', description: 'Çok nadir! Bir sonraki kutu açılışında kazanacağın puanı veya eşyayı 5\'e katlar.' },
         { icon: '🎂', title: '1000 PUAN', description: 'Nadir bulunan, yüksek miktarda bir puan ödülüdür.' },
         { icon: '🎁', title: '3 KUTU HAKKI', description: 'Değerli bir ödül! Kutu oyununda kullanmak üzere tam 3 adet açma hakkı verir.' },
+        { icon: '🎴', title: 'KART PAKETİ', description: 'İçinden koleksiyonun için rastgele bir kart çıkarır.' },
         { icon: '🍐', title: '250 PUAN', description: 'Hesabına anında 250 Puan eklenir.' },
-        { icon: '📦', title: '1 KUTU HAKKI', description: 'Ana oyundaki kutu oyununda kullanabileceğin 1 adet açma hakkı kazandırır.' },
         { icon: '🛡️', title: 'İFLAS KALKANI', description: 'Kutu oyununda "Bomba" bulursan puanlarını bir defaya mahsus korur.' },
         { icon: '🎟️', title: '+1 T-Y BİLETİ', description: 'Tıkla-Yakala mini oyununa bir giriş hakkı kazandırır.' },
         { icon: '🎡', title: 'BEDAVA ÇEVİRME', description: 'Şansını tekrar denemen için +1 Çark Bileti kazandırır.' },
