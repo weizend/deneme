@@ -11,6 +11,21 @@
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
 
 <style>
+/* --- KAPALI KART STİLİ (SEÇİM EKRANI İÇİN) --- */
+.card:not(.flipped) {
+    background: linear-gradient(135deg, #4B5563, #1F2937); /* Modern, koyu bir arkaplan */
+    border: 2px solid #6B7280;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+    cursor: pointer;
+    transition: transform 0.3s ease, box-shadow 0.3s ease; /* Yumuşak geçişler */
+}
+
+/* Kartın üzerine gelindiğinde */
+.card:not(.flipped):hover {
+    transform: scale(1.05); /* Hafifçe büyüt */
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4); /* Gölgeyi belirginleştir */
+    border-color: #9CA3AF;
+}
 /* --- YENİ KART ETİKETİ STİLİ --- */
 .new-card-badge {
     position: absolute;
