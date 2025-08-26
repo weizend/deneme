@@ -11,22 +11,16 @@
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
 
 <style>
-/* --- KAPALI KART STİLİ (SEÇİM EKRANI İÇİN) --- */
-.card:not(.flipped) {
-    background: linear-gradient(135deg, #4B5563, #1F2937); /* Modern, koyu bir arkaplan */
-    border: 2px solid #6B7280;
-    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
-    cursor: pointer;
-    transition: transform 0.3s ease, box-shadow 0.3s ease; /* Yumuşak geçişler */
+/* --- SÜRPRİZ KART SEÇİM STİLİ --- */
+#cardSelectionModal .card {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
 }
 
-/* Kartın üzerine gelindiğinde */
-.card:not(.flipped):hover {
-    transform: scale(1.05); /* Hafifçe büyüt */
-    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.4); /* Gölgeyi belirginleştir */
-    border-color: #9CA3AF;
+#cardSelectionModal .card:hover {
+    transform: translateY(-10px) scale(1.05);
+    box-shadow: 0 15px 30px rgba(255, 50, 50, 0.4);
 }
-/* --- YENİ KART ETİKETİ STİLİ --- */
+
 .new-card-badge {
     position: absolute;
     top: -10px;
@@ -5144,10 +5138,10 @@ function showOpenedBoxInfo(box) {
     sessionRef.once('value').then(snap => {
         const sessionData = snap.val();
         if (!sessionData || !sessionData.active || sessionData.result) return;
-        
+
         sessionData.cards.forEach((cardValue, index) => {
             const cardDiv = document.createElement('div');
-            // --- DEĞİŞİKLİK BURADA: bg-gray-700 kaldırıldı ---
+            // --- DEĞİŞİKLİK BURADA: 'bg-gray-700' class'ı kaldırıldı. ---
             cardDiv.className = 'card border-2 border-red-700 rounded-xl w-28 h-40 flex flex-col items-center justify-center font-bold text-2xl cursor-pointer relative';
             cardDiv.dataset.value = cardValue;
             cardDiv.dataset.index = index;
@@ -6550,6 +6544,44 @@ async function manualResetAfterSurprise() {
     closeSolveProblemsModal();
 }
 
+// =======================================================
+// MANUEL PANEL SİLME FONKSİYONLARI (GÜNCELLENMİŞ VERSİYON)
+// =======================================================
+
+/**
+ * "Son Sürpriz Kutusu Bulundu" panelini temizlemeden önce onay sorar.
+ */
+async function silSonSurprizKutusu() {
+    if (!isAdmin) {
+        console.error("Bu işlem sadece adminler tarafından yapılabilir.");
+        return;
+    }
+    // --- YENİ EKLENEN KOD BAŞLANGICI ---
+    const confirmed = await customConfirm("Son Sürpriz Kutu panelini silmek istediğinden emin misin?");
+    if (confirmed) {
+    // --- YENİ EKLENEN KOD SONU ---
+        await db.ref('gameStats/lastSurpriseInfo').remove();
+        console.log("Başarılı: 'Son Sürpriz Kutusu' paneli temizlendi.");
+    } // --- if bloğunu kapatan parantez
+}
+
+/**
+ * "Çarktan Son Çıkan Sürpriz" panelini temizlemeden önce onay sorar.
+ */
+async function silSonCarkSurprizi() {
+    if (!isAdmin) {
+        console.error("Bu işlem sadece adminler tarafından yapılabilir.");
+        return;
+    }
+    // --- YENİ EKLENEN KOD BAŞLANGICI ---
+    const confirmed = await customConfirm("Son Çark Sürprizi panelini silmek istediğinden emin misin?");
+    if (confirmed) {
+    // --- YENİ EKLENEN KOD SONU ---
+        await db.ref('gameStats/lastWheelSurpriseInfo').remove();
+        console.log("Başarılı: 'Çarktan Son Çıkan Sürpriz' paneli temizlendi.");
+    } // --- if bloğunu kapatan parantez
+}
+
 function listenForLastSurpriseFinderPanel() {
     const ref = db.ref('gameStats/lastSurpriseInfo');
     const panel = document.getElementById('lastSurpriseFinderPanel');
@@ -6561,27 +6593,35 @@ function listenForLastSurpriseFinderPanel() {
             return;
         }
 
+        // --- DEĞİŞİKLİK BURADA BAŞLIYOR ---
+        let adminDeleteButton = '';
+        if (isAdmin) {
+            adminDeleteButton = `
+                <button onclick="silSonSurprizKutusu()" class="absolute -top-3 -right-3 bg-red-600 hover:bg-red-500 text-white rounded-full h-8 w-8 flex items-center justify-center text-lg font-bold transition-transform hover:scale-110" title="Bu Paneli Gizle">
+                    &times;
+                </button>
+            `;
+        }
+        // --- DEĞİŞİKLİK BURADA BİTİYOR ---
+
         let messageHtml = '';
         const finderHtml = `<b class="text-white text-lg">${data.finder}</b>`;
-        
-        // --- DEĞİŞTİRİLEN KOD BAŞLANGICI ---
+
         let multiplierHtml = '';
         if (data.multiplier && data.multiplier > 1) {
-            // Eğer çarpan 1'den büyükse, mor renkli başarı yazısını göster
             multiplierHtml = `<p class="text-sm text-purple-300 font-bold mt-1">Bu ödül ${data.multiplier}x çarpan ile kazanıldı!</p>`;
         } else {
-            // Değilse, gri renkli bilgilendirme yazısını göster
             multiplierHtml = `<p class="text-xs text-gray-500 mt-1">(Çarpan kullanılmadı)</p>`;
         }
-        // --- DEĞİŞTİRİLEN KOD SONU ---
 
         messageHtml = `
+            ${adminDeleteButton}
             <h4 class="text-amber-300 text-xl font-bold">🎉 SON SÜRPRİZ KUTUSU BULUNDU! 🎉</h4>
             <p>${finderHtml}, bu tur <b class="text-white">${data.boxesOpenedThisRound} adet</b> kutu açtıktan sonra <b class="text-white">${data.boxId} numaralı</b> kutudan Sürprriz Kutu buldu!</p>
             <p>Kart seçiminden <b class="text-green-400">+${data.points} Puan</b> kazandı. <span class="text-gray-400">(Mevcut Puanı: ${data.newBalance})</span></p>
             ${multiplierHtml}
         `;
-        
+
         if (data.resettledBy) {
             messageHtml += `
                 <hr class="border-gray-600 my-2">
@@ -6595,9 +6635,10 @@ function listenForLastSurpriseFinderPanel() {
         }
 
         panel.innerHTML = messageHtml;
+        panel.classList.add('relative'); // Butonun konumlanması için gerekli
         panel.classList.remove('hidden');
     };
-    
+
     if (activeListeners.surprisePanel) {
         activeListeners.surprisePanel.ref.off('value', activeListeners.surprisePanel.callback);
     }
@@ -7659,13 +7700,13 @@ function openSpectatorModal(sessionData) {
 
     sessionData.cards.forEach((cardValue, index) => {
         const cardDiv = document.createElement('div');
-         // --- DEĞİŞİKLİK BURADA: bg-gray-700 kaldırıldı ---
+        // --- DEĞİŞİKLİK BURADA: 'bg-gray-700' class'ı kaldırıldı. ---
         cardDiv.className = 'card border-2 border-red-700 rounded-xl w-28 h-40 flex flex-col items-center justify-center font-bold text-2xl relative';
         cardDiv.id = `spectator-card-${index}`;
         cardDiv.innerHTML = `<div class="card-back absolute inset-0 bg-gradient-to-br from-red-700 to-red-900 flex items-center justify-center text-white text-5xl">?</div><div class="card-front absolute inset-0 bg-gray-900 flex items-center justify-center text-yellow-400 text-3xl"></div>`;
         cardContainer.appendChild(cardDiv);
     });
-    
+
     const resultContainer = document.getElementById('spectatorResultContainer');
     resultContainer.innerHTML = '<p id="spectatorResult" class="text-2xl text-green-400 font-bold h-8"></p>';
 
@@ -7681,7 +7722,7 @@ function openSpectatorModal(sessionData) {
         }
         resultContainer.innerHTML += `<button onclick="closeSpectatorModal()" class="mt-4 py-3 px-8 bg-red-700 hover:bg-red-600 text-white font-bold rounded-lg transition-colors">Oyuna Dön</button>`;
     };
-    
+
     if (timeLeft <= 0) {
         handleTimeout();
         spectatorModal.style.display = 'flex';
@@ -7698,7 +7739,7 @@ function openSpectatorModal(sessionData) {
             handleTimeout();
         }
     }, 1000);
-    
+
     spectatorModal.style.display = 'flex';
 }
 
@@ -7876,17 +7917,30 @@ function renderWheel() {
             return;
         }
 
+        // --- DEĞİŞİKLİK BURADA BAŞLIYOR ---
+        let adminDeleteButton = '';
+        if (isAdmin) {
+            adminDeleteButton = `
+                <button onclick="silSonCarkSurprizi()" class="absolute -top-3 -right-3 bg-red-600 hover:bg-red-500 text-white rounded-full h-8 w-8 flex items-center justify-center text-lg font-bold transition-transform hover:scale-110" title="Bu Paneli Gizle">
+                    &times;
+                </button>
+            `;
+        }
+        // --- DEĞİŞİKLİK BURADA BİTİYOR ---
+
         const finderHtml = `<b class="text-white">${data.finder}</b>`;
         const messageHtml = `
+            ${adminDeleteButton}
             <h4 class="text-amber-300 text-lg font-bold">🎡 ÇARKTAN SON ÇIKAN SÜRPRİZ! 🎡</h4>
             <p>${finderHtml}, çarktan Sürpriz Kutu kazandı!</p>
             <p>Kart seçiminden <b class="text-green-400">+${data.points} Puan</b> elde etti. <span class="text-gray-400">(Mevcut Puanı: ${data.newBalance})</span></p>
         `;
 
         panel.innerHTML = messageHtml;
+        panel.classList.add('relative'); // Butonun konumlanması için gerekli
         panel.classList.remove('hidden');
     };
-    
+
     if (activeListeners.wheelSurprisePanel) {
         activeListeners.wheelSurprisePanel.ref.off('value', activeListeners.wheelSurprisePanel.callback);
     }
