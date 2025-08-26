@@ -4675,17 +4675,16 @@ async function openBox(index) {
         else if (box.content === 'iflas') {
             let shieldWasUsed = false;
             const lostPoints = user.balance || 0;
-            let newBalanceForLog = user.balance || 0; // <<< DÜZELTME 1: Log için yeni bakiye değişkeni tanımlandı.
+            let newBalanceForLog = user.balance || 0; 
             updates['iflasCount'] = (user.iflasCount || 0) + 1;
             if ((user.iflasShieldUses || 0) > 0) {
                 updates['iflasShieldUses'] = (user.iflasShieldUses || 0) - 1;
                 updates['iflasShieldUsedCount'] = (user.iflasShieldUsedCount || 0) + 1; 
                 shieldWasUsed = true;
                 message = `İflas! 🛡️ Kalkanın seni korudu!`;
-                // Bakiye değişmediği için newBalanceForLog doğru değeri (mevcut bakiye) tutuyor.
             } else {
                 updates['balance'] = 0;
-                newBalanceForLog = 0; // <<< DÜZELTME 2: Kalkan kullanılmadıysa log için yeni bakiye 0 olarak ayarlandı.
+                newBalanceForLog = 0; 
                 message = `İflas! Tüm puanların (${lostPoints} puan) silindi.`;
             }
             boxUpdate.shieldUsed = shieldWasUsed;
@@ -4697,7 +4696,7 @@ async function openBox(index) {
                 lostPoints: shieldWasUsed ? 0 : lostPoints, 
                 boxId: box.id, 
                 multiplier: finalMultiplier,
-                newBalance: newBalanceForLog // <<< DÜZELTME 3: Log fonksiyonuna her zaman doğru değeri gönder.
+                newBalance: newBalanceForLog 
             });
         }
         else if (box.content === 'surpriz') {
@@ -4705,12 +4704,19 @@ async function openBox(index) {
             shouldLockGame = false;
             shouldDisplayMessage = false;
 
+            // --- DEĞİŞİKLİK BURADA BAŞLIYOR ---
+            const openedInTurnSnap = await db.ref(`gameStats/boxesOpenedByUsers/${currentUser}`).once('value');
+            const openedBoxesThisRound = openedInTurnSnap.val() || 1; 
+
             const sessionRef = db.ref('surprise_box_session');
             await sessionRef.set({
                 active: true, user: currentUser, boxId: box.id, multiplier: finalMultiplier,
                 cards: shuffleArray([...cardValues]), selection: null, result: null,
-                timestamp: firebase.database.ServerValue.TIMESTAMP
+                timestamp: firebase.database.ServerValue.TIMESTAMP,
+                boxesOpenedThisRound: openedBoxesThisRound // Bu bilgiyi oturuma ekliyoruz
             });
+            // --- DEĞİŞİKLİK BURADA BİTİYOR ---
+
             const snap = await sessionRef.once('value');
             await sessionRef.update({ expirationTimestamp: snap.val().timestamp + 60000 });
             openCardSelectionModal(currentUser);
@@ -5130,8 +5136,7 @@ function showOpenedBoxInfo(box) {
   function closeOpenedBoxInfoModal() { openedBoxInfoModal.style.display = 'none'; }
   function shuffleArray(array) { for (let i = array.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [array[i], array[j]] = [array[j], array[i]]; } return array; }
   
-  // MEVCUT openCardSelectionModal FONKSİYONUNU BU BLOK İLE DEĞİŞTİRİN
-function openCardSelectionModal(userId) {
+  function openCardSelectionModal(userId) {
     if (countdownInterval) clearInterval(countdownInterval);
     cardContainer.innerHTML = '';
     const sessionRef = db.ref('surprise_box_session');
@@ -5142,7 +5147,8 @@ function openCardSelectionModal(userId) {
         
         sessionData.cards.forEach((cardValue, index) => {
             const cardDiv = document.createElement('div');
-            cardDiv.className = 'card bg-gray-700 border-2 border-red-700 rounded-xl w-28 h-40 flex flex-col items-center justify-center font-bold text-2xl cursor-pointer relative';
+            // --- DEĞİŞİKLİK BURADA: bg-gray-700 kaldırıldı ---
+            cardDiv.className = 'card border-2 border-red-700 rounded-xl w-28 h-40 flex flex-col items-center justify-center font-bold text-2xl cursor-pointer relative';
             cardDiv.dataset.value = cardValue;
             cardDiv.dataset.index = index;
             const cardBack = document.createElement('div');
@@ -5167,18 +5173,15 @@ function openCardSelectionModal(userId) {
             if (sessionData) {
                 logActivity('surpriseBoxTimeout', sessionData.user, { boxId: sessionData.boxId });
 
-                // --- YENİ EKLENEN KISIM BAŞLANGICI ---
-                // Kullanıcı kart seçmedi, bu bilgiyi veritabanına yazıyoruz.
                 const surpriseInfoOnTimeout = {
                     finder: sessionData.user,
                     boxId: sessionData.boxId,
                     points: 0,
                     multiplier: sessionData.multiplier,
-                    timedOut: true, // Zaman aşımına uğradı
+                    timedOut: true, 
                     timestamp: firebase.database.ServerValue.TIMESTAMP
                 };
                 db.ref('gameStats/lastSurpriseInfo').set(surpriseInfoOnTimeout);
-                // --- YENİ EKLENEN KISIM SONU ---
 
                 handleSurpriseBoxCleanup(sessionData);
             } else {
@@ -6612,9 +6615,7 @@ async function toggleGameLock() {
     displayMessage(`Oyun kilidi başarıyla ${!isCurrentlyLocked ? 'aktif edildi' : 'kaldırıldı'}.`);
 }
 
-  // MEVCUT showGlobalOpenedBoxInfo FONKSİYONUNU SİLİP BUNU YAPIŞTIRIN
-
-function showGlobalOpenedBoxInfo(info) {
+  function showGlobalOpenedBoxInfo(info) {
     const isPlayingClickCatch = clickCatchGameActive || (lobbyGameSettings && lobbyGameSettings.state === 'active');
     if (isPlayingClickCatch) return;
 
@@ -6622,12 +6623,8 @@ function showGlobalOpenedBoxInfo(info) {
     const notificationMessage = `${info.opener}, ${info.boxId} numaralı kutuyu açtı.`;
     displayGlobalNotification(notificationMessage);
 
-    // SİLİNEN KISIM: Artık modalı göstermeyeceğimiz için bu satırları siliyoruz.
-    // document.getElementById('globalOpenedBoxInfoContent').innerHTML = contentHtml;
-    // globalOpenedBoxInfoModal.style.display = 'flex';
-
     // DEĞİŞEN SATIR: Zamanlayıcı 3 saniyeye düşürüldü.
-    let countdown = 3; 
+    let countdown = 1; // <--- BU SATIRI 1 OLARAK DEĞİŞTİR
 
     // Geri kalan zamanlayıcı mantığı aynı kalıyor, çünkü oyun kilidini bu yönetiyor.
     const countdownEl = document.getElementById('globalOpenedBoxCountdown'); // Bu element artık görünmese de sayaç çalışmaya devam eder.
@@ -6640,7 +6637,7 @@ function showGlobalOpenedBoxInfo(info) {
             clearInterval(globalCountdownInterval);
             // SİLİNEN SATIR: Modal artık olmadığı için kapatmaya gerek yok.
             // globalOpenedBoxInfoModal.style.display = 'none';
-            
+
             // En önemli kısım: Süre dolduğunda oyun kilidini açar.
             db.ref('gameLock').set(false);
         }
@@ -7662,7 +7659,8 @@ function openSpectatorModal(sessionData) {
 
     sessionData.cards.forEach((cardValue, index) => {
         const cardDiv = document.createElement('div');
-        cardDiv.className = 'card bg-gray-700 border-2 border-red-700 rounded-xl w-28 h-40 flex flex-col items-center justify-center font-bold text-2xl relative';
+         // --- DEĞİŞİKLİK BURADA: bg-gray-700 kaldırıldı ---
+        cardDiv.className = 'card border-2 border-red-700 rounded-xl w-28 h-40 flex flex-col items-center justify-center font-bold text-2xl relative';
         cardDiv.id = `spectator-card-${index}`;
         cardDiv.innerHTML = `<div class="card-back absolute inset-0 bg-gradient-to-br from-red-700 to-red-900 flex items-center justify-center text-white text-5xl">?</div><div class="card-front absolute inset-0 bg-gray-900 flex items-center justify-center text-yellow-400 text-3xl"></div>`;
         cardContainer.appendChild(cardDiv);
@@ -7676,13 +7674,11 @@ function openSpectatorModal(sessionData) {
 
     const handleTimeout = () => {
         countdownEl.textContent = 'Süre Doldu!';
-        // --- YENİ EKLENEN KISIM ---
         const resultP = document.getElementById('spectatorResult');
         if (resultP) {
             resultP.textContent = 'Kart seçilmedi, puan kazanılamadı.';
             resultP.className = 'text-xl text-red-400 font-bold h-8';
         }
-        // --- YENİ KISIM SONU ---
         resultContainer.innerHTML += `<button onclick="closeSpectatorModal()" class="mt-4 py-3 px-8 bg-red-700 hover:bg-red-600 text-white font-bold rounded-lg transition-colors">Oyuna Dön</button>`;
     };
     
