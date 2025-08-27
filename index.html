@@ -151,17 +151,95 @@
     border-radius: 12px;
 }
 
-/* Kapalı Kartın Görünümü (Arka Yüzü) */
+/* --- YENİ: KAPALI KART PAKETİ ÖN YÜZ STİLLERİ --- */
+
+/* Tüm kapalı paket ön yüzleri için temel stil */
 .card-front {
-    background: linear-gradient(145deg, #4f46e5, #7c3aed);
-    border: 4px solid #a78bfa;
     display: flex;
     align-items: center;
     justify-content: center;
+    overflow: hidden; /* Efsanevi animasyonu için önemli */
+}
+
+.pack-icon {
     font-size: 5rem;
-    font-weight: bold;
+    opacity: 0.8;
+    filter: drop-shadow(0 0 10px rgba(0,0,0,0.7));
+}
+
+/* Standart Paket Ön Yüzü (Mor/Gizemli) */
+.pack-front-standart {
+    background: linear-gradient(145deg, #4c1d95, #3730a3); /* Koyu Mor */
+    border: 4px solid #a78bfa;
+}
+.pack-front-standart .pack-icon {
     color: #c4b5fd;
-    text-shadow: 0 0 10px rgba(255,255,255,0.5);
+}
+
+/* Bronz Paket Ön Yüzü */
+.pack-front-normal {
+    background: linear-gradient(145deg, #4a2c0f, #3a1e0b);
+    border: 4px solid;
+    border-image: linear-gradient(145deg, #d3a17c, #b37e5c, #d3a17c) 1;
+}
+.pack-front-normal .pack-icon {
+    color: #d3a17c;
+}
+
+/* Gümüş Paket Ön Yüzü */
+.pack-front-gumus {
+    background: linear-gradient(145deg, #4a5568, #2d3748);
+    border: 4px solid;
+    border-image: linear-gradient(145deg, #e5e7eb, #9ca3af, #e5e7eb) 1;
+}
+.pack-front-gumus .pack-icon {
+    color: #e5e7eb;
+}
+
+/* Altın Paket Ön Yüzü */
+.pack-front-altin {
+    background: linear-gradient(145deg, #6a4f2b, #4a371e);
+    border: 4px solid;
+    border-image: linear-gradient(145deg, #ffee00, #ffd700, #ffb300) 1;
+    box-shadow: 0 0 15px #ffd700;
+}
+.pack-front-altin .pack-icon {
+    color: #ffee00;
+}
+
+/* Efsanevi Paket Ön Yüzü (Animasyonlu) */
+.pack-front-efsanevi {
+    position: relative;
+    z-index: 1;
+    background: #111;
+}
+.pack-front-efsanevi::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    z-index: 1;
+    background: conic-gradient(#ff1b1b, #ff7f00, #ffee00, #ff7f00, #ff1b1b);
+    animation: spin-around 4s linear infinite;
+}
+.pack-front-efsanevi::after {
+    content: '';
+    position: absolute;
+    top: 4px; left: 4px; right: 4px; bottom: 4px;
+    border-radius: 8px; /* İç çerçeve için daha az yuvarlaklık */
+    z-index: 2;
+    background: linear-gradient(145deg, #e43642, #b11f29);
+    animation: breathing-bg 3s infinite ease-in-out;
+}
+.pack-front-efsanevi > * {
+    position: relative;
+    z-index: 3;
+}
+.pack-front-efsanevi .pack-icon {
+    color: #ffee00;
+    animation: badge-pulse 2s infinite ease-in-out;
 }
 
 /* Açılmış Kartın Görünümü (Ön Yüzü) */
@@ -1178,17 +1256,18 @@ body.modal-open .modal-content {
             <input type="number" id="newItemStock" placeholder="Stok Durumu (Opsiyonel, boş bırakılırsa sınırsız)" min="0" class="w-full p-2 mb-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500 transition duration-300">
             <select id="newItemType" class="w-full p-2 mb-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-yellow-500">
   <option value="">Ürün Tipi Seçin</option>
-  <option value="boxRights">Kutu Hakkı</option>
-  <option value="wheelTicket">Çark Bileti</option>
-  <option value="clickCatchTicket">Tıkla-Yakala Bileti</option>
-  <option value="tempMultiplier">Geçici Çarpan</option>
-  <option value="iflasShield">İflas Kalkanı</option>
-  <option value="wildcard">Joker Kart</option>      <option value="card_pack">Kart Paketi</option>
-  <option value="card_pack_normal">Normal Kart Paketi</option>
-<option value="card_pack_gumus">Gümüş Kart Paketi</option>
-<option value="card_pack_altin">Altın Kart Paketi</option>
-<option value="card_pack_efsanevi">Efsanevi Kart Paketi</option>
-  <option value="special">Özel Ürün (Onay Gerektirir)</option>
+  <option value="boxRights">📦 Kutu Hakkı</option>
+  <option value="wheelTicket">️🎫 Çark Bileti</option>
+  <option value="clickCatchTicket">🎟️ Tıkla-Yakala Bileti</option>
+  <option value="tempMultiplier">✖️ Geçici Çarpan</option>
+  <option value="iflasShield">🛡️ İflas Kalkanı</option>
+  <option value="wildcard">🃏 Joker Kart</option>
+  <option value="card_pack">🎴 Standart Kart Paketi</option>
+  <option value="card_pack_normal">🥉 Bronz Kart Paketi</option>
+  <option value="card_pack_gumus">🥈 Gümüş Kart Paketi</option>
+  <option value="card_pack_altin">🥇 Altın Kart Paketi</option>
+  <option value="card_pack_efsanevi">🏆 Efsanevi Kart Paketi</option>
+  <option value="special">🚀 Özel Ürün (Onay Gerektirir)</option>
 </select>
             <input type="number" id="newItemValue" placeholder="Değer (Kutu Hakkı Adedi / Çarpan Değeri / Kalkan Sayısı)" class="w-full p-2 mb-2 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500 transition duration-300">
             <input type="number" id="newItemMultiplierDuration" placeholder="Çarpan Süresi (Kutu Sayısı)" min="1" class="w-full p-2 mb-2 bg-gray-700 border border-gray-600 rounded-lg text-white hidden focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500 transition duration-300">
@@ -1923,16 +2002,16 @@ body.modal-open .modal-content {
                 <h5 class="font-semibold text-gray-300 mb-2">Çıkacak Özel Hedef</h5>
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <select id="soloSpecialItemType" class="box-setting-input md:col-span-1">
-    <option value="boxRight">Kutu Hakkı (📦)</option>
-    <option value="iflasShield">İflas Kalkanı (🛡️)</option>
-    <option value="wheelTicket">Çark Bileti (🎫️)</option>
-    <option value="tempMultiplier">Çarpan (✖️)</option>
-    <option value="wildcard">Joker Kart (🃏)</option>
-    <option value="card_pack">Standart Kart Paketi (🎴)</option>
-    <option value="card_pack_normal">Normal Kart Paketi (🥉)</option>
-    <option value="card_pack_gumus">Gümüş Kart Paketi (🥈)</option>
-    <option value="card_pack_altin">Altın Kart Paketi (🥇)</option>
-    <option value="card_pack_efsanevi">Efsanevi Kart Paketi (🏆)</option>
+    <option value="boxRight">📦 Kutu Hakkı</option>
+    <option value="iflasShield">🛡️ İflas Kalkanı)</option>
+    <option value="wheelTicket">🎫 Çark Bileti</option>
+    <option value="tempMultiplier">✖️ Çarpan</option>
+    <option value="wildcard">🃏 Joker Kart</option>
+    <option value="card_pack">🎴 Standart Kart Paketi</option>
+    <option value="card_pack_normal">🥉 Bronz Kart Paketi</option>
+    <option value="card_pack_gumus">🥈 Gümüş Kart Paketi</option>
+    <option value="card_pack_altin">🥇 Altın Kart Paketi</option>
+    <option value="card_pack_efsanevi">🏆 Efsanevi Kart Paketi</option>
 </select>
                     <div id="soloSpecialValueContainer" class="md:col-span-2 grid grid-cols-2 gap-4">
                         <input type="number" id="soloSpecialValue" class="box-setting-input" placeholder="Adet (örn: 1, 5)">
@@ -2110,17 +2189,22 @@ body.modal-open .modal-content {
           <div class="mb-4 space-y-2">
               <input type="text" id="dailyRewardName" placeholder="Ödül Adı (Örn: 100 Puan)" class="w-full p-2 bg-gray-700 border border-gray-600 rounded-lg text-white">
               <textarea id="dailyRewardDescription" placeholder="Ödül Açıklaması" rows="2" class="w-full p-2 bg-gray-700 border border-gray-600 rounded-lg text-white"></textarea>
-              <select id="dailyRewardType" class="w-full p-2 bg-gray-700 border border-gray-600 rounded-lg text-white">
-                  <option value="">Ödül Tipi Seçin</option>
-                  <option value="points">Puan</option>
-                  <option value="boxRights">Kutu Hakkı</option>
-                  <option value="wheelTicket">Çark Bileti</option>
-                  <option value="clickCatchTicket">Tıkla-Yakala Bileti</option>
-                  <option value="iflasShield">İflas Kalkanı</option>
-                  <option value="tempMultiplier">Çarpan</option>
-                  <option value="avatar">Avatar</option>
-                  <option value="wildcard">Joker Kart</option> <option value="card_pack">Kart Paketi</option> </select>
-              </select>
+              <<select id="dailyRewardType" class="w-full p-2 bg-gray-700 border border-gray-600 rounded-lg text-white">
+    <option value="">Ödül Tipi Seçin</option>
+    <option value="points">💰 Puan</option>
+    <option value="boxRights">📦 Kutu Hakkı</option>
+    <option value="wheelTicket">🎫 Çark Bileti</option>
+    <option value="clickCatchTicket">🎟️ Tıkla-Yakala Bileti</option>
+    <option value="iflasShield">🛡️ İflas Kalkanı</option>
+    <option value="tempMultiplier">✖️ Çarpan</option>
+    <option value="avatar">👤 Avatar</option>
+    <option value="wildcard">🃏 Joker Kart</option>
+    <option value="card_pack">🎴 Standart Kart Paketi</option>
+    <option value="card_pack_normal">🥉 Bronz Kart Paketi</option>
+    <option value="card_pack_gumus">🥈 Gümüş Kart Paketi</option>
+    <option value="card_pack_altin">🥇 Altın Kart Paketi</option>
+    <option value="card_pack_efsanevi">🏆 Efsanevi Kart Paketi</option>
+</select>
               
               <div id="dailyRewardAvatarFields" class="hidden space-y-2">
                   <input type="text" id="dailyRewardAvatarName" placeholder="Avatarın Adı" class="w-full p-2 bg-gray-700 border border-gray-600 rounded-lg text-white">
@@ -2646,7 +2730,7 @@ const defaultWheelSegments = [
     { type: 'points', value: 100, label: '🍌', prizeName: '+100 Puan', color: '#fde047', weight: 20 },
     { type: 'boxRights', value: 1, label: '📦', prizeName: '+1 Kutu Hakkı', color: '#8b5cf6', weight: 15 },
     { type: 'card_pack', value: 1, label: '🎴', prizeName: '+1 Standart Kart Paketi', color: '#14b8a6', weight: 12 }, 
-    { type: 'card_pack_normal', value: 1, label: '🥉', prizeName: '+1 Normal Kart Paketi', color: '#a16207', weight: 10 },
+    { type: 'card_pack_normal', value: 1, label: '🥉', prizeName: '+1 Bronz Kart Paketi', color: '#a16207', weight: 10 },
     { type: 'points', value: 10, label: '🍆', prizeName: '+10 Puan', color: '#9ca3af', weight: 10 },
     { type: 'pas', label: '☠️', prizeName: 'Pas', color: '#6b7280', weight: 10 },
 
@@ -2661,6 +2745,7 @@ const defaultWheelSegments = [
     // Nadir ve Efsanevi Ödüller
     { type: 'card_pack_altin', value: 1, label: '🥇', prizeName: '+1 Altın Kart Paketi', color: '#f59e0b', weight: 4 },
     { type: 'wildcard', value: 1, label: '🃏', prizeName: '+1 Joker Kart', color: '#d946ef', weight: 4 },
+    { type: 'tempMultiplier', value: 5, duration: 1, label: '✖️', prizeName: '5X Çarpan', color: '#06b6d4', weight: 2 }, // EKLENEN SATIR
     { type: 'points', value: 1000, label: '🎂', prizeName: '+1000 Puan', color: '#ef4444', weight: 2 },
     { type: 'card_pack_efsanevi', value: 1, label: '🏆', prizeName: '+1 Efsanevi Kart Paketi', color: '#7e22ce', weight: 1 },
     { type: 'surpriseBox', value: 1, label: '🎉', prizeName: 'Sürpriz Kutu', color: '#eab308', weight: 1 }
@@ -4498,41 +4583,41 @@ async function deleteUserAvatar(username, avatarId) {
         let div = document.createElement('div'); 
         div.className = `box bg-gray-700 border-2 border-red-700 aspect-square flex flex-col items-center justify-center cursor-pointer font-bold text-lg rounded-lg relative transition-all duration-200 shadow-md hover:shadow-lg`;
         
-        // Önce içeriği belirleyelim, sonra sınıfları ekleyelim
-        let displayContent = `<span class="box-content text-gray-300">${box.id}</span>`; 
-
         if (box.opened) {
             div.classList.add('opened', 'bg-gray-600', 'cursor-default', 'border-gray-500', 'shadow-inner');
+            
+            let openedContentHtml = '';
 
-            // --- YENİ EKLENEN KISIM BAŞLANGICI ---
-            // Eğer içerik bir kart paketi ise, ilgili CSS sınıfını ekle
+            // Kart paketi ise, CSS sınıfını ekle (ikon CSS'ten gelecek)
             if (box.content && box.content.startsWith('card_pack')) {
-                div.classList.add(box.content); 
+                div.classList.add(box.content);
+                openedContentHtml = `<div class="box-content"></div>`; // ::before ikonunun çalışması için boş bir content alanı
             }
-            // --- YENİ EKLENEN KISIM SONU ---
-
-            if (box.content === 'points') { 
-                displayContent = `<span class="box-content text-green-400 text-xl">+${box.finalPoints || box.value}</span>`; 
+            // Diğer içerik türleri için ikonu/yazıyı doğrudan ekle
+            else if (box.content === 'points') { 
+                openedContentHtml = `<span class="box-content text-green-400 text-xl">+${box.finalPoints || box.value}</span>`; 
                 div.classList.add('bg-green-700', 'border-green-500', 'animate-pulse'); 
             } else if (box.content === 'surpriz') { 
+                openedContentHtml = `<div class="box-content text-yellow-400 text-2xl">🎉</div>`;
                 div.classList.add('bg-yellow-700', 'border-yellow-500', 'animate-pulse'); 
-                div.innerHTML += `<div class="box-content text-yellow-400 text-2xl">🎉</div>`;
             } else if (box.content === 'iflas') { 
+                openedContentHtml = `<div class="box-content text-red-400 text-2xl">💣</div>`;
                 div.classList.add('bg-red-700', 'border-red-500'); 
-                div.innerHTML += `<div class="box-content text-red-400 text-2xl">💣</div>`;
             } else if (box.content === 'multiplier') { 
-                displayContent = `<span class="box-content text-blue-400 text-xl">${box.value}X</span>`; 
+                openedContentHtml = `<span class="box-content text-blue-400 text-xl">${box.value}X</span>`; 
                 div.classList.add('bg-blue-700', 'border-blue-500', 'animate-pulse'); 
             } else if (box.content === 'wheelTicket') {
+                openedContentHtml = `<div class="box-content text-pink-400 text-2xl">🎫️</div>`;
                 div.classList.add('bg-pink-700', 'border-pink-500', 'animate-pulse'); 
-                div.innerHTML += `<div class="box-content text-pink-400 text-2xl">🎫️</div>`;
             } else if (box.content === 'clickCatchTicket') {
+                openedContentHtml = `<div class="box-content text-orange-400 text-2xl">🎟️</div>`;
                 div.classList.add('bg-orange-700', 'border-orange-500', 'animate-pulse');
-                div.innerHTML += `<div class="box-content text-orange-400 text-2xl">🎟️</div>`;
             } else if (box.content === 'iflasShield') {
+                openedContentHtml = `<div class="box-content text-cyan-400 text-2xl">🛡️</div>`;
                 div.classList.add('bg-cyan-700', 'border-cyan-500', 'animate-pulse');
-                div.innerHTML += `<div class="box-content text-cyan-400 text-2xl">🛡️</div>`;
             }
+            
+            div.innerHTML = openedContentHtml;
           
             if (box.opener) {
                 let openerDiv = document.createElement('div'); 
@@ -4548,9 +4633,11 @@ async function deleteUserAvatar(username, avatarId) {
                 multiplierIcon.title = `Bu kutu ${box.multiplierApplied}x çarpan ile açıldı.`;
                 div.appendChild(multiplierIcon);
             }
+        } else {
+            // Kutu kapalıysa, sadece numarasını göster
+            div.innerHTML = `<span class="box-content text-gray-300">${box.id}</span>`;
         }
         
-        div.innerHTML += displayContent; 
         div.onclick = () => { 
             if (box.opened) { 
                 showOpenedBoxInfo(box); 
@@ -4562,7 +4649,6 @@ async function deleteUserAvatar(username, avatarId) {
     }); 
 }
 
-// 1. Kutu Ayarları için yeni satır ekler (Joker Kart VE Kart Paketi dahil)
 function addBoxSettingRow(item = {}) {
     const container = document.getElementById('boxSettingsRowsContainer');
     const row = document.createElement('div');
@@ -4574,15 +4660,19 @@ function addBoxSettingRow(item = {}) {
 
     row.innerHTML = `
         <select class="setting-type flex-grow bg-gray-700 p-2 rounded-md text-white border border-gray-600" onchange="handleRowTypeChange(this)">
-            <option value="points" ${type === 'points' ? 'selected' : ''}>Puan</option>
-            <option value="iflas" ${type === 'iflas' ? 'selected' : ''}>İflas (Bomba)</option>
-            <option value="surpriz" ${type === 'surpriz' ? 'selected' : ''}>Sürpriz Kutu</option>
-            <option value="multiplier" ${type === 'multiplier' ? 'selected' : ''}>Çarpan</option>
-            <option value="wheelTicket" ${type === 'wheelTicket' ? 'selected' : ''}>Çark Bileti</option>
-            <option value="clickCatchTicket" ${type === 'clickCatchTicket' ? 'selected' : ''}>Tıkla-Yakala Bileti</option>
-            <option value="iflasShield" ${type === 'iflasShield' ? 'selected' : ''}>İflas Kalkanı</option>
-            <option value="wildcard" ${type === 'wildcard' ? 'selected' : ''}>Joker Kart</option>
-            <option value="card_pack" ${type === 'card_pack' ? 'selected' : ''}>Kart Paketi</option>
+            <option value="points" ${type === 'points' ? 'selected' : ''}>💰 Puan</option>
+            <option value="iflas" ${type === 'iflas' ? 'selected' : ''}>💣 İflas (Bomba)</option>
+            <option value="surpriz" ${type === 'surpriz' ? 'selected' : ''}>🎉 Sürpriz Kutu</option>
+            <option value="multiplier" ${type === 'multiplier' ? 'selected' : ''}>✖️ Çarpan</option>
+            <option value="wheelTicket" ${type === 'wheelTicket' ? 'selected' : ''}>🎫 Çark Bileti</option>
+            <option value="clickCatchTicket" ${type === 'clickCatchTicket' ? 'selected' : ''}>🎟️ T-Y Bileti</option>
+            <option value="iflasShield" ${type === 'iflasShield' ? 'selected' : ''}>🛡️ İflas Kalkanı</option>
+            <option value="wildcard" ${type === 'wildcard' ? 'selected' : ''}>🃏 Joker Kart</option>
+            <option value="card_pack" ${type === 'card_pack' ? 'selected' : ''}>🎴 Standart Kart Paketi</option>
+            <option value="card_pack_normal" ${type === 'card_pack_normal' ? 'selected' : ''}>🥉 Bronz Kart Paketi</option>
+            <option value="card_pack_gumus" ${type === 'card_pack_gumus' ? 'selected' : ''}>🥈 Gümüş Kart Paketi</option>
+            <option value="card_pack_altin" ${type === 'card_pack_altin' ? 'selected' : ''}>🥇 Altın Kart Paketi</option>
+            <option value="card_pack_efsanevi" ${type === 'card_pack_efsanevi' ? 'selected' : ''}>🏆 Efsanevi Kart Paketi</option>
         </select>
         <input type="number" value="${value}" class="setting-value w-28 bg-gray-700 p-2 rounded-md text-white border border-gray-600" placeholder="Değer">
         <input type="number" value="${count}" class="setting-count w-28 bg-gray-700 p-2 rounded-md text-white border border-gray-600" placeholder="Adet" oninput="updateTotalBoxCount()">
@@ -4732,7 +4822,7 @@ async function openBox(index) {
         }
     }
     else {
-        if (useMultiplier && box.content !== 'surpriz' && !box.content.startsWith('card_pack')) { // card_pack'ler de çarpanı tüketmesin
+        if (useMultiplier && box.content !== 'surpriz' && !box.content.startsWith('card_pack')) {
             if (originalMultiplierSource === 'box') {
                 updates['activeMultiplier'] = 1;
                 updates['multiplierSource'] = 'none';
@@ -4819,7 +4909,7 @@ async function openBox(index) {
             if (userForCheck.completedCollection === true) {
                 const boxRightsToGain = itemsGained * 5;
                 updates['kutuHakki'] = (user.kutuHakki || 0) + boxRightsToGain;
-                message = `Harika! Koleksiyonu zaten tamamladığın için kazandığın ${itemsGained} Joker Kart, hesabına <b class="text-green-400">+${boxRightsToGain} Kutu Hakkı</b> olarak eklendi!`;
+                message = `Harika! Koleksiyonu zaten tamamladığın için kazandığın ${itemsGained} 🃏 Joker Kart, hesabına <b class="text-green-400">+${boxRightsToGain} Kutu Hakkı</b> olarak eklendi!`;
                 logActivity('wildcardConverted', currentUser, { 
                     source: `${box.id} numaralı kutu`,
                     wildcards: itemsGained, 
@@ -4828,18 +4918,18 @@ async function openBox(index) {
                 });
             } else {
                 updates['wildcards'] = (user.wildcards || 0) + itemsGained;
-                message = `İNANILMAZ! Kutudan <b class="text-purple-400">+${itemsGained} JOKER KART</b> kazandın!`;
-                logActivity('newItemFound', currentUser, { itemName: `+${itemsGained} Joker Kart`, itemType: 'wildcard', boxId: box.id, multiplier: finalMultiplier });
+                message = `İNANILMAZ! Kutudan <b class="text-purple-400">+${itemsGained} 🃏 Joker Kart</b> kazandın!`;
+                logActivity('newItemFound', currentUser, { itemName: `+${itemsGained} 🃏 Joker Kart`, itemType: 'wildcard', boxId: box.id, multiplier: finalMultiplier });
             }
         }
         else if (box.content.startsWith('card_pack')) {
             const packsToOpen = (box.value || 1) * finalMultiplier;
             const packNames = {
-                'card_pack': 'Kart Paketi',
-                'card_pack_normal': 'Normal Kart Paketi',
-                'card_pack_gumus': 'Gümüş Kart Paketi',
-                'card_pack_altin': 'Altın Kart Paketi',
-                'card_pack_efsanevi': 'Efsanevi Kart Paketi'
+                'card_pack': '🎴 Standart Kart Paketi',
+                'card_pack_normal': '🥉 Bronz Kart Paketi',
+                'card_pack_gumus': '🥈 Gümüş Kart Paketi',
+                'card_pack_altin': '🥇 Altın Kart Paketi',
+                'card_pack_efsanevi': '🏆 Efsanevi Kart Paketi'
             };
             const packName = packNames[box.content] || 'Kart Paketi';
             
@@ -7010,13 +7100,11 @@ async function toggleGameLock() {
 
         const remainingContents = {};
 
-        // 1. Başlangıçtaki tüm içerikleri say
         boxConfig.forEach(item => {
             const key = `${item.type}-${item.value}`;
             remainingContents[key] = (remainingContents[key] || 0) + item.count;
         });
 
-        // 2. Açılmış kutuları bu sayıdan düş
         if (currentBoxes) {
             currentBoxes.forEach(box => {
                 if (box.opened) {
@@ -7028,7 +7116,6 @@ async function toggleGameLock() {
             });
         }
         
-        // 3. Sonuçları ekrana yazdır
         listEl.innerHTML = '';
         let html = '';
         Object.entries(remainingContents).forEach(([key, count]) => {
@@ -7044,6 +7131,12 @@ async function toggleGameLock() {
                     case 'iflasShield': label = 'İflas Kalkanı'; icon = '🛡️'; break;
                     case 'wheelTicket': label = 'Çark Bileti'; icon = '️🎫'; break;
                     case 'clickCatchTicket': label = 'Tıkla-Yakala Bileti'; icon = '🎟️'; break;
+                    case 'wildcard': label = 'Joker Kart'; icon = '🃏'; break;
+                    case 'card_pack': label = 'Standart Kart Paketi'; icon = '🎴'; break;
+                    case 'card_pack_normal': label = 'Bronz Kart Paketi'; icon = '🥉'; break;
+                    case 'card_pack_gumus': label = 'Gümüş Kart Paketi'; icon = '🥈'; break;
+                    case 'card_pack_altin': label = 'Altın Kart Paketi'; icon = '🥇'; break;
+                    case 'card_pack_efsanevi': label = 'Efsanevi Kart Paketi'; icon = '🏆'; break;
                 }
                 html += `<p class="flex justify-between items-center p-2 bg-gray-800 rounded mb-2 text-white"><span>${icon} ${label}</span> <span class="font-bold text-yellow-300">${count} Adet</span></p>`;
             }
@@ -8442,10 +8535,31 @@ async function clearLastWinner() {
             break;
         case 'tempMultiplier':
             collectedMultipliers.push({ value: value, uses: uses });
-            // --- DÜZELTİLEN SATIR ---
             floatingText = `${value}x Çarpan (${uses} kullanım)`;
-            // --- DÜZELTME SONU ---
             document.getElementById('collectedSpecials').innerHTML += `<span class="text-xl">${emoji}</span>`;
+            break;
+        case 'wildcard':
+            // Bu gelecekte eklenebilir, şimdilik diğerleriyle aynı mantıkta çalışsın
+            // collectedWildcards += value;
+            floatingText = `+${value} 🃏 Joker Kart Yakalandı!`;
+            document.getElementById('collectedSpecials').innerHTML += `<span class="text-xl">🎁</span>`;
+            break;
+        case 'card_pack':
+        case 'card_pack_normal':
+        case 'card_pack_gumus':
+        case 'card_pack_altin':
+        case 'card_pack_efsanevi':
+            const packNames = {
+                'card_pack': '🎴 Standart Kart Paketi',
+                'card_pack_normal': '🥉 Bronz Kart Paketi',
+                'card_pack_gumus': '🥈 Gümüş Kart Paketi',
+                'card_pack_altin': '🥇 Altın Kart Paketi',
+                'card_pack_efsanevi': '🏆 Efsanevi Kart Paketi'
+            };
+            const packName = packNames[type];
+            collectedCardPacks.push({ type: type, value: value });
+            floatingText = `+${value} ${packName} Yakalandı!`;
+            document.getElementById('collectedSpecials').innerHTML += `<span class="text-xl">🎁</span>`;
             break;
     }
     
@@ -10211,13 +10325,17 @@ function addWheelSettingRow(item = {}) {
         <select class="setting-type col-span-1 bg-gray-700 p-2 rounded-md text-white border border-gray-600" onchange="handleWheelRowTypeChange(this)">
             <option value="points" ${type === 'points' ? 'selected' : ''}>Puan</option>
             <option value="boxRights" ${type === 'boxRights' ? 'selected' : ''}>Kutu Hakkı</option>
-            <option value="iflasShield" ${type === 'iflasShield' ? 'selected' : ''}>Kalkan</option>
+            <option value="iflasShield" ${type === 'iflasShield' ? 'selected' : ''}>İflas Kalkan</option>
             <option value="tempMultiplier" ${type === 'tempMultiplier' ? 'selected' : ''}>Çarpan</option>
             <option value="surpriseBox" ${type === 'surpriseBox' ? 'selected' : ''}>Sürpriz Kutu</option>
-            <option value="clickCatchTicket" ${type === 'clickCatchTicket' ? 'selected' : ''}>Tıkla-Yakala Bileti</option>
+            <option value="clickCatchTicket" ${type === 'clickCatchTicket' ? 'selected' : ''}>T-Y Bileti</option>
             <option value="wheelTicket" ${type === 'wheelTicket' ? 'selected' : ''}>Çark Bileti</option>
             <option value="wildcard" ${type === 'wildcard' ? 'selected' : ''}>Joker Kart</option>
-            <option value="card_pack" ${type === 'card_pack' ? 'selected' : ''}>Kart Paketi</option>
+            <option value="card_pack" ${type === 'card_pack' ? 'selected' : ''}>Standart Kart Paketi</option>
+            <option value="card_pack_normal" ${type === 'card_pack_normal' ? 'selected' : ''}>Bronz Kart Paketi</option>
+            <option value="card_pack_gumus" ${type === 'card_pack_gumus' ? 'selected' : ''}>Gümüş Kart Paketi</option>
+            <option value="card_pack_altin" ${type === 'card_pack_altin' ? 'selected' : ''}>Altın Kart Paketi</option>
+            <option value="card_pack_efsanevi" ${type === 'card_pack_efsanevi' ? 'selected' : ''}>Efsanevi Kart Paketi</option>
             <option value="pas" ${type === 'pas' ? 'selected' : ''}>Pas</option>
         </select>
         <input type="text" value="${label}" class="setting-label col-span-1 sm:col-span-2 bg-gray-700 p-2 rounded-md text-white" placeholder="Etiket (Örn: JOKER!)">
@@ -10652,18 +10770,22 @@ function openWheelLegendModal() {
     const contentDiv = document.getElementById('wheelLegendContent');
     contentDiv.innerHTML = '';
 
-    // Yeni eklenen Joker Kart ve Kart Paketi ile güncellenmiş ve sıraya konulmuş liste
     const legendData = [
         { icon: '🎉', title: 'SÜRPRİZ KUTU', description: 'En nadir ödül! İçinden çok yüksek puanlar çıkan özel bir kart seçme oyunu başlatır.' },
+        { icon: '🏆', title: 'EFSANEVİ KART PAKETİ', description: 'Çok nadir! İçinden sadece Efsanevi nadirlikte bir koleksiyon kartı çıkar.' },
         { icon: '🃏', title: 'JOKER KART', description: 'Çok nadir! Kart koleksiyonundaki herhangi bir eksik kartı tamamlamanı sağlar.' },
-        { icon: '✖️', title: '5X ÇARPAN', description: 'Çok nadir! Bir sonraki kutu açılışında kazanacağın puanı veya eşyayı 5\'e katlar.' },
+        { icon: '✖️', title: '5X ÇARPAN', description: 'Çok nadir! Bir sonraki kutu açılışında kazanacağın puanı veya eşyayı 5\'e katlar.' }, // EKLENEN BLOK
         { icon: '🎂', title: '1000 PUAN', description: 'Nadir bulunan, yüksek miktarda bir puan ödülüdür.' },
+        { icon: '🥇', title: 'ALTIN KART PAKETİ', description: 'İçinden sadece Altın nadirlikte bir koleksiyon kartı çıkar.' },
         { icon: '🎁', title: '3 KUTU HAKKI', description: 'Değerli bir ödül! Kutu oyununda kullanmak üzere tam 3 adet açma hakkı verir.' },
-        { icon: '🎴', title: 'KART PAKETİ', description: 'İçinden koleksiyonun için rastgele bir kart çıkarır.' },
+        { icon: '🥈', title: 'GÜMÜŞ KART PAKETİ', description: 'İçinden sadece Gümüş nadirlikte bir koleksiyon kartı çıkar.' },
         { icon: '🍐', title: '250 PUAN', description: 'Hesabına anında 250 Puan eklenir.' },
         { icon: '🛡️', title: 'İFLAS KALKANI', description: 'Kutu oyununda "Bomba" bulursan puanlarını bir defaya mahsus korur.' },
         { icon: '🎟️', title: '+1 T-Y BİLETİ', description: 'Tıkla-Yakala mini oyununa bir giriş hakkı kazandırır.' },
         { icon: '🎡', title: 'BEDAVA ÇEVİRME', description: 'Şansını tekrar denemen için +1 Çark Bileti kazandırır.' },
+        { icon: '📦', title: '+1 KUTU HAKKI', description: 'Kutu oyununda kullanmak üzere bir adet kutu açma hakkı kazandırır.' },
+        { icon: '🎴', title: 'STANDART KART PAKETİ', description: 'İçinden herhangi bir nadirlikte rastgele bir kart çıkar.' },
+        { icon: '🥉', title: 'BRONZ KART PAKETİ', description: 'İçinden sadece Normal nadirlikte bir koleksiyon kartı çıkar.' },
         { icon: '🍌', title: '100 PUAN', description: 'Sıkça gelen, güzel bir puan ödülüdür.' },
         { icon: '🍆', title: '10 PUAN', description: 'En küçük teselli puanı ödülüdür.' },
         { icon: '☠️', title: 'PAS', description: 'Şanssızlık! Bu dilimde herhangi bir ödül yoktur.' }
@@ -12114,11 +12236,9 @@ async function cancelTradeOffer(tradeId, asAdmin = false) {
 let packsToReveal = [];
 let packsRevealedCount = 0;
 
-// YENİ VE GÜNCELLENMİŞ PAKET AÇMA FONKSİYONU
 async function startCardPackOpening(packCount, source = 'Bilinmeyen Kaynak', multiplier = 1, packType = 'card_pack') {
     if (packCount <= 0) return;
     
-    // Standart paketler için koleksiyon tamamlama kontrolü devam ediyor
     if (packType === 'card_pack') {
         const userSnapCheck = await db.ref(`users/${currentUser}`).once('value');
         const userDataCheck = userSnapCheck.val();
@@ -12147,7 +12267,6 @@ async function startCardPackOpening(packCount, source = 'Bilinmeyen Kaynak', mul
         return;
     }
 
-    // --- YENİ KART FİLTRELEME MANTIĞI ---
     let cardPool = [];
     const rarityMap = {
         'card_pack_efsanevi': 'efsanevi',
@@ -12159,8 +12278,6 @@ async function startCardPackOpening(packCount, source = 'Bilinmeyen Kaynak', mul
 
     for (const cardId in masterCards) {
         const card = { id: cardId, ...masterCards[cardId] };
-        // Eğer belirli bir nadirlik paketi ise, sadece o nadirlikteki kartları havuza ekle.
-        // Değilse (standart paketse), tüm kartları ekle.
         if (targetRarity) {
             if (card.rarity === targetRarity) {
                 cardPool.push(card);
@@ -12170,7 +12287,6 @@ async function startCardPackOpening(packCount, source = 'Bilinmeyen Kaynak', mul
         }
     }
     
-    // Eğer hedeflenen nadirlikte hiç kart bulunamazsa, kullanıcıya bilgi ver ve telafi et.
     if (cardPool.length === 0) {
         displayMessage(`Bu paketten kart çıkmadı çünkü oyunda hiç '${targetRarity}' nadirlikte kart tanımlanmamış. Telafi olarak +500 Puan kazandın!`);
         const userRef = db.ref(`users/${currentUser}`);
@@ -12183,7 +12299,6 @@ async function startCardPackOpening(packCount, source = 'Bilinmeyen Kaynak', mul
         });
         return;
     }
-    // --- FİLTRELEME SONU ---
 
     const weightedCardList = [];
     let totalWeight = 0;
@@ -12204,7 +12319,6 @@ async function startCardPackOpening(packCount, source = 'Bilinmeyen Kaynak', mul
     for (let i = 0; i < packCount; i++) {
         let randomWeight = Math.random() * totalWeight;
         let chosenCard = null;
-
         for (const card of weightedCardList) {
             randomWeight -= card.chance;
             if (randomWeight <= 0) {
@@ -12221,17 +12335,30 @@ async function startCardPackOpening(packCount, source = 'Bilinmeyen Kaynak', mul
     title.textContent = `${packCount} Kart Paketini Aç!`;
     area.innerHTML = '';
 
-    packsToReveal.forEach((card, index) => {
+    // --- YENİ GÖRSEL OLUŞTURMA MANTIĞI BURADA ---
+    const packInfoMap = {
+        'card_pack_efsanevi': { className: 'pack-front-efsanevi', icon: '🏆' },
+        'card_pack_altin': { className: 'pack-front-altin', icon: '🥇' },
+        'card_pack_gumus': { className: 'pack-front-gumus', icon: '🥈' },
+        'card_pack_normal': { className: 'pack-front-normal', icon: '🥉' },
+        'card_pack': { className: 'pack-front-standart', icon: '🎴' }
+    };
+    const packInfo = packInfoMap[packType] || packInfoMap['card_pack'];
+
+    for (let i = 0; i < packCount; i++) {
         const cardHtml = `
-            <div class="card-flip-container" data-index="${index}" onclick="revealCard(this)">
+            <div class="card-flip-container" data-index="${i}" onclick="revealCard(this)">
                 <div class="card-flipper">
-                    <div class="card-front">?</div>
+                    <div class="card-front ${packInfo.className}">
+                        <span class="pack-icon">${packInfo.icon}</span>
+                    </div>
                     <div class="card-back"></div>
                 </div>
             </div>
         `;
         area.innerHTML += cardHtml;
-    });
+    }
+    // --- YENİ GÖRSEL OLUŞTURMA SONU ---
 
     modal.style.display = 'flex';
 }
