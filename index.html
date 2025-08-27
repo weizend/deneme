@@ -4830,19 +4830,14 @@ async function openBox(index) {
         updates['multiplierFoundCount'] = (user.multiplierFoundCount || 0) + 1;
         
         if (user.multiplierSource === 'store' && user.multiplierRemainingUses > 0) {
-            // --- YENİ MANTIK BAŞLANGICI ---
-            // Senaryo: Kullanıcının kalıcı bir mağaza çarpanı var.
-            
             if (box.value === user.activeMultiplier) {
-                // AYNI çarpanı bulursa, hakları direkt artar. Seçim ekranı GEREKMEZ.
                 updates['multiplierRemainingUses'] = (user.multiplierRemainingUses || 0) + 1;
                 message = `Tebrikler! Mevcut <b>${user.activeMultiplier}x</b> çarpanınla aynı türde bir çarpan daha buldun. Kullanım hakkın <b>+1</b> arttı!`;
                 logActivity('multiplierStacked', currentUser, { value: user.activeMultiplier, uses: 1 });
 
             } else {
-                // FARKLI bir çarpan bulursa (düşük veya yüksek), seçim ekranı açılır.
-                shouldLockGame = false; // Oyunu kilitleme, çünkü seçim bekleniyor
-                shouldDisplayMessage = false; // Standart mesajı gösterme
+                shouldLockGame = false;
+                shouldDisplayMessage = false;
                 
                 const existingMultiplier = {
                     value: user.activeMultiplier,
@@ -4850,28 +4845,43 @@ async function openBox(index) {
                 };
                 const foundMultiplier = {
                     value: box.value,
-                    uses: 1 // Kutudan çıkan her zaman 1'dir.
+                    uses: 1
                 };
 
-                // Önemli: Kutu açma hakkı düşülmüş ve kutu açılmış sayılmış haliyle DB güncellenir.
                 await userRef.update(updates);
                 await boxRef.update(boxUpdate);
                 await db.ref('lastOpenedBox').set(boxOpenInfo);
                 
-                // Seçim penceresini aç
-                openMultiplierChoiceModal(existingMultiplier, foundMultiplier, box.id);
-                return; // Fonksiyonu burada sonlandır, geri kalanı resolveMultiplierChoice halledecek.
+                openMultiplierChoiceModal({ hasMultiplier: true, existing: existingMultiplier, found: foundMultiplier });
+                return;
             }
-            // --- YENİ MANTIK SONU ---
 
         } else {
-            // Senaryo: Kullanıcının hiç çarpanı yok veya tek kullanımlık 'kutu çarpanı' var.
-            // Bu durumda eski mantık devam eder: yeni çarpan tek kullanımlık olarak atanır.
-            message = `Tebrikler! <b>${box.value}x Çarpan</b> buldun! Bu çarpan, bir sonraki kutu açılışında otomatik olarak kullanılacak.`;
-            updates['activeMultiplier'] = box.value;
-            updates['multiplierSource'] = 'box';
-            updates['multiplierRemainingUses'] = 0; // Kutu çarpanlarının ayrı sayacı yok.
-            logActivity('multiplierFound', currentUser, { boxId: box.id, value: box.value, multiplier: finalMultiplier });
+            if (user.multiplierSource === 'box' && user.activeMultiplier > 1) {
+                const oldValue = user.activeMultiplier;
+                const newValue = box.value;
+                const combinedValue = oldValue + newValue;
+
+                updates['activeMultiplier'] = combinedValue;
+                updates['multiplierSource'] = 'box';
+                updates['multiplierRemainingUses'] = 0;
+                
+                message = `Şanslısın! Mevcut tek kullanımlık <b>${oldValue}x</b> çarpanın, kutudan çıkan <b>${newValue}x</b> ile birleşerek <b>${combinedValue}x</b> gücüne ulaştı!`;
+                
+                logActivity('multiplierCombined', currentUser, {
+                    boxId: box.id,
+                    oldValue: oldValue,
+                    newValue: newValue,
+                    combinedValue: combinedValue
+                });
+
+            } else {
+                message = `Tebrikler! <b>${box.value}x Çarpan</b> buldun! Bu çarpan, bir sonraki kutu açılışında otomatik olarak kullanılacak.`;
+                updates['activeMultiplier'] = box.value;
+                updates['multiplierSource'] = 'box';
+                updates['multiplierRemainingUses'] = 0;
+                logActivity('multiplierFound', currentUser, { boxId: box.id, value: box.value, multiplier: finalMultiplier });
+            }
         }
     }
     else {
@@ -9848,6 +9858,10 @@ function getActivityIcon(type, details = {}) {
         case 'multiplierRefund':
             icon = '✖️';
             bgColor = 'bg-purple-500';
+            break;
+        case 'multiplierCombined':
+            icon = '✨';
+            bgColor = 'bg-teal-500';
             break;
         case 'multiplierUpgradedFromStore':
         case 'multiplierStackedFromStore':
