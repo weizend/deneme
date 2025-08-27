@@ -1210,12 +1210,30 @@ body.modal-open .modal-content {
           </div>
           
           <div id="kasaTransferBolumu" class="bg-gray-900/50 p-6 rounded-xl border-2 border-purple-500 text-center mb-8 max-w-lg mx-auto">
-    <h4 class="text-purple-300 text-2xl font-bold mb-3">Puan Kasası</h4>
+    <div class="flex justify-center items-center gap-4 mb-3">
+        <h4 class="text-purple-300 text-2xl font-bold">Puan Kasası</h4>
+        <button id="kasaSettingsBtn" onclick="openKasaSettingsModal()" class="hidden py-1 px-3 text-sm bg-gray-600 hover:bg-gray-500 rounded-lg">Ayarlar</button>
+    </div>
     <p class="text-gray-400 mb-4">Sezon sıfırlamasından etkilenmeyecek puanlarını buraya aktar. Bu puanlar sadece <b class="text-white">Özel Ürün Mağazası'nda</b> kullanılabilir ve sıralamaya etki etmez.</p>
     <div class="flex items-center gap-4">
         <input type="number" id="kasaTransferInput" min="1" placeholder="Miktarı Girin" class="w-full p-3 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500">
         <button onclick="kasaTransferEt()" class="py-3 px-6 bg-purple-700 hover:bg-purple-600 text-white font-bold rounded-lg shadow-md whitespace-nowrap">Kasaya Aktar</button>
     </div>
+</div>
+
+<div id="kasaSettingsModal" class="modal-overlay fixed inset-0 bg-black bg-opacity-70 flex justify-center items-center z-[9999] hidden">
+  <div class="modal-content bg-gray-800 p-8 rounded-xl shadow-2xl border border-purple-500 w-11/12 max-w-md text-center relative">
+    <button class="modal-close-button" onclick="closeKasaSettingsModal()">&times;</button>
+    <h4 class="text-purple-300 text-2xl font-bold mb-6">Kasa Transfer Ayarları</h4>
+    <div>
+      <label for="minKasaTransferInput" class="block text-sm font-medium text-gray-300 mb-2">Minimum Transfer Tutarı</label>
+      <input type="number" id="minKasaTransferInput" placeholder="Örn: 1000 (0 yazılırsa limit olmaz)" class="box-setting-input">
+      <p class="text-xs text-gray-500 mt-1">Bu tutarın altındaki transferlere izin verilmez.</p>
+    </div>
+    <div class="mt-6">
+      <button onclick="saveKasaSettings()" class="w-full py-3 bg-purple-700 hover:bg-purple-600 text-white font-bold rounded-lg shadow-md">Ayarları Kaydet</button>
+    </div>
+  </div>
 </div>
           
           <div id="gameStoreItemsContainer" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 p-4">
@@ -1848,66 +1866,100 @@ body.modal-open .modal-content {
 </div>
 
 <div id="helpModal" class="modal-overlay fixed inset-0 bg-black bg-opacity-70 flex justify-center items-center z-50 hidden">
-  <div class="modal-content bg-gray-800 rounded-xl shadow-2xl border border-red-700 w-11/12 max-w-2xl text-left relative max-h-[90vh] flex flex-col">
+  <div class="modal-content bg-gray-800 rounded-xl shadow-2xl border border-red-700 w-11/12 max-w-3xl text-left relative max-h-[90vh] flex flex-col">
       
       <div class="flex-shrink-0 p-6 border-b border-gray-700 relative">
-          <h3 class="text-yellow-400 text-3xl font-bold text-center">Yardım / Nasıl Oynanır?</h3>
+          <h3 class="text-yellow-400 text-3xl font-bold text-center">Weizend Oyun Dünyası Rehberi</h3>
           <button class="modal-close-button" onclick="closeHelpModal()">&times;</button>
       </div>
+      
       <div class="overflow-y-auto scrollable-list p-6">
-        <div class="space-y-6 text-gray-300">
-            <div>
-                <h4 class="text-xl font-bold text-yellow-300 mb-2">Oyunun Amacı</h4>
-                <p>Oyunun temel amacı puan toplayarak liderlik sıralamasında yükselmek ve mini oyunlarda en yüksek skorları elde etmektir. Asıl büyük hedef ise, sezon boyunca tüm koleksiyon kartlarını toplayarak albümü tamamlamak ve büyük ödülleri kazanmaktır.</p>
-            </div>
-
-            <div>
-                <h4 class="text-xl font-bold text-yellow-300 mb-2">Nasıl Kutu Hakkı Kazanırım?</h4>
-                <ul class="list-disc list-inside mt-2 space-y-1 pl-4">
-                    <li>Mağazadan puanlarınızla "Kutu Hakkı" satın alabilirsiniz.</li>
-                    <li>Günlük ödüllerinizi toplayarak kazanabilirsiniz.</li>
-                    <li>Şans Çarkı'nı çevirerek elde edebilirsiniz.</li>
-                    <li>Tıkla-Yakala oyununda özel hedefleri yakalayarak kazanabilirsiniz.</li>
-                </ul>
-            </div>
+        <div class="space-y-8 text-gray-300">
             
             <div>
-                <h4 class="text-xl font-bold text-yellow-300 mb-2">Kutu İçerikleri</h4>
-                <ul class="list-disc list-inside mt-2 space-y-1 pl-4">
-                    <li><strong class="text-green-400">Puan:</strong> Farklı miktarlarda puanlar içerir.</li>
-                    <li><strong class="text-red-500">İflas (Bomba 💣):</strong> Tüm puanlarınızı sıfırlar!</li>
-                    <li><strong class="text-yellow-400">Sürpriz Kutu 🎉:</strong> İçinden yüksek puanlar çıkan özel bir kart seçme oyunu başlatır.</li>
-                    <li><strong class="text-blue-400">Çarpan ✖️:</strong> Bir sonraki açacağınız kutudan çıkacak puanı veya eşyayı katlar.</li>
-                    <li><strong class="text-purple-400">Kart Paketi 🎴:</strong> Koleksiyon albümün için rastgele bir kart çıkarır.</li>
-                    <li><strong class="text-fuchsia-400">Joker Kart 🃏:</strong> Çok nadirdir! Koleksiyonundaki herhangi bir eksik kartın yerine kullanabilirsin.</li>
-                    <li><strong class="text-cyan-400">İflas Kalkanı 🛡️:</strong> Bomba bulduğunda puanlarını korur. Tek kullanımlıktır.</li>
-                    <li><strong class="text-pink-400">Çark Bileti 🎟️:</strong> Şans Çarkı'nı çevirmen için bilet verir.</li>
-                    <li><strong class="text-orange-400">Tıkla-Yakala Bileti 🎫:</strong> Tıkla-Yakala oyununu oynaman için bilet verir.</li>
-                </ul>
+                <h4 class="text-2xl font-bold text-yellow-300 mb-3">👋 Oyuna Hoş Geldin!</h4>
+                <p>Weizend Oyun Dünyası'na hoş geldin! Bu dünyada seni iki büyük macera bekliyor: Liderlik yarışında en tepeye tırmanmak ve sezonun en prestijli görevini, yani Kart Koleksiyonu'nu tamamlamak.</p>
             </div>
-            
+
+            <hr class="border-gray-700">
+
             <div>
-                <h4 class="text-xl font-bold text-yellow-300 mb-2">Kart Koleksiyonu ve Takas</h4>
-                <p>Oyunun en önemli parçasıdır. Amacın, tüm kartları toplayarak koleksiyonu tamamlamaktır. Albümü tamamlayan herkes büyük ödülü kazanır!</p>
-                <ul class="list-disc list-inside mt-2 space-y-1 pl-4">
-                    <li><b>Kart Paketleri (🎴):</b> Kartlar doğrudan bulunmaz. Kutu, Çark ve Mağaza'dan "Kart Paketi" elde edersin. Her paket sana rastgele bir kart verir.</li>
-                    <li><b>Fazla Kartlar ve Takas Pazarı (⇄):</b> Aynı karttan birden fazla kazandığında, bu kartları "Takas Pazarı"nda diğer oyuncularla takas ederek eksiklerini tamamlayabilirsin.</li>
-                    <li><b>Joker Kart (🃏):</b> Bu özel kart, koleksiyonundaki herhangi bir eksik kartın yerine geçer. Eksik bir kartın üzerine tıklayarak Joker'i kullanabilirsin.</li>
+                <h4 class="text-2xl font-bold text-yellow-300 mb-3">🎲 Oyun Modları ve Özellikleri</h4>
+                
+                <div class="space-y-6">
+                    <div>
+                        <h5 class="text-xl font-semibold text-red-400 mb-2">🎁 Kutu Oyunu</h5>
+                        <p class="mb-2">Oyunun kalbi ve ana kaynak motorudur. "Kutu Hakları" kullanarak kutuları açar ve içlerindeki sürprizleri keşfedersin. Kutulardan çıkabilecekler:</p>
+                        <ul class="list-disc list-inside mt-2 space-y-2 pl-4">
+                            <li><b>💰 Puan:</b> Liderlik tablosunda yükselmeni sağlayan temel birimdir.</li>
+                            <li><b>💣 İflas:</b> DİKKAT! Tüm puanlarını sıfırlar.</li>
+                            <li><b>🛡️ İflas Kalkanı:</b> Seni bir defaya mahsus iflastan korur.</li>
+                            <li><b>🎉 Sürpriz Kutu:</b> İçinden çok yüksek puanlar çıkan bir kart seçme oyunu açar.</li>
+                            <li><b>✖️ Çarpan:</b> Bir sonraki kutudan kazanacağın ödülü katlar (Puan, Bilet, Kalkan vb.).</li>
+                            <li><b>🃏 Joker Kart:</b> Çok nadirdir! Eksik bir koleksiyon kartının yerine geçer.</li>
+                            <li><b>🎴 Standart Kart Paketi:</b> İçinden herhangi bir nadirlikte kart çıkabilir.</li>
+                            <li><b>🥉 Bronz Kart Paketi:</b> İçinden sadece "Normal" nadirlikte kart çıkar.</li>
+                            <li><b>🥈 Gümüş Kart Paketi:</b> İçinden sadece "Gümüş" nadirlikte kart çıkar.</li>
+                            <li><b>🥇 Altın Kart Paketi:</b> İçinden sadece "Altın" nadirlikte kart çıkar.</li>
+                            <li><b>🏆 Efsanevi Kart Paketi:</b> İçinden sadece "Efsanevi" nadirlikte kart çıkar.</li>
+                            <li><b>🎫 Çark Bileti:</b> Şans Çarkı'na giriş hakkı verir.</li>
+                            <li><b>🎟️ Tıkla-Yakala Bileti:</b> Tıkla-Yakala oyununa giriş hakkı verir.</li>
+                        </ul>
+                    </div>
+                    
+                    <div>
+                        <h5 class="text-xl font-semibold text-purple-400 mb-2">🃏 Kart Koleksiyonu & Takas Pazarı</h5>
+                        <p class="mb-2">Oyunun en büyük ve en prestijli hedefi! Sezon bitmeden tüm kartları toplayan herkes, admin tarafından belirlenen büyük ödülleri kazanır.</p>
+                        <ul class="list-disc list-inside mt-2 space-y-2 pl-4">
+                            <li><b>Paket Sistemi:</b> Kartlar, oyun içinden kazandığın paketlerden çıkar. Artık belirli nadirlikteki paketleri (Bronz, Gümüş, Altın, Efsanevi) bularak koleksiyonunu daha stratejik bir şekilde tamamlayabilirsin.</li>
+                            <li><b>Takas Pazarı (⇄):</b> Elinde aynı karttan birden fazla varsa, bunları Takas Pazarı'nda diğer oyuncularla takas ederek eksiklerini tamamlayabilirsin. Bu, koleksiyonu tamamlamanın en önemli yollarından biridir.</li>
+                             <li><b>Joker Kart Kullanımı:</b> Kazandığın Joker Kartları, koleksiyon albümünde eksik olan bir kartın üzerine tıklayarak kullanabilir ve o kartı anında envanterine ekleyebilirsin.</li>
+                        </ul>
+                    </div>
+
+                    <div>
+                        <h5 class="text-xl font-semibold text-teal-400 mb-2">🎡 Şans Çarkı</h5>
+                        <p>"Çark Biletleri" kullanarak çarkı çevir ve Puan, Kutu Hakkı, Kart Paketleri, Joker Kart gibi birçok farklı ödülden birini anında kazanma şansı yakala! Çarkın üzerindeki ikonların anlamını öğrenmek için çarkın yanındaki `(?)` butonuna tıklayabilirsin.</p>
+                    </div>
+
+                    <div>
+                        <h5 class="text-xl font-semibold text-orange-400 mb-2">🎯 Tıkla-Yakala</h5>
+                        <p class="mb-2">"Tıkla-Yakala Biletleri" ile oynanan bu refleks oyununda iki mod bulunur:</p>
+                        <ul class="list-disc list-inside mt-2 space-y-2 pl-4">
+                            <li><b>Tekli Oyun:</b> Haftalık liderlik tablosunda en yüksek skoru yapmak için yarış. Hafta sonunda şampiyon özel bir ödül kazanır ve tüm katılımcılara +1 Bilet hediye edilir.</li>
+                            <li><b>Lobi Oyunu:</b> Admin tarafından kurulan, diğer oyuncularla gerçek zamanlı bir yarış. Belirlenen hedefe ilk ulaşan, büyük ödül havuzunu kazanır!</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <hr class="border-gray-700">
+
+            <div>
+                <h4 class="text-2xl font-bold text-yellow-300 mb-3">🏦 Ekonomi ve Sezonlar</h4>
+                 <ul class="list-disc list-inside mt-2 space-y-2 pl-4">
+                    <li><b>Puan Sistemi:</b> Oyunda iki tür puan vardır. Normal <b class="text-green-400">Puan</b>'ı mağazada harcayabilirsin. <b class="text-yellow-200">Kariyer Puanı</b> ise sezon boyunca topladığın tüm puanların toplamıdır ve sadece liderlik sıralaması için kullanılır.</li>
+                    <li><b>Mağaza:</b> Puanlarını kullanarak Kutu Hakkı, Bilet, Kalkan, Çarpan, Avatar ve Kart Paketleri gibi birçok faydalı ürün satın alabilirsin.</li>
+                    <li><b>Puan Kasası:</b> Sezon sıfırlamasından etkilenmeyen özel bir "banka" hesabıdır. Puanlarını buraya aktararak bir sonraki sezona taşıyabilirsin. Kasa puanları sadece "Özel Ürün Mağazası"nda kullanılabilir.</li>
+                    <li><strong class="text-red-400">Aylık Sezon Sıfırlaması:</strong> Rekabeti taze tutmak için her ay oyun sıfırlanır. Bu sıfırlamanın detaylarını öğrenmek için ana ekrandaki geri sayımın yanındaki `(?)` butonuna tıkla. Kısaca:
+                        <ul class="list-disc list-inside pl-6 mt-2">
+                           <li><b class="text-red-400">❌ Sıfırlananlar:</b> Puanlar, Kariyer Puanı, Kart Koleksiyonu ilerlemesi ve tüm oyun istatistikleri.</li>
+                           <li><b class="text-green-400">✅ Kalıcı Olanlar:</b> Puan Kasanızdaki puanlar, satın aldığınız avatarlar ve kazandığınız şampiyonluk unvanları.</li>
+                        </ul>
+                    </li>
                 </ul>
             </div>
 
-            <div>
-                <h4 class="text-xl font-bold text-yellow-300 mb-2">Puan Kasası ve Sezon Sıfırlaması</h4>
-                <p>Oyun, rekabeti taze tutmak için aylık sezonlara ayrılmıştır. Sezon sonunda birçok ilerleme sıfırlanır.</p>
-                <ul class="list-disc list-inside mt-2 space-y-1 pl-4">
-                    <li><strong class="text-purple-400">Puan Kasası:</strong> Sezon sıfırlamasından etkilenmeyen puanlarını buraya aktarabilirsin. Kasa puanları sadece "Özel Ürün Mağazası"nda geçerlidir ve liderlik sıralamasını etkilemez.</li>
-                    <li><strong class="text-red-400">Neler Sıfırlanır?:</strong> Sezon sonunda tüm oyuncuların Puanları, Kariyer Puanları, istatistikleri ve Kart Koleksiyonu ilerlemeleri sıfırlanır.</li>
-                    <li><strong class="text-green-400">Neler Kalır?:</strong> Kasa Puanların, satın aldığın avatarlar ve kazandığın Şampiyonluk unvanları kalıcıdır.</li>
-                </ul>
+            <hr class="border-gray-700">
+
+            <div class="text-center">
+                <p class="text-lg">Unutma, oyunun en önemli amacı eğlenmek! Liderlik tablolarında tırmanırken ve koleksiyonunu tamamlarken herkese bol şans ve iyi oyunlar dileriz!</p>
+                <p class="text-2xl mt-2">🎉🏆🃏</p>
             </div>
+
         </div>
       </div>
-      </div>
+  </div>
 </div>
 
 <div id="avatarSelectionModal" class="modal-overlay fixed inset-0 bg-black bg-opacity-70 flex justify-center items-center z-50 hidden">
@@ -2275,7 +2327,7 @@ body.modal-open .modal-content {
                 <div class="flex items-center gap-3"><span class="text-2xl w-6 text-center">💰</span><span><strong>Yüksek Skor:</strong> Normal hedeften daha fazla skor kazandırır.</span></div>
                 <div class="flex items-center gap-3"><span class="text-2xl w-6 text-center">💣</span><span><strong>Bomba:</strong> DİKKAT! Tıklanıldığında toplam skorunuzdan -skor düşürür.</span></div>
                 <div class="flex items-center gap-3"><span class="text-2xl w-6 text-center">⏰</span><span><strong>Ekstra Süre:</strong> Kalan oyun sürenize bonus saniyeler ekler.</span></div>
-                <div class="flex items-center gap-3"><span class="text-2xl w-6 text-center">🎁</span><span><strong>Özel Hedef:</strong> Nadiren belirir. Kutu Hakkı (📦) , İflas Kalkanı (🛡️) veya Çark Bilet (🎫️) gibi değerli eşyalar kazandırır.</span></div>
+                <div class="flex items-center gap-3"><span class="text-2xl w-6 text-center">🎁</span><span><strong>Özel Hedef:</strong> Nadiren belirir. Kutu Hakkı (📦), İflas Kalkanı (🛡️), Joker Kart (🃏) veya çeşitli Kart Paketleri (🎴🥉🥈🥇🏆) gibi çok değerli ödüller kazandırır.</span></div>
                 <hr class="border-gray-600">
                 <p class="font-semibold text-green-400">-- Lobi Oyununda Geçerli --</p>
                 <div class="flex items-center gap-3"><span class="text-2xl w-6 text-center">🎯</span><span><strong>Hedef:</strong> Hedef skora ulaşmak için tıklamanız gereken ana hedeftir. (+1 Skor)</span></div>
@@ -3322,46 +3374,14 @@ async function afterLogin() {
  */
 // MEVCUT showSection FONKSİYONUNU SİLİP BUNU YAPIŞTIR
 function showSection(sectionId) {
-    // Kullanıcı koleksiyon sekmesinden ayrılıyorsa, "yeni" kart listesini temizle
     if (currentActiveSection === 'cardCollection' && sectionId !== 'cardCollection') {
         newlyAcquiredCards.clear();
     }
 
-    const contentIds = [
-        'gameContent', 
-        'storeSection', 
-        'announcementsContent', 
-        'chanceWheelContent', 
-        'clickCatchContent',
-        'cardCollectionContent' // <-- BU SATIRI EKLE
-    ];
-    const tabButtonIds = [
-        'gameTabBtn', 
-        'storeTabBtn', 
-        'announcementsTabBtn', 
-        'chanceWheelTabBtn', 
-        'clickCatchTabBtn',
-        'cardCollectionTabBtn'
-    ];
+    const contentIds = ['gameContent', 'storeSection', 'announcementsContent', 'chanceWheelContent', 'clickCatchContent', 'cardCollectionContent'];
+    const tabButtonIds = ['gameTabBtn', 'storeTabBtn', 'announcementsTabBtn', 'chanceWheelTabBtn', 'clickCatchTabBtn', 'cardCollectionTabBtn'];
 
-    contentIds.forEach(id => {
-        const element = document.getElementById(id);
-        if (element) {
-            element.classList.add('hidden');
-        }
-    });
-
-    document.getElementById('adminStoreManagementButtonContainer').classList.add('hidden');
-    document.getElementById('adminAnnouncementControls').classList.add('hidden');
-    const clickCatchAdminButtonsContainer = document.getElementById('clickCatchAdminButtonsContainer');
-    if (clickCatchAdminButtonsContainer) {
-        clickCatchAdminButtonsContainer.classList.add('hidden');
-    }
-    const cardAdminControls = document.getElementById('adminCardCollectionControls');
-    if (cardAdminControls) {
-        cardAdminControls.classList.add('hidden');
-    }
-
+    contentIds.forEach(id => document.getElementById(id)?.classList.add('hidden'));
     tabButtonIds.forEach(btnId => {
         const btn = document.getElementById(btnId);
         if (btn) {
@@ -3370,10 +3390,8 @@ function showSection(sectionId) {
         }
     });
     
-    const activeContent = document.getElementById(`${sectionId}Content`) || document.getElementById(`${sectionId}Section`);
-    if (activeContent) {
-        activeContent.classList.remove('hidden');
-    }
+    document.getElementById(`${sectionId}Content`)?.classList.remove('hidden');
+    document.getElementById(`${sectionId}Section`)?.classList.remove('hidden');
 
     const activeBtn = document.getElementById(`${sectionId}TabBtn`);
     if (activeBtn) {
@@ -3381,10 +3399,18 @@ function showSection(sectionId) {
         activeBtn.classList.remove('bg-gray-700', 'hover:bg-gray-600');
     }
 
+    // Admin panellerini yönet
+    document.getElementById('adminStoreManagementButtonContainer').classList.add('hidden');
+    document.getElementById('adminAnnouncementControls').classList.add('hidden');
+    document.getElementById('clickCatchAdminButtonsContainer')?.classList.add('hidden');
+    document.getElementById('adminCardCollectionControls')?.classList.add('hidden');
+    document.getElementById('kasaSettingsBtn')?.classList.add('hidden'); // Kasa ayarlarını varsayılan olarak gizle
+
     if (sectionId === 'store') {
         loadStoreItems();
         if (isAdmin) {
             document.getElementById('adminStoreManagementButtonContainer').classList.remove('hidden');
+            document.getElementById('kasaSettingsBtn').classList.remove('hidden'); // Admin için Kasa Ayarlarını göster
         } else {
             document.getElementById('storeIndicator').classList.add('hidden');
             db.ref(`users/${currentUser}/lastSeenStoreTimestamp`).set(latestStoreItemTimestamp);
@@ -10893,9 +10919,7 @@ function closeWheelLegendModal() {
       }
   });
 
-    // --- TIKLA-YAKALA BİLGİ FONKSİYONLARI ---
-
-function openClickCatchInfoModal() {
+    function openClickCatchInfoModal() {
     document.body.classList.add('modal-open');
     document.getElementById('clickCatchInfoModal').style.display = 'flex';
 }
@@ -11362,6 +11386,16 @@ async function kasaTransferEt() {
         displayMessage("Lütfen geçerli bir miktar girin.");
         return;
     }
+
+    // YENİ EKLENEN KONTROL MEKANİZMASI
+    const settingsSnap = await db.ref('gameConfig/kasaSettings').once('value');
+    const minAmount = settingsSnap.val()?.minTransferAmount || 0;
+
+    if (minAmount > 0 && miktar < minAmount) {
+        displayMessage(`Kasaya aktarım için minimum tutar ${minAmount} Puandır.`);
+        return;
+    }
+    // KONTROL SONU
 
     const userRef = db.ref('users/' + currentUser);
     const userSnap = await userRef.once('value');
@@ -12737,6 +12771,35 @@ async function endCurrentSeason() {
         console.error("Sezon bitirilirken hata oluştu:", error);
         displayMessage("Sezon bitirilirken bir hata meydana geldi.");
     }
+}
+
+// Kasa Ayarları penceresini açar ve mevcut ayarı input'a yazar
+async function openKasaSettingsModal() {
+    if (!isAdmin) return;
+    const settingsSnap = await db.ref('gameConfig/kasaSettings').once('value');
+    const minAmount = settingsSnap.val()?.minTransferAmount || 0;
+    document.getElementById('minKasaTransferInput').value = minAmount;
+    document.getElementById('kasaSettingsModal').style.display = 'flex';
+}
+
+// Kasa Ayarları penceresini kapatır
+function closeKasaSettingsModal() {
+    document.getElementById('kasaSettingsModal').style.display = 'none';
+}
+
+// Kasa Ayarlarını Firebase'e kaydeder
+async function saveKasaSettings() {
+    if (!isAdmin) return;
+    const minAmount = parseInt(document.getElementById('minKasaTransferInput').value);
+
+    if (isNaN(minAmount) || minAmount < 0) {
+        displayMessage("Lütfen geçerli bir minimum tutar girin (0 veya daha büyük bir sayı).");
+        return;
+    }
+
+    await db.ref('gameConfig/kasaSettings/minTransferAmount').set(minAmount);
+    displayMessage(`Minimum kasa transfer tutarı başarıyla ${minAmount} olarak ayarlandı.`);
+    closeKasaSettingsModal();
 }
 
 </script>
