@@ -1878,7 +1878,7 @@ body.modal-open .modal-content {
             
             <div>
                 <h4 class="text-2xl font-bold text-yellow-300 mb-3">👋 Oyuna Hoş Geldin!</h4>
-                <p>Weizend Oyun Dünyası'na hoş geldin! Bu dünyada seni iki büyük macera bekliyor: Liderlik yarışında en tepeye tırmanmak ve sezonun en prestijli görevini, yani Kart Koleksiyonu'nu tamamlamak.</p>
+                <p>Weizend Oyun Dünyası'na hoş geldin! Buradaki temel amacın puan toplayarak liderlik sıralamalarında yükselmek, mini oyunlarda en iyi skorları yapmak ve en büyük hedef olan **Kart Koleksiyonu** albümünü tamamlayarak sezonun şampiyonu olmaktır.</p>
             </div>
 
             <hr class="border-gray-700">
@@ -1891,19 +1891,22 @@ body.modal-open .modal-content {
                         <h5 class="text-xl font-semibold text-red-400 mb-2">🎁 Kutu Oyunu</h5>
                         <p class="mb-2">Oyunun kalbi ve ana kaynak motorudur. "Kutu Hakları" kullanarak kutuları açar ve içlerindeki sürprizleri keşfedersin. Kutulardan çıkabilecekler:</p>
                         <ul class="list-disc list-inside mt-2 space-y-2 pl-4">
-                            <li><b>💰 Puan:</b> Liderlik tablosunda yükselmeni sağlayan temel birimdir.</li>
-                            <li><b>💣 İflas:</b> DİKKAT! Tüm puanlarını sıfırlar.</li>
-                            <li><b>🛡️ İflas Kalkanı:</b> Seni bir defaya mahsus iflastan korur.</li>
-                            <li><b>🎉 Sürpriz Kutu:</b> İçinden çok yüksek puanlar çıkan bir kart seçme oyunu açar.</li>
-                            <li><b>✖️ Çarpan:</b> Bir sonraki kutudan kazanacağın ödülü katlar (Puan, Bilet, Kalkan vb.).</li>
-                            <li><b>🃏 Joker Kart:</b> Çok nadirdir! Eksik bir koleksiyon kartının yerine geçer.</li>
-                            <li><b>🎴 Standart Kart Paketi:</b> İçinden herhangi bir nadirlikte kart çıkabilir.</li>
-                            <li><b>🥉 Bronz Kart Paketi:</b> İçinden sadece "Normal" nadirlikte kart çıkar.</li>
-                            <li><b>🥈 Gümüş Kart Paketi:</b> İçinden sadece "Gümüş" nadirlikte kart çıkar.</li>
-                            <li><b>🥇 Altın Kart Paketi:</b> İçinden sadece "Altın" nadirlikte kart çıkar.</li>
-                            <li><b>🏆 Efsanevi Kart Paketi:</b> İçinden sadece "Efsanevi" nadirlikte kart çıkar.</li>
-                            <li><b>🎫 Çark Bileti:</b> Şans Çarkı'na giriş hakkı verir.</li>
-                            <li><b>🎟️ Tıkla-Yakala Bileti:</b> Tıkla-Yakala oyununa giriş hakkı verir.</li>
+                            <li><b class="text-green-400">Puan:</b> Liderlik tablosunda yükselmeni sağlayan temel birimdir.</li>
+                            <li><b class="text-red-500">İflas (💣):</b> Tüm puanlarını sıfırlar! Dikkatli ol!</li>
+                            <li><b class="text-cyan-400">İflas Kalkanı (🛡️):</b> Seni bir defaya mahsus iflastan korur.</li>
+                            <li><b class="text-yellow-400">Sürpriz Kutu (🎉):</b> İçinden çok yüksek puanlar çıkan bir kart seçme oyunu açar.</li>
+                            <li><b class="text-blue-400">Çarpan (✖️):</b> Bir sonraki kutudan kazanacağın ödülü katlar (Puan, Bilet, Kalkan vb.).</li>
+                            <li><b class="text-purple-400">🃏 Joker Kart:</b> Çok nadirdir! Eksik bir koleksiyon kartının yerine geçer.</li>
+                            <li><b class="text-indigo-400">Kart Paketleri:</b> Koleksiyonunu tamamlaman için en önemli öğelerdir. Farklı türleri vardır:
+                                <ul class="list-disc list-inside mt-1 pl-6">
+                                    <li><b class="text-gray-300">🎴 Standart Kart Paketi:</b> İçinden herhangi bir nadirlikte kart çıkabilir.</li>
+                                    <li><b class="text-amber-700">🥉 Bronz Kart Paketi:</b> İçinden sadece "Normal" nadirlikte kart çıkar.</li>
+                                    <li><b class="text-zinc-400">🥈 Gümüş Kart Paketi:</b> İçinden sadece "Gümüş" nadirlikte kart çıkar.</li>
+                                    <li><b class="text-amber-400">🥇 Altın Kart Paketi:</b> İçinden sadece "Altın" nadirlikte kart çıkar.</li>
+                                    <li><b class="text-fuchsia-400">🏆 Efsanevi Kart Paketi:</b> İçinden sadece "Efsanevi" nadirlikte kart çıkar.</li>
+                                </ul>
+                            </li>
+                            <li><b class="text-pink-400">Biletler (🎫, 🎟️):</b> Diğer mini oyunlara giriş hakkı verir.</li>
                         </ul>
                     </div>
                     
@@ -4614,10 +4617,10 @@ async function deleteUserAvatar(username, avatarId) {
             
             let openedContentHtml = '';
 
-            // Kart paketi ise, CSS sınıfını ekle (ikon CSS'ten gelecek)
-            if (box.content && box.content.startsWith('card_pack')) {
+            // Kart paketi veya Joker Kart ise, CSS sınıfını ekle (ikon CSS'ten gelecek)
+            if (box.content && (box.content.startsWith('card_pack') || box.content === 'wildcard')) {
                 div.classList.add(box.content);
-                openedContentHtml = `<div class="box-content"></div>`; // ::before ikonunun çalışması için boş bir content alanı
+                openedContentHtml = `<div class="box-content"></div>`; 
             }
             // Diğer içerik türleri için ikonu/yazıyı doğrudan ekle
             else if (box.content === 'points') { 
