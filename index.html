@@ -2257,7 +2257,7 @@ body.modal-open .modal-content {
           <div class="mb-4 space-y-2">
               <input type="text" id="dailyRewardName" placeholder="Ödül Adı (Örn: 100 Puan)" class="w-full p-2 bg-gray-700 border border-gray-600 rounded-lg text-white">
               <textarea id="dailyRewardDescription" placeholder="Ödül Açıklaması" rows="2" class="w-full p-2 bg-gray-700 border border-gray-600 rounded-lg text-white"></textarea>
-              <<select id="dailyRewardType" class="w-full p-2 bg-gray-700 border border-gray-600 rounded-lg text-white">
+              <select id="dailyRewardType" class="w-full p-2 bg-gray-700 border border-gray-600 rounded-lg text-white">
     <option value="">Ödül Tipi Seçin</option>
     <option value="points">💰 Puan</option>
     <option value="boxRights">📦 Kutu Hakkı</option>
@@ -12886,11 +12886,6 @@ function openMultiplierChoiceModal(existingMultiplier, foundMultiplier, boxId) {
 
     modal.style.display = 'flex';
 }
-
-// --- YENİ VE EN GELİŞMİŞ ÇARPAN SEÇİM SİSTEMİ FONKSİYONLARI (KUTU HAKKI ÖDÜLSÜZ VERSİYON) ---
-
-// Hangi seçimin beklendiğini tutan global değişken
-let pendingMultiplierChoice = null;
 
 // Seçim penceresini açar ve senaryoya göre içini doldurur
 function openMultiplierChoiceModal(context) {
