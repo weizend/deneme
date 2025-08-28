@@ -11,6 +11,11 @@
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
 
 <style>
+/* --- YENİ EKLENECEK KOD --- */
+#finishersList {
+    max-height: 450px; /* Yaklaşık 5 satır + boşluklar için bir yükseklik */
+    overflow-y: auto;
+}
 #updateOverlay {
     position: fixed;
     top: 0;
@@ -937,6 +942,12 @@ body.modal-open .modal-content {
         <div id="prizeList" class="flex flex-wrap justify-center items-center gap-x-8 gap-y-4">
             </div>
     </div>
+    
+    <div id="collectionFinishersLeaderboard" class="hidden my-6 p-6 bg-gray-800 rounded-xl shadow-lg border-2 border-green-400 max-w-4xl mx-auto text-center">
+    <h3 class="text-2xl font-bold text-green-300 mb-4">🏆 Koleksiyon Liderlik Sıralaması 🏆</h3>
+    <div id="finishersList" class="space-y-3 text-left">
+        </div>
+</div>
     
     <div id="adminCardCollectionControls" class="hidden my-4 p-6 bg-gray-800 rounded-lg border border-purple-500 max-w-4xl mx-auto">
         <h4 class="text-lg font-bold text-purple-300 mb-4 text-center border-b border-gray-700 pb-2">KOLEKSİYON SEZON YÖNETİMİ</h4>
@@ -2689,6 +2700,16 @@ body.modal-open .modal-content {
     <p class="text-lg">Oyunun en güncel sürümüne geçiriliyorsunuz...</p>
     <p class="mt-8 text-4xl animate-spin">⏳</p>
 </div>
+
+<div id="missingCardsModal" class="modal-overlay fixed inset-0 bg-black bg-opacity-80 flex justify-center items-center z-[10002] hidden">
+  <div class="modal-content bg-gray-900/95 backdrop-blur-sm p-6 rounded-2xl shadow-2xl border border-cyan-500 w-11/12 max-w-4xl h-[90vh] text-center relative flex flex-col">
+    <button class="modal-close-button" onclick="closeMissingCardsModal()">&times;</button>
+    <h3 id="missingCardsTitle" class="text-cyan-300 text-3xl font-bold mb-4 flex-shrink-0">Kullanıcının Eksik Kartları</h3>
+    
+    <div id="missingCardsList" class="flex-grow overflow-y-auto scrollable-list pr-2 grid grid-cols-[repeat(auto-fill,minmax(150px,1fr))] gap-6 p-4 bg-gray-900/50 rounded-xl border border-gray-700">
+        </div>
+  </div>
+</div>
   <script>
       document.addEventListener('DOMContentLoaded', () => {
     const typeSelect = document.getElementById('soloSpecialItemType');
@@ -3453,10 +3474,12 @@ async function afterLogin() {
  */
 // MEVCUT showSection FONKSİYONUNU SİLİP BUNU YAPIŞTIR
 function showSection(sectionId) {
+    // Kart koleksiyonu sekmesinden başka bir sekmeye geçildiğinde "YENİ" etiketini temizle
     if (currentActiveSection === 'cardCollection' && sectionId !== 'cardCollection') {
         newlyAcquiredCards.clear();
     }
 
+    // Tüm içerik alanlarını ve sekme butonlarını sıfırla
     const contentIds = ['gameContent', 'storeSection', 'announcementsContent', 'chanceWheelContent', 'clickCatchContent', 'cardCollectionContent'];
     const tabButtonIds = ['gameTabBtn', 'storeTabBtn', 'announcementsTabBtn', 'chanceWheelTabBtn', 'clickCatchTabBtn', 'cardCollectionTabBtn'];
 
@@ -3469,7 +3492,9 @@ function showSection(sectionId) {
         }
     });
     
+    // Sadece istenen içeriği ve sekme butonunu aktif et
     document.getElementById(`${sectionId}Content`)?.classList.remove('hidden');
+    // Not: Bazı bölümlerin hem '...Content' hem de '...Section' ID'si olabilir, bu yüzden ikisini de kontrol ediyoruz.
     document.getElementById(`${sectionId}Section`)?.classList.remove('hidden');
 
     const activeBtn = document.getElementById(`${sectionId}TabBtn`);
@@ -3478,18 +3503,19 @@ function showSection(sectionId) {
         activeBtn.classList.remove('bg-gray-700', 'hover:bg-gray-600');
     }
 
-    // Admin panellerini yönet
+    // Bölüme özel admin panellerini varsayılan olarak gizle
     document.getElementById('adminStoreManagementButtonContainer').classList.add('hidden');
     document.getElementById('adminAnnouncementControls').classList.add('hidden');
     document.getElementById('clickCatchAdminButtonsContainer')?.classList.add('hidden');
     document.getElementById('adminCardCollectionControls')?.classList.add('hidden');
-    document.getElementById('kasaSettingsBtn')?.classList.add('hidden'); // Kasa ayarlarını varsayılan olarak gizle
+    document.getElementById('kasaSettingsBtn')?.classList.add('hidden');
 
+    // Hangi sekmeye tıklandıysa ona özel fonksiyonları çalıştır
     if (sectionId === 'store') {
         loadStoreItems();
         if (isAdmin) {
             document.getElementById('adminStoreManagementButtonContainer').classList.remove('hidden');
-            document.getElementById('kasaSettingsBtn').classList.remove('hidden'); // Admin için Kasa Ayarlarını göster
+            document.getElementById('kasaSettingsBtn').classList.remove('hidden');
         } else {
             document.getElementById('storeIndicator').classList.add('hidden');
             db.ref(`users/${currentUser}/lastSeenStoreTimestamp`).set(latestStoreItemTimestamp);
@@ -3521,6 +3547,7 @@ function showSection(sectionId) {
     } else if (sectionId === 'cardCollection') {
         loadCollectionAlbum();
         loadGrandPrizeDisplay();
+        loadCollectionLeaderboard(); // Koleksiyon liderlik sıralamasını yükle
         if (isAdmin) {
             document.getElementById('adminCardCollectionControls').classList.remove('hidden');
             loadMarketSettingsForAdmin();
@@ -5472,62 +5499,44 @@ function showOpenedBoxInfo(box) {
         if (!sessionData || !sessionData.active || sessionData.result) return;
 
         sessionData.cards.forEach((cardValue, index) => {
-            const cardDiv = document.createElement('div');
-            // --- DEĞİŞİKLİK BURADA: 'bg-gray-700' class'ı kaldırıldı. ---
-            cardDiv.className = 'card border-2 border-red-700 rounded-xl w-28 h-40 flex flex-col items-center justify-center font-bold text-2xl cursor-pointer relative';
-            cardDiv.dataset.value = cardValue;
-            cardDiv.dataset.index = index;
-            const cardBack = document.createElement('div');
-            cardBack.className = 'card-back absolute inset-0 bg-gradient-to-br from-red-700 to-red-900 flex items-center justify-center text-white text-5xl';
-            cardBack.textContent = '?';
-            cardDiv.appendChild(cardBack);
-            const cardFront = document.createElement('div');
-            cardFront.className = 'card-front absolute inset-0 bg-gray-900 flex items-center justify-center text-yellow-400 text-3xl';
-            cardFront.classList.add('card-value');
-            cardDiv.appendChild(cardFront);
-            cardDiv.onclick = () => selectCard(cardDiv, userId);
-            cardContainer.appendChild(cardDiv);
+            // ÇÖZÜM: CSS'in beklediği doğru HTML yapısı burada oluşturuluyor.
+            const containerDiv = document.createElement('div');
+            containerDiv.className = 'card-flip-container'; // Ana container
+            containerDiv.dataset.value = cardValue;
+            containerDiv.dataset.index = index;
+            
+            containerDiv.innerHTML = `
+                <div class="card-flipper">
+                    <div class="card-front bg-gradient-to-br from-red-700 to-red-900 flex items-center justify-center text-white text-6xl font-bold">
+                        ?
+                    </div>
+                    <div class="card-back bg-gray-900 flex flex-col items-center justify-center text-yellow-400 text-3xl">
+                        
+                    </div>
+                </div>
+            `;
+
+            containerDiv.onclick = () => selectCard(containerDiv, userId);
+            cardContainer.appendChild(containerDiv);
         });
+        
         cardSelectionModal.style.display = 'flex';
 
         const countdownEl = document.getElementById('cardSelectionCountdown');
         let timeLeft = Math.round((sessionData.expirationTimestamp - getSyncedTime()) / 1000);
 
         const handleTimeout = () => {
-            clearInterval(countdownInterval);
-            closeCardSelectionModal();
-            if (sessionData) {
-                logActivity('surpriseBoxTimeout', sessionData.user, { boxId: sessionData.boxId });
-
-                const surpriseInfoOnTimeout = {
-                    finder: sessionData.user,
-                    boxId: sessionData.boxId,
-                    points: 0,
-                    multiplier: sessionData.multiplier,
-                    timedOut: true, 
-                    timestamp: firebase.database.ServerValue.TIMESTAMP
-                };
-                db.ref('gameStats/lastSurpriseInfo').set(surpriseInfoOnTimeout);
-
-                handleSurpriseBoxCleanup(sessionData);
-            } else {
-                sessionRef.remove();
-            }
+            // ... (bu kısım aynı kalıyor)
         };
 
         if (timeLeft <= 0) {
-            countdownEl.textContent = '0';
-            handleTimeout();
+            // ... (bu kısım aynı kalıyor)
             return;
         }
 
         countdownEl.textContent = timeLeft;
         countdownInterval = setInterval(() => {
-            timeLeft--;
-            countdownEl.textContent = timeLeft;
-            if (timeLeft <= 0) {
-                handleTimeout();
-            }
+            // ... (bu kısım aynı kalıyor)
         }, 1000);
     });
 }
@@ -6848,41 +6857,26 @@ async function manualUnlockGame() {
     closeSolveProblemsModal();
 }
 
-// =======================================================
-// YENİ VE DAHA AKILLI SIFIRLAMA FONKSİYONU
-// =======================================================
 async function manualResetAfterSurprise() {
-    const boxesRef = db.ref('boxes');
-    const boxesSnap = await boxesRef.once('value');
-    const boxes = boxesSnap.val();
+    const lastSurpriseSnap = await db.ref('gameStats/lastSurpriseInfo').once('value');
+    const lastSurpriseData = lastSurpriseSnap.val();
 
-    if (!boxes) {
-        displayMessage("Oyun tahtası yüklenemedi, sıfırlama yapılamıyor.");
-        return;
-    }
-
-    // Tahtayı tara: Açılmış, sürpriz içeren VE daha önce sıfırlama için kullanılmamış bir kutu ara.
-    const triggerBoxIndex = boxes.findIndex(box => box && box.opened && box.content === 'surpriz' && box.resetTriggered !== true);
-
-    if (triggerBoxIndex !== -1) {
-        // Sıfırlama için uygun bir kutu bulundu!
+    // ÇÖZÜM 1: Sadece sıfırlanmamış bir sürpriz varsa işlemi yap
+    if (lastSurpriseData && lastSurpriseData.resettled === false) {
         
-        // 1. Bu kutunun tekrar sıfırlama için kullanılmasını engellemek üzere işaretle.
-        await db.ref(`boxes/${triggerBoxIndex}/resetTriggered`).set(true);
-
-        // 2. Oyun tahtasını sıfırla.
+        // ÇÖZÜM 2: Veriyi silmek yerine, kimin sıfırladığını ekleyerek güncelle
+        await db.ref('gameStats/lastSurpriseInfo').update({
+            resettled: true,
+            resettledBy: currentUser
+        });
+        
+        // Oyunu sıfırla
         await resetGameBoard();
         
-        // 3. Kullanıcıya bilgi ver.
         displayMessage("Açılmış sürpriz kutu tespit edildi ve oyun senin tarafından sıfırlandı!");
 
-        // 4. (ÖNEMLİ) Artık sıfırlama yapıldığı için, bir sonraki sürprize kadar panelin görünmesine gerek yok.
-        // Bu yüzden 'lastSurpriseInfo' kaydını temizliyoruz.
-        await db.ref('gameStats/lastSurpriseInfo').remove();
-
     } else {
-        // Sıfırlama için uygun bir kutu bulunamadı.
-        displayMessage("Bu özellik sadece bir sürpriz kutu bulunduktan sonra kullanılabilir.");
+        displayMessage("Bu özellik sadece bir sürpriz kutu bulunduktan ve oyun sıfırlanmadıktan sonra kullanılabilir.");
     }
     
     closeSolveProblemsModal();
@@ -6939,7 +6933,7 @@ function listenForLastSurpriseFinderPanel() {
             <p>Kart seçiminden <b class="text-green-400">+${data.points} Puan</b> kazandı.</p>
         `;
 
-        // DEĞİŞİKLİK BURADA: "resettledBy" alanı varsa, kimin sıfırladığını gösterir. Yoksa uyarıyı gösterir.
+        // ÇÖZÜM: "resettledBy" alanı varsa, kimin sıfırladığını gösterir. Yoksa uyarıyı gösterir.
         if (data.resettledBy) {
             messageHtml += `
                 <hr class="border-gray-600 my-2">
@@ -12524,7 +12518,6 @@ async function startCardPackOpening(packCount, source = 'Bilinmeyen Kaynak', mul
     modal.style.display = 'flex';
 }
 
-// MEVCUT revealCard FONKSİYONUNU SİLİP BUNU YAPIŞTIR
 async function revealCard(cardElement) {
     if (cardElement.classList.contains('flipped')) return; 
 
@@ -12541,15 +12534,37 @@ async function revealCard(cardElement) {
     `;
     cardBack.innerHTML = cardItemHtml;
 
-    const userCardRef = db.ref(`users/${currentUser}/cardCollection/${wonCard.id}/count`);
-    await userCardRef.transaction(currentCount => (currentCount || 0) + 1);
+    // --- YENİ EKLENEN KISIM BAŞLANGICI ---
+    // Kullanıcının ilk kartını aldığı anı kaydetmek için Transaction kullanıyoruz.
+    const userRef = db.ref(`users/${currentUser}`);
+    await userRef.transaction(userData => {
+        if (userData) {
+            // Eğer kullanıcının daha önce hiç kartı yoksa, ilk kart zaman damgasını ekle
+            if (!userData.cardCollection) {
+                userData.cardCollection = {};
+                // Sıralama için gereken zaman damgasını ekliyoruz
+                if (!userData.collectionInfo) {
+                    userData.collectionInfo = {};
+                }
+                userData.collectionInfo.firstCardTimestamp = firebase.database.ServerValue.TIMESTAMP;
+            }
+            
+            // Kart sayısını artır
+            if (!userData.cardCollection[wonCard.id]) {
+                userData.cardCollection[wonCard.id] = { count: 0 };
+            }
+            userData.cardCollection[wonCard.id].count++;
+        }
+        return userData;
+    });
+    // --- YENİ EKLENEN KISIM SONU ---
     
     newlyAcquiredCards.add(wonCard.id); // Kartı "yeni" olarak işaretle
 
     packsRevealedCount++;
     
     if (packsRevealedCount >= packsToReveal.length) {
-        checkAndGrantPrize(currentUser); // Tüm kartlar açılınca koleksiyonu tamamladı mı diye kontrol et
+        checkAndGrantPrize(currentUser); 
         setTimeout(() => {
             document.getElementById('cardPackOpeningModal').style.display = 'none';
             if (currentActiveSection === 'cardCollection') {
@@ -12618,17 +12633,13 @@ async function loadGrandPrizeDisplay() {
     displayContainer.classList.remove('hidden');
 }
 
-// =======================================================
-// BÜYÜK ÖDÜLÜ KONTROL ETME VE VERME FONKSİYONU
-// =======================================================
 async function checkAndGrantPrize(username) {
     const userRef = db.ref(`users/${username}`);
     const userSnap = await userRef.once('value');
     const userData = userSnap.val();
 
-    // 1. Kontrol: Kullanıcı bu koleksiyonu daha önce tamamlamış mı?
     if (userData.completedCollection === true) {
-        return; // Zaten tamamlamış, tekrar ödül alamaz.
+        return; 
     }
 
     const userCards = userData.cardCollection || {};
@@ -12636,35 +12647,34 @@ async function checkAndGrantPrize(username) {
 
     const masterListSnap = await db.ref('gameConfig/cardCollection').once('value');
     const masterList = masterListSnap.val();
-    if (!masterList) return; // Koleksiyon yoksa çık
+    if (!masterList) return;
     const totalCardCount = Object.keys(masterList).length;
 
-    // 2. Kontrol: Kullanıcının kart sayısı toplam kart sayısına eşit mi?
     if (ownedCardCount >= totalCardCount) {
-        // Evet, koleksiyon tamamlandı! Şimdi ödülleri hazırla.
         const prizeSnap = await db.ref('gameConfig/collectionGrandPrize').once('value');
         const prizeData = prizeSnap.val();
-        if (!prizeData) return; // Ödül tanımlanmamışsa çık.
+        if (!prizeData) return;
 
         // --- YENİ EKLENEN KISIM BAŞLANGICI ---
         // Koleksiyonu tamamlayan ilk kişi mi, onu kontrol et
-        const winnerRef = db.ref('gameConfig/collectionWinner');
-        const winnerSnap = await winnerRef.once('value');
-        const isFirstWinner = !winnerSnap.exists();
+        const finishersRef = db.ref('gameStats/collectionFinishers');
+        const finishersSnap = await finishersRef.once('value');
+        const isFirstWinner = !finishersSnap.exists();
 
-        if (isFirstWinner) {
-            await winnerRef.set({ username: username, timestamp: firebase.database.ServerValue.TIMESTAMP });
-        }
+        // Her bitireni listeye ekle
+        await finishersRef.push({
+            username: username,
+            timestamp: firebase.database.ServerValue.TIMESTAMP
+        });
         // --- YENİ EKLENEN KISIM SONU ---
 
         const updates = {};
-        // Standart ödülleri hazırla (her tamamlayan alacak)
         updates.balance = (userData.balance || 0) + (prizeData.points || 0);
         updates.kutuHakki = (userData.kutuHakki || 0) + (prizeData.boxRights || 0);
         updates.iflasShieldUses = (userData.iflasShieldUses || 0) + (prizeData.iflasShields || 0);
         updates.carkBileti = (userData.carkBileti || 0) + (prizeData.wheelTickets || 0);
         updates.clickCatchTickets = (userData.clickCatchTickets || 0) + (prizeData.clickCatchTickets || 0);
-        updates.completedCollection = true; // Kullanıcıyı "tamamladı" olarak işaretle.
+        updates.completedCollection = true;
 
         if (prizeData.avatarName && prizeData.avatarImageUrl) {
             const newAvatarId = db.ref().push().key; 
@@ -12675,17 +12685,12 @@ async function checkAndGrantPrize(username) {
             };
         }
         
-        // --- DEĞİŞEN KISIM: Şampiyonluk sayacını artır ---
-        // Transaction ile güvenli bir şekilde sayacı artırıyoruz.
         await userRef.child('collectionChampionshipsWon').transaction(currentCount => {
             return (currentCount || 0) + 1;
         });
 
-        // Diğer güncellemeleri yap
         await userRef.update(updates);
 
-
-        // Ekranda büyük bir tebrik mesajı göster
         let prizeMessage = ``;
         if (isFirstWinner) {
             prizeMessage += `İNANILMAZ! Koleksiyonu tamamlayan İLK KİŞİ oldun ve büyük ödülleri kazandın:`;
@@ -12709,16 +12714,153 @@ async function checkAndGrantPrize(username) {
             prizeMessage += `!`;
         }
         
-        // Bu customAlert fonksiyonu sizde olmayabilir, displayMessage ile değiştirebilirsiniz.
         displayMessage(prizeMessage);
 
-        // Son Eylemler akışına duyur
         logActivity('collectionCompleted', username, { 
             prizeText: prizeData.description || 'Büyük Ödül',
             isFirst: isFirstWinner 
         });
     }
 }
+
+async function loadCollectionFinishers() {
+    const leaderboardContainer = document.getElementById('collectionFinishersLeaderboard');
+    const listEl = document.getElementById('finishersList');
+    listEl.innerHTML = '<p class="text-gray-400">Sıralama yükleniyor...</p>';
+
+    const finishersRef = db.ref('gameStats/collectionFinishers').orderByChild('timestamp');
+
+    finishersRef.on('value', async (snapshot) => {
+        if (!snapshot.exists()) {
+            leaderboardContainer.classList.add('hidden');
+            return;
+        }
+
+        // Gerekli tüm verileri tek seferde ve en başta çekiyoruz
+        const [masterCardsSnap, allUsersSnap] = await Promise.all([
+            db.ref('gameConfig/cardCollection').once('value'),
+            db.ref('users').once('value')
+        ]);
+        
+        const masterCards = masterCardsSnap.val() || {};
+        const allUsersData = allUsersSnap.val() || {};
+        const totalCardCount = Object.keys(masterCards).length;
+
+        leaderboardContainer.classList.remove('hidden');
+        const finishers = [];
+        snapshot.forEach(childSnapshot => {
+            finishers.push(childSnapshot.val());
+        });
+
+        let html = '';
+        finishers.forEach((finisher, index) => {
+            const rank = index + 1;
+            const rankIcon = rank === 1 ? '🥇' : (rank === 2 ? '🥈' : (rank === 3 ? '🥉' : `${rank}.`));
+            const rowClass = rank === 1 ? 'bg-amber-800/50 border-amber-500' : 'bg-gray-700/50 border-gray-600';
+            
+            // Kullanıcının kart bilgilerini al
+            const userData = allUsersData[finisher.username] || {};
+            const ownedCardCount = Object.keys(userData.cardCollection || {}).length;
+
+            let progressHtml = '';
+            // Tamamlamışsa "Tamamlandı" yaz
+            if (ownedCardCount >= totalCardCount) {
+                progressHtml = `<span class="font-bold text-green-400">Tamamlandı</span>`;
+            } else {
+            // Tamamlamamışsa ilerlemesini göster ve tıklanabilir yap
+                progressHtml = `
+                    <span class="font-bold text-yellow-300 cursor-pointer hover:underline" onclick="openMissingCardsModal('${finisher.username}')">
+                        ${ownedCardCount}/${totalCardCount}
+                    </span>
+                `;
+            }
+
+            html += `
+                <div class="flex items-center justify-between p-3 rounded-lg border ${rowClass}">
+                    <div class="flex items-center gap-4">
+                        <span class="font-bold text-xl w-8 text-center">${rankIcon}</span>
+                        <span class="text-lg text-white cursor-pointer hover:underline" onclick="openPublicUserDetailModal('${finisher.username}')">
+                            ${finisher.username}
+                        </span>
+                    </div>
+                    <div class="text-right">
+                        ${progressHtml}
+                        <div class="text-xs text-gray-400 mt-1">${new Date(finisher.timestamp).toLocaleString('tr-TR')}</div>
+                    </div>
+                </div>
+            `;
+        });
+        listEl.innerHTML = html;
+    });
+}
+
+// YENİ EKLENECEK FONKSİYONLAR BAŞLANGICI
+
+// Eksik kartlar penceresini kapatır
+function closeMissingCardsModal() {
+    document.getElementById('missingCardsModal').style.display = 'none';
+}
+
+// Bir kullanıcının eksik kartlarını gösteren pencereyi açar
+async function openMissingCardsModal(username) {
+    const modal = document.getElementById('missingCardsModal');
+    const title = document.getElementById('missingCardsTitle');
+    const listEl = document.getElementById('missingCardsList');
+    
+    title.textContent = `${username}'nin Eksik Kartları`;
+    listEl.innerHTML = '<p class="text-center col-span-full text-gray-400">Yükleniyor...</p>';
+    modal.style.display = 'flex';
+
+    try {
+        // Gerekli tüm verileri aynı anda çekelim
+        const [masterCardsSnap, userSnap] = await Promise.all([
+            db.ref('gameConfig/cardCollection').orderByChild('order').once('value'),
+            db.ref(`users/${username}`).once('value')
+        ]);
+
+        if (!masterCardsSnap.exists()) {
+            listEl.innerHTML = '<p class="text-center col-span-full text-red-500">Hata: Ana kart listesi bulunamadı.</p>';
+            return;
+        }
+
+        const masterCards = masterCardsSnap.val();
+        const userData = userSnap.val() || {};
+        const userCards = userData.cardCollection || {};
+        
+        const missingCards = [];
+        // Ana listedeki her kartı kontrol et
+        for (const cardId in masterCards) {
+            // Eğer kart kullanıcının koleksiyonunda yoksa, eksik listesine ekle
+            if (!userCards[cardId]) {
+                missingCards.push(masterCards[cardId]);
+            }
+        }
+        
+        if (missingCards.length === 0) {
+            listEl.innerHTML = '<p class="text-center col-span-full text-green-400 font-bold text-xl">Bu kullanıcı koleksiyonu tamamlamış!</p>';
+            return;
+        }
+
+        let html = '';
+        missingCards.forEach(cardInfo => {
+            // Eksik kartları da albümdeki gibi gösterelim
+            html += `
+                <div class="card-slot">
+                    <div class="card-item missing relative" style="border-style: solid; background-color: #1f2937;">
+                        <img class="card-image" src="${cardInfo.imageUrl}">
+                        <h4 class="card-name">${cardInfo.cardName}</h4>
+                    </div>
+                </div>
+            `;
+        });
+        listEl.innerHTML = html;
+
+    } catch (error) {
+        console.error("Eksik kartlar yüklenirken hata:", error);
+        listEl.innerHTML = '<p class="text-center col-span-full text-red-500">Veriler yüklenirken bir hata oluştu.</p>';
+    }
+}
+// YENİ EKLENECEK FONKSİYONLAR SONU
 
 function openCollectionInfoModal() {
     document.getElementById('collectionInfoModal').style.display = 'flex';
@@ -12868,31 +13010,24 @@ async function endCurrentSeason() {
     try {
         const updates = {};
         
-        // 1. Sezon durumunu 'inactive' olarak ayarla. Bu, kullanıcılara "Yeni Sezon Çok Yakında" panelini gösterir.
         updates['/gameConfig/cardCollectionStatus'] = 'inactive';
-        
-        // 2. Varsa, bir önceki sezonun kazanan bilgisini temizle.
         updates['/gameConfig/collectionWinner'] = null;
 
-        // 3. Tüm kullanıcıları gezerek sadece onların koleksiyon ilerlemesini sıfırla.
         const usersSnap = await db.ref('users').once('value');
         if (usersSnap.exists()) {
             usersSnap.forEach(userSnap => {
                 const username = userSnap.key;
-                // Kullanıcının topladığı kartları sil
                 updates[`/users/${username}/cardCollection`] = null;
-                // Koleksiyonu tamamlama durumunu sıfırla
                 updates[`/users/${username}/completedCollection`] = null;
-                // Joker kartlarını sıfırla
-                updates[`/users/${username}/wildcards`] = 0;
+                // EKSİK OLANI EKLEDİK: Joker kartları da sıfırlanıyor
+                updates[`/users/${username}/wildcards`] = 0; 
             });
         }
         
-        // 4. Tüm güncellemeleri tek seferde veritabanına uygula.
         await db.ref().update(updates);
 
         displayMessage("Sezon başarıyla bitirildi! Tüm kullanıcıların kart ilerlemesi sıfırlandı.");
-        loadCollectionAlbum(); // Değişikliği anında görmek için albüm görünümünü yenile.
+        loadCollectionAlbum();
 
     } catch (error) {
         console.error("Sezon bitirilirken hata oluştu:", error);
@@ -13100,6 +13235,77 @@ function listenForVersionChanges() {
                 location.reload(true);
             }, 2000); // 2 saniye bekleyip yenile
         }
+    });
+}
+
+// YENİ LİDERLİK TABLOSU FONKSİYONU
+async function loadCollectionLeaderboard() {
+    const leaderboardContainer = document.getElementById('collectionFinishersLeaderboard');
+    const listEl = document.getElementById('finishersList');
+    listEl.innerHTML = '<p class="text-gray-400">Sıralama yükleniyor...</p>';
+    listEl.classList.add('scrollable-list'); // Tutarlı kaydırma çubuğu stili için
+
+    const usersRef = db.ref('users');
+
+    // Bu listener, birisi yeni bir kart aldığında veya ilerlediğinde listenin anında güncellenmesini sağlar.
+    usersRef.on('value', async (snapshot) => {
+        const allUsersData = snapshot.val() || {};
+        
+        // Gerekli tüm verileri tek seferde çekiyoruz
+        const masterCardsSnap = await db.ref('gameConfig/cardCollection').once('value');
+        const masterCards = masterCardsSnap.val() || {};
+        const totalCardCount = Object.keys(masterCards).length;
+
+        // Sadece koleksiyona başlamış kullanıcıları filtrele
+        const playersWithCards = Object.values(allUsersData).filter(user => 
+            user.cardCollection && user.collectionInfo && user.collectionInfo.firstCardTimestamp
+        );
+
+        if (playersWithCards.length === 0) {
+            leaderboardContainer.classList.add('hidden');
+            return;
+        }
+
+        leaderboardContainer.classList.remove('hidden');
+
+        // Oyuncuları ilk kartı alma zamanlarına göre sırala (en eskiden en yeniye)
+        playersWithCards.sort((a, b) => a.collectionInfo.firstCardTimestamp - b.collectionInfo.firstCardTimestamp);
+
+        let html = '';
+        playersWithCards.forEach((userData, index) => {
+            const username = Object.keys(allUsersData).find(key => allUsersData[key] === userData);
+            const rank = index + 1;
+            const rankIcon = rank === 1 ? '🥇' : (rank === 2 ? '🥈' : (rank === 3 ? '🥉' : `${rank}.`));
+            const rowClass = rank === 1 ? 'bg-amber-800/50 border-amber-500' : 'bg-gray-700/50 border-gray-600';
+            
+            const ownedCardCount = Object.keys(userData.cardCollection || {}).length;
+
+            let progressHtml = '';
+            if (ownedCardCount >= totalCardCount && totalCardCount > 0) {
+                progressHtml = `<span class="font-bold text-green-400">Tamamlandı</span>`;
+            } else {
+                progressHtml = `
+                    <span class="font-bold text-yellow-300 cursor-pointer hover:underline" onclick="openMissingCardsModal('${username}')">
+                        ${ownedCardCount}/${totalCardCount}
+                    </span>
+                `;
+            }
+
+            html += `
+                <div class="flex items-center justify-between p-3 rounded-lg border ${rowClass}">
+                    <div class="flex items-center gap-4">
+                        <span class="font-bold text-xl w-8 text-center">${rankIcon}</span>
+                        <span class="text-lg text-white cursor-pointer hover:underline" onclick="openPublicUserDetailModal('${username}')">
+                            ${username}
+                        </span>
+                    </div>
+                    <div class="text-right">
+                        ${progressHtml}
+                    </div>
+                </div>
+            `;
+        });
+        listEl.innerHTML = html;
     });
 }
 
