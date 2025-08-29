@@ -1657,7 +1657,7 @@ body.modal-open .modal-content {
     
     <h4 id="cardSelectionCountdown" class="text-red-500 text-2xl font-bold mb-4">60</h4>
 
-    <div class="card-container grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4 justify-center items-center"></div>
+    <div id="playerCardContainer" class="card-container grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 gap-4 justify-center items-center"></div>
   </div>
 </div>
 
@@ -6020,11 +6020,9 @@ function showOpenedBoxInfo(box) {
   function closeOpenedBoxInfoModal() { openedBoxInfoModal.style.display = 'none'; }
   function shuffleArray(array) { for (let i = array.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [array[i], array[j]] = [array[j], array[i]]; } return array; }
   
-  // --- YENİ VE DÜZELTİLMİŞ KOD ---
-
-function openCardSelectionModal(userId) {
+  function openCardSelectionModal(userId) {
     if (countdownInterval) clearInterval(countdownInterval);
-    const cardContainer = document.querySelector('#cardSelectionModal .card-container');
+    const cardContainer = document.getElementById('playerCardContainer');
     cardContainer.innerHTML = '';
     const sessionRef = db.ref('surprise_box_session');
 
@@ -6085,8 +6083,6 @@ function openCardSelectionModal(userId) {
         }, 1000);
     });
 }
-
-// --- YENİ EKLENECEK YARDIMCI KOD ---
 
 // Kullanıcının kendi seçtiği kartları ve sonucu ekranda gösterir.
 function revealMyCardChoice(sessionData) {
