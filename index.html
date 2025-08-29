@@ -576,19 +576,40 @@
   .glowing-border {
     animation: glow 2.5s ease-in-out infinite;
   }
-  .card-back, .card-front {
-    backface-visibility: hidden;
-    transition: transform 0.5s ease-in-out;
-  }
-  .card.opened .card-back {
+  /* --- KART ÇEVİRME ANİMASYONU STİLLERİ --- */
+.card-flip-container {
+    perspective: 1000px;
+    width: 150px; /* Veya kartlarınızın genişliği ne ise */
+    height: 210px; /* Veya kartlarınızın yüksekliği ne ise */
+    cursor: pointer;
+}
+
+.card-flipper {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    transition: transform 0.6s;
+    transform-style: preserve-3d;
+}
+
+/* Bu sınıf JS tarafından eklendiğinde kart dönecek */
+.card-flip-container.flipped .card-flipper {
     transform: rotateY(180deg);
-  }
-  .card.opened .card-front {
-    transform: rotateY(0deg);
-  }
-  .card-front {
-    transform: rotateY(-180deg);
-  }
+}
+
+.card-front, .card-back {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    -webkit-backface-visibility: hidden;
+    backface-visibility: hidden;
+    border-radius: 12px;
+}
+
+/* Kartın arka yüzü başlangıçta arkaya dönük olacak */
+.card-back {
+    transform: rotateY(180deg);
+}
   .user-mention {
     background-color: #4a5568;
     color: #a0aec0;
