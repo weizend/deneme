@@ -940,9 +940,10 @@ body.modal-open .modal-content {
       <div class="flex items-center gap-4">
           <div>
               <div class="flex items-center gap-3">
-                  <h3 class="text-yellow-400 text-3xl font-bold">Kart Koleksiyonu Albümü</h3>
-                  <button onclick="openCollectionInfoModal()" class="info-button" title="Oyun Hakkında Bilgi">?</button>
-              </div>
+    <h3 class="text-yellow-400 text-3xl font-bold">Kart Koleksiyonu Albümü</h3>
+    <button onclick="openCollectionInfoModal()" class="info-button" title="Oyun Hakkında Bilgi">?</button>
+    <button id="collectionAdminBtn" onclick="openCollectionAdminModal()" class="hidden py-1 px-3 ml-4 text-sm bg-purple-600 hover:bg-purple-500 rounded-lg">Yönetim Paneli</button>
+</div>
               <div id="seasonCountdownContainer_cards" class="text-sm font-normal mt-2 text-yellow-300 hidden flex justify-center items-center gap-2">
                   <span>Sezonun Bitmesine: <span id="seasonCountdown_cards" class="font-bold text-white tracking-wider"></span></span>
               </div>
@@ -971,44 +972,8 @@ body.modal-open .modal-content {
     <div id="finishersList" class="space-y-3 text-left">
         </div>
 </div>
-    
-    <div id="adminCardCollectionControls" class="hidden my-4 p-6 bg-gray-800 rounded-lg border border-purple-500 max-w-4xl mx-auto">
-        <h4 class="text-lg font-bold text-purple-300 mb-4 text-center border-b border-gray-700 pb-2">KOLEKSİYON SEZON YÖNETİMİ</h4>
-        <p class="text-center text-gray-400 text-sm mb-4">Mevcut Sezon Durumu: <b id="collectionStatusText" class="text-white">Bilinmiyor</b></p>
-        
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div class="space-y-3">
-                <button onclick="openCardCreatorModal()" class="w-full py-3 bg-gray-700 hover:bg-gray-600 text-white font-bold rounded-lg">Kart Ekle/Düzenle</button>
-                <button onclick="openGrandPrizeSettings()" class="w-full py-3 bg-gray-700 hover:bg-gray-600 text-white font-bold rounded-lg">Büyük Ödülü Ayarla</button>
-            </div>
-            
-            <div class="space-y-3">
-                <button onclick="toggleCollectionPause()" id="pauseResumeButton" class="w-full py-3 bg-orange-600 hover:bg-orange-500 text-white font-bold rounded-lg">Sezonu Duraklat</button>
-                <button onclick="endCurrentSeason()" class="w-full py-3 bg-red-700 hover:bg-red-600 text-white font-bold rounded-lg">⛔ Sezonu Bitir</button>
-                <button onclick="openTradeHistoryModal()" class="w-full py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-lg">Takas Geçmişi</button>
-            </div>
 
-            <div class="space-y-3">
-                <button onclick="startNewCollection()" class="w-full h-full py-3 bg-green-700 hover:bg-green-600 text-white font-bold rounded-lg text-lg animate-pulse">
-                    💥 YENİ SEZONU BAŞLAT 💥
-                </button>
-            </div>
-        </div>
-    
-    <div class="mt-6 pt-4 border-t border-gray-700">
-        <h4 class="text-lg font-bold text-purple-300 mb-3 text-center">PAZAR AYARLARI</h4>
-        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
-            <div class="md:col-span-1">
-                <label for="tradeFeeInput" class="block text-sm font-medium text-gray-300 mb-1">Takas İşlem Ücreti (Puan)</label>
-                <input type="number" id="tradeFeeInput" value="0" class="box-setting-input">
-            </div>
-            <div class="md:col-span-2 flex flex-col sm:flex-row gap-3 mt-4">
-                <button onclick="saveMarketSettings()" class="w-full py-2 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-lg">Ücreti Kaydet</button>
-                <button onclick="toggleMarketLock()" id="marketLockBtn" class="w-full py-2 bg-gray-600 hover:bg-gray-500 text-white font-bold rounded-lg">Pazarı Kilitle</button>
-            </div>
-        </div>
-    </div>
-</div>
+        
     
     <div id="cardCollectionAlbum" class="grid grid-cols-[repeat(auto-fill,minmax(150px,1fr))] gap-6 p-4 bg-gray-900/50 rounded-xl border border-gray-700">
         </div>
@@ -1107,7 +1072,7 @@ body.modal-open .modal-content {
       <div>
         <label class="block text-sm font-medium text-gray-300 mb-1">Nadirlik Seviyesi:</label>
         <select id="cardRarityInput" class="box-setting-input">
-          <option value="normal">Normal (Gri Çerçeve)</option>
+          <option value="normal">Bronz (Bronz Çerçeve)</option>
           <option value="gumus">Gümüş (Gümüş Çerçeve)</option>
           <option value="altin">Altın (Altın Çerçeve)</option>
           <option value="efsanevi">Efsanevi (Hareketli Çerçeve)</option>
@@ -2649,6 +2614,33 @@ body.modal-open .modal-content {
   </div>
 </div>
 
+    <div id="collectionAdminModal" class="modal-overlay fixed inset-0 bg-black bg-opacity-70 flex justify-center items-center z-[10002] hidden">
+  <div class="modal-content bg-gray-800 p-8 rounded-xl shadow-2xl border border-purple-500 w-11/12 max-w-4xl text-left relative">
+    <button class="modal-close-button" onclick="closeCollectionAdminModal()">&times;</button>
+    <h3 class="text-purple-300 text-3xl font-bold mb-6 text-center">Koleksiyon Sezon Yönetimi</h3>
+    
+    <div id="collectionAdminModalContent">
+    </div>
+<div id="collectionAdminModal" class="modal-overlay fixed inset-0 bg-black bg-opacity-70 flex justify-center items-center z-[10002] hidden">
+  <div class="modal-content bg-gray-800 p-8 rounded-xl shadow-2xl border border-purple-500 w-11/12 max-w-4xl text-left relative">
+    <button class="modal-close-button" onclick="closeCollectionAdminModal()">&times;</button>
+    
+    <div id="collectionAdminModalContent">
+      <h4 class="text-lg font-bold text-purple-300 mb-4 text-center border-b border-gray-700 pb-2">KOLEKSİYON SEZON YÖNETİMİ</h4>
+      <p class="text-center text-gray-400 text-sm mb-4">Mevcut Sezon Durumu: <b id="collectionStatusText" class="text-white">Bilinmiyor</b></p>
+      
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          </div>
+  
+      <div class="mt-6 pt-4 border-t border-gray-700">
+          </div>
+      </div>
+
+  </div>
+</div>
+  </div>
+</div>
+
     <div id="tradeCompleteModal" class="modal-overlay fixed inset-0 bg-black bg-opacity-80 flex justify-center items-center z-[10005] hidden">
   <div class="modal-content bg-gray-800 p-8 rounded-xl shadow-2xl border-4 border-green-500 w-11/12 max-w-md text-center relative">
     <h4 class="text-green-300 text-3xl font-bold mb-4">🤝 Takas Gerçekleşti! 🤝</h4>
@@ -2791,6 +2783,10 @@ body.modal-open .modal-content {
     <p class="text-xl">Oyun dünyasında bazı güncellemeler yapıyoruz. Lütfen daha sonra tekrar deneyin.</p>
     <div id="maintenanceIcon" class="mt-8 text-5xl animate-spin cursor-pointer" title="Admin Girişi">⚙️</div>
 </div>
+
+    <div id="collectionAdminModal" class="modal-overlay fixed inset-0 bg-black bg-opacity-70 flex justify-center items-center z-[10002] hidden">
+  <div class="modal-content bg-gray-800 p-8 rounded-xl shadow-2xl border border-purple-500 w-11/12 max-w-4xl text-left relative">
+    <button class="modal-close-button" onclick="closeCollectionAdminModal()">&times;</button>
   <script>
       // YENİ EKLENECEK GİZLİ ADMİN GİRİŞİ KODU
 const keyboardSecretCode = ['b', 'a', 'k', 'i', 'm'];
@@ -3661,13 +3657,8 @@ async function afterLogin() {
         gameTabBtn.classList.remove('border-red-500', 'text-white');
     }
   }
-  /**
- * Ana içerik alanındaki bölümleri (oyun, mağaza, kartlar vb.) yönetir.
- * Önce tüm bölümleri gizler, sonra sadece isteneni gösterir.
- * İlgili sekme butonunu aktif olarak işaretler ve bölüme özel fonksiyonları çalıştırır.
- * @param {string} sectionId - Gösterilecek bölümün kimliği (örn: 'game', 'store', 'cardCollection').
- */
-// MEVCUT showSection FONKSİYONUNU SİLİP BUNU YAPIŞTIR
+
+// ✅ YENİ VE GÜNCEL FONKSİYON
 function showSection(sectionId) {
     // Kart koleksiyonu sekmesinden başka bir sekmeye geçildiğinde "YENİ" etiketini temizle
     if (currentActiveSection === 'cardCollection' && sectionId !== 'cardCollection') {
@@ -3686,10 +3677,17 @@ function showSection(sectionId) {
             btn.classList.add('bg-gray-700', 'hover:bg-gray-600');
         }
     });
-    
+
+    // Bölüme özel tüm admin butonlarını varsayılan olarak gizle
+    document.getElementById('adminStoreManagementButtonContainer').classList.add('hidden');
+    document.getElementById('adminAnnouncementControls').classList.add('hidden');
+    document.getElementById('clickCatchAdminButtonsContainer')?.classList.add('hidden');
+    document.getElementById('kasaSettingsBtn')?.classList.add('hidden');
+    // YÖNETİM PANELİ BUTONU DA ARTIK BURADA GİZLENİYOR
+    document.getElementById('collectionAdminBtn')?.classList.add('hidden');
+
     // Sadece istenen içeriği ve sekme butonunu aktif et
     document.getElementById(`${sectionId}Content`)?.classList.remove('hidden');
-    // Not: Bazı bölümlerin hem '...Content' hem de '...Section' ID'si olabilir, bu yüzden ikisini de kontrol ediyoruz.
     document.getElementById(`${sectionId}Section`)?.classList.remove('hidden');
 
     const activeBtn = document.getElementById(`${sectionId}TabBtn`);
@@ -3697,13 +3695,6 @@ function showSection(sectionId) {
         activeBtn.classList.add('bg-red-700', 'hover:bg-red-600');
         activeBtn.classList.remove('bg-gray-700', 'hover:bg-gray-600');
     }
-
-    // Bölüme özel admin panellerini varsayılan olarak gizle
-    document.getElementById('adminStoreManagementButtonContainer').classList.add('hidden');
-    document.getElementById('adminAnnouncementControls').classList.add('hidden');
-    document.getElementById('clickCatchAdminButtonsContainer')?.classList.add('hidden');
-    document.getElementById('adminCardCollectionControls')?.classList.add('hidden');
-    document.getElementById('kasaSettingsBtn')?.classList.add('hidden');
 
     // Hangi sekmeye tıklandıysa ona özel fonksiyonları çalıştır
     if (sectionId === 'store') {
@@ -3742,9 +3733,10 @@ function showSection(sectionId) {
     } else if (sectionId === 'cardCollection') {
         loadCollectionAlbum();
         loadGrandPrizeDisplay();
-        loadCollectionLeaderboard(); // Koleksiyon liderlik sıralamasını yükle
+        loadCollectionLeaderboard();
         if (isAdmin) {
-            document.getElementById('adminCardCollectionControls').classList.remove('hidden');
+            // ARTIK PANEL YERİNE BUTONU GÖSTERİYORUZ
+            document.getElementById('collectionAdminBtn').classList.remove('hidden');
             loadMarketSettingsForAdmin();
             loadPrizeSettingsForAdmin();
         }
@@ -12150,6 +12142,23 @@ async function loadCollectionAlbum() {
                 pauseBtn.classList.replace('hover:bg-green-500', 'hover:bg-orange-500');
             }
         }
+        
+        // --- YENİ EKLENEN BUTON GÜNCELLEME KODU BURADA ---
+        const toggleBtn = document.getElementById('toggleSeasonBtn');
+        if (toggleBtn) {
+            if (currentStatus === 'active') {
+                // Sezon aktifse: Butonu KIRMIZI ve "Sezonu Bitir" yap
+                toggleBtn.textContent = '⛔ Sezonu Bitir';
+                toggleBtn.classList.remove('bg-green-700', 'hover:bg-green-600', 'animate-pulse');
+                toggleBtn.classList.add('bg-red-700', 'hover:bg-red-600');
+            } else {
+                // Sezon aktif değilse: Butonu YEŞİL, "Yeni Sezonu Başlat" yap ve animasyon ekle
+                toggleBtn.textContent = '💥 YENİ SEZONU BAŞLAT 💥';
+                toggleBtn.classList.remove('bg-red-700', 'hover:bg-red-600');
+                toggleBtn.classList.add('bg-green-700', 'hover:bg-green-600', 'animate-pulse');
+            }
+        }
+        // --- YENİ EKLENEN KOD SONU ---
     }
 
     if (!isAdmin) {
@@ -12227,7 +12236,6 @@ async function loadCollectionAlbum() {
                 newBadge = `<div class="new-card-badge">YENİ</div>`;
             }
             
-            // --- DÜZELTME BURADA: Fazla kart sayısını '+1' formatında gösteriyoruz ---
             let duplicateBadge = userHasCard && userHasCard.count > 1 ? `<div class="duplicate-badge">+${userHasCard.count - 1}</div>` : '';
             let adminCardControls = isAdmin ? `<div class="card-admin-buttons"><button onclick="openCardCreatorModal('${cardId}')" title="Düzenle">✏️</button><button onclick="deleteCard('${cardId}')" title="Sil">🗑️</button></div>` : '';
             
@@ -13644,33 +13652,88 @@ async function saveGrandPrizeAndCloseModal() {
     closeGrandPrizeSettingsModal(); // Modalı kapat
 }
 
-// Yeni sezonu başlatır. Önce her şeyi sıfırlar, sonra sezonu "aktif" yapar.
-async function startNewCollection() {
-    if(!isAdmin) return;
-    const confirmed = await customConfirm("Bu işlem mevcut tüm kartları, kullanıcı ilerlemelerini ve şampiyonlukları SİLEREK yepyeni bir sezon başlatacaktır. Emin misiniz?");
-    if(!confirmed) return;
-    
-    // resetWholeCollection fonksiyonu artık her şeyi siliyor ve durumu 'inactive' yapıyor.
-    await resetWholeCollection();
-    
-    // Şimdi yeni sezonu 'aktif' olarak işaretleyelim.
-    await db.ref('gameConfig/cardCollectionStatus').set('active');
-    displayMessage("YENİ KOLEKSİYON SEZONU BAŞLATILDI!");
+      // YENİ AKILLI FONKSİYON: Sezonu başlatır veya bitirir.
+async function toggleCardSeason() {
+    if (!isAdmin) return;
+
+    // 1. Mevcut sezon durumunu kontrol et
+    const statusRef = db.ref('gameConfig/cardCollectionStatus');
+    const statusSnap = await statusRef.once('value');
+    const currentStatus = statusSnap.val() || 'inactive';
+
+    // 2. Eğer sezon aktifse, BİTİRME işlemini yap
+    if (currentStatus === 'active') {
+        const confirmed = await customConfirm("Bu işlem mevcut sezonu sonlandıracak. Tüm kullanıcıların topladığı kartlar, joker kartları ve koleksiyon tamamlama durumları sıfırlanacak. ANA KART LİSTENİZ SİLİNMEZ. Emin misiniz?");
+        if (!confirmed) return;
+
+        try {
+            const updates = {};
+            updates['/gameConfig/cardCollectionStatus'] = 'inactive';
+            updates['/gameConfig/collectionWinner'] = null;
+
+            const usersSnap = await db.ref('users').once('value');
+            if (usersSnap.exists()) {
+                usersSnap.forEach(userSnap => {
+                    const username = userSnap.key;
+                    updates[`/users/${username}/cardCollection`] = null;
+                    updates[`/users/${username}/completedCollection`] = null;
+                    updates[`/users/${username}/wildcards`] = 0; 
+                });
+            }
+            await db.ref().update(updates);
+            displayMessage("Sezon başarıyla bitirildi! Tüm kullanıcıların kart ilerlemesi sıfırlandı.");
+            loadCollectionAlbum(); // Arayüzü güncelle
+        } catch (error) {
+            console.error("Sezon bitirilirken hata oluştu:", error);
+            displayMessage("Sezon bitirilirken bir hata meydana geldi.");
+        }
+    } 
+    // 3. Eğer sezon aktif değilse (bitmiş veya duraklatılmışsa), YENİ SEZON BAŞLATMA işlemini yap
+    else {
+        const confirmed = await customConfirm("Bu işlem mevcut tüm kartları, kullanıcı ilerlemelerini ve şampiyonlukları SİLEREK yepyeni bir sezon başlatacaktır. Emin misiniz?");
+        if (!confirmed) return;
+
+        await resetWholeCollection(); // Bu fonksiyon zaten ilerlemeyi sıfırlıyor
+        await statusRef.set('active');
+        displayMessage("YENİ KOLEKSİYON SEZONU BAŞLATILDI!");
+        loadCollectionAlbum(); // Arayüzü güncelle
+    }
 }
 
-// Sezonu duraklatır veya devam ettirir.
+// YENİ VE GÜNCEL FONKSİYONU EKLE
 async function toggleCollectionPause() {
-    if(!isAdmin) return;
+    if (!isAdmin) return;
+
     const statusRef = db.ref('gameConfig/cardCollectionStatus');
     const statusSnap = await statusRef.once('value');
     const currentStatus = statusSnap.val();
 
-    if(currentStatus === 'active') {
+    // Buton ve yazı elementlerini en başta seçelim
+    const pauseBtn = document.getElementById('pauseResumeButton');
+    const statusTextEl = document.getElementById('collectionStatusText');
+
+    if (currentStatus === 'active') {
         await statusRef.set('paused');
         displayMessage("Koleksiyon sezonu duraklatıldı. Oyuncular bakım bilgilendirmesi görecek.");
+
+        // --- YENİ EKLENEN ANINDA GÜNCELLEME KODLARI ---
+        statusTextEl.textContent = 'Duraklatıldı (Bakımda)';
+        pauseBtn.textContent = 'Sezonu Devam Ettir';
+        pauseBtn.classList.replace('bg-orange-600', 'bg-green-600');
+        pauseBtn.classList.replace('hover:bg-orange-500', 'hover:bg-green-500');
+        // --- GÜNCELLEME BİTTİ ---
+
     } else if (currentStatus === 'paused') {
         await statusRef.set('active');
         displayMessage("Koleksiyon sezonu devam ettiriliyor.");
+
+        // --- YENİ EKLENEN ANINDA GÜNCELLEME KODLARI ---
+        statusTextEl.textContent = 'Aktif';
+        pauseBtn.textContent = 'Sezonu Duraklat';
+        pauseBtn.classList.replace('bg-green-600', 'bg-orange-600');
+        pauseBtn.classList.replace('hover:bg-green-500', 'hover:bg-orange-500');
+        // --- GÜNCELLEME BİTTİ ---
+
     } else {
         displayMessage("Sezon sadece 'aktif' veya 'duraklatılmış' durumdayken bu işlem yapılabilir.");
     }
@@ -13682,41 +13745,6 @@ function formatNumber(num) {
     return 0;
   }
   return num.toLocaleString('tr-TR');
-}
-
-      // YENİ EKLENEN SEZONU BİTİRME FONKSİYONU
-async function endCurrentSeason() {
-    if (!isAdmin) return;
-
-    const confirmed = await customConfirm("Bu işlem mevcut sezonu sonlandıracak. Tüm kullanıcıların topladığı kartlar, joker kartları ve koleksiyon tamamlama durumları sıfırlanacak. ANA KART LİSTENİZ SİLİNMEZ. Emin misiniz?");
-    if (!confirmed) return;
-
-    try {
-        const updates = {};
-        
-        updates['/gameConfig/cardCollectionStatus'] = 'inactive';
-        updates['/gameConfig/collectionWinner'] = null;
-
-        const usersSnap = await db.ref('users').once('value');
-        if (usersSnap.exists()) {
-            usersSnap.forEach(userSnap => {
-                const username = userSnap.key;
-                updates[`/users/${username}/cardCollection`] = null;
-                updates[`/users/${username}/completedCollection`] = null;
-                // EKSİK OLANI EKLEDİK: Joker kartları da sıfırlanıyor
-                updates[`/users/${username}/wildcards`] = 0; 
-            });
-        }
-        
-        await db.ref().update(updates);
-
-        displayMessage("Sezon başarıyla bitirildi! Tüm kullanıcıların kart ilerlemesi sıfırlandı.");
-        loadCollectionAlbum();
-
-    } catch (error) {
-        console.error("Sezon bitirilirken hata oluştu:", error);
-        displayMessage("Sezon bitirilirken bir hata meydana geldi.");
-    }
 }
 
 // Kasa Ayarları penceresini açar ve mevcut ayarı input'a yazar
@@ -14127,6 +14155,15 @@ function listenForTradeNotifications() {
         }
     });
 }
+
+      function openCollectionAdminModal() {
+        if (!isAdmin) return;
+        document.getElementById('collectionAdminModal').style.display = 'flex';
+    }
+
+    function closeCollectionAdminModal() {
+        document.getElementById('collectionAdminModal').style.display = 'none';
+    }
 // ★★★ YENİ EKLENECEK FONKSİYONLAR SONU ★★★
       
 </script>
