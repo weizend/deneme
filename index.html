@@ -1451,6 +1451,9 @@ body.modal-open .modal-content {
     <h4 class="text-green-300 text-xl font-semibold mb-4 border-b border-gray-600 pb-2">🏆 Aylık Sezon Yönetimi 👑</h4>
     <button onclick="openSeasonManagementModal()" class="w-full py-3 bg-green-800 hover:bg-green-700 text-white font-bold rounded-lg">Sezon Ayarlarını Aç</button>
 </div>
+<button id="maintenanceModeBtn" onclick="toggleMaintenanceMode()" class="flex-1 py-2 px-3 bg-yellow-700 hover:bg-yellow-600 text-white font-bold rounded-lg text-sm">
+    Bakımı Başlat
+</button>
 <button onclick="forceClientUpdate()" class="w-full py-3 bg-teal-700 hover:bg-teal-600 text-white font-bold rounded-lg text-sm">
     Tüm Kullanıcılara Güncellemeyi Zorla
 </button>
@@ -2782,23 +2785,65 @@ body.modal-open .modal-content {
         </div>
   </div>
 </div>
+
+<div id="maintenanceOverlay" class="fixed top-0 left-0 w-full h-full bg-gray-900 text-white flex-col justify-center items-center z-[999999] hidden text-center">
+    <h2 class="text-4xl font-bold text-red-500 mb-4">SİTE BAKIMDA</h2>
+    <p class="text-xl">Oyun dünyasında bazı güncellemeler yapıyoruz. Lütfen daha sonra tekrar deneyin.</p>
+    <div id="maintenanceIcon" class="mt-8 text-5xl animate-spin cursor-pointer" title="Admin Girişi">⚙️</div>
+</div>
   <script>
-      document.addEventListener('DOMContentLoaded', () => {
-    const typeSelect = document.getElementById('soloSpecialItemType');
-    if (typeSelect) {
-        typeSelect.addEventListener('change', () => {
-            const valueInput = document.getElementById('soloSpecialValue');
-            const usesInput = document.getElementById('soloSpecialMultiplierUses');
-            if (typeSelect.value === 'tempMultiplier') {
-                valueInput.placeholder = 'Çarpan Değeri (örn: 2)';
-                usesInput.classList.remove('hidden');
-            } else {
-                valueInput.placeholder = 'Adet (örn: 1, 5)';
-                usesInput.classList.add('hidden');
-            }
-        });
+      // YENİ EKLENECEK GİZLİ ADMİN GİRİŞİ KODU
+const keyboardSecretCode = ['b', 'a', 'k', 'i', 'm'];
+let keyboardKeySequence = [];
+
+document.addEventListener('keydown', (e) => {
+    const maintenanceOverlay = document.getElementById('maintenanceOverlay');
+    if (maintenanceOverlay.style.display !== 'flex') {
+        keyboardKeySequence = [];
+        return;
+    }
+    const key = e.key.toLowerCase();
+    keyboardKeySequence.push(key);
+    if (keyboardKeySequence.length > keyboardSecretCode.length) {
+        keyboardKeySequence.shift();
+    }
+    if (keyboardKeySequence.join('') === keyboardSecretCode.join('')) {
+        console.log("Admin bakım modu (Klavye) bypass kodu girildi!");
+        maintenanceOverlay.style.display = 'none';
+        document.getElementById('loginContainer').style.display = 'block';
+        keyboardKeySequence = [];
     }
 });
+
+// --- MOBİL (DOKUNMA) İÇİN GİRİŞ KODU ---
+let tapCount = 0;
+let firstTapTime = 0;
+const requiredTaps = 5; // Giriş için gereken dokunma sayısı
+const tapTimeLimit = 3000; // 3 saniye içinde dokunulmalı
+
+const maintenanceIcon = document.getElementById('maintenanceIcon');
+if (maintenanceIcon) {
+    maintenanceIcon.addEventListener('click', () => {
+        const maintenanceOverlay = document.getElementById('maintenanceOverlay');
+        if (maintenanceOverlay.style.display !== 'flex') return;
+
+        const now = Date.now();
+        if (now - firstTapTime > tapTimeLimit) {
+            tapCount = 0;
+        }
+        if (tapCount === 0) {
+            firstTapTime = now;
+        }
+        tapCount++;
+        if (tapCount >= requiredTaps) {
+            console.log("Admin bakım modu (Mobil) bypass kodu aktive edildi!");
+            maintenanceOverlay.style.display = 'none';
+            document.getElementById('loginContainer').style.display = 'block';
+            tapCount = 0;
+            firstTapTime = 0;
+        }
+    });
+}
   // Firebase yapılandırması
   const firebaseConfig = {
     apiKey: "AIzaSyAVuyT2Hb7v9omKSgcwtoj0gzjTbXRtQn8",
@@ -3236,62 +3281,131 @@ async function register() {
   function closeWelcomeGiftModal() { welcomeGiftModal.style.display = 'none'; }
 
 
-  // Oturum yönetimi
-  function checkAndProceedLogin(username, userData) {
+  // MEVCUT checkAndProceedLogin FONKSİYONUNU SİL VE BUNU YAPIŞTIR
+async function checkAndProceedLogin(username, userData) {
+    // 1. GİRİŞ YAPMADAN ÖNCE BAKIM MODUNU KONTROL ET
+    const maintenanceSnap = await db.ref('gameConfig/isMaintenanceMode').once('value');
+    const isMaintenanceOn = maintenanceSnap.val() === true;
+
+    if (isMaintenanceOn) {
+        // Bakım modu açıksa, oyun yerine bakım ekranını göster.
+        document.getElementById('loginContainer').style.display = 'none';
+        document.getElementById('gameDiv').style.display = 'none';
+        document.getElementById('maintenanceOverlay').style.display = 'flex';
+        return; // Fonksiyonu burada bitir, oyuna giriş yapma.
+    }
+
+    // 2. Bakım modu kapalıysa, eski normal kontrollere devam et.
+    // Engelli kullanıcı kontrolü
+    if (userData.blocked && userData.blockedUntil && Date.now() < userData.blockedUntil) {
+        displayBlockedMessage(userData.blockedUntil, username);
+        return; // Engelliyse oyuna giriş yapma
+    }
+
+    // Engel süresi dolmuş ama veritabanında kalmışsa temizle
     if (userData.blocked && userData.blockedUntil && Date.now() >= userData.blockedUntil) {
-         db.ref('users/' + username).update({ blocked: false, blockedUntil: null }).then(() => {
-            currentUser = username;
-            isAdmin = false;
-            afterLogin();
-         });
-         return;
+        await db.ref('users/' + username).update({ blocked: false, blockedUntil: null });
     }
     
+    // Her şey yolundaysa oyuna giriş yap
     currentUser = username;
     isAdmin = false;
     afterLogin();
-  }
+}
 
- // BU FONKSİYONU BUL VE AŞAĞIDAKİYLE DEĞİŞTİR
-// Sayfa yüklendiğinde oturum kontrolü yapar.
+ /// MEVCUT "DOMContentLoaded" KOD BLOĞUNU KOMPLE SİLİP BUNUNLA DEĞİŞTİR
+
 document.addEventListener('DOMContentLoaded', () => {
-    auth.onAuthStateChanged(user => {
-        // 1. Önce Admin girişi var mı diye kontrol et (Firebase Auth ile)
-        if (user) {
-            const firebaseAuthUsername = user.email ? user.email.split('@')[0].toLowerCase() : '';
-            if (firebaseAuthUsername === "weizendtv") {
-                currentUser = "WeizendTv";
-                isAdmin = true;
-                afterLogin();
-            }
-        } 
-        // 2. Admin girişi yoksa, normal kullanıcı girişi var mı diye kontrol et (localStorage ile)
-        else {
-            const savedUser = localStorage.getItem('weizendOyunUser');
-            if (savedUser) {
-                // Kayıtlı kullanıcı varsa, veritabanından bilgilerini çekip doğrula
-                db.ref('users/' + savedUser).once('value').then(snap => {
-                    if (snap.exists()) {
-                        // Kullanıcı veritabanında varsa, otomatik giriş yap
-                        checkAndProceedLogin(savedUser, snap.val());
-                    } else {
-                        // Kullanıcı silinmişse, hafızayı temizle ve giriş ekranını göster
-                        localStorage.removeItem('weizendOyunUser');
-                        document.getElementById("loginContainer").style.display = "block";
-                        document.getElementById("gameDiv").style.display = "none";
-                    }
-                });
-            } 
-            // 3. Hiçbir giriş yoksa, giriş ekranını göster
-            else {
-                document.getElementById("loginContainer").style.display = "block";
-                document.getElementById("gameDiv").style.display = "none";
-                switchAuthTab('login');
-                detachAllListeners(); // Güvenlik için tüm dinleyicileri kapat
-            }
-        }
+    const loginContainer = document.getElementById("loginContainer");
+    const gameDiv = document.getElementById("gameDiv");
+    const maintenanceOverlay = document.getElementById("maintenanceOverlay");
+
+    let isFirebaseUserChecked = false;
+    let isMaintenanceChecked = false;
+    let isMaintenanceMode = false;
+    let loggedInFirebaseUser = null;
+
+    // 1. Bakım modunu dinle
+    db.ref('gameConfig/isMaintenanceMode').on('value', snap => {
+        isMaintenanceMode = snap.val() === true;
+        isMaintenanceChecked = true;
+        checkInitialLoad();
     });
+
+    // 2. Kullanıcı giriş durumunu dinle
+    auth.onAuthStateChanged(user => {
+        loggedInFirebaseUser = user;
+        isFirebaseUserChecked = true;
+        checkInitialLoad();
+    });
+
+    // 3. İki bilgi de geldikten sonra siteyi yükle
+    function checkInitialLoad() {
+        if (!isFirebaseUserChecked || !isMaintenanceChecked) {
+            return; // Henüz her iki bilgiyi de almadıysak bekle
+        }
+
+        const isAdminLoggedIn = loggedInFirebaseUser && loggedInFirebaseUser.email.startsWith('weizendtv');
+        const savedUser = localStorage.getItem('weizendOyunUser');
+
+        // Bakım modu aktifse VE giriş yapan admin değilse, bakım ekranını göster
+        if (isMaintenanceMode && !isAdminLoggedIn) {
+            loginContainer.style.display = "none";
+            gameDiv.style.display = "none";
+            maintenanceOverlay.style.display = "flex";
+            detachAllListeners(); // Herkes için dinleyicileri kapat
+            return;
+        }
+        
+        // Bakım modu kapalıysa veya admin giriş yaptıysa, normal işlemlere devam et
+        maintenanceOverlay.style.display = "none";
+
+        if (isAdminLoggedIn) {
+            currentUser = "WeizendTv";
+            isAdmin = true;
+            afterLogin();
+        } else if (savedUser) {
+            db.ref('users/' + savedUser).once('value').then(snap => {
+                if (snap.exists()) {
+                    checkAndProceedLogin(savedUser, snap.val());
+                } else {
+                    localStorage.removeItem('weizendOyunUser');
+                    loginContainer.style.display = "block";
+                    gameDiv.style.display = "none";
+                }
+            });
+        } else {
+            loginContainer.style.display = "block";
+            gameDiv.style.display = "none";
+            switchAuthTab('login');
+            detachAllListeners();
+        }
+    }
 });
+
+// Adminin bakım modunu açıp kapatacağı fonksiyon
+async function toggleMaintenanceMode() {
+    if (!isAdmin) return;
+    const ref = db.ref('gameConfig/isMaintenanceMode');
+    const snap = await ref.once('value');
+    const isCurrentlyActive = snap.val() === true;
+    
+    const newState = !isCurrentlyActive;
+    await ref.set(newState);
+    
+    const btn = document.getElementById('maintenanceModeBtn');
+    if (newState) {
+        btn.textContent = 'Bakımı Bitir';
+        btn.classList.remove('bg-yellow-700', 'hover:bg-yellow-600');
+        btn.classList.add('bg-green-700', 'hover:bg-green-600');
+        displayMessage("Bakım modu BAŞLATILDI. Adminler hariç kimse siteye giremez.");
+    } else {
+        btn.textContent = 'Bakımı Başlat';
+        btn.classList.remove('bg-green-700', 'hover:bg-green-600');
+        btn.classList.add('bg-yellow-700', 'hover:bg-yellow-600');
+        displayMessage("Bakım modu BİTTİ. Site tüm kullanıcılara açıldı.");
+    }
+}
 
 async function saveWeeklyResetSettings() {
     if (!isAdmin) return;
@@ -5976,51 +6090,75 @@ async function handleSurpriseBoxCleanup(sessionData) {
   }
 
   async function restartSystem() {
-    const confirmed = await customConfirm("Sistemi baştan başlatmak istediğinize emin misiniz? Tüm kullanıcı verileri (puan, hak, istatistik) sıfırlanacak!");
+    const confirmed = await customConfirm("Sistemi baştan başlatmak istediğinize emin misiniz? Avatarlar ve Sezon Başarımları HARİÇ, Kasa Puanları ve Rozetleri belirleyen tüm istatistikler dahil her şey kalıcı olarak sıfırlanacak!");
     if (confirmed) {
         const userSnap = await db.ref('users').once('value');
         const usersData = userSnap.val();
         const updates = {};
         if (usersData) {
             for (const u in usersData) {
+                // Admin dışındaki tüm kullanıcıları döngüye al
                 if (u !== "weizendtv") {
-                    updates['users/' + u + '/balance'] = 0;
-                    updates['users/' + u + '/highestBalanceEver'] = 0;
-                    updates['users/' + u + '/totalSpentPoints'] = 0;
-                    updates['users/' + u + '/kutuHakki'] = 0;
-                    updates['users/' + u + '/carkBileti'] = 0; // YENİ
-                    updates['users/' + u + '/clickCatchHighestScore'] = 0; // YENİ
-                    updates['users/' + u + '/boxesOpenedCount'] = 0;
-                    updates['users/' + u + '/surpriseBoxesOpened'] = 0;
-                    updates['users/' + u + '/activeMultiplier'] = 1;
-                    updates['users/' + u + '/multiplierSource'] = 'none';
-                    updates['users/' + u + '/multiplierRemainingUses'] = 0;
-                    updates['users/' + u + '/activeStoreMultiplierItemId'] = null;
-                    updates['users/' + u + '/iflasShieldUses'] = 0;
-                    updates['users/' + u + '/iflasCount'] = 0;
-                    updates['users/' + u + '/iflasShieldUsedCount'] = 0;
-                    updates['users/' + u + '/multiplierFoundCount'] = 0;
-                    updates['users/' + u + '/storePurchasesCount'] = 0;
-                    updates['users/' + u + '/hasReceivedWelcomeGift'] = false;
-                    updates['users/' + u + '/approvalNotified'] = null;
-                    updates['users/' + u + '/notifications'] = null;
-                    updates['users/' + u + '/dailyRewardsClaimed'] = null;
-                    updates['users/' + u + '/lastSeenAnnouncementTimestamp'] = null;
-                    updates['users/' + u + '/lastSeenGlobalNotifTimestamp'] = null; // YENİ EKLENEN SATIR
+                    const userPath = 'users/' + u;
+                    
+                    // --- SIFIRLANACAK VERİLER (ROZETLER DAHİL) ---
+                    updates[userPath + '/balance'] = 0;
+                    updates[userPath + '/kasaPuani'] = 0;
+                    updates[userPath + '/kariyerPuani'] = 0;
+                    updates[userPath + '/highestBalanceEver'] = 0;
+                    updates[userPath + '/totalSpentPoints'] = 0;
+                    updates[userPath + '/kutuHakki'] = 0;
+                    updates[userPath + '/carkBileti'] = 0;
+                    updates[userPath + '/clickCatchTickets'] = 0;
+                    updates[userPath + '/clickCatchHighestScore'] = 0;
+                    updates[userPath + '/boxesOpenedCount'] = 0;
+                    updates[userPath + '/surpriseBoxesOpened'] = 0;
+                    updates[userPath + '/activeMultiplier'] = 1;
+                    updates[userPath + '/multiplierSource'] = 'none';
+                    updates[userPath + '/multiplierRemainingUses'] = 0;
+                    updates[userPath + '/activeStoreMultiplierItemId'] = null;
+                    updates[userPath + '/iflasShieldUses'] = 0;
+                    updates[userPath + '/iflasCount'] = 0;
+                    updates[userPath + '/iflasShieldUsedCount'] = 0;
+                    updates[userPath + '/multiplierFoundCount'] = 0;
+                    updates[userPath + '/storePurchasesCount'] = 0;
+                    updates[userPath + '/wheelSpinsCount'] = 0;
+                    updates[userPath + '/hasReceivedWelcomeGift'] = false;
+                    updates[userPath + '/approvalNotified'] = null;
+                    updates[userPath + '/notifications'] = null;
+                    updates[userPath + '/dailyRewardsClaimed'] = null;
+                    updates[userPath + '/lastSeenAnnouncementTimestamp'] = null;
+                    updates[userPath + '/lastSeenGlobalNotifTimestamp'] = null;
+                    updates[userPath + '/cardCollection'] = null;
+                    updates[userPath + '/completedCollection'] = null;
+                    updates[userPath + '/wildcards'] = 0;
                 }
             }
             await db.ref().update(updates);
         }
+        
+        // Diğer genel oyun verilerini de temizle
         await createBoxes();
         await db.ref('purchaseHistory').remove();
         await db.ref('pendingSpecialPurchases').remove();
         await db.ref('gameStats').remove();
         await db.ref('announcements').remove();
         await db.ref('dailyRewardOptions').remove();
-        await db.ref('gameConfig').remove(); // <-- BU SATIRI EKLE
-        displayMessage("Sistem başarıyla baştan başlatıldı!");
+        await db.ref('gameConfig').remove();
+        await db.ref('trades').remove();
+        await db.ref('tradeHistory').remove();
+        await db.ref('activityFeed').remove();
+
+        displayMessage("Sistem başarıyla baştan başlatıldı! Tüm rozetler ve istatistikler sıfırlandı. Sayfa 2 saniye içinde yenilenecek...");
+        
+        // !!!!!!!!!!!!!  İŞTE YENİ EKLENEN KISIM BURASI  !!!!!!!!!!!!!
+        // İşlem bittikten 2 saniye sonra sayfayı otomatik olarak yenile.
+        setTimeout(() => {
+            window.location.reload();
+        }, 2000);
+        // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     }
-  }
+}
 
   function loadTotalOpenedBoxesCount() {
     const ref = db.ref('boxes');
@@ -6207,23 +6345,48 @@ function revealMyCardChoice(sessionData) {
     cardContainer.parentElement.appendChild(resultPopup);
 }
 
-// MEVCUT selectCard fonksiyonunu bununla değiştir
-async function selectCard(selectedCardDiv, userId) { 
+// YENİ, GÜVENLİ VE DÜZELTİLMİŞ KOD
+// YENİ, GÜVENLİ VE DÜZELTİLMİŞ KOD
+async function selectCard(selectedCardDiv, userId) {
+    // Anında koruma: Bir kart seçildiği anda diğer tüm kartların tıklanmasını engelle.
+    const cardContainer = document.getElementById('playerCardContainer');
+    const allCards = cardContainer.querySelectorAll('.card-flip-container');
+    allCards.forEach(card => {
+        card.onclick = null;
+        card.style.cursor = 'default';
+    });
+
     if (countdownInterval) clearInterval(countdownInterval);
-    if (selectedCardDiv.classList.contains('opened')) return; 
 
     const cardIndex = selectedCardDiv.dataset.index;
     const sessionRef = db.ref('surprise_box_session');
-    
-    await sessionRef.child('selection').set({ user: userId, cardIndex: cardIndex });
 
-    const snap = await sessionRef.once('value');
-    const sessionData = snap.val();
-    let points = parseInt(selectedCardDiv.dataset.value) * sessionData.multiplier;
-    
-    const userRef = db.ref('users/' + userId); 
+    // Garantili koruma: Firebase Transaction ile sunucu tarafında sadece İLK isteği kabul et.
+    const transactionResult = await sessionRef.transaction(sessionData => {
+        if (!sessionData || sessionData.selection) {
+            return; // İşlemi iptal et, çünkü zaten bir seçim yapılmış.
+        }
+        sessionData.selection = { user: userId, cardIndex: cardIndex };
+        return sessionData;
+    });
 
-    // KARİYER PUANI GÜNCELLEMESİ (Transaction ile)
+    // Sadece işlem başarılı olduysa (yani ilk seçimi bu kullanıcı yaptıysa) devam et.
+    if (!transactionResult.committed) {
+        console.log("Bu kart zaten seçilmiş veya oturum süresi dolmuş.");
+        return;
+    }
+
+    const updatedSessionData = transactionResult.snapshot.val();
+    
+    // !!!!!!!!!!!!!  PUAN BUG'INI ÇÖZEN KRİTİK DÜZELTME BURADA  !!!!!!!!!!!!!
+    // Puan hesaplanırken artık sessionData.multiplier ile ÇARPILMIYOR. Sadece kartın kendi değeri alınıyor.
+    // Böylece çarpan ne olursa olsun, sürpriz kutu puanı sabit kalır.
+    let points = parseInt(selectedCardDiv.dataset.value);
+    // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    
+    const userRef = db.ref('users/' + userId);
+
+    // Puanları ekle
     await userRef.transaction(user => {
         if (user) {
             user.balance = (user.balance || 0) + points;
@@ -6239,10 +6402,11 @@ async function selectCard(selectedCardDiv, userId) {
     const finalUserData = finalUserSnap.val();
     let newBalance = finalUserData.balance || 0;
  
+    // Sonucu Firebase'e yaz
     await sessionRef.child('result').set({ points: points, newBalance: newBalance });
 }
 
-// --- YENİ VE DÜZELTİLMİŞ KOD (Çarpanı Kaydediyor) ---
+// --- YENİ VE GÜNCEL SÜRPRİZ KUTU DİNLEME FONKSİYONU ---
 
 let isProcessingSurpriseResult = false;
 let spectatorViewingResult = false;
@@ -6305,7 +6469,7 @@ function listenForSurpriseBox() {
                             points: finalSessionData.result.points,
                             newBalance: finalSessionData.result.newBalance,
                             timestamp: firebase.database.ServerValue.TIMESTAMP,
-                            multiplier: finalSessionData.multiplier || 1 // <-- YENİ EKLENEN SATIR
+                            multiplier: finalSessionData.multiplier || 1
                         };
 
                         if (finalSessionData.boxId === 'Çark') {
@@ -6352,7 +6516,7 @@ function listenForSurpriseBox() {
     activeListeners.surpriseBox = { ref: sessionRef, event: 'value', callback };
     sessionRef.on('value', callback);
 }
-
+      
   function closeCardSelectionModal() { 
     cardSelectionModal.style.display = 'none'; 
   }
@@ -7522,8 +7686,7 @@ function listenForGameChanges() {
     lastOpenedBoxRef.on('value', lastOpenedBoxCallback);
 }
 
-// --- SORUNLARI ÇÖZ MODALI İÇİN YENİ FONKSİYONLAR ---
-
+// YENİ EKLENEN SORUN GİDERME FONKSİYONLARI
 function openSolveProblemsModal() {
     document.getElementById('solveProblemsModal').style.display = 'flex';
 }
@@ -7532,6 +7695,7 @@ function closeSolveProblemsModal() {
     document.getElementById('solveProblemsModal').style.display = 'none';
 }
 
+// Oyuncunun kendi oyun kilidini manuel olarak açmasını sağlar.
 async function manualUnlockGame() {
     const gameLockRef = db.ref('gameLock');
     const lockSnap = await gameLockRef.once('value');
@@ -7544,17 +7708,18 @@ async function manualUnlockGame() {
     closeSolveProblemsModal();
 }
 
+// Sürpriz kutu bulunduktan sonra oyunun sıfırlanmasını sağlar.
 async function manualResetAfterSurprise() {
     const lastSurpriseSnap = await db.ref('gameStats/lastSurpriseInfo').once('value');
     const lastSurpriseData = lastSurpriseSnap.val();
 
-    // ÇÖZÜM 1: Sadece sıfırlanmamış bir sürpriz varsa işlemi yap
+    // GÜVENLİK KONTROLÜ: Sadece sıfırlanmamış bir sürpriz varsa işlemi yap
     if (lastSurpriseData && lastSurpriseData.resettled === false) {
         
-        // ÇÖZÜM 2: Veriyi silmek yerine, kimin sıfırladığını ekleyerek güncelle
+        // GÜVENLİK KONTROLÜ 2: Veriyi silmek yerine, kimin sıfırladığını ekleyerek güncelle
         await db.ref('gameStats/lastSurpriseInfo').update({
             resettled: true,
-            resettledBy: currentUser
+            resettledBy: currentUser // Sıfırlayan kişiyi kaydet
         });
         
         // Oyunu sıfırla
@@ -7563,7 +7728,7 @@ async function manualResetAfterSurprise() {
         displayMessage("Açılmış sürpriz kutu tespit edildi ve oyun senin tarafından sıfırlandı!");
 
     } else {
-        displayMessage("Bu özellik sadece bir sürpriz kutu bulunduktan sonra kullanılabilir.");
+        displayMessage("Bu özellik sadece bir sürpriz kutu bulunduktan sonra veya oyun sıfırlanmamışsa kullanılabilir.");
     }
     
     closeSolveProblemsModal();
@@ -12701,6 +12866,7 @@ function closeCreateOfferModal() {
     document.getElementById('createOfferModal').style.display = 'none';
 }
 
+// submitTradeOffer FONKSİYONUNU BUL VE BUNUNLA DEĞİŞTİR
 async function submitTradeOffer() {
     const submitBtn = document.getElementById('submit-trade-offer-btn');
     if (!submitBtn) return;
@@ -12806,7 +12972,8 @@ async function submitTradeOffer() {
         submitBtn.textContent = 'TEKLİFİ PAZARA KOY';
     }
 }
-      
+
+// cancelTradeOffer FONKSİYONUNU BUL VE BUNUNLA DEĞİŞTİR
 async function cancelTradeOffer(tradeId, asAdmin = false) {
     if (!tradeId) return;
     
