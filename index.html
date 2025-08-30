@@ -2862,19 +2862,26 @@ function getSyncedTime() {
 
   const defaultAvatarUrl = 'https://i.hizliresim.com/n01dnz4.png?_gl=1*11uaptm*_ga*NTE1MDc3ODEyLjE3Mzg5Mjg1MDk.*_ga_M9ZRXYS2YN*czE3NTQ2OTEwMTgkbzkkZzEkdDE3NTQ2OTEwMjYkajUyJGwwJGgw'; // Varsayılan profil resmi
   
+  // ★★★ SENİN İSTEDİĞİN YENİ VARSAYILAN AYARLAR ★★★
   const BOX_CONTENTS = [
     { type: 'surpriz', value: 0, count: 1 },
     { type: 'points', value: 1000, count: 2 },
-    { type: 'iflas', count: 2 },
-    { type: 'points', value: 750, count: 4 },
-    { type: 'points', value: 500, count: 6 },
-    { type: 'points', value: 250, count: 8 },
+    { type: 'points', value: 750, count: 3 },
+    { type: 'points', value: 500, count: 4 },
+    { type: 'points', value: 250, count: 5 },
     { type: 'points', value: 100, count: 10 },
     { type: 'points', value: 50, count: 15 },
-    { type: 'points', value: 10, count: 20 },
-    { type: 'points', value: 1, count: 30 },
+    { type: 'points', value: 25, count: 20 },
+    { type: 'iflas', value: 0, count: 10 },
     { type: 'multiplier', value: 2, count: 1 },
-    { type: 'multiplier', value: 3, count: 1 }
+    { type: 'multiplier', value: 3, count: 1 },
+    { type: 'card_pack', value: 1, count: 6 },
+    { type: 'card_pack_normal', value: 1, count: 5 },
+    { type: 'card_pack_gumus', value: 1, count: 4 },
+    { type: 'card_pack_altin', value: 1, count: 3 },
+    { type: 'card_pack_efsanevi', value: 1, count: 1 },
+    { type: 'wheelTicket', value: 1, count: 5 },
+    { type: 'clickCatchTicket', value: 1, count: 4 }
   ];
   const TOTAL_BOXES = BOX_CONTENTS.reduce((sum, item) => sum + item.count, 0);
 
@@ -2950,31 +2957,31 @@ function getSyncedTime() {
 
 const defaultWheelSegments = [
     // Sık Gelen Ödüller (Yüksek Şans)
-    { type: 'points', value: 100, label: '🍌', prizeName: '+100 Puan', color: '#2dd4bf', weight: 20 },
+    { type: 'points', value: 100, label: '🍌', prizeName: '+100 Puan', color: '#FF5733', weight: 20 },
     // --- YENİ EKLENEN SATIR BAŞLANGICI ---
-    { type: 'points', value: 10, label: '🍆', prizeName: '+10 Puan', color: '#a855f7', weight: 20 }, 
+    { type: 'points', value: 10, label: '🍆', prizeName: '+10 Puan', color: '#33FF57', weight: 20 }, 
     // --- YENİ EKLENEN SATIR SONU ---
-    { type: 'boxRights', value: 1, label: '📦', prizeName: '+1 Kutu Hakkı', color: '#818cf8', weight: 20 },
-    { type: 'card_pack', value: 1, label: '🎴', prizeName: '+1 Standart Kart Paketi', color: '#facc15', weight: 18 },
-    { type: 'card_pack_normal', value: 1, label: '🥉', prizeName: '+1 Bronz Kart Paketi', color: '#f59e0b', weight: 15 },
-    { type: 'boxRights', value: 3, label: '🎁', prizeName: '+3 Kutu Hakkı', color: '#fb7185', weight: 10 },
-    { type: 'pas', label: '☠️', prizeName: 'Pas', color: '#000000', weight: 20 },
+    { type: 'boxRights', value: 1, label: '📦', prizeName: '+1 Kutu Hakkı', color: '#3357FF', weight: 20 },
+    { type: 'card_pack', value: 1, label: '🎴', prizeName: '+1 Standart Kart Paketi', color: '#FF33A6', weight: 18 },
+    { type: 'card_pack_normal', value: 1, label: '🥉', prizeName: '+1 Bronz Kart Paketi', color: '#33FFF3', weight: 15 },
+    { type: 'boxRights', value: 3, label: '🎁', prizeName: '+3 Kutu Hakkı', color: '#F3FF33', weight: 10 },
+    { type: 'pas', label: '☠️', prizeName: 'Pas', color: '#8E44AD', weight: 20 },
 
     // Orta Seviye Ödüller (Normal Şans)
-    { type: 'card_pack_gumus', value: 1, label: '🥈', prizeName: '+1 Gümüş Kart Paketi', color: '#dbeafe', weight: 7 },
-    { type: 'points', value: 250, label: '🍐', prizeName: '+250 Puan', color: '#4ade80', weight: 9 },
-    { type: 'iflasShield', value: 1, label: '🛡️', prizeName: '+1 İflas Kalkanı', color: '#38bdf8', weight:  5},
-    { type: 'clickCatchTicket', value: 1, label: '🎟️', prizeName: '+1 T-Y Bileti', color: '#f472b6', weight: 7 },
-    { type: 'wheelTicket', value: 1, label: '🎡', prizeName: 'Bedava Çevirme', color: '#fb923c', weight: 9 },
-    { type: 'pas', label: '☠️', prizeName: 'Pas', color: '#000000', weight: 20 },
+    { type: 'card_pack_gumus', value: 1, label: '🥈', prizeName: '+1 Gümüş Kart Paketi', color: '#E67E22', weight: 7 },
+    { type: 'points', value: 250, label: '🍐', prizeName: '+250 Puan', color: '##2ECC71', weight: 9 },
+    { type: 'iflasShield', value: 1, label: '🛡️', prizeName: '+1 İflas Kalkanı', color: '#3498DB', weight:  4},
+    { type: 'clickCatchTicket', value: 1, label: '🎟️', prizeName: '+1 T-Y Bileti', color: '##E74C3C', weight: 5 },
+    { type: 'wheelTicket', value: 1, label: '🎡', prizeName: 'Bedava Çevirme', color: '#1ABC9C', weight: 9 },
+    { type: 'pas', label: '☠️', prizeName: 'Pas', color: '#9B59B6', weight: 20 },
     
     // Nadir ve Efsanevi Ödüller (Düşük Şans)
-    { type: 'card_pack_altin', value: 1, label: '🥇', prizeName: '+1 Altın Kart Paketi', color: '#fef08a', weight: 2 },
-    { type: 'wildcard', value: 1, label: '🃏', prizeName: '+1 Joker Kart', color: '#e879f9', weight: 1 },
-    { type: 'tempMultiplier', value: 5, duration: 1, label: '✖️', prizeName: '5X Çarpan', color: '#22d3ee', weight: 2 },
-    { type: 'points', value: 1000, label: '🎂', prizeName: '+1000 Puan', color: '#f87171', weight: 3 },
-    { type: 'card_pack_efsanevi', value: 1, label: '🏆', prizeName: '+1 Efsanevi Kart Paketi', color: '#c084fc', weight: 1 },
-    { type: 'surpriseBox', value: 1, label: '🎉', prizeName: 'Sürpriz Kutu', color: '#fde047', weight: 1 }
+    { type: 'card_pack_altin', value: 1, label: '🥇', prizeName: '+1 Altın Kart Paketi', color: '#F39C12', weight: 2 },
+    { type: 'wildcard', value: 1, label: '🃏', prizeName: '+1 Joker Kart', color: '##27AE60', weight: 1 },
+    { type: 'tempMultiplier', value: 5, duration: 1, label: '✖️', prizeName: '5X Çarpan', color: '#2980B9', weight: 2 },
+    { type: 'points', value: 1000, label: '🎂', prizeName: '+1000 Puan', color: '#D35400', weight: 3 },
+    { type: 'card_pack_efsanevi', value: 1, label: '🏆', prizeName: '+1 Efsanevi Kart Paketi', color: '#16A085', weight: 1 },
+    { type: 'surpriseBox', value: 1, label: '🎉', prizeName: 'Sürpriz Kutu', color: '#C0392B', weight: 1 }
 ];
   
   // Tıkla Yakala Değişkenleri
@@ -8872,7 +8879,7 @@ function renderWheel() {
     // Pozitif sayı = Saat yönünde kaydırır.
     // Negatif sayı = Saat yönünün tersine kaydırır.
     // 0 = Tam ortaya alır.
-    const angleOffset = 195; 
+    const angleOffset = 193; 
     // ------------------------------------
 
     const segmentAngle = 360 / segmentCount;
