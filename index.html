@@ -973,7 +973,49 @@ body.modal-open .modal-content {
         </div>
 </div>
 
-        
+        <div id="collectionAdminModal" class="modal-overlay fixed inset-0 bg-black bg-opacity-70 flex justify-center items-center z-[50000] hidden">
+  <div class="modal-content bg-gray-800 p-8 rounded-xl shadow-2xl border border-purple-500 w-11/12 max-w-4xl text-left relative max-h-[90vh] overflow-y-auto scrollable-list">
+    <button class="modal-close-button" onclick="closeCollectionAdminModal()">&times;</button>
+    
+    <div id="collectionAdminModalContent">
+      <h4 class="text-lg font-bold text-purple-300 mb-4 text-center border-b border-gray-700 pb-2">KOLEKSİYON SEZON YÖNETİMİ</h4>
+      <p class="text-center text-gray-400 text-sm mb-4">Mevcut Sezon Durumu: <b id="collectionStatusText" class="text-white">Bilinmiyor</b></p>
+      
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div class="space-y-3">
+              <button onclick="openCardCreatorModal()" class="w-full py-3 bg-gray-700 hover:bg-gray-600 text-white font-bold rounded-lg">Kart Ekle/Düzenle</button>
+              <button onclick="openGrandPrizeSettings()" class="w-full py-3 bg-gray-700 hover:bg-gray-600 text-white font-bold rounded-lg">Büyük Ödülü Ayarla</button>
+          </div>
+          
+          <div class="space-y-3">
+              <button onclick="toggleCollectionPause()" id="pauseResumeButton" class="w-full py-3 bg-orange-600 hover:bg-orange-500 text-white font-bold rounded-lg">Sezonu Duraklat</button>
+              <button onclick="openTradeHistoryModal()" class="w-full py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-lg">Takas Geçmişi</button>
+          </div>
+
+          <div class="space-y-3">
+              <button id="toggleSeasonBtn" onclick="toggleCardSeason()" class="w-full h-full py-3 bg-gray-700 text-white font-bold rounded-lg text-lg">
+                  Yükleniyor...
+              </button>
+          </div>
+      </div>
+  
+      <div class="mt-6 pt-4 border-t border-gray-700">
+          <h4 class="text-lg font-bold text-purple-300 mb-3 text-center">PAZAR AYARLARI</h4>
+          <div class="grid grid-cols-1 md:grid-cols-3 gap-4 items-center">
+              <div class="md:col-span-1">
+                  <label for="tradeFeeInput" class="block text-sm font-medium text-gray-300 mb-1">Takas İşlem Ücreti (Puan)</label>
+                  <input type="number" id="tradeFeeInput" value="0" class="box-setting-input">
+              </div>
+              <div class="md:col-span-2 flex flex-col sm:flex-row gap-3 mt-4">
+                  <button onclick="saveMarketSettings()" class="w-full py-2 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-lg">Ücreti Kaydet</button>
+                  <button onclick="toggleMarketLock()" id="marketLockBtn" class="w-full py-2 bg-gray-600 hover:bg-gray-500 text-white font-bold rounded-lg">Pazarı Kilitle</button>
+              </div>
+          </div>
+      </div>
+    </div>
+
+  </div>
+</div>
     
     <div id="cardCollectionAlbum" class="grid grid-cols-[repeat(auto-fill,minmax(150px,1fr))] gap-6 p-4 bg-gray-900/50 rounded-xl border border-gray-700">
         </div>
@@ -1061,7 +1103,7 @@ body.modal-open .modal-content {
     </div>
   </div>
 </div>
-<div id="cardCreatorModal" class="modal-overlay fixed inset-0 bg-black bg-opacity-70 flex justify-center items-center z-[9999] hidden">
+<div id="cardCreatorModal" class="modal-overlay fixed inset-0 bg-black bg-opacity-70 flex justify-center items-center z-[50001] hidden">
   <div class="modal-content bg-gray-800 p-8 rounded-xl shadow-2xl border border-yellow-500 w-11/12 max-w-lg text-left relative">
     <button class="modal-close-button" onclick="closeCardCreatorModal()">&times;</button>
     <h3 id="cardFormTitle" class="text-yellow-300 text-3xl font-bold mb-6 text-center">Yeni Kart Oluştur</h3>
@@ -2614,33 +2656,6 @@ body.modal-open .modal-content {
   </div>
 </div>
 
-    <div id="collectionAdminModal" class="modal-overlay fixed inset-0 bg-black bg-opacity-70 flex justify-center items-center z-[10002] hidden">
-  <div class="modal-content bg-gray-800 p-8 rounded-xl shadow-2xl border border-purple-500 w-11/12 max-w-4xl text-left relative">
-    <button class="modal-close-button" onclick="closeCollectionAdminModal()">&times;</button>
-    <h3 class="text-purple-300 text-3xl font-bold mb-6 text-center">Koleksiyon Sezon Yönetimi</h3>
-    
-    <div id="collectionAdminModalContent">
-    </div>
-<div id="collectionAdminModal" class="modal-overlay fixed inset-0 bg-black bg-opacity-70 flex justify-center items-center z-[10002] hidden">
-  <div class="modal-content bg-gray-800 p-8 rounded-xl shadow-2xl border border-purple-500 w-11/12 max-w-4xl text-left relative">
-    <button class="modal-close-button" onclick="closeCollectionAdminModal()">&times;</button>
-    
-    <div id="collectionAdminModalContent">
-      <h4 class="text-lg font-bold text-purple-300 mb-4 text-center border-b border-gray-700 pb-2">KOLEKSİYON SEZON YÖNETİMİ</h4>
-      <p class="text-center text-gray-400 text-sm mb-4">Mevcut Sezon Durumu: <b id="collectionStatusText" class="text-white">Bilinmiyor</b></p>
-      
-      <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-          </div>
-  
-      <div class="mt-6 pt-4 border-t border-gray-700">
-          </div>
-      </div>
-
-  </div>
-</div>
-  </div>
-</div>
-
     <div id="tradeCompleteModal" class="modal-overlay fixed inset-0 bg-black bg-opacity-80 flex justify-center items-center z-[10005] hidden">
   <div class="modal-content bg-gray-800 p-8 rounded-xl shadow-2xl border-4 border-green-500 w-11/12 max-w-md text-center relative">
     <h4 class="text-green-300 text-3xl font-bold mb-4">🤝 Takas Gerçekleşti! 🤝</h4>
@@ -2717,7 +2732,7 @@ body.modal-open .modal-content {
   </div>
 </div>
 
-<div id="grandPrizeSettingsModal" class="modal-overlay fixed inset-0 bg-black bg-opacity-70 flex justify-center items-center z-[9999] hidden">
+<div id="grandPrizeSettingsModal" class="modal-overlay fixed inset-0 bg-black bg-opacity-70 flex justify-center items-center z-[50001] hidden">
   <div class="modal-content bg-gray-800 p-8 rounded-xl shadow-2xl border border-yellow-500 w-11/12 max-w-2xl text-center relative">
     <button class="modal-close-button" onclick="closeGrandPrizeSettingsModal()">&times;</button>
     <h3 class="text-yellow-300 text-3xl font-bold mb-6">Büyük Ödül Ayarları</h3>
@@ -2783,10 +2798,6 @@ body.modal-open .modal-content {
     <p class="text-xl">Oyun dünyasında bazı güncellemeler yapıyoruz. Lütfen daha sonra tekrar deneyin.</p>
     <div id="maintenanceIcon" class="mt-8 text-5xl animate-spin cursor-pointer" title="Admin Girişi">⚙️</div>
 </div>
-
-    <div id="collectionAdminModal" class="modal-overlay fixed inset-0 bg-black bg-opacity-70 flex justify-center items-center z-[10002] hidden">
-  <div class="modal-content bg-gray-800 p-8 rounded-xl shadow-2xl border border-purple-500 w-11/12 max-w-4xl text-left relative">
-    <button class="modal-close-button" onclick="closeCollectionAdminModal()">&times;</button>
   <script>
       // YENİ EKLENECEK GİZLİ ADMİN GİRİŞİ KODU
 const keyboardSecretCode = ['b', 'a', 'k', 'i', 'm'];
