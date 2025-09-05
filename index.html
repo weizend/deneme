@@ -1359,8 +1359,6 @@ body.modal-open .modal-content {
     <input type="text" id="adminMonsterImageUrl" class="box-setting-input" placeholder="Canavar Resim URL">
     <hr class="border-gray-600">
     <h5 class="text-yellow-300 font-bold">Ödüller</h5>
-    <input type="number" id="adminMonsterDmgReward" class="box-setting-input" placeholder="Saldırı Başına Puan Ödülü">
-    
     <label class="block text-sm font-medium text-gray-300 mb-1">Canavar Ölünce Lidere Verilecek Ödül:</label>
     <div class="grid grid-cols-2 gap-2">
         <select id="adminMonsterKillRewardType" class="box-setting-input">
@@ -1393,37 +1391,54 @@ body.modal-open .modal-content {
             <button onclick="saveAvatarStats()" class="w-full py-2 bg-green-700 hover:bg-green-600 rounded-lg font-bold mt-2">Tüm Avatar İstatistiklerini Kaydet</button>
         </div>
 
-        <div id="battleArena" class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <div class="monster-container lg:col-span-1 bg-gray-900/50 p-4 rounded-lg flex flex-col items-center">
-                <h4 id="monsterName" class="text-2xl font-bold text-red-400">Canavar Yükleniyor...</h4>
-                <img id="monsterImage" src="https://i.hizliresim.com/n01dnz4.png" class="w-48 h-48 my-4 object-contain">
-                <div class="w-full bg-gray-700 rounded-full h-6 border-2 border-black">
-                    <div id="monsterHealthBar" class="bg-red-600 h-full rounded-full text-center text-white text-xs font-bold transition-all duration-500" style="width: 100%;">100%</div>
-                </div>
-                <p id="monsterHealthText" class="text-sm mt-1 text-gray-300">Yükleniyor...</p>
+        <div id="battleArenaContainer">
+    <div id="battleArena" class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div class="monster-container lg:col-span-1 bg-gray-900/50 p-4 rounded-lg flex flex-col items-center relative">
+            <div id="monsterInstanceAdminControls" class="absolute top-2 right-2 flex gap-2 hidden">
+                <button onclick="editCurrentMonster()" class="p-2 bg-blue-600 hover:bg-blue-500 rounded-full text-white" title="Mevcut Canavarı Düzenle">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path d="M17.414 2.586a2 2 0 00-2.828 0L7 10.172V13h2.828l7.586-7.586a2 2 0 000-2.828zM5 12V7a1 1 0 011-1h2.586l-2 2H6v3h3v-1.586l2-2H13a1 1 0 011 1v5a1 1 0 01-1 1H6a1 1 0 01-1-1v-2z" /></svg>
+                </button>
+                <button onclick="deleteCurrentMonster()" class="p-2 bg-red-700 hover:bg-red-600 rounded-full text-white" title="Bu Canavarı Kaldır">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1-1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" /></svg>
+                </button>
+            </div>
+            
+            <h4 id="monsterName" class="text-2xl font-bold text-red-400">Canavar Yükleniyor...</h4>
+            <img id="monsterImage" src="https://i.hizliresim.com/n01dnz4.png" class="w-48 h-48 my-4 object-contain cursor-pointer transition-transform hover:scale-105" onclick="openMonsterInfoModal()">
+            <div class="w-full bg-gray-700 rounded-full h-6 border-2 border-black">
+                <div id="monsterHealthBar" class="bg-red-600 h-full rounded-full text-center text-white text-xs font-bold transition-all duration-500" style="width: 100%;">100%</div>
+            </div>
+            <p id="monsterHealthText" class="text-sm mt-1 text-gray-300">Yükleniyor...</p>
+        </div>
+
+        <div class="leaderboard-container lg:col-span-2 bg-gray-900/50 p-4 rounded-lg">
+            <h4 class="text-xl font-bold text-yellow-300 mb-3 border-b border-gray-600 pb-2">En Çok Hasar Verenler</h4>
+            <div id="monsterLeaderboard" class="space-y-2 max-h-80 overflow-y-auto scrollable-list pr-2 mb-4">
             </div>
 
-            <div class="leaderboard-container lg:col-span-2 bg-gray-900/50 p-4 rounded-lg">
-                <h4 class="text-xl font-bold text-yellow-300 mb-3 border-b border-gray-600 pb-2">En Çok Hasar Verenler</h4>
-                <div id="monsterLeaderboard" class="space-y-2 max-h-80 overflow-y-auto scrollable-list pr-2 mb-4">
-                    </div>
-
-                <div class="player-controls bg-gray-800 p-4 rounded-lg mt-4">
-                    <h5 class="text-lg font-bold text-green-400" id="playerBattleName">Oyuncu Yükleniyor...</h5>
-                    <div class="w-full bg-gray-700 rounded-full h-5 my-2 border border-black">
-                         <div id="playerHealthBar" class="bg-green-500 h-full rounded-full text-center text-black text-xs font-bold transition-all duration-500" style="width: 100%;">100%</div>
-                    </div>
-                    <p id="playerHealthText" class="text-sm text-gray-300 mb-3">Yükleniyor...</p>
-
-                    <div id="playerPotions" class="flex justify-center gap-4 mb-4">
-                        </div>
-
-                    <button id="attackMonsterBtn" onclick="attackMonster()" class="w-full py-3 bg-red-700 hover:bg-red-600 text-white font-bold text-lg rounded-lg shadow-lg disabled:bg-gray-600 disabled:cursor-not-allowed">
-                        SALDIR!
-                    </button>
+            <div class="player-controls bg-gray-800 p-4 rounded-lg mt-4">
+                <h5 class="text-lg font-bold text-green-400" id="playerBattleName">Oyuncu Yükleniyor...</h5>
+                <div class="w-full bg-gray-700 rounded-full h-5 my-2 border border-black">
+                     <div id="playerHealthBar" class="bg-green-500 h-full rounded-full text-center text-black text-xs font-bold transition-all duration-500" style="width: 100%;">100%</div>
                 </div>
+                <p id="playerHealthText" class="text-sm text-gray-300 mb-3">Yükleniyor...</p>
+
+                <div id="playerBuffs" class="flex justify-center items-center gap-4 mb-3 min-h-[30px]"></div>
+                
+                <div id="playerPotions" class="flex justify-center gap-4 mb-4">
+                </div>
+
+                <button id="attackMonsterBtn" onclick="attackMonster()" class="w-full py-3 bg-red-700 hover:bg-red-600 text-white font-bold text-lg rounded-lg shadow-lg disabled:bg-gray-600 disabled:cursor-not-allowed">
+                    SALDIR!
+                </button>
             </div>
         </div>
+    </div>
+    <div id="monsterDefeatedScreen" class="hidden bg-gray-800 p-8 rounded-xl text-center">
+        <h3 id="monsterDefeatedTitle" class="text-3xl font-bold text-green-300 mb-4"></h3>
+        <p id="monsterDefeatedMessage" class="text-lg text-gray-300"></p>
+    </div>
+</div>
     </div>
 </div>
     <div id="mainContentArea" class="w-full">
@@ -3274,6 +3289,25 @@ body.modal-open .modal-content {
     <h3 id="statsModalUsername" class="text-cyan-300 text-3xl font-bold mb-6 text-center">Kullanıcı İstatistikleri</h3>
     <div id="statsModalContent" class="space-y-3 text-lg">
       </div>
+  </div>
+</div>
+<div id="monsterInfoModal" class="modal-overlay fixed inset-0 bg-black bg-opacity-70 flex justify-center items-center z-[10003] hidden">
+  <div class="modal-content bg-gray-800 p-8 rounded-xl shadow-2xl border border-red-500 w-11/12 max-w-lg text-left relative max-h-[90vh] overflow-y-auto scrollable-list">
+    <button class="modal-close-button" onclick="closeMonsterInfoModal()">&times;</button>
+    <h3 id="modalMonsterName" class="text-red-300 text-3xl font-bold mb-6 text-center">Canavar Bilgileri</h3>
+    
+    <div id="modalMonsterStats" class="space-y-3 text-lg mb-6">
+      </div>
+    
+    <div class="border-t border-gray-700 pt-4">
+        <h4 class="text-yellow-300 text-xl font-bold mb-3">🏆 Liderlik Ödülü</h4>
+        <p id="modalKillReward" class="text-gray-300"></p>
+    </div>
+
+    <div class="mt-4 border-t border-gray-700 pt-4">
+        <h4 class="text-yellow-300 text-xl font-bold mb-3">✨ Hasar Eşiği Ödülleri</h4>
+        <p id="modalDamageTiers" class="text-gray-300 text-sm space-y-2"></p>
+    </div>
   </div>
 </div>
   <script>
@@ -7440,14 +7474,24 @@ async function buyItem(itemId) {
                 message = `Tebrikler! Mağazadan ${itemValue} adet Joker Kart satın aldın!`;
             }
         } else if (item.type === 'avatar') {
-            const newAvatar = { id: itemId, name: item.name, imageUrl: item.imageUrl };
-            updates[`avatars/${itemId}`] = newAvatar;
+            const newAvatarId = db.ref().push().key;
+            updates[`avatars/${itemId}`] = { id: itemId, name: item.name, imageUrl: item.imageUrl };
             message = `'${item.name}' avatarı koleksiyonuna eklendi!`;
         } else if (item.type === 'health_potion') {
-    updates['inventory/health_potion'] = (user.inventory?.health_potion || 0) + itemValue;
-} else if (item.type === 'revival_stone') {
-    updates['inventory/revival_stone'] = (user.inventory?.revival_stone || 0) + itemValue;
-}
+            updates['inventory/health_potion'] = (user.inventory?.health_potion || 0) + itemValue;
+        } else if (item.type === 'revival_stone') {
+            updates['inventory/revival_stone'] = (user.inventory?.revival_stone || 0) + itemValue;
+        } else if (['damage_potion', 'defense_potion', 'crit_potion'].includes(item.type)) {
+            const buffDurationMinutes = item.duration || 5; // Varsayılan 5 dakika
+            const expiresAt = getSyncedTime() + (buffDurationMinutes * 60 * 1000);
+            
+            // Kullanıcının savaş verilerine buff'ı ekle
+            updates[`/gameConfig/monsterBattle/damageLeaderboard/${currentUser}/buffs/${item.type}`] = {
+                value: item.value,
+                expiresAt: expiresAt
+            };
+            message = `'${item.name}' iksiri ${buffDurationMinutes} dakika boyunca aktif olacak!`;
+        }
         
         
         let itemUpdates = {};
@@ -15521,24 +15565,63 @@ function listenForAvatarBaseStats() {
     ref.on('value', callback);
 }
 
-/**
- * Canavar Savaşı sekmesinin tüm arayüzünü güncel verilerle yeniden çizer.
- */
+// MEVCUT renderMonsterBattleUI FONKSİYONUNU BUL VE BUNUNLA DEĞİŞTİR
+
 async function renderMonsterBattleUI() {
+    const battleArenaContainer = document.getElementById('battleArenaContainer');
+    if (!battleArenaContainer) return; // Sekme değiştirildiğinde hata almamak için kontrol
+
     const monster = monsterBattleData.monsterDetails;
     const leaderboard = monsterBattleData.damageLeaderboard || {};
+    const battleArena = document.getElementById('battleArena');
+    const defeatedScreen = document.getElementById('monsterDefeatedScreen');
+    const monsterInstanceControls = document.getElementById('monsterInstanceAdminControls');
 
-    if (!monster) {
-        document.getElementById('battleArena').innerHTML = '<p class="text-center col-span-full text-2xl text-gray-400">Henüz çağırılmış bir canavar yok. Adminin savaşı başlatması bekleniyor.</p>';
+    // Admin kontrolü: Ayar butonlarını göster/gizle
+    const adminToggles = document.getElementById('monsterBattleAdminToggles');
+    if (adminToggles) {
+        adminToggles.style.display = isAdmin ? 'block' : 'none';
+    }
+    
+    // Eğer canavar yoksa veya canı sıfırdan küçükse
+    if (!monster || monster.currentHP <= 0) {
+        battleArena.style.display = 'none'; // Savaş alanını gizle
+        defeatedScreen.classList.remove('hidden'); // "Öldü" ekranını göster
+        
+        // Kazananı belirle
+        const sortedLeaderboard = Object.entries(leaderboard).sort((a, b) => b[1].totalDamage - a[1].totalDamage);
+        const winner = sortedLeaderboard.length > 0 ? sortedLeaderboard[0][0] : null;
+        const prize = monsterBattleData.rewards?.onKillLeader;
+        
+        document.getElementById('monsterDefeatedTitle').textContent = `${monster?.name || 'Canavar'} Mağlup Edildi!`;
+        
+        if (winner && prize) {
+            const prizeName = typeToName[prize.type] || prize.type;
+            document.getElementById('monsterDefeatedMessage').innerHTML = `
+                En çok hasarı veren <b class="text-yellow-300">${winner}</b> oldu ve <b class="text-green-400">${formatNumber(prize.value)} ${prizeName}</b> ödülünü kazandı!
+                <br><br>
+                <span class="text-gray-400">Adminin yeni bir canavar çağırması bekleniyor...</span>
+            `;
+        } else {
+            document.getElementById('monsterDefeatedMessage').textContent = 'Adminin yeni bir canavar çağırması bekleniyor.';
+        }
+        
+        if(monsterInstanceControls) monsterInstanceControls.classList.add('hidden');
         return;
     }
+
+    // Canavar varsa, "öldü" ekranını gizle, savaş alanını göster
+    battleArena.style.display = 'grid';
+    defeatedScreen.classList.add('hidden');
+    if(monsterInstanceControls) monsterInstanceControls.style.display = isAdmin ? 'flex' : 'none';
 
     // Canavar bilgilerini güncelle
     document.getElementById('monsterName').textContent = monster.name;
     document.getElementById('monsterImage').src = monster.imageUrl || 'https://i.hizliresim.com/n01dnz4.png';
     const healthPercent = (monster.currentHP / monster.maxHP) * 100;
-    document.getElementById('monsterHealthBar').style.width = `${healthPercent}%`;
-    document.getElementById('monsterHealthBar').textContent = `${Math.ceil(healthPercent)}%`;
+    const healthBar = document.getElementById('monsterHealthBar');
+    healthBar.style.width = `${healthPercent}%`;
+    healthBar.textContent = `${Math.ceil(healthPercent)}%`;
     document.getElementById('monsterHealthText').textContent = `${formatNumber(monster.currentHP)} / ${formatNumber(monster.maxHP)} Can`;
 
     // Liderlik tablosunu güncelle
@@ -15555,13 +15638,14 @@ async function renderMonsterBattleUI() {
             if (!userData) continue;
 
             const avatarUrl = userData.selectedAvatar?.url || defaultAvatarUrl;
-            const userMaxHP = (avatarBaseStats[userData.selectedAvatar?.id]?.hp || 1000); // Varsayılan 1000 can
+            const sanitizedId = sanitizeFirebaseKey(avatarUrl);
+            const userMaxHP = (avatarBaseStats[sanitizedId]?.hp || 1000); // HATAYI DÜZELTEN KISIM
             const userHealthPercent = (data.currentHP / userMaxHP) * 100;
 
             const itemHtml = `
-                <div class="leaderboard-item" onclick="openAvatarStatsModal('${username}')">
+                <div class="leaderboard-item" onclick="openPublicUserDetailModal('${username}')">
                     <span class="rank">${leaderboardEl.children.length + 1}.</span>
-                    <img src="${avatarUrl}" class="avatar">
+                    <img src="${avatarUrl}" class="avatar" onclick="event.stopPropagation(); openAvatarStatsModal('${username}')">
                     <div class="flex-grow">
                         <p class="font-bold text-white">${username}</p>
                         <div class="health-bar-container mt-1">
@@ -15579,19 +15663,50 @@ async function renderMonsterBattleUI() {
     const playerSnap = await db.ref(`users/${currentUser}`).once('value');
     const playerData = playerSnap.val();
     const playerBattleData = leaderboard[currentUser];
-    if (playerData && playerBattleData) {
+    const playerControlsEl = document.querySelector('.player-controls');
+    
+    if (playerData && playerControlsEl) {
         document.getElementById('playerBattleName').textContent = currentUser;
-        const playerMaxHP = (avatarBaseStats[playerData.selectedAvatar?.id]?.hp || 1000);
-        const playerHealthPercent = (playerBattleData.currentHP / playerMaxHP) * 100;
+        const playerAvatarUrl = playerData.selectedAvatar?.url || defaultAvatarUrl;
+        const sanitizedPlayerAvatarId = sanitizeFirebaseKey(playerAvatarUrl);
+        const playerMaxHP = (avatarBaseStats[sanitizedPlayerAvatarId]?.hp || 1000); // HATAYI DÜZELTEN KISIM
+        
+        let playerCurrentHP = playerBattleData ? playerBattleData.currentHP : playerMaxHP;
+
+        // Oyuncu henüz savaşmadıysa ama canavar varsa, canını full göster
+        if (!playerBattleData) {
+            playerCurrentHP = playerMaxHP;
+        }
+
+        const playerHealthPercent = (playerCurrentHP / playerMaxHP) * 100;
         document.getElementById('playerHealthBar').style.width = `${playerHealthPercent}%`;
         document.getElementById('playerHealthBar').textContent = `${Math.ceil(playerHealthPercent)}%`;
-        document.getElementById('playerHealthText').textContent = `${formatNumber(playerBattleData.currentHP)} / ${formatNumber(playerMaxHP)} Can`;
+        document.getElementById('playerHealthText').textContent = `${formatNumber(playerCurrentHP)} / ${formatNumber(playerMaxHP)} Can`;
+        
+        // Aktif Buffları (İksirleri) Göster
+        const buffs = playerBattleData?.buffs || {};
+        const now = getSyncedTime();
+        const buffsEl = document.getElementById('playerBuffs');
+        buffsEl.innerHTML = '';
+        let hasActiveBuff = false;
+        
+        const buffInfo = {
+            damage_potion: { icon: '⚔️', text: 'Hasar Artışı' },
+            defense_potion: { icon: '🛡️', text: 'Savunma Artışı' },
+            crit_potion: { icon: '💥', text: 'Kritik Şans Artışı' }
+        };
 
-        // İksirleri güncelle... (Bu kısım daha sonra eklenecek)
+        for (const buffKey in buffs) {
+            const buff = buffs[buffKey];
+            if (buff && buff.expiresAt > now) {
+                hasActiveBuff = true;
+                const info = buffInfo[buffKey];
+                buffsEl.innerHTML += `<span class="text-sm" title="${info.text}">${info.icon}</span>`;
+            }
+        }
+        if(!hasActiveBuff) buffsEl.innerHTML = '<span class="text-xs text-gray-500">Aktif iksir yok</span>';
     }
 }
-
-// openAvatarStatsModal FONKSİYONUNU BULUP BU BLOK İLE DEĞİŞTİRİN
 
 // openAvatarStatsModal FONKSİYONUNU BULUP BU BLOK İLE DEĞİŞTİRİN
 
@@ -15940,9 +16055,6 @@ function addRewardToTier(element, rewardData = {}) {
     rewardsListContainer.appendChild(rewardRow);
 }
 
-/**
- * GÜNCELLENMİŞ: Rastgele hasar, kritik vuruş ve iksir mekaniklerini içerir.
- */
 async function attackMonster() {
     if (isAdmin || attackCooldown) return;
 
@@ -15973,8 +16085,9 @@ async function attackMonster() {
         }
         
         // --- Oyuncu ve Canavar Statlarını Hesapla (İKSİR ETKİLERİ DAHİL) ---
-        const playerAvatarId = userData.selectedAvatar?.id;
-        const playerBaseStats = playerAvatarId ? (avatarBaseStats[playerAvatarId] || {}) : {};
+        const playerAvatarUrl = userData.selectedAvatar?.url || defaultAvatarUrl;
+        const sanitizedPlayerAvatarId = sanitizeFirebaseKey(playerAvatarUrl);
+        const playerBaseStats = avatarBaseStats[sanitizedPlayerAvatarId] || {};
         
         // Aktif iksir (buff) etkilerini al
         const buffs = playerBattleData?.buffs || {};
@@ -15984,9 +16097,9 @@ async function attackMonster() {
         let critBuff = 0;
 
         // Süresi dolmamış buffları hesapla
-        if (buffs.damage && buffs.damage.expiresAt > now) damageBuff = buffs.damage.value;
-        if (buffs.defense && buffs.defense.expiresAt > now) defenseBuff = buffs.defense.value;
-        if (buffs.crit && buffs.crit.expiresAt > now) critBuff = buffs.crit.value;
+        if (buffs.damage_potion && buffs.damage_potion.expiresAt > now) damageBuff = buffs.damage_potion.value;
+        if (buffs.defense_potion && buffs.defense_potion.expiresAt > now) defenseBuff = buffs.defense_potion.value;
+        if (buffs.crit_potion && buffs.crit_potion.expiresAt > now) critBuff = buffs.crit_potion.value;
 
         const playerStats = {
             hp: playerBaseStats.hp || 1000,
@@ -16048,7 +16161,7 @@ async function attackMonster() {
             // Süresi dolan buffları temizle
             for(const buffType in (currentPlayerBattleData.buffs || {})) {
                 if(currentPlayerBattleData.buffs[buffType].expiresAt <= now) {
-                    currentPlayerBattleData.buffs[buffType] = null;
+                    delete currentPlayerBattleData.buffs[buffType];
                 }
             }
             
@@ -16056,10 +16169,6 @@ async function attackMonster() {
         });
         
         // Ödülleri ve Puanları Ekle
-        const sabitPuan = battleData.rewards?.perAttack || 0;
-        updates[`/users/${currentUser}/balance`] = (userData.balance || 0) + sabitPuan;
-        updates[`/users/${currentUser}/kariyerPuani`] = (userData.kariyerPuani || 0) + sabitPuan;
-
         if (randomReward) {
             const { type, value } = randomReward;
             const dbKeyMap = { points: 'balance', boxRights: 'kutuHakki', wheelTicket: 'carkBileti', clickCatchTicket: 'clickCatchTickets', iflasShield: 'iflasShieldUses', wildcard: 'wildcards' };
@@ -16067,8 +16176,8 @@ async function attackMonster() {
             rewardMessage = ` Ek olarak <b class="text-green-400">+${value} ${prizeName}</b> kazandın!`;
 
             if (type === 'points') {
-                updates[`/users/${currentUser}/balance`] += value;
-                updates[`/users/${currentUser}/kariyerPuani`] += value;
+                updates[`/users/${currentUser}/balance`] = (userData.balance || 0) + value;
+                updates[`/users/${currentUser}/kariyerPuani`] = (userData.kariyerPuani || 0) + value;
             } else if (type.startsWith('card_pack')) {
                  startCardPackOpening(value, 'Canavar Savaşı', 1, type);
             } else if (dbKeyMap[type]) {
@@ -16085,7 +16194,7 @@ async function attackMonster() {
             document.getElementById('monsterImage').getBoundingClientRect().left + 100, 
             document.getElementById('monsterImage').getBoundingClientRect().top + 100);
 
-        displayMessage(`Canavara <b>${finalDamageToMonster} hasar</b> verdin ve <b>+${sabitPuan} Puan</b> kazandın.${rewardMessage}`);
+        displayMessage(`Canavara <b>${finalDamageToMonster} hasar</b> verdin ve canavardan <b>${finalDamageToPlayer} hasar</b> aldın.${rewardMessage}`);
 
         // Canavarın Ölüm Kontrolü
         const finalBattleSnap = await battleRef.once('value');
@@ -16134,6 +16243,99 @@ async function attackMonster() {
             }
         }, 1000);
     }
+}
+
+/**
+ * Adminin mevcut canavarı düzenlemek için yönetim panelini açmasını sağlar.
+ */
+async function editCurrentMonster() {
+    if (!isAdmin || !monsterBattleData.monsterDetails) return;
+    
+    const monster = monsterBattleData.monsterDetails;
+    const rewards = monsterBattleData.rewards || {};
+    const tiers = monsterBattleData.damageTiers || [];
+
+    // Formu mevcut canavarın bilgileriyle doldur
+    document.getElementById('adminMonsterName').value = monster.name || '';
+    document.getElementById('adminMonsterMaxHP').value = monster.maxHP || '';
+    document.getElementById('adminMonsterMinDamage').value = monster.minDamage || '';
+    document.getElementById('adminMonsterMaxDamage').value = monster.maxDamage || '';
+    document.getElementById('adminMonsterDefense').value = monster.defense || '';
+    document.getElementById('adminMonsterCritChance').value = monster.critChance || '';
+    document.getElementById('adminMonsterImageUrl').value = monster.imageUrl || '';
+
+    if (rewards.onKillLeader) {
+        document.getElementById('adminMonsterKillRewardType').value = rewards.onKillLeader.type || 'points';
+        document.getElementById('adminMonsterKillReward').value = rewards.onKillLeader.value || '';
+    }
+
+    // Hasar aralıklarını temizle ve yeniden doldur
+    const tiersContainer = document.getElementById('damageTiersContainer');
+    tiersContainer.innerHTML = '';
+    tiers.forEach(tier => addDamageTierRow(tier));
+
+    // Paneli aç
+    document.getElementById('monsterAdminControls').classList.remove('hidden');
+}
+
+/**
+ * Adminin mevcut canavarı oyundan kaldırmasını sağlar.
+ */
+async function deleteCurrentMonster() {
+    if (!isAdmin) return;
+    const confirmed = await customConfirm("Mevcut canavarı ve tüm savaş ilerlemesini kalıcı olarak silmek istediğinizden emin misiniz?");
+    if (confirmed) {
+        await db.ref('gameConfig/monsterBattle').remove();
+        displayMessage("Canavar başarıyla kaldırıldı.");
+    }
+}
+
+/**
+ * Canavar bilgi penceresini açar ve doldurur.
+ */
+function openMonsterInfoModal() {
+    const monster = monsterBattleData.monsterDetails;
+    if (!monster) return;
+
+    document.getElementById('modalMonsterName').textContent = monster.name;
+    
+    const statsEl = document.getElementById('modalMonsterStats');
+    statsEl.innerHTML = `
+        <p>❤️ Maksimum Can: <b class="text-white">${formatNumber(monster.maxHP)}</b></p>
+        <p>⚔️ Hasar Aralığı: <b class="text-white">${formatNumber(monster.minDamage)} - ${formatNumber(monster.maxDamage)}</b></p>
+        <p>🛡️ Savunma: <b class="text-white">${formatNumber(monster.defense)}</b></p>
+        <p>💥 Kritik Vuruş Şansı: <b class="text-white">%${monster.critChance || 5}</b></p>
+    `;
+
+    const killReward = monsterBattleData.rewards?.onKillLeader;
+    const killRewardEl = document.getElementById('modalKillReward');
+    if (killReward) {
+        const prizeName = typeToName[killReward.type] || killReward.type;
+        killRewardEl.innerHTML = `Canavarı öldüren takımın lideri <b class="text-green-400">${formatNumber(killReward.value)} ${prizeName}</b> kazanır.`;
+    } else {
+        killRewardEl.textContent = 'Liderlik ödülü belirlenmemiş.';
+    }
+
+    const tiers = monsterBattleData.damageTiers || [];
+    const tiersEl = document.getElementById('modalDamageTiers');
+    if (tiers.length > 0) {
+        tiersEl.innerHTML = '';
+        tiers.sort((a,b) => a.minDamage - b.minDamage).forEach(tier => {
+            const rewardTexts = tier.rewards.map(r => `${typeToName[r.type]} (%${r.chance})`).join(', ');
+            tiersEl.innerHTML += `<div><b class="text-white">${formatNumber(tier.minDamage)}+ Hasar</b> vuranlar şu ödüllerden birini kazanma şansı yakalar: <span class="text-cyan-300">${rewardTexts}</span></div>`;
+        });
+    } else {
+        tiersEl.textContent = 'Bu canavar için özel hasar eşiği ödülü ayarlanmamış.';
+    }
+
+    document.getElementById('monsterInfoModal').style.display = 'flex';
+}
+
+/**
+ * Canavar bilgi penceresini kapatır.
+ */
+function closeMonsterInfoModal() {
+    document.getElementById('monsterInfoModal').style.display = 'none';
 }
 
  /**
