@@ -1176,7 +1176,7 @@ body.modal-open .modal-content {
 <div id="gameDiv" class="w-full max-w-4xl hidden pb-16">
     <div class="bg-gray-800 p-6 rounded-xl shadow-lg border border-red-700 mb-8 relative">
         <div class="flex flex-col items-center mb-4">
-            <img id="currentUserAvatar" src="" class="w-24 h-24 rounded-full border-4 border-yellow-400 mb-3 object-cover shadow-lg cursor-pointer transition-opacity hover:opacity-80" onclick="openAvatarSelectionModal()">
+            <img id="currentUserAvatar" src="" class="w-24 h-24 rounded-full border-4 border-yellow-400 mb-3 object-cover shadow-lg cursor-pointer transition-opacity hover:opacity-80" onclick="openAvatarStatsModal(currentUser)">
             <div id="currentUserBadges" class="h-6 mb-1 flex items-center justify-center space-x-1"></div>
             <h3 class="text-yellow-400 text-2xl font-bold flex items-center justify-center">
                 <span id="currentUser" class="inline-flex items-center cursor-pointer transition-opacity hover:opacity-80" onclick="openPublicUserDetailModal(currentUser)"></span> 
@@ -1358,9 +1358,13 @@ body.modal-open .modal-content {
             <input type="number" id="adminMonsterDmgReward" class="box-setting-input" placeholder="Saldırı Başına Puan Ödülü">
             <input type="number" id="adminMonsterKillReward" class="box-setting-input" placeholder="Canavar Ölünce Lidere Verilecek Puan Ödülü">
             <button onclick="saveAndSpawnMonster()" class="w-full py-2 bg-green-700 hover:bg-green-600 rounded-lg font-bold">Kaydet ve Canavarı Çağır</button>
+            <hr class="border-gray-600 mt-4">
+            <h5 class="text-yellow-300 font-bold mt-2">Hasar Başına Rastgele Ödüller</h5>
+            <p class="text-xs text-gray-400 mb-2">Hasar eşiğini geçen oyunculara aşağıdaki ödüllerden BİRİ, belirtilen şansla verilir.</p>
+            <div id="damageTiersContainer" class="space-y-3">
+            </div>
+            <button onclick="addDamageTierRow()" class="w-full py-2 mt-2 bg-blue-700 hover:bg-blue-600 rounded-lg text-sm font-bold">Yeni Hasar Aralığı Ekle</button>
         </div>
-        <hr class="border-gray-600">
-<button onclick="openDamageTiersModal()" class="w-full py-2 mt-3 bg-yellow-600 hover:bg-yellow-500 text-black font-bold rounded-lg shadow-md">Hasar Başına Ödülleri Ayarla</button>
         <div id="avatarAdminControls" class="hidden bg-gray-900/50 p-4 rounded-lg border border-blue-500 mb-6 text-left space-y-3">
             <h4 class="text-blue-300 text-xl font-bold text-center mb-2">Avatar İstatistik Yönetimi</h4>
             <div id="avatarStatEditor" class="space-y-4 max-h-96 overflow-y-auto scrollable-list pr-2">
@@ -3056,9 +3060,9 @@ body.modal-open .modal-content {
             <button id="marketTabAll" onclick="switchMarketTab('all')" class="market-tab-btn flex-1 py-2 px-6 text-base font-bold border-b-2 border-purple-500 text-white">Pazardaki Teklifler</button>
             <button id="marketTabMine" onclick="switchMarketTab('mine')" class="market-tab-btn flex-1 py-2 px-6 text-base font-bold border-b-2 border-transparent text-gray-400">Benim Tekliflerim</button>
         </div>
-        <button onclick="openCreateOfferModal()" class="py-2 px-5 bg-green-600 hover:bg-green-500 rounded-lg font-bold text-sm">
-            + Yeni Takas Teklifi Oluştur
-        </button>
+        <button id="create-new-offer-btn" onclick="openCreateOfferModal()" class="py-2 px-5 bg-green-600 hover:bg-green-500 rounded-lg font-bold text-sm">
+    + Yeni Takas Teklifi Oluştur
+</button>
     </div>
 
     <div id="marketOffersList" class="flex-grow overflow-y-auto scrollable-list pr-2 space-y-3">
@@ -3249,23 +3253,6 @@ body.modal-open .modal-content {
     <h3 id="statsModalUsername" class="text-cyan-300 text-3xl font-bold mb-6 text-center">Kullanıcı İstatistikleri</h3>
     <div id="statsModalContent" class="space-y-3 text-lg">
       </div>
-  </div>
-</div>
-<div id="damageTiersModal" class="modal-overlay fixed inset-0 bg-black bg-opacity-70 flex justify-center items-center z-[9999] hidden">
-  <div class="modal-content bg-gray-800 p-8 rounded-xl shadow-2xl border border-yellow-500 w-11/12 max-w-3xl text-center relative max-h-[90vh] flex flex-col">
-    <button class="modal-close-button" onclick="closeDamageTiersModal()">&times;</button>
-    <h3 class="text-yellow-300 text-3xl font-bold mb-6">Hasar Başına Rastgele Ödül Ayarları</h3>
-    
-    <div class="flex-grow overflow-y-auto scrollable-list pr-4 text-left">
-      <p class="text-xs text-gray-400 mb-4">Burada belirlediğin hasar eşiğini geçen oyunculara, aşağıdaki ödüllerden BİRİ, girdiğin şans yüzdesiyle verilir. Oyuncunun vurduğu en yüksek hasar aralığındaki ödül havuzu dikkate alınır.</p>
-      <div id="damageTiersModalContainer" class="space-y-3">
-          </div>
-    </div>
-
-    <div class="mt-6 pt-4 border-t border-gray-700 flex flex-col sm:flex-row gap-4">
-        <button onclick="addDamageTierRow()" class="flex-1 py-3 bg-blue-700 hover:bg-blue-600 text-white font-bold rounded-lg shadow-md">Yeni Hasar Aralığı Ekle</button>
-        <button onclick="closeDamageTiersModal()" class="flex-1 py-3 bg-red-700 hover:bg-red-600 text-white font-bold rounded-lg shadow-md">Kapat</button>
-    </div>
   </div>
 </div>
   <script>
@@ -4617,8 +4604,7 @@ async function calculateAllLeaders(allUsersData) {
     return leaders;
 }
 
-  // MEVCUT renderUserRankings fonksiyonunu bununla değiştir
-async function renderUserRankings() {
+  async function renderUserRankings() {
     const searchTerm = document.getElementById('searchUserRanking').value.trim().toLowerCase();
     
     let filteredUsers = allUsersCache;
@@ -4657,13 +4643,12 @@ async function renderUserRankings() {
             blockedInfo = `<div class="text-red-400 font-bold mt-2">Engelli - Kalan Süre: <span id="countdown-${u.username}">--:--</span></div>`;
         }
 
-        // GÖSTERİLEN Puan: 'kariyerPuani' oldu.
         const scoreToShow = u.kariyerPuani || 0;
 
         return `<div class="relative mb-3 p-3 bg-gray-800 rounded-xl border border-gray-700 cursor-pointer hover:bg-gray-700/70 transition-colors" onclick="openPublicUserDetailModal('${u.username}')">
             <div class="flex items-center w-full gap-3">
                 <span class="font-bold text-xl text-gray-400 w-8 text-center flex-shrink-0">${i + 1}.</span>
-                <img src="${avatarUrl}" class="w-14 h-14 rounded-full object-cover flex-shrink-0 border-2 border-gray-600">
+                <img src="${avatarUrl}" class="w-14 h-14 rounded-full object-cover flex-shrink-0 border-2 border-gray-600" onclick="event.stopPropagation(); openAvatarStatsModal('${u.username}')">
                 
                 <div class="flex flex-col min-w-0 flex-grow">
                     <div class="h-6 min-h-[24px] flex items-center">${userIcons}</div>
@@ -4752,7 +4737,7 @@ async function loadLeaderboardRanking() {
                 <div class="text-center">${badgesHtml}</div>
                 <div class="flex items-center justify-start mt-1">
                     <span class="font-semibold text-lg text-yellow-300 mr-3 w-8 text-left">${i + 1}.</span>
-                    <img src="${avatarUrl}" class="w-12 h-12 rounded-md mr-3 object-contain">
+                    <img src="${avatarUrl}" class="w-12 h-12 rounded-md mr-3 object-contain" onclick="event.stopPropagation(); openAvatarStatsModal('${u.username}')">
                     <span class="font-semibold text-lg">${u.username}</span>
                 </div>
             </div>`;
@@ -13173,21 +13158,24 @@ async function loadTradeHistory() {
     listEl.innerHTML = html;
 }
 
-// =======================================================
-// YENİ ÖZELLİK: TAKAS PAZARI SİSTEMİ FONKSİYONLARI
-// =======================================================
-
-// Takas pazarı ana penceresini açar
 async function openTradeMarket() {
-    // Önce pazarın kilitli olup olmadığını kontrol et
     const lockSnap = await db.ref('gameConfig/marketSettings/isLocked').once('value');
     if (lockSnap.val() === true && !isAdmin) {
         displayMessage("Takas Pazarı şu anda bakım nedeniyle geçici olarak kapalıdır.");
         return;
     }
 
+    const userSnap = await db.ref(`users/${currentUser}`).once('value');
+    const userData = userSnap.val() || {};
+    const createOfferBtn = document.getElementById('create-new-offer-btn');
+
+    if (userData.completedCollection === true) {
+        createOfferBtn.style.display = 'none'; // Albümü tamamladıysa butonu gizle
+    } else {
+        createOfferBtn.style.display = 'block'; // Tamamlamadıysa butonu göster
+    }
+
     document.getElementById('tradeMarketModal').style.display = 'flex';
-    // Varsayılan olarak her zaman "Pazardaki Teklifler" sekmesini aç
     switchMarketTab('all');
 }
 
@@ -13504,28 +13492,32 @@ listEl.innerHTML += offerHtml;
     tradesRef.on('value', callback);
 }
 
-// Yeni teklif oluşturma penceresini açar
+// --- YENİ FONKSİYON ---
 async function openCreateOfferModal(preselectedCardId = null) {
+    // ÖNCE KONTROL ET
+    const userSnap = await db.ref(`users/${currentUser}`).once('value');
+    const userData = userSnap.val() || {};
+    if (userData.completedCollection === true) {
+        displayMessage("Koleksiyonu tamamladığın için artık yeni takas teklifi oluşturamazsın.");
+        return; // Fonksiyonu burada durdur, pencere açılmasın.
+    }
+
+    // Kontrolden geçerse, eski kodun aynısı devam etsin
     const myCardSelect = document.getElementById('offerMyCardSelect');
     const requestCardSelect = document.getElementById('offerRequestCardSelect');
     myCardSelect.innerHTML = '<option>Yükleniyor...</option>';
     requestCardSelect.innerHTML = '<option>Yükleniyor...</option>';
 
-    // Pazar ayarlarından takas ücretini çek
     const feeSnap = await db.ref('gameConfig/marketSettings/tradeFee').once('value');
     const tradeFee = feeSnap.val() || 0;
     
-    // ★★★ DEĞİŞEN UYARI MESAJI BURADA ★★★
     const feeInfoEl = document.getElementById('tradeFeeInfo');
     if (tradeFee > 0) {
-        // innerHTML kullanarak metni daha dikkat çekici hale getiriyoruz.
         feeInfoEl.innerHTML = `Bu teklifi oluşturmak için sizden <b class="text-yellow-400">${tradeFee} Puan</b> işlem ücreti alınacaktır. <b class="text-red-400">Bu ücret, teklifi iptal etseniz bile iade edilmez.</b>`;
     } else {
         feeInfoEl.textContent = `Not: Takas işlemleri şu anda ücretsizdir.`;
     }
-    // ★★★ DEĞİŞİKLİK SONU ★★★
 
-    // Kullanıcının fazla kartlarını ve tüm kartların listesini aynı anda çek
     const [userCardsSnap, masterCardsSnap] = await Promise.all([
         db.ref(`users/${currentUser}/cardCollection`).once('value'),
         db.ref('gameConfig/cardCollection').orderByChild('order').once('value')
@@ -13534,7 +13526,6 @@ async function openCreateOfferModal(preselectedCardId = null) {
     const userCards = userCardsSnap.val() || {};
     const masterCards = masterCardsSnap.val() || {};
 
-    // "Teklif Ettiğim Kart" listesini doldur
     myCardSelect.innerHTML = '';
     let hasDuplicates = false;
     for (const cardId in userCards) {
@@ -13556,7 +13547,6 @@ async function openCreateOfferModal(preselectedCardId = null) {
         myCardSelect.value = preselectedCardId;
     }
 
-    // "İstediğim Kart" listesini doldur
     requestCardSelect.innerHTML = '';
     for (const cardId in masterCards) {
         const cardInfo = masterCards[cardId];
@@ -15751,21 +15741,9 @@ async function saveAvatarStats() {
     toggleAvatarAdminPanel();
 }
 
-function updateHealthBar(currentHP, maxHP) {
-  const healthBarEl = document.getElementById('monsterHealthBar');
-  const healthTextEl = document.getElementById('monsterHealthText');
-
-  const healthPercentage = (currentHP / maxHP) * 100;
-  const healthColor = healthPercentage > 50 ? 'bg-green-500' : (healthPercentage > 20 ? 'bg-yellow-500' : 'bg-red-500');
-
-  healthBarEl.style.width = `${healthPercentage}%`;
-  healthBarEl.className = `health-bar ${healthColor}`;
-  healthTextEl.textContent = `${formatNumber(currentHP)} / ${formatNumber(maxHP)}`;
-}
-
-// =====================================================================
-// ESKİ saveAndSpawnMonster FONKSİYONUNU SİLİP BUNU YAPIŞTIR
-// =====================================================================
+/**
+ * GÜNCELLENMİŞ: Yeni hasar aralığı ödüllerini de kaydeder.
+ */
 async function saveAndSpawnMonster() {
     if (!isAdmin) return;
 
@@ -15783,9 +15761,9 @@ async function saveAndSpawnMonster() {
         onKillLeader: parseInt(document.getElementById('adminMonsterKillReward').value) || 50000,
     };
     
-    // YENİ KOD: Hasar aralıklarını artık modal penceresinden okuyor
+    // YENİ KOD: Hasar aralıklarını oku
     const damageTiers = [];
-    document.querySelectorAll('#damageTiersModal .damage-tier-row').forEach(tierRow => {
+    document.querySelectorAll('.damage-tier-row').forEach(tierRow => {
         const minDamage = parseInt(tierRow.querySelector('.min-damage').value);
         if (isNaN(minDamage) || minDamage <= 0) return;
         
@@ -15811,7 +15789,7 @@ async function saveAndSpawnMonster() {
     await db.ref('gameConfig/monsterBattle').set({
         monsterDetails: monsterDetails,
         rewards: rewards,
-        damageTiers: damageTiers,
+        damageTiers: damageTiers, // Yeni veriyi kaydet
         damageLeaderboard: null 
     });
 
@@ -15819,15 +15797,25 @@ async function saveAndSpawnMonster() {
     toggleMonsterAdminPanel();
 }
 
+function updateHealthBar(currentHP, maxHP) {
+  const healthBarEl = document.getElementById('monsterHealthBar');
+  const healthTextEl = document.getElementById('monsterHealthText');
 
-// =====================================================================
-// ESKİ addDamageTierRow FONKSİYONUNU SİLİP BUNU YAPIŞTIR
-// =====================================================================
+  const healthPercentage = (currentHP / maxHP) * 100;
+  const healthColor = healthPercentage > 50 ? 'bg-green-500' : (healthPercentage > 20 ? 'bg-yellow-500' : 'bg-red-500');
+
+  healthBarEl.style.width = `${healthPercentage}%`;
+  healthBarEl.className = `health-bar ${healthColor}`;
+  healthTextEl.textContent = `${formatNumber(currentHP)} / ${formatNumber(maxHP)}`;
+}
+
+/**
+ * YENİ: Hasar aralığı admin paneline yeni bir satır ekler.
+ */
 function addDamageTierRow(tierData = {}) {
-    // Artık modal içindeki container'a ekleme yapıyor
-    const container = document.getElementById('damageTiersModalContainer');
+    const container = document.getElementById('damageTiersContainer');
     const tierRow = document.createElement('div');
-    tierRow.className = 'damage-tier-row bg-gray-900 p-3 rounded-lg border border-gray-700';
+    tierRow.className = 'damage-tier-row bg-gray-800 p-3 rounded-lg';
     tierRow.innerHTML = `
         <div class="flex items-center gap-2 mb-2">
             <input type="number" class="box-setting-input min-damage" placeholder="Minimum Hasar" value="${tierData.minDamage || ''}">
@@ -15844,35 +15832,6 @@ function addDamageTierRow(tierData = {}) {
             addRewardToTier(rewardsListContainer, reward);
         });
     }
-}
-
-
-// =====================================================================
-// BU YENİ FONKSİYONLARI SCRİPTİNİN SONUNA EKLE
-// =====================================================================
-/**
- * YENİ: Hasar Ödülleri modal penceresini açar ve mevcut ayarları yükler.
- */
-function openDamageTiersModal() {
-    const container = document.getElementById('damageTiersModalContainer');
-    container.innerHTML = ''; // Önceki satırları temizle
-    
-    const existingTiers = monsterBattleData.damageTiers || [];
-    if (existingTiers.length > 0) {
-        existingTiers.forEach(tier => addDamageTierRow(tier));
-    } else {
-        // Eğer hiç ayar yoksa, başlangıç için boş bir tane ekle
-        addDamageTierRow();
-    }
-    
-    document.getElementById('damageTiersModal').style.display = 'flex';
-}
-
-/**
- * YENİ: Hasar Ödülleri modal penceresini kapatır.
- */
-function closeDamageTiersModal() {
-    document.getElementById('damageTiersModal').style.display = 'none';
 }
 
 /**
