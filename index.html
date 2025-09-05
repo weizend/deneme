@@ -1360,11 +1360,7 @@ body.modal-open .modal-content {
             <button onclick="saveAndSpawnMonster()" class="w-full py-2 bg-green-700 hover:bg-green-600 rounded-lg font-bold">Kaydet ve Canavarı Çağır</button>
         </div>
         <hr class="border-gray-600">
-<h5 class="text-yellow-300 font-bold mt-2">Hasar Başına Rastgele Ödüller</h5>
-<p class="text-xs text-gray-400 mb-2">Hasar eşiğini geçen oyunculara aşağıdaki ödüllerden BİRİ, belirtilen şansla verilir.</p>
-<div id="damageTiersContainer" class="space-y-3">
-    </div>
-<button onclick="addDamageTierRow()" class="w-full py-2 mt-2 bg-blue-700 hover:bg-blue-600 rounded-lg text-sm font-bold">Yeni Hasar Aralığı Ekle</button>
+<button onclick="openDamageTiersModal()" class="w-full py-2 mt-3 bg-yellow-600 hover:bg-yellow-500 text-black font-bold rounded-lg shadow-md">Hasar Başına Ödülleri Ayarla</button>
         <div id="avatarAdminControls" class="hidden bg-gray-900/50 p-4 rounded-lg border border-blue-500 mb-6 text-left space-y-3">
             <h4 class="text-blue-300 text-xl font-bold text-center mb-2">Avatar İstatistik Yönetimi</h4>
             <div id="avatarStatEditor" class="space-y-4 max-h-96 overflow-y-auto scrollable-list pr-2">
@@ -3253,6 +3249,23 @@ body.modal-open .modal-content {
     <h3 id="statsModalUsername" class="text-cyan-300 text-3xl font-bold mb-6 text-center">Kullanıcı İstatistikleri</h3>
     <div id="statsModalContent" class="space-y-3 text-lg">
       </div>
+  </div>
+</div>
+<div id="damageTiersModal" class="modal-overlay fixed inset-0 bg-black bg-opacity-70 flex justify-center items-center z-[9999] hidden">
+  <div class="modal-content bg-gray-800 p-8 rounded-xl shadow-2xl border border-yellow-500 w-11/12 max-w-3xl text-center relative max-h-[90vh] flex flex-col">
+    <button class="modal-close-button" onclick="closeDamageTiersModal()">&times;</button>
+    <h3 class="text-yellow-300 text-3xl font-bold mb-6">Hasar Başına Rastgele Ödül Ayarları</h3>
+    
+    <div class="flex-grow overflow-y-auto scrollable-list pr-4 text-left">
+      <p class="text-xs text-gray-400 mb-4">Burada belirlediğin hasar eşiğini geçen oyunculara, aşağıdaki ödüllerden BİRİ, girdiğin şans yüzdesiyle verilir. Oyuncunun vurduğu en yüksek hasar aralığındaki ödül havuzu dikkate alınır.</p>
+      <div id="damageTiersModalContainer" class="space-y-3">
+          </div>
+    </div>
+
+    <div class="mt-6 pt-4 border-t border-gray-700 flex flex-col sm:flex-row gap-4">
+        <button onclick="addDamageTierRow()" class="flex-1 py-3 bg-blue-700 hover:bg-blue-600 text-white font-bold rounded-lg shadow-md">Yeni Hasar Aralığı Ekle</button>
+        <button onclick="closeDamageTiersModal()" class="flex-1 py-3 bg-red-700 hover:bg-red-600 text-white font-bold rounded-lg shadow-md">Kapat</button>
+    </div>
   </div>
 </div>
   <script>
@@ -15738,9 +15751,21 @@ async function saveAvatarStats() {
     toggleAvatarAdminPanel();
 }
 
-/**
- * GÜNCELLENMİŞ: Yeni hasar aralığı ödüllerini de kaydeder.
- */
+function updateHealthBar(currentHP, maxHP) {
+  const healthBarEl = document.getElementById('monsterHealthBar');
+  const healthTextEl = document.getElementById('monsterHealthText');
+
+  const healthPercentage = (currentHP / maxHP) * 100;
+  const healthColor = healthPercentage > 50 ? 'bg-green-500' : (healthPercentage > 20 ? 'bg-yellow-500' : 'bg-red-500');
+
+  healthBarEl.style.width = `${healthPercentage}%`;
+  healthBarEl.className = `health-bar ${healthColor}`;
+  healthTextEl.textContent = `${formatNumber(currentHP)} / ${formatNumber(maxHP)}`;
+}
+
+// =====================================================================
+// ESKİ saveAndSpawnMonster FONKSİYONUNU SİLİP BUNU YAPIŞTIR
+// =====================================================================
 async function saveAndSpawnMonster() {
     if (!isAdmin) return;
 
@@ -15758,9 +15783,9 @@ async function saveAndSpawnMonster() {
         onKillLeader: parseInt(document.getElementById('adminMonsterKillReward').value) || 50000,
     };
     
-    // YENİ KOD: Hasar aralıklarını oku
+    // YENİ KOD: Hasar aralıklarını artık modal penceresinden okuyor
     const damageTiers = [];
-    document.querySelectorAll('.damage-tier-row').forEach(tierRow => {
+    document.querySelectorAll('#damageTiersModal .damage-tier-row').forEach(tierRow => {
         const minDamage = parseInt(tierRow.querySelector('.min-damage').value);
         if (isNaN(minDamage) || minDamage <= 0) return;
         
@@ -15786,7 +15811,7 @@ async function saveAndSpawnMonster() {
     await db.ref('gameConfig/monsterBattle').set({
         monsterDetails: monsterDetails,
         rewards: rewards,
-        damageTiers: damageTiers, // Yeni veriyi kaydet
+        damageTiers: damageTiers,
         damageLeaderboard: null 
     });
 
@@ -15794,25 +15819,15 @@ async function saveAndSpawnMonster() {
     toggleMonsterAdminPanel();
 }
 
-function updateHealthBar(currentHP, maxHP) {
-  const healthBarEl = document.getElementById('monsterHealthBar');
-  const healthTextEl = document.getElementById('monsterHealthText');
 
-  const healthPercentage = (currentHP / maxHP) * 100;
-  const healthColor = healthPercentage > 50 ? 'bg-green-500' : (healthPercentage > 20 ? 'bg-yellow-500' : 'bg-red-500');
-
-  healthBarEl.style.width = `${healthPercentage}%`;
-  healthBarEl.className = `health-bar ${healthColor}`;
-  healthTextEl.textContent = `${formatNumber(currentHP)} / ${formatNumber(maxHP)}`;
-}
-
-/**
- * YENİ: Hasar aralığı admin paneline yeni bir satır ekler.
- */
+// =====================================================================
+// ESKİ addDamageTierRow FONKSİYONUNU SİLİP BUNU YAPIŞTIR
+// =====================================================================
 function addDamageTierRow(tierData = {}) {
-    const container = document.getElementById('damageTiersContainer');
+    // Artık modal içindeki container'a ekleme yapıyor
+    const container = document.getElementById('damageTiersModalContainer');
     const tierRow = document.createElement('div');
-    tierRow.className = 'damage-tier-row bg-gray-800 p-3 rounded-lg';
+    tierRow.className = 'damage-tier-row bg-gray-900 p-3 rounded-lg border border-gray-700';
     tierRow.innerHTML = `
         <div class="flex items-center gap-2 mb-2">
             <input type="number" class="box-setting-input min-damage" placeholder="Minimum Hasar" value="${tierData.minDamage || ''}">
@@ -15829,6 +15844,35 @@ function addDamageTierRow(tierData = {}) {
             addRewardToTier(rewardsListContainer, reward);
         });
     }
+}
+
+
+// =====================================================================
+// BU YENİ FONKSİYONLARI SCRİPTİNİN SONUNA EKLE
+// =====================================================================
+/**
+ * YENİ: Hasar Ödülleri modal penceresini açar ve mevcut ayarları yükler.
+ */
+function openDamageTiersModal() {
+    const container = document.getElementById('damageTiersModalContainer');
+    container.innerHTML = ''; // Önceki satırları temizle
+    
+    const existingTiers = monsterBattleData.damageTiers || [];
+    if (existingTiers.length > 0) {
+        existingTiers.forEach(tier => addDamageTierRow(tier));
+    } else {
+        // Eğer hiç ayar yoksa, başlangıç için boş bir tane ekle
+        addDamageTierRow();
+    }
+    
+    document.getElementById('damageTiersModal').style.display = 'flex';
+}
+
+/**
+ * YENİ: Hasar Ödülleri modal penceresini kapatır.
+ */
+function closeDamageTiersModal() {
+    document.getElementById('damageTiersModal').style.display = 'none';
 }
 
 /**
