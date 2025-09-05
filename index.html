@@ -7816,7 +7816,8 @@ async function deletePurchase(purchaseId) {
   function openBadgeInfoModal() { badgeInfoModal.style.display = 'flex'; }
   function closeBadgeInfoModal() { badgeInfoModal.style.display = 'none'; }
 
-// MEVCUT openPublicUserDetailModal FONKSİYONUNU SİLİP BUNU YAPIŞTIR
+// openPublicUserDetailModal FONKSİYONUNU BULUP BU BLOK İLE DEĞİŞTİRİN
+
 async function openPublicUserDetailModal(username) {
     if (!username) return;
 
@@ -7826,10 +7827,8 @@ async function openPublicUserDetailModal(username) {
     modal.style.display = 'flex';
     document.body.classList.add('modal-open');
     
-    // Yükleniyor... metinlerini ayarla
     document.getElementById('publicUserName').textContent = `${username} yükleniyor...`;
     document.getElementById('publicUserAvatar').src = defaultAvatarUrl;
-    // Diğer tüm alanları temizle...
 
     if (activeUserProfileListener && activeUserProfileListener.ref) {
         activeUserProfileListener.ref.off('value', activeUserProfileListener.callback);
@@ -7860,7 +7859,6 @@ async function openPublicUserDetailModal(username) {
             isWheelSpinLeader: username === leaders.wheelSpinUser
         };
 
-        // ROZETLERİN GÖRÜNMEME SORUNUNU ÇÖZEN KISIM
         document.getElementById('publicBadgeBalance').innerHTML = userLeaderStatus.isCurrentLeader ? '🥇' : '';
         document.getElementById('publicBadgeHighest').innerHTML = userLeaderStatus.isHighLeader ? '🏆' : '';
         document.getElementById('badge-stat-box').innerHTML = userLeaderStatus.isBoxLeader ? '📦' : '';
@@ -7875,7 +7873,12 @@ async function openPublicUserDetailModal(username) {
         const badges = getUserBadgesHtml(userData, userLeaderStatus, true);
         document.getElementById('publicUserProfileBadges').innerHTML = badges.crown + badges.others;
         
-        document.getElementById('publicUserAvatar').src = userData.selectedAvatar ? userData.selectedAvatar.url : defaultAvatarUrl;
+        // YENİ EKLENEN KISIM BAŞLANGICI: Avatar resmini ayarla VE tıklama özelliği ekle
+        const avatarEl = document.getElementById('publicUserAvatar');
+        avatarEl.src = userData.selectedAvatar ? userData.selectedAvatar.url : defaultAvatarUrl;
+        avatarEl.onclick = () => openAvatarStatsModal(username); // Tıklama özelliği eklendi
+        // YENİ EKLENEN KISIM SONU
+
         document.getElementById('publicUserName').textContent = username;
         
         document.getElementById('publicUserBalance').textContent = formatNumber(userData.balance || 0);
@@ -14034,13 +14037,15 @@ async function loadGrandPrizeDisplay() {
     displayContainer.classList.remove('hidden');
 }
 
+// checkAndGrantPrize FONKSİYONUNU BULUP BU BLOK İLE DEĞİŞTİRİN
+
 async function checkAndGrantPrize(username) {
     const userRef = db.ref(`users/${username}`);
     const userSnap = await userRef.once('value');
     const userData = userSnap.val();
 
     if (userData.completedCollection === true) {
-        return; 
+        return;
     }
 
     const userCards = userData.cardCollection || {};
@@ -14056,18 +14061,14 @@ async function checkAndGrantPrize(username) {
         const prizeData = prizeSnap.val();
         if (!prizeData) return;
 
-        // --- YENİ EKLENEN KISIM BAŞLANGICI ---
-        // Koleksiyonu tamamlayan ilk kişi mi, onu kontrol et
         const finishersRef = db.ref('gameStats/collectionFinishers');
         const finishersSnap = await finishersRef.once('value');
         const isFirstWinner = !finishersSnap.exists();
 
-        // Her bitireni listeye ekle
         await finishersRef.push({
             username: username,
             timestamp: firebase.database.ServerValue.TIMESTAMP
         });
-        // --- YENİ EKLENEN KISIM SONU ---
 
         const updates = {};
         updates.balance = (userData.balance || 0) + (prizeData.points || 0);
@@ -14078,7 +14079,7 @@ async function checkAndGrantPrize(username) {
         updates.completedCollection = true;
 
         if (prizeData.avatarName && prizeData.avatarImageUrl) {
-            const newAvatarId = db.ref().push().key; 
+            const newAvatarId = db.ref().push().key;
             updates[`avatars/${newAvatarId}`] = {
                 id: newAvatarId,
                 name: prizeData.avatarName,
@@ -14086,9 +14087,13 @@ async function checkAndGrantPrize(username) {
             };
         }
         
-        await userRef.child('collectionChampionshipsWon').transaction(currentCount => {
-            return (currentCount || 0) + 1;
-        });
+        // YENİ EKLENEN KISIM BAŞLANGICI: Başarım sadece İLK KAZANANA verilir.
+        if (isFirstWinner) {
+            await userRef.child('collectionChampionshipsWon').transaction(currentCount => {
+                return (currentCount || 0) + 1;
+            });
+        }
+        // YENİ EKLENEN KISIM SONU
 
         await userRef.update(updates);
 
@@ -15565,13 +15570,14 @@ async function renderMonsterBattleUI() {
     }
 }
 
-/**
- * Liderlik tablosundaki bir kullanıcıya tıklandığında stat'larını gösteren modalı açar.
- */
+// openAvatarStatsModal FONKSİYONUNU BULUP BU BLOK İLE DEĞİŞTİRİN
+
 async function openAvatarStatsModal(username) {
     const modal = document.getElementById('avatarStatsModal');
     const contentEl = document.getElementById('statsModalContent');
-    document.getElementById('statsModalUsername').textContent = `${username} İstatistikleri`;
+    const titleEl = document.getElementById('statsModalUsername'); 
+
+    titleEl.textContent = `Yükleniyor...`; 
     contentEl.innerHTML = '<p class="text-gray-400">Yükleniyor...</p>';
     modal.style.display = 'flex';
 
@@ -15579,27 +15585,35 @@ async function openAvatarStatsModal(username) {
     const userData = userSnap.val();
 
     if (!userData || !userData.selectedAvatar) {
+        titleEl.textContent = `${username} İstatistikleri`; 
         contentEl.innerHTML = '<p class="text-red-500">Bu kullanıcının seçili bir avatarı yok.</p>';
         return;
     }
 
+    titleEl.textContent = "Avatar Özellikleri";
+    
     const avatarId = userData.selectedAvatar.id;
     const baseStats = avatarBaseStats[avatarId] || {};
 
-    // Burada iksir vb. geçici güçlendirmeleri de hesaba katabiliriz (ileride)
     const finalStats = {
         hp: baseStats.hp || 1000,
         damage: baseStats.damage || 50,
         defense: baseStats.defense || 10,
-        critChance: baseStats.critChance || 5, // %5
+        critChance: baseStats.critChance || 5,
     };
 
+    // YENİ EKLENEN KISIM BAŞLANGICI: Avatar resmini de içeriğe ekliyoruz
     contentEl.innerHTML = `
+        <div class="flex flex-col items-center mb-4">
+            <img src="${userData.selectedAvatar.url}" alt="${userData.selectedAvatar.name || 'Avatar'}" class="w-24 h-24 rounded-full border-2 border-green-500 mb-2">
+            <span class="text-lg font-bold text-white">${userData.selectedAvatar.name || 'Seçili Avatar'}</span>
+        </div>
         <p>❤️ Can: <b class="text-white">${formatNumber(finalStats.hp)}</b></p>
         <p>⚔️ Hasar: <b class="text-white">${formatNumber(finalStats.damage)}</b></p>
         <p>🛡️ Savunma: <b class="text-white">${formatNumber(finalStats.defense)}</b></p>
         <p>💥 Kritik Şans: <b class="text-white">%${finalStats.critChance}</b></p>
     `;
+    // YENİ EKLENEN KISIM SONU
 }
 
 function closeAvatarStatsModal() {
