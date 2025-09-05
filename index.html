@@ -1359,6 +1359,12 @@ body.modal-open .modal-content {
             <input type="number" id="adminMonsterKillReward" class="box-setting-input" placeholder="Canavar Ölünce Lidere Verilecek Puan Ödülü">
             <button onclick="saveAndSpawnMonster()" class="w-full py-2 bg-green-700 hover:bg-green-600 rounded-lg font-bold">Kaydet ve Canavarı Çağır</button>
         </div>
+        <hr class="border-gray-600">
+<h5 class="text-yellow-300 font-bold mt-2">Hasar Başına Rastgele Ödüller</h5>
+<p class="text-xs text-gray-400 mb-2">Hasar eşiğini geçen oyunculara aşağıdaki ödüllerden BİRİ, belirtilen şansla verilir.</p>
+<div id="damageTiersContainer" class="space-y-3">
+    </div>
+<button onclick="addDamageTierRow()" class="w-full py-2 mt-2 bg-blue-700 hover:bg-blue-600 rounded-lg text-sm font-bold">Yeni Hasar Aralığı Ekle</button>
         <div id="avatarAdminControls" class="hidden bg-gray-900/50 p-4 rounded-lg border border-blue-500 mb-6 text-left space-y-3">
             <h4 class="text-blue-300 text-xl font-bold text-center mb-2">Avatar İstatistik Yönetimi</h4>
             <div id="avatarStatEditor" class="space-y-4 max-h-96 overflow-y-auto scrollable-list pr-2">
@@ -15595,27 +15601,100 @@ function toggleAvatarAdminPanel() {
 }
 
 /**
- * Admin için avatar stat düzenleme arayüzünü oluşturur.
+ * NİHAİ VE DÜZELTİLMİŞ: Resim URL'si bazında duplikasyonları engelleyerek
+ * sistemdeki TÜM benzersiz avatarları listeler.
  */
 async function loadAvatarStatsForAdmin() {
     const editorEl = document.getElementById('avatarStatEditor');
-    editorEl.innerHTML = '<p class="text-gray-400">Avatar listesi yükleniyor...</p>';
+    editorEl.innerHTML = '<p class="text-gray-400">Tüm benzersiz avatarlar taranıyor...</p>';
 
+    const allAvatars = new Map(); // Yinelenmeyi %100 engellemek için Map yapısı kullanıyoruz. Anahtar: resim URL'si
+
+    // --- 1. ADIM: Tüm Avatar Kaynaklarını Tara ---
+
+    // Mağazadaki Avatarlar
     const storeItemsSnap = await db.ref('storeItems').orderByChild('type').equalTo('avatar').once('value');
-    const avatars = storeItemsSnap.val();
+    if (storeItemsSnap.exists()) {
+        const storeAvatars = storeItemsSnap.val();
+        for (const avatarId in storeAvatars) {
+            const avatar = storeAvatars[avatarId];
+            if (avatar.imageUrl && !allAvatars.has(avatar.imageUrl)) {
+                allAvatars.set(avatar.imageUrl, {
+                    id: avatarId,
+                    name: avatar.name,
+                    imageUrl: avatar.imageUrl
+                });
+            }
+        }
+    }
 
-    if (!avatars) {
-        editorEl.innerHTML = '<p class="text-red-500">Mağazada "avatar" tipinde hiç ürün bulunamadı.</p>';
+    // Günlük Ödüllerdeki Avatarlar
+    const dailyRewardsSnap = await db.ref('dailyRewardOptions').once('value');
+    if (dailyRewardsSnap.exists()) {
+        dailyRewardsSnap.forEach(rewardSnap => {
+            const reward = rewardSnap.val();
+            if (reward.type === 'avatar' && reward.avatarImageUrl && !allAvatars.has(reward.avatarImageUrl)) {
+                const avatarId = `daily_${reward.avatarName.replace(/\s+/g, '_')}`; // Yönetim için geçici ID
+                allAvatars.set(reward.avatarImageUrl, { id: avatarId, name: reward.avatarName, imageUrl: reward.avatarImageUrl });
+            }
+        });
+    }
+
+    // Giriş Serisi Ödüllerindeki Avatarlar
+    const streakRewardsSnap = await db.ref('gameConfig/loginStreakRewards').once('value');
+    if (streakRewardsSnap.exists()) {
+        streakRewardsSnap.forEach(daySnap => {
+            (daySnap.val().rewards || []).forEach(reward => {
+                if (reward.type === 'avatar' && reward.avatarImageUrl && !allAvatars.has(reward.avatarImageUrl)) {
+                    const avatarId = `streak_${reward.avatarName.replace(/\s+/g, '_')}`; // Yönetim için geçici ID
+                    allAvatars.set(reward.avatarImageUrl, { id: avatarId, name: reward.avatarName, imageUrl: reward.avatarImageUrl });
+                }
+            });
+        });
+    }
+
+    // Koleksiyon Büyük Ödülündeki Avatar
+    const grandPrizeSnap = await db.ref('gameConfig/collectionGrandPrize').once('value');
+    if (grandPrizeSnap.exists()) {
+        const prize = grandPrizeSnap.val();
+        if (prize.avatarName && prize.avatarImageUrl && !allAvatars.has(prize.avatarImageUrl)) {
+            const avatarId = `prize_${prize.avatarName.replace(/\s+/g, '_')}`; // Yönetim için geçici ID
+            allAvatars.set(prize.avatarImageUrl, { id: avatarId, name: prize.avatarName, imageUrl: prize.avatarImageUrl });
+        }
+    }
+
+    // --- 2. ADIM (EN ÖNEMLİSİ): Tüm Kullanıcıların Envanterlerini Tara ---
+    const usersSnap = await db.ref('users').once('value');
+    if (usersSnap.exists()) {
+        usersSnap.forEach(userSnap => {
+            const userData = userSnap.val();
+            if (userData.avatars) {
+                for (const avatarId in userData.avatars) {
+                    const userAvatar = userData.avatars[avatarId];
+                    if (userAvatar.imageUrl && !allAvatars.has(userAvatar.imageUrl)) {
+                        allAvatars.set(userAvatar.imageUrl, {
+                            id: avatarId,
+                            name: userAvatar.name,
+                            imageUrl: userAvatar.imageUrl
+                        });
+                    }
+                }
+            }
+        });
+    }
+
+    // --- 3. ADIM: Paneli Oluştur ---
+    if (allAvatars.size === 0) {
+        editorEl.innerHTML = '<p class="text-red-500">Sistemde (Mağaza, Ödüller, Kullanıcılar vb.) hiç avatar bulunamadı.</p>';
         return;
     }
 
     editorEl.innerHTML = '';
-    for (const avatarId in avatars) {
-        const avatar = avatars[avatarId];
-        const currentStats = avatarBaseStats[avatarId] || {};
+    for (const avatar of allAvatars.values()) {
+        const currentStats = avatarBaseStats[avatar.id] || {};
 
         const avatarHtml = `
-            <div class="p-3 bg-gray-800 rounded-lg border border-gray-700" data-avatar-id="${avatarId}">
+            <div class="p-3 bg-gray-800 rounded-lg border border-gray-700" data-avatar-id="${avatar.id}">
                 <div class="flex items-center gap-3 mb-2">
                     <img src="${avatar.imageUrl}" class="w-12 h-12 rounded-md object-cover">
                     <h5 class="text-lg font-bold text-white">${avatar.name}</h5>
@@ -15659,9 +15738,8 @@ async function saveAvatarStats() {
     toggleAvatarAdminPanel();
 }
 
-
 /**
- * Adminin girdiği canavar bilgilerini kaydeder ve savaşı başlatır/sıfırlar.
+ * GÜNCELLENMİŞ: Yeni hasar aralığı ödüllerini de kaydeder.
  */
 async function saveAndSpawnMonster() {
     if (!isAdmin) return;
@@ -15673,12 +15751,34 @@ async function saveAndSpawnMonster() {
         defense: parseInt(document.getElementById('adminMonsterDefense').value) || 100,
         imageUrl: document.getElementById('adminMonsterImageUrl').value.trim(),
     };
-    monsterDetails.currentHP = monsterDetails.maxHP; // Canı fulleyerek başlat
+    monsterDetails.currentHP = monsterDetails.maxHP;
 
     const rewards = {
         perAttack: parseInt(document.getElementById('adminMonsterDmgReward').value) || 100,
         onKillLeader: parseInt(document.getElementById('adminMonsterKillReward').value) || 50000,
     };
+    
+    // YENİ KOD: Hasar aralıklarını oku
+    const damageTiers = [];
+    document.querySelectorAll('.damage-tier-row').forEach(tierRow => {
+        const minDamage = parseInt(tierRow.querySelector('.min-damage').value);
+        if (isNaN(minDamage) || minDamage <= 0) return;
+        
+        const tierRewards = [];
+        tierRow.querySelectorAll('.rewards-list > .grid').forEach(rewardRow => {
+            const type = rewardRow.querySelector('.reward-type').value;
+            const value = parseInt(rewardRow.querySelector('.reward-value').value);
+            const chance = parseInt(rewardRow.querySelector('.reward-chance').value);
+
+            if (type && !isNaN(value) && !isNaN(chance) && value > 0 && chance > 0) {
+                tierRewards.push({ type, value, chance });
+            }
+        });
+        
+        if(tierRewards.length > 0) {
+            damageTiers.push({ minDamage, rewards: tierRewards });
+        }
+    });
 
     const confirmed = await customConfirm(`<b>${monsterDetails.name}</b> canavarı ${formatNumber(monsterDetails.maxHP)} can ile çağrılacak. Mevcut savaş ilerlemesi (varsa) sıfırlanacak. Onaylıyor musun?`);
     if (!confirmed) return;
@@ -15686,12 +15786,247 @@ async function saveAndSpawnMonster() {
     await db.ref('gameConfig/monsterBattle').set({
         monsterDetails: monsterDetails,
         rewards: rewards,
-        damageLeaderboard: null // Liderlik tablosunu sıfırla
+        damageTiers: damageTiers, // Yeni veriyi kaydet
+        damageLeaderboard: null 
     });
 
     displayMessage("Canavar başarıyla çağrıldı ve savaş başladı!");
     toggleMonsterAdminPanel();
 }
+
+function updateHealthBar(currentHP, maxHP) {
+  const healthBarEl = document.getElementById('monsterHealthBar');
+  const healthTextEl = document.getElementById('monsterHealthText');
+
+  const healthPercentage = (currentHP / maxHP) * 100;
+  const healthColor = healthPercentage > 50 ? 'bg-green-500' : (healthPercentage > 20 ? 'bg-yellow-500' : 'bg-red-500');
+
+  healthBarEl.style.width = `${healthPercentage}%`;
+  healthBarEl.className = `health-bar ${healthColor}`;
+  healthTextEl.textContent = `${formatNumber(currentHP)} / ${formatNumber(maxHP)}`;
+}
+
+/**
+ * YENİ: Hasar aralığı admin paneline yeni bir satır ekler.
+ */
+function addDamageTierRow(tierData = {}) {
+    const container = document.getElementById('damageTiersContainer');
+    const tierRow = document.createElement('div');
+    tierRow.className = 'damage-tier-row bg-gray-800 p-3 rounded-lg';
+    tierRow.innerHTML = `
+        <div class="flex items-center gap-2 mb-2">
+            <input type="number" class="box-setting-input min-damage" placeholder="Minimum Hasar" value="${tierData.minDamage || ''}">
+            <button onclick="addRewardToTier(this)" class="py-1 px-2 bg-green-600 hover:bg-green-500 rounded-md text-xs">+ Ödül</button>
+            <button onclick="this.parentElement.parentElement.remove()" class="py-1 px-2 bg-red-700 hover:bg-red-600 rounded-md text-xs">Aralığı Sil</button>
+        </div>
+        <div class="rewards-list space-y-2"></div>
+    `;
+    container.appendChild(tierRow);
+
+    if (tierData.rewards && tierData.rewards.length > 0) {
+        tierData.rewards.forEach(reward => {
+            const rewardsListContainer = tierRow.querySelector('.rewards-list');
+            addRewardToTier(rewardsListContainer, reward);
+        });
+    }
+}
+
+/**
+ * YENİ: Belirli bir hasar aralığına yeni bir ödül seçeneği ekler.
+ */
+function addRewardToTier(element, rewardData = {}) {
+    const rewardsListContainer = element.matches('.rewards-list') ? element : element.closest('.damage-tier-row').querySelector('.rewards-list');
+    const rewardRow = document.createElement('div');
+    rewardRow.className = 'grid grid-cols-4 gap-2 items-center';
+    rewardRow.innerHTML = `
+        <select class="box-setting-input reward-type col-span-2">
+             <option value="points">💰 Puan</option>
+             <option value="boxRights">📦 Kutu Hakkı</option>
+             <option value="wheelTicket">🎫 Çark Bileti</option>
+             <option value="clickCatchTicket">🎟️ Tıkla-Yakala Bileti</option>
+             <option value="iflasShield">🛡️ İflas Kalkanı</option>
+             <option value="wildcard">🃏 Joker Kart</option>
+             <option value="card_pack">🎴 Standart Kart Paketi</option>
+             <option value="card_pack_normal">🥉 Bronz Kart Paketi</option>
+             <option value="card_pack_gumus">🥈 Gümüş Kart Paketi</option>
+             <option value="card_pack_altin">🥇 Altın Kart Paketi</option>
+             <option value="card_pack_efsanevi">🏆 Efsanevi Kart Paketi</option>
+        </select>
+        <input type="number" class="box-setting-input reward-value" placeholder="Miktar" value="${rewardData.value || ''}">
+        <div class="flex items-center gap-1">
+           <input type="number" class="box-setting-input reward-chance" placeholder="Şans (%)" value="${rewardData.chance || ''}">
+           <button onclick="this.parentElement.parentElement.remove()" class="text-red-500 text-xl font-bold">&times;</button>
+        </div>
+    `;
+    // Seçili değeri ayarla
+    if(rewardData.type) {
+        rewardRow.querySelector('.reward-type').value = rewardData.type;
+    }
+    rewardsListContainer.appendChild(rewardRow);
+}
+
+/**
+ * YENİ VE EN ÖNEMLİ FONKSİYON: Canavara saldırma mantığını yönetir.
+ */
+async function attackMonster() {
+    if (isAdmin || attackCooldown) return;
+
+    attackCooldown = true;
+    const attackBtn = document.getElementById('attackMonsterBtn');
+    attackBtn.disabled = true;
+
+    try {
+        const userRef = db.ref(`users/${currentUser}`);
+        const battleRef = db.ref('gameConfig/monsterBattle');
+
+        // Gerekli tüm verileri tek seferde çek
+        const [userSnap, battleSnap] = await Promise.all([
+            userRef.once('value'),
+            battleRef.once('value')
+        ]);
+        
+        const userData = userSnap.val();
+        const battleData = battleSnap.val();
+
+        if (!userData || !battleData || !battleData.monsterDetails || battleData.monsterDetails.currentHP <= 0) {
+            throw new Error("Savaş durumu geçersiz veya canavar zaten ölü.");
+        }
+
+        const playerBattleData = battleData.damageLeaderboard?.[currentUser];
+        if (playerBattleData && playerBattleData.currentHP <= 0) {
+            throw new Error("Savaşmak için canın kalmadı!");
+        }
+        
+        // Oyuncu ve Canavar Statlarını Hesapla
+        const playerAvatarId = userData.selectedAvatar?.id;
+        const playerBaseStats = playerAvatarId ? (avatarBaseStats[playerAvatarId] || {}) : {};
+        const playerStats = {
+            hp: playerBaseStats.hp || 1000,
+            damage: playerBaseStats.damage || 50,
+            defense: playerBaseStats.defense || 10,
+            critChance: playerBaseStats.critChance || 5, // Yüzde
+        };
+        const monsterStats = battleData.monsterDetails;
+
+        // Hasar Hesaplaması
+        let isCrit = Math.random() * 100 < playerStats.critChance;
+        let playerDamage = Math.floor(playerStats.damage * (isCrit ? 1.5 : 1)); // Kritik vuruş 1.5 kat hasar
+        let finalDamage = Math.max(1, playerDamage - monsterStats.defense); // Minimum 1 hasar
+
+        // Canavarın Geri Saldırısı
+        let damageToPlayer = Math.max(1, monsterStats.damage - playerStats.defense);
+        
+        let randomReward = null;
+        let rewardMessage = '';
+        
+        // Yeni Dinamik Ödül Sistemi
+        const damageTiers = (battleData.damageTiers || []).sort((a, b) => b.minDamage - a.minDamage);
+        for (const tier of damageTiers) {
+            if (finalDamage >= tier.minDamage) {
+                const totalChance = tier.rewards.reduce((sum, r) => sum + r.chance, 0);
+                let randomRoll = Math.random() * totalChance;
+                
+                for (const reward of tier.rewards) {
+                    randomRoll -= reward.chance;
+                    if (randomRoll <= 0) {
+                        randomReward = reward;
+                        break;
+                    }
+                }
+                break; 
+            }
+        }
+        
+        // Firebase Transaction ile Güvenli Güncelleme
+        const updates = {};
+        await battleRef.transaction(currentBattleData => {
+            if (!currentBattleData || !currentBattleData.monsterDetails || currentBattleData.monsterDetails.currentHP <= 0) {
+                return; // Başka biri canavarı öldürdüyse işlemi iptal et
+            }
+
+            // Canavarın canını güncelle
+            currentBattleData.monsterDetails.currentHP -= finalDamage;
+
+            // Oyuncunun Liderlik Tablosu Verisini Güncelle
+            if (!currentBattleData.damageLeaderboard) currentBattleData.damageLeaderboard = {};
+            if (!currentBattleData.damageLeaderboard[currentUser]) {
+                currentBattleData.damageLeaderboard[currentUser] = { totalDamage: 0, currentHP: playerStats.hp };
+            }
+            currentBattleData.damageLeaderboard[currentUser].totalDamage += finalDamage;
+            currentBattleData.damageLeaderboard[currentUser].currentHP -= damageToPlayer;
+            
+            return currentBattleData;
+        });
+        
+        // Ödülleri ve Puanları Ekle
+        const sabitPuan = battleData.rewards?.perAttack || 0;
+        updates[`/users/${currentUser}/balance`] = (userData.balance || 0) + sabitPuan;
+        updates[`/users/${currentUser}/kariyerPuani`] = (userData.kariyerPuani || 0) + sabitPuan;
+
+        if (randomReward) {
+            const { type, value } = randomReward;
+            const dbKeyMap = { points: 'balance', boxRights: 'kutuHakki', wheelTicket: 'carkBileti', clickCatchTicket: 'clickCatchTickets', iflasShield: 'iflasShieldUses', wildcard: 'wildcards' };
+            const prizeName = typeToName[type] || 'Ödül';
+            rewardMessage = ` Ek olarak <b class="text-green-400">+${value} ${prizeName}</b> kazandın!`;
+
+            if (type === 'points') {
+                updates[`/users/${currentUser}/balance`] += value;
+                updates[`/users/${currentUser}/kariyerPuani`] += value;
+            } else if (type.startsWith('card_pack')) {
+                 startCardPackOpening(value, 'Canavar Savaşı', 1, type);
+            } else if (dbKeyMap[type]) {
+                updates[`/users/${currentUser}/${dbKeyMap[type]}`] = (userData[dbKeyMap[type]] || 0) + value;
+            }
+        }
+        
+        if (Object.keys(updates).length > 0) {
+            await db.ref().update(updates);
+        }
+
+        // Arayüzde anlık hasar yazısı göster
+        showFloatingText(isCrit ? `💥 KRİTİK! -${finalDamage}` : `-${finalDamage}`, 
+            document.getElementById('monsterImage').getBoundingClientRect().left + 100, 
+            document.getElementById('monsterImage').getBoundingClientRect().top + 100);
+
+        displayMessage(`Canavara <b>${finalDamage} hasar</b> verdin ve <b>+${sabitPuan} Puan</b> kazandın.${rewardMessage}`);
+
+        // Canavarın Ölüm Kontrolü
+        const finalBattleSnap = await battleRef.once('value');
+        if (finalBattleSnap.val().monsterDetails.currentHP <= 0) {
+            const leaderboard = finalBattleSnap.val().damageLeaderboard || {};
+            const sorted = Object.entries(leaderboard).sort((a,b) => b[1].totalDamage - a[1].totalDamage);
+            if (sorted.length > 0) {
+                const winner = sorted[0][0];
+                const killReward = finalBattleSnap.val().rewards?.onKillLeader || 0;
+                await db.ref(`users/${winner}`).transaction(winnerData => {
+                    if (winnerData) {
+                        winnerData.balance = (winnerData.balance || 0) + killReward;
+                        winnerData.kariyerPuani = (winnerData.kariyerPuani || 0) + killReward;
+                    }
+                    return winnerData;
+                });
+                displayGlobalNotification(`CANAVAR ÖLDÜ! En çok hasarı veren ${winner}, +${formatNumber(killReward)} Puan kazandı!`);
+            }
+            await battleRef.remove(); // Savaşı bitir
+        }
+
+    } catch (error) {
+        displayMessage(error.message);
+    } finally {
+        // 3 saniye bekleme süresi
+        let count = 3;
+        const interval = setInterval(() => {
+            attackBtn.textContent = `BEKLE (${count--})`;
+            if (count < 0) {
+                clearInterval(interval);
+                attackCooldown = false;
+                attackBtn.disabled = false;
+                attackBtn.textContent = 'SALDIR!';
+            }
+        }, 1000);
+    }
+}
+
 // ★★★ YENİ EKLENECEK FONKSİYONLAR SONU ★★★
       
 </script>
