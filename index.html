@@ -15608,22 +15608,23 @@ async function openAvatarStatsModal(username) {
         const userSnap = await db.ref(`users/${username}`).once('value');
         const userData = userSnap.val();
 
-        if (!userData || !userData.selectedAvatar) {
+        if (!userData || !userData.selectedAvatar || !userData.selectedAvatar.url) {
             titleEl.textContent = `${username} İstatistikleri`; 
-            contentEl.innerHTML = '<p class="text-red-500">Bu kullanıcının seçili bir avatarı yok.</p>';
+            contentEl.innerHTML = '<p class="text-red-500">Bu kullanıcının seçili bir avatarı veya avatar resmi yok.</p>';
             return;
         }
 
         titleEl.textContent = "Avatar Özellikleri";
         
-        const avatarId = userData.selectedAvatar.id;
-        
-        // --- ANA DÜZELTME BURADA ---
-        // Artık önbellekteki `avatarBaseStats` değişkenini kullanmıyoruz.
-        // Bunun yerine, her seferinde veritabanından en güncel statları çekiyoruz.
-        const statsSnap = await db.ref(`gameConfig/avatarBaseStats/${avatarId}`).once('value');
-        const baseStats = statsSnap.val() || {}; // Veritabanından gelen en taze bilgi
-        // --- DÜZELTME SONU ---
+        // ★★★ EN KRİTİK DEĞİŞİKLİK BURADA ★★★
+        // Kullanıcının seçili avatarının resim URL'sini alıp,
+        // admin panelinde kullandığımız aynı yardımcı fonksiyonla temizliyoruz.
+        const avatarUrl = userData.selectedAvatar.url;
+        const sanitizedId = sanitizeFirebaseKey(avatarUrl);
+
+        // İstatistikleri veritabanından, bu yeni ve güvenilir ID ile çekiyoruz.
+        const statsSnap = await db.ref(`gameConfig/avatarBaseStats/${sanitizedId}`).once('value');
+        const baseStats = statsSnap.val() || {};
 
         const finalStats = {
             hp: baseStats.hp || 1000,
@@ -15678,6 +15679,10 @@ function toggleAvatarAdminPanel() {
  * NİHAİ VE DÜZELTİLMİŞ: Resim URL'si bazında duplikasyonları engelleyerek
  * ve anahtarları temizleyerek sistemdeki TÜM benzersiz avatarları listeler.
  */
+/**
+ * NİHAİ VE DÜZELTİLMİŞ: Resim URL'si bazında duplikasyonları engelleyerek
+ * ve anahtarları temizleyerek sistemdeki TÜM benzersiz avatarları listeler.
+ */
 async function loadAvatarStatsForAdmin() {
     const editorEl = document.getElementById('avatarStatEditor');
     editorEl.innerHTML = '<p class="text-gray-400">Tüm benzersiz avatarlar taranıyor...</p>';
@@ -15685,82 +15690,49 @@ async function loadAvatarStatsForAdmin() {
     const allAvatars = new Map(); // Yinelenmeyi %100 engellemek için Map yapısı kullanıyoruz. Anahtar: resim URL'si
 
     // --- 1. ADIM: Tüm Avatar Kaynaklarını Tara ---
-
-    // Mağazadaki Avatarlar
-    const storeItemsSnap = await db.ref('storeItems').orderByChild('type').equalTo('avatar').once('value');
-    if (storeItemsSnap.exists()) {
-        const storeAvatars = storeItemsSnap.val();
-        for (const avatarId in storeAvatars) {
-            const avatar = storeAvatars[avatarId];
-            if (avatar.imageUrl && !allAvatars.has(avatar.imageUrl)) {
-                allAvatars.set(avatar.imageUrl, {
-                    id: avatarId, // Mağaza item ID'si zaten güvenli
-                    name: avatar.name,
-                    imageUrl: avatar.imageUrl
-                });
+    const sources = [
+        db.ref('storeItems').orderByChild('type').equalTo('avatar').once('value'),
+        db.ref('dailyRewardOptions').once('value'),
+        db.ref('gameConfig/loginStreakRewards').once('value'),
+        db.ref('gameConfig/collectionGrandPrize').once('value'),
+        db.ref('users').once('value')
+    ];
+    
+    const snapshots = await Promise.all(sources);
+    
+    // Mağaza
+    if (snapshots[0].exists()) snapshots[0].forEach(snap => {
+        const item = snap.val();
+        if (item.imageUrl && !allAvatars.has(item.imageUrl)) allAvatars.set(item.imageUrl, { name: item.name, imageUrl: item.imageUrl });
+    });
+    // Günlük Ödüller
+    if (snapshots[1].exists()) snapshots[1].forEach(snap => {
+        const reward = snap.val();
+        if (reward.type === 'avatar' && reward.avatarImageUrl && !allAvatars.has(reward.avatarImageUrl)) allAvatars.set(reward.avatarImageUrl, { name: reward.avatarName, imageUrl: reward.avatarImageUrl });
+    });
+    // Giriş Serisi
+    if (snapshots[2].exists()) snapshots[2].forEach(snap => {
+        (snap.val().rewards || []).forEach(reward => {
+            if (reward.type === 'avatar' && reward.avatarImageUrl && !allAvatars.has(reward.avatarImageUrl)) allAvatars.set(reward.avatarImageUrl, { name: reward.avatarName, imageUrl: reward.avatarImageUrl });
+        });
+    });
+    // Koleksiyon Ödülü
+    if (snapshots[3].exists()) {
+        const prize = snapshots[3].val();
+        if (prize.avatarName && prize.avatarImageUrl && !allAvatars.has(prize.avatarImageUrl)) allAvatars.set(prize.avatarImageUrl, { name: prize.avatarName, imageUrl: prize.avatarImageUrl });
+    }
+    // Kullanıcı Envanterleri
+    if (snapshots[4].exists()) snapshots[4].forEach(userSnap => {
+        const avatars = userSnap.val().avatars;
+        if (avatars) {
+            for (const avatarId in avatars) {
+                const userAvatar = avatars[avatarId];
+                if (userAvatar.imageUrl && !allAvatars.has(userAvatar.imageUrl)) allAvatars.set(userAvatar.imageUrl, { name: userAvatar.name, imageUrl: userAvatar.imageUrl });
             }
         }
-    }
+    });
 
-    // Günlük Ödüllerdeki Avatarlar
-    const dailyRewardsSnap = await db.ref('dailyRewardOptions').once('value');
-    if (dailyRewardsSnap.exists()) {
-        dailyRewardsSnap.forEach(rewardSnap => {
-            const reward = rewardSnap.val();
-            if (reward.type === 'avatar' && reward.avatarImageUrl && !allAvatars.has(reward.avatarImageUrl)) {
-                const sanitizedName = sanitizeFirebaseKey(reward.avatarName.replace(/\s+/g, '_'));
-                const avatarId = `daily_${sanitizedName}`; // Temizlenmiş isimle ID oluştur
-                allAvatars.set(reward.avatarImageUrl, { id: avatarId, name: reward.avatarName, imageUrl: reward.avatarImageUrl });
-            }
-        });
-    }
-
-    // Giriş Serisi Ödüllerindeki Avatarlar
-    const streakRewardsSnap = await db.ref('gameConfig/loginStreakRewards').once('value');
-    if (streakRewardsSnap.exists()) {
-        streakRewardsSnap.forEach(daySnap => {
-            (daySnap.val().rewards || []).forEach(reward => {
-                if (reward.type === 'avatar' && reward.avatarImageUrl && !allAvatars.has(reward.avatarImageUrl)) {
-                    const sanitizedName = sanitizeFirebaseKey(reward.avatarName.replace(/\s+/g, '_'));
-                    const avatarId = `streak_${sanitizedName}`; // Temizlenmiş isimle ID oluştur
-                    allAvatars.set(reward.avatarImageUrl, { id: avatarId, name: reward.avatarName, imageUrl: reward.avatarImageUrl });
-                }
-            });
-        });
-    }
-
-    // Koleksiyon Büyük Ödülündeki Avatar
-    const grandPrizeSnap = await db.ref('gameConfig/collectionGrandPrize').once('value');
-    if (grandPrizeSnap.exists()) {
-        const prize = grandPrizeSnap.val();
-        if (prize.avatarName && prize.avatarImageUrl && !allAvatars.has(prize.avatarImageUrl)) {
-            const sanitizedName = sanitizeFirebaseKey(prize.avatarName.replace(/\s+/g, '_'));
-            const avatarId = `prize_${sanitizedName}`; // Temizlenmiş isimle ID oluştur
-            allAvatars.set(prize.avatarImageUrl, { id: avatarId, name: prize.avatarName, imageUrl: prize.avatarImageUrl });
-        }
-    }
-
-    // --- 2. ADIM: Tüm Kullanıcıların Envanterlerini Tara ---
-    const usersSnap = await db.ref('users').once('value');
-    if (usersSnap.exists()) {
-        usersSnap.forEach(userSnap => {
-            const userData = userSnap.val();
-            if (userData.avatars) {
-                for (const avatarId in userData.avatars) {
-                    const userAvatar = userData.avatars[avatarId];
-                    if (userAvatar.imageUrl && !allAvatars.has(userAvatar.imageUrl)) {
-                        allAvatars.set(userAvatar.imageUrl, {
-                            id: avatarId, // Kullanıcı envanterindeki ID zaten güvenli
-                            name: userAvatar.name,
-                            imageUrl: userAvatar.imageUrl
-                        });
-                    }
-                }
-            }
-        });
-    }
-
-    // --- 3. ADIM: Paneli Oluştur ---
+    // --- 2. ADIM: Paneli Oluştur ---
     if (allAvatars.size === 0) {
         editorEl.innerHTML = '<p class="text-red-500">Sistemde (Mağaza, Ödüller, Kullanıcılar vb.) hiç avatar bulunamadı.</p>';
         return;
@@ -15768,10 +15740,13 @@ async function loadAvatarStatsForAdmin() {
 
     editorEl.innerHTML = '';
     for (const avatar of allAvatars.values()) {
-        const currentStats = avatarBaseStats[avatar.id] || {};
+        // ★★★ EN KRİTİK DEĞİŞİKLİK BURADA ★★★
+        // Artık ID olarak, resim URL'sinin temizlenmiş halini kullanıyoruz.
+        const sanitizedId = sanitizeFirebaseKey(avatar.imageUrl);
+        const currentStats = avatarBaseStats[sanitizedId] || {};
 
         const avatarHtml = `
-            <div class="p-3 bg-gray-800 rounded-lg border border-gray-700" data-avatar-id="${avatar.id}">
+            <div class="p-3 bg-gray-800 rounded-lg border border-gray-700" data-avatar-id="${sanitizedId}">
                 <div class="flex items-center gap-3 mb-2">
                     <img src="${avatar.imageUrl}" class="w-12 h-12 rounded-md object-cover">
                     <h5 class="text-lg font-bold text-white">${avatar.name}</h5>
@@ -16161,7 +16136,7 @@ async function attackMonster() {
     }
 }
 
-      /**
+ /**
  * Firebase anahtarlarında kullanılamayacak yasaklı karakterleri temizler.
  * @param {string} key - Temizlenecek olan metin.
  * @returns {string} Temizlenmiş ve Firebase için güvenli metin.
@@ -16169,9 +16144,9 @@ async function attackMonster() {
 function sanitizeFirebaseKey(key) {
     if (!key) return '';
     // Firebase'in yasakladığı karakterleri (. # $ [ ] /) bulur ve kaldırır.
-    return key.replace(/[.#$[\]/]/g, '');
+    // DEĞİŞİKLİK: ':' ve '/' karakterlerini de '_' ile değiştirerek URL'leri daha güvenli hale getiriyoruz.
+    return key.replace(/[.#$[\]/]/g, '').replace(/:/g, '_');
 }
-
 // ★★★ YENİ EKLENECEK FONKSİYONLAR SONU ★★★
       
 </script>
