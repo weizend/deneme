@@ -1336,6 +1336,69 @@ body.modal-open .modal-content {
         </div>
 
 </div>
+<div id="monsterBattleContent" class="w-full hidden">
+    <div class="bg-gray-800 p-6 rounded-xl shadow-lg border border-red-700 text-center">
+        <div class="flex justify-center items-center gap-4 mb-6">
+            <h3 class="text-yellow-400 text-3xl font-bold">Canavar Savaşı Arenası</h3>
+            <div id="monsterBattleAdminToggles" class="hidden">
+                <button onclick="toggleMonsterAdminPanel()" class="py-1 px-3 text-sm bg-purple-600 hover:bg-purple-500 rounded-lg">Canavar Ayarları</button>
+                <button onclick="toggleAvatarAdminPanel()" class="py-1 px-3 text-sm bg-blue-600 hover:bg-blue-500 rounded-lg">Avatar Ayarları</button>
+            </div>
+        </div>
+
+        <div id="monsterAdminControls" class="hidden bg-gray-900/50 p-4 rounded-lg border border-purple-500 mb-6 text-left space-y-3">
+            <h4 class="text-purple-300 text-xl font-bold text-center mb-2">Canavar Yönetim Paneli</h4>
+            <input type="text" id="adminMonsterName" class="box-setting-input" placeholder="Canavar Adı">
+            <input type="number" id="adminMonsterMaxHP" class="box-setting-input" placeholder="Canavar Maksimum Can">
+            <input type="number" id="adminMonsterDamage" class="box-setting-input" placeholder="Canavar Hasarı">
+            <input type="number" id="adminMonsterDefense" class="box-setting-input" placeholder="Canavar Savunması">
+            <input type="text" id="adminMonsterImageUrl" class="box-setting-input" placeholder="Canavar Resim URL">
+            <hr class="border-gray-600">
+            <h5 class="text-yellow-300 font-bold">Ödüller</h5>
+            <input type="number" id="adminMonsterDmgReward" class="box-setting-input" placeholder="Saldırı Başına Puan Ödülü">
+            <input type="number" id="adminMonsterKillReward" class="box-setting-input" placeholder="Canavar Ölünce Lidere Verilecek Puan Ödülü">
+            <button onclick="saveAndSpawnMonster()" class="w-full py-2 bg-green-700 hover:bg-green-600 rounded-lg font-bold">Kaydet ve Canavarı Çağır</button>
+        </div>
+        <div id="avatarAdminControls" class="hidden bg-gray-900/50 p-4 rounded-lg border border-blue-500 mb-6 text-left space-y-3">
+            <h4 class="text-blue-300 text-xl font-bold text-center mb-2">Avatar İstatistik Yönetimi</h4>
+            <div id="avatarStatEditor" class="space-y-4 max-h-96 overflow-y-auto scrollable-list pr-2">
+                </div>
+            <button onclick="saveAvatarStats()" class="w-full py-2 bg-green-700 hover:bg-green-600 rounded-lg font-bold mt-2">Tüm Avatar İstatistiklerini Kaydet</button>
+        </div>
+
+        <div id="battleArena" class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <div class="monster-container lg:col-span-1 bg-gray-900/50 p-4 rounded-lg flex flex-col items-center">
+                <h4 id="monsterName" class="text-2xl font-bold text-red-400">Canavar Yükleniyor...</h4>
+                <img id="monsterImage" src="https://i.hizliresim.com/n01dnz4.png" class="w-48 h-48 my-4 object-contain">
+                <div class="w-full bg-gray-700 rounded-full h-6 border-2 border-black">
+                    <div id="monsterHealthBar" class="bg-red-600 h-full rounded-full text-center text-white text-xs font-bold transition-all duration-500" style="width: 100%;">100%</div>
+                </div>
+                <p id="monsterHealthText" class="text-sm mt-1 text-gray-300">Yükleniyor...</p>
+            </div>
+
+            <div class="leaderboard-container lg:col-span-2 bg-gray-900/50 p-4 rounded-lg">
+                <h4 class="text-xl font-bold text-yellow-300 mb-3 border-b border-gray-600 pb-2">En Çok Hasar Verenler</h4>
+                <div id="monsterLeaderboard" class="space-y-2 max-h-80 overflow-y-auto scrollable-list pr-2 mb-4">
+                    </div>
+
+                <div class="player-controls bg-gray-800 p-4 rounded-lg mt-4">
+                    <h5 class="text-lg font-bold text-green-400" id="playerBattleName">Oyuncu Yükleniyor...</h5>
+                    <div class="w-full bg-gray-700 rounded-full h-5 my-2 border border-black">
+                         <div id="playerHealthBar" class="bg-green-500 h-full rounded-full text-center text-black text-xs font-bold transition-all duration-500" style="width: 100%;">100%</div>
+                    </div>
+                    <p id="playerHealthText" class="text-sm text-gray-300 mb-3">Yükleniyor...</p>
+
+                    <div id="playerPotions" class="flex justify-center gap-4 mb-4">
+                        </div>
+
+                    <button id="attackMonsterBtn" onclick="attackMonster()" class="w-full py-3 bg-red-700 hover:bg-red-600 text-white font-bold text-lg rounded-lg shadow-lg disabled:bg-gray-600 disabled:cursor-not-allowed">
+                        SALDIR!
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
     <div id="mainContentArea" class="w-full">
     <div id="gameContent" class="w-full">
       <div class="text-lg text-gray-300 mb-6 text-center flex flex-wrap justify-center items-center gap-4">
@@ -3178,6 +3241,14 @@ body.modal-open .modal-content {
       </div>
   </div>
 </div>
+<div id="avatarStatsModal" class="modal-overlay fixed inset-0 bg-black bg-opacity-70 flex justify-center items-center z-[10002] hidden">
+  <div class="modal-content bg-gray-800 p-8 rounded-xl shadow-2xl border border-cyan-500 w-11/12 max-w-md text-left relative">
+    <button class="modal-close-button" onclick="closeAvatarStatsModal()">&times;</button>
+    <h3 id="statsModalUsername" class="text-cyan-300 text-3xl font-bold mb-6 text-center">Kullanıcı İstatistikleri</h3>
+    <div id="statsModalContent" class="space-y-3 text-lg">
+      </div>
+  </div>
+</div>
   <script>
       
       // YENİ EKLENECEK GİZLİ ADMİN GİRİŞİ KODU
@@ -4065,8 +4136,14 @@ function showSection(sectionId) {
     }
 
     // Tüm içerik alanlarını ve sekme butonlarını sıfırla
-    const contentIds = ['gameContent', 'storeSection', 'announcementsContent', 'chanceWheelContent', 'clickCatchContent', 'cardCollectionContent'];
-    const tabButtonIds = ['gameTabBtn', 'storeTabBtn', 'announcementsTabBtn', 'chanceWheelTabBtn', 'clickCatchTabBtn', 'cardCollectionTabBtn'];
+    const contentIds = [
+    'gameContent', 'storeSection', 'announcementsContent', 'chanceWheelContent',
+    'clickCatchContent', 'cardCollectionContent', 'monsterBattleContent' // MonsterBattle'ı ekle
+];
+    const tabButtonIds = [
+    'gameTabBtn', 'storeTabBtn', 'announcementsTabBtn', 'chanceWheelTabBtn',
+    'clickCatchTabBtn', 'cardCollectionTabBtn', 'monsterBattleTabBtn' // MonsterBattle'ı ekle
+];
 
     contentIds.forEach(id => document.getElementById(id)?.classList.add('hidden'));
     tabButtonIds.forEach(btnId => {
@@ -4143,7 +4220,7 @@ function showSection(sectionId) {
     renderMonsterBattleUI(); // Canavar savaşı arayüzünü çiz
     // Admin ise yönetim butonlarını göster
     if (isAdmin) {
-        document.getElementById('monsterBattleAdminToggles').classList.remove('hidden');
+        document.getElementById('monsterBattleAdminToggles')?.classList.remove('hidden'); // MonsterBattle Admin Toggles'ı göster
     }
 }
     
@@ -7319,6 +7396,7 @@ async function buyItem(itemId) {
             updates.carkBileti = (user.carkBileti || 0) + itemValue;
         } else if (item.type === 'clickCatchTicket') {
             updates.clickCatchTickets = (user.clickCatchTickets || 0) + itemValue;
+            
         } else if (item.type === 'tempMultiplier') {
             updates.activeMultiplier = itemValue;
             updates.multiplierSource = 'store';
@@ -7326,6 +7404,7 @@ async function buyItem(itemId) {
             updates.activeStoreMultiplierItemId = itemId;
         } else if (item.type === 'iflasShield') {
             updates.iflasShieldUses = (user.iflasShieldUses || 0) + itemValue;
+            
         } else if (item.type === 'wildcard') {
             if (user.completedCollection === true) {
                 const boxRightsToGain = itemValue * 5;
@@ -7339,7 +7418,12 @@ async function buyItem(itemId) {
             const newAvatar = { id: itemId, name: item.name, imageUrl: item.imageUrl };
             updates[`avatars/${itemId}`] = newAvatar;
             message = `'${item.name}' avatarı koleksiyonuna eklendi!`;
-        }
+        } else if (item.type === 'health_potion') {
+    updates['inventory/health_potion'] = (user.inventory?.health_potion || 0) + itemValue;
+} else if (item.type === 'revival_stone') {
+    updates['inventory/revival_stone'] = (user.inventory?.revival_stone || 0) + itemValue;
+}
+        
         
         let itemUpdates = {};
         if (item.stock !== undefined && item.stock !== null) {
@@ -8932,7 +9016,11 @@ async function claimDailyReward(rewardId) {
                     if (!confirmedUpgrade) {
                         if (claimButton) { claimButton.disabled = false; claimButton.textContent = 'Ödülü Al'; }
                         return;
-                    }
+                    } else if (item.type === 'health_potion') {
+    updates['inventory/health_potion'] = (user.inventory?.health_potion || 0) + itemValue;
+} else if (item.type === 'revival_stone') {
+    updates['inventory/revival_stone'] = (user.inventory?.revival_stone || 0) + itemValue;
+}
                     await userRef.update({
                         kutuHakki: (user.kutuHakki || 0) + kutuHakkiDonusum,
                         activeMultiplier: reward.value,
@@ -10985,6 +11073,10 @@ async function endSoloClickCatchGame() {
                 logActivity('multiplierUpgraded', currentUser, { oldValue: currentUserMultiplier, newValue: newMultiplier.value, boxRights: kutuHakkiDonusum });
                 currentUserMultiplier = newMultiplier.value;
                 currentUserUses = newMultiplier.uses;
+                } else if (item.type === 'health_potion') {
+    updates['inventory/health_potion'] = (user.inventory?.health_potion || 0) + itemValue;
+} else if (item.type === 'revival_stone') {
+    updates['inventory/revival_stone'] = (user.inventory?.revival_stone || 0) + itemValue;
             } else if (newMultiplier.value === currentUserMultiplier) {
                 currentUserUses += newMultiplier.uses;
             } else {
@@ -15342,7 +15434,7 @@ function displayTemporaryNotification(message, color = 'bg-blue-600') {
     }, 2500);
 }
 
-      // =======================================================
+// =======================================================
 // YENİ: CANAVAR SAVAŞI SİSTEMİ FONKSİYONLARI
 // =======================================================
 
@@ -15600,7 +15692,6 @@ async function saveAndSpawnMonster() {
     displayMessage("Canavar başarıyla çağrıldı ve savaş başladı!");
     toggleMonsterAdminPanel();
 }
-
 // ★★★ YENİ EKLENECEK FONKSİYONLAR SONU ★★★
       
 </script>
