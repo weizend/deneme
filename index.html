@@ -15593,6 +15593,8 @@ async function renderMonsterBattleUI() {
 
 // openAvatarStatsModal FONKSİYONUNU BULUP BU BLOK İLE DEĞİŞTİRİN
 
+// openAvatarStatsModal FONKSİYONUNU BULUP BU BLOK İLE DEĞİŞTİRİN
+
 async function openAvatarStatsModal(username) {
     const modal = document.getElementById('avatarStatsModal');
     const contentEl = document.getElementById('statsModalContent');
@@ -15602,39 +15604,51 @@ async function openAvatarStatsModal(username) {
     contentEl.innerHTML = '<p class="text-gray-400">Yükleniyor...</p>';
     modal.style.display = 'flex';
 
-    const userSnap = await db.ref(`users/${username}`).once('value');
-    const userData = userSnap.val();
+    try {
+        const userSnap = await db.ref(`users/${username}`).once('value');
+        const userData = userSnap.val();
 
-    if (!userData || !userData.selectedAvatar) {
+        if (!userData || !userData.selectedAvatar) {
+            titleEl.textContent = `${username} İstatistikleri`; 
+            contentEl.innerHTML = '<p class="text-red-500">Bu kullanıcının seçili bir avatarı yok.</p>';
+            return;
+        }
+
+        titleEl.textContent = "Avatar Özellikleri";
+        
+        const avatarId = userData.selectedAvatar.id;
+        
+        // --- ANA DÜZELTME BURADA ---
+        // Artık önbellekteki `avatarBaseStats` değişkenini kullanmıyoruz.
+        // Bunun yerine, her seferinde veritabanından en güncel statları çekiyoruz.
+        const statsSnap = await db.ref(`gameConfig/avatarBaseStats/${avatarId}`).once('value');
+        const baseStats = statsSnap.val() || {}; // Veritabanından gelen en taze bilgi
+        // --- DÜZELTME SONU ---
+
+        const finalStats = {
+            hp: baseStats.hp || 1000,
+            minDamage: baseStats.minDamage || 50,
+            maxDamage: baseStats.maxDamage || 100,
+            defense: baseStats.defense || 10,
+            critChance: baseStats.critChance || 5,
+        };
+
+        contentEl.innerHTML = `
+            <div class="flex flex-col items-center mb-4">
+                <img src="${userData.selectedAvatar.url}" alt="${userData.selectedAvatar.name || 'Avatar'}" class="w-24 h-24 rounded-full border-2 border-green-500 mb-2">
+                <span class="text-lg font-bold text-white">${userData.selectedAvatar.name || 'Seçili Avatar'}</span>
+            </div>
+            <p>❤️ Can: <b class="text-white">${formatNumber(finalStats.hp)}</b></p>
+            <p>⚔️ Hasar: <b class="text-white">${formatNumber(finalStats.minDamage)} - ${formatNumber(finalStats.maxDamage)}</b></p>
+            <p>🛡️ Savunma: <b class="text-white">${formatNumber(finalStats.defense)}</b></p>
+            <p>💥 Kritik Şans: <b class="text-white">%${finalStats.critChance}</b></p>
+        `;
+
+    } catch (error) {
+        console.error("Avatar istatistikleri yüklenirken hata:", error);
         titleEl.textContent = `${username} İstatistikleri`; 
-        contentEl.innerHTML = '<p class="text-red-500">Bu kullanıcının seçili bir avatarı yok.</p>';
-        return;
+        contentEl.innerHTML = '<p class="text-red-500">İstatistikler yüklenirken bir hata oluştu.</p>';
     }
-
-    titleEl.textContent = "Avatar Özellikleri";
-    
-    const avatarId = userData.selectedAvatar.id;
-    const baseStats = avatarBaseStats[avatarId] || {};
-
-    const finalStats = {
-        hp: baseStats.hp || 1000,
-        damage: baseStats.damage || 50,
-        defense: baseStats.defense || 10,
-        critChance: baseStats.critChance || 5,
-    };
-
-    // YENİ EKLENEN KISIM BAŞLANGICI: Avatar resmini de içeriğe ekliyoruz
-    contentEl.innerHTML = `
-        <div class="flex flex-col items-center mb-4">
-            <img src="${userData.selectedAvatar.url}" alt="${userData.selectedAvatar.name || 'Avatar'}" class="w-24 h-24 rounded-full border-2 border-green-500 mb-2">
-            <span class="text-lg font-bold text-white">${userData.selectedAvatar.name || 'Seçili Avatar'}</span>
-        </div>
-        <p>❤️ Can: <b class="text-white">${formatNumber(finalStats.hp)}</b></p>
-        <p>⚔️ Hasar: <b class="text-white">${formatNumber(finalStats.damage)}</b></p>
-        <p>🛡️ Savunma: <b class="text-white">${formatNumber(finalStats.defense)}</b></p>
-        <p>💥 Kritik Şans: <b class="text-white">%${finalStats.critChance}</b></p>
-    `;
-    // YENİ EKLENEN KISIM SONU
 }
 
 function closeAvatarStatsModal() {
@@ -15660,6 +15674,10 @@ function toggleAvatarAdminPanel() {
  * NİHAİ VE DÜZELTİLMİŞ: Resim URL'si bazında duplikasyonları engelleyerek
  * sistemdeki TÜM benzersiz avatarları listeler.
  */
+/**
+ * NİHAİ VE DÜZELTİLMİŞ: Resim URL'si bazında duplikasyonları engelleyerek
+ * ve anahtarları temizleyerek sistemdeki TÜM benzersiz avatarları listeler.
+ */
 async function loadAvatarStatsForAdmin() {
     const editorEl = document.getElementById('avatarStatEditor');
     editorEl.innerHTML = '<p class="text-gray-400">Tüm benzersiz avatarlar taranıyor...</p>';
@@ -15676,7 +15694,7 @@ async function loadAvatarStatsForAdmin() {
             const avatar = storeAvatars[avatarId];
             if (avatar.imageUrl && !allAvatars.has(avatar.imageUrl)) {
                 allAvatars.set(avatar.imageUrl, {
-                    id: avatarId,
+                    id: avatarId, // Mağaza item ID'si zaten güvenli
                     name: avatar.name,
                     imageUrl: avatar.imageUrl
                 });
@@ -15690,7 +15708,8 @@ async function loadAvatarStatsForAdmin() {
         dailyRewardsSnap.forEach(rewardSnap => {
             const reward = rewardSnap.val();
             if (reward.type === 'avatar' && reward.avatarImageUrl && !allAvatars.has(reward.avatarImageUrl)) {
-                const avatarId = `daily_${reward.avatarName.replace(/\s+/g, '_')}`; // Yönetim için geçici ID
+                const sanitizedName = sanitizeFirebaseKey(reward.avatarName.replace(/\s+/g, '_'));
+                const avatarId = `daily_${sanitizedName}`; // Temizlenmiş isimle ID oluştur
                 allAvatars.set(reward.avatarImageUrl, { id: avatarId, name: reward.avatarName, imageUrl: reward.avatarImageUrl });
             }
         });
@@ -15702,7 +15721,8 @@ async function loadAvatarStatsForAdmin() {
         streakRewardsSnap.forEach(daySnap => {
             (daySnap.val().rewards || []).forEach(reward => {
                 if (reward.type === 'avatar' && reward.avatarImageUrl && !allAvatars.has(reward.avatarImageUrl)) {
-                    const avatarId = `streak_${reward.avatarName.replace(/\s+/g, '_')}`; // Yönetim için geçici ID
+                    const sanitizedName = sanitizeFirebaseKey(reward.avatarName.replace(/\s+/g, '_'));
+                    const avatarId = `streak_${sanitizedName}`; // Temizlenmiş isimle ID oluştur
                     allAvatars.set(reward.avatarImageUrl, { id: avatarId, name: reward.avatarName, imageUrl: reward.avatarImageUrl });
                 }
             });
@@ -15714,12 +15734,13 @@ async function loadAvatarStatsForAdmin() {
     if (grandPrizeSnap.exists()) {
         const prize = grandPrizeSnap.val();
         if (prize.avatarName && prize.avatarImageUrl && !allAvatars.has(prize.avatarImageUrl)) {
-            const avatarId = `prize_${prize.avatarName.replace(/\s+/g, '_')}`; // Yönetim için geçici ID
+            const sanitizedName = sanitizeFirebaseKey(prize.avatarName.replace(/\s+/g, '_'));
+            const avatarId = `prize_${sanitizedName}`; // Temizlenmiş isimle ID oluştur
             allAvatars.set(prize.avatarImageUrl, { id: avatarId, name: prize.avatarName, imageUrl: prize.avatarImageUrl });
         }
     }
 
-    // --- 2. ADIM (EN ÖNEMLİSİ): Tüm Kullanıcıların Envanterlerini Tara ---
+    // --- 2. ADIM: Tüm Kullanıcıların Envanterlerini Tara ---
     const usersSnap = await db.ref('users').once('value');
     if (usersSnap.exists()) {
         usersSnap.forEach(userSnap => {
@@ -15729,7 +15750,7 @@ async function loadAvatarStatsForAdmin() {
                     const userAvatar = userData.avatars[avatarId];
                     if (userAvatar.imageUrl && !allAvatars.has(userAvatar.imageUrl)) {
                         allAvatars.set(userAvatar.imageUrl, {
-                            id: avatarId,
+                            id: avatarId, // Kullanıcı envanterindeki ID zaten güvenli
                             name: userAvatar.name,
                             imageUrl: userAvatar.imageUrl
                         });
@@ -15767,7 +15788,6 @@ async function loadAvatarStatsForAdmin() {
         editorEl.innerHTML += avatarHtml;
     }
 }
-
 /**
  * Adminin girdiği avatar istatistiklerini Firebase'e kaydeder.
  */
@@ -16139,6 +16159,17 @@ async function attackMonster() {
             }
         }, 1000);
     }
+}
+
+      /**
+ * Firebase anahtarlarında kullanılamayacak yasaklı karakterleri temizler.
+ * @param {string} key - Temizlenecek olan metin.
+ * @returns {string} Temizlenmiş ve Firebase için güvenli metin.
+ */
+function sanitizeFirebaseKey(key) {
+    if (!key) return '';
+    // Firebase'in yasakladığı karakterleri (. # $ [ ] /) bulur ve kaldırır.
+    return key.replace(/[.#$[\]/]/g, '');
 }
 
 // ★★★ YENİ EKLENECEK FONKSİYONLAR SONU ★★★
