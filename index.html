@@ -12887,8 +12887,7 @@ function closeSeasonInfoModal() {
     document.getElementById('seasonInfoModal').style.display = 'none';
 }
 
-// --- YENİ EKLENECEK HAFTALIK BİLGİ PENCERESİ FONKSİYONLARI ---
-
+// YENİ VE DÜZELTİLMİŞ FONKSİYONU BU ŞEKİLDE YAPIŞTIR
 async function openWeeklyResetInfoModal() {
     document.body.classList.add('modal-open');
     const detailsContainer = document.getElementById('weeklyWinnerPrizeDetails');
@@ -12900,10 +12899,21 @@ async function openWeeklyResetInfoModal() {
 
         if (settingsSnap.exists()) {
             const prize = settingsSnap.val();
-            const prizeNames = { boxRights: "Kutu Hakkı", points: "Puan", wheelTicket: "Çark Bileti", iflasShield: "İflas Kalkanı" };
-            const prizeName = prizeNames[prize.type] || prize.type;
+            let prizeText = '';
+
+            // Çarpan türündeki ödüller için özel bir metin oluşturuyoruz
+            if (prize.type === 'tempMultiplier') {
+                prizeText = `${prize.amount}x Çarpan (${prize.uses} kullanım)`;
+            } 
+            // Diğer tüm ödül türleri için genel metin
+            else {
+                // typeToName haritasını kullanarak daha tutarlı isimler alıyoruz
+                const prizeName = typeToName[prize.type] || prize.type;
+                prizeText = `${prize.amount} ${prizeName}`;
+            }
             
-            prizeHtml = `<strong>🏆 Şampiyon Ödülü:</strong> <span class="text-white font-bold">${prize.amount} ${prizeName}</span>`;
+            prizeHtml = `<strong>🏆 Şampiyon Ödülü:</strong> <span class="text-white font-bold">${prizeText}</span>`;
+
         } else {
             prizeHtml = '<strong>🏆 Şampiyon Ödülü:</strong> <span class="text-gray-400">Henüz admin tarafından belirlenmedi.</span>';
         }
