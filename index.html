@@ -4438,7 +4438,7 @@ async function logout() {
     });
 }
 
-// MEVCUT loadBalanceAndBoxRights fonksiyonunu bununla değiştir
+// MEVCUT loadBalanceAndBoxRights FONKSİYONUNU SİLİP BUNU YAPIŞTIR
 function loadBalanceAndBoxRights() {
     if (isAdmin) {
         document.getElementById("balance").textContent = "Admin Paneli Aktif";
@@ -4451,6 +4451,14 @@ function loadBalanceAndBoxRights() {
     const callback = async snap => {
         const userData = snap.val();
         if (!userData) return;
+
+        // --- YENİ EKLENEN KISIM BAŞLANGICI: DİRİLME TAŞI SORUNU ÇÖZÜMÜ ---
+        // Eğer kullanıcı Canavar Savaşı sekmesindeyse, bu fonksiyon her çalıştığında
+        // (yani kullanıcının verisi her değiştiğinde) arayüzü yeniden çiz.
+        if (currentActiveSection === 'monsterBattle') {
+            renderMonsterBattleUI();
+        }
+        // --- ÇÖZÜM SONU ---
 
         if (userData.blocked && userData.blockedUntil && Date.now() < userData.blockedUntil) {
             displayBlockedMessage(userData.blockedUntil, currentUser);
@@ -4468,7 +4476,6 @@ function loadBalanceAndBoxRights() {
         document.getElementById("balance").textContent = statusText;
         document.getElementById('storeCurrentUserBalance').textContent = userData.balance || 0;
         document.getElementById('storeCurrentUserSpent').textContent = userData.totalSpentPoints || 0;
-        // GÜNCELLENEN SATIR BURADA
         document.getElementById('storeCurrentUserKasaBalance').textContent = userData.kasaPuani || 0;
         document.getElementById('wheelTicketBalance').textContent = userData.carkBileti || 0;
 
@@ -5748,8 +5755,8 @@ function handleRowTypeChange(selectElement) {
     }
 }
 
+// MEVCUT openBox FONKSİYONUNU SİLİP BUNU YAPIŞTIR
 async function openBox(index) {
-    // --- SÜRPRİZ KUTU UYARI SİSTEMİ ---
     const lastSurpriseSnap = await db.ref('gameStats/lastSurpriseInfo').once('value');
     const lastSurpriseData = lastSurpriseSnap.val();
     if (lastSurpriseData && lastSurpriseData.resettled === false) {
@@ -5760,7 +5767,6 @@ async function openBox(index) {
             return;
         }
     }
-    // --- UYARI SİSTEMİ SONU ---
 
     if (isGameLocked) {
         displayMessage("Kutular 1 saniye arayla açılıyor. Lütfen tekrar deneyin. Sorun devam ediyorsa, 'Sorunları Çöz' menüsüne göz atabilirsiniz.");
@@ -5906,6 +5912,7 @@ async function openBox(index) {
         if (shieldWasUsed) {
             updates['iflasShieldUses'] = user.iflasShieldUses - 1;
             updates['iflasShieldUsedCount'] = (user.iflasShieldUsedCount || 0) + 1;
+            updates['balance'] = user.balance; // Puanı değiştirme
             message = `İflas! 🛡️ Kalkanın seni korudu!`;
         } else {
             updates['balance'] = 0;
@@ -5928,6 +5935,7 @@ async function openBox(index) {
         const dbKeys = { wheelTicket: 'carkBileti', clickCatchTicket: 'clickCatchTickets', iflasShield: 'iflasShieldUses', wildcard: 'wildcards' };
         const itemName = itemNames[box.content] || 'Eşya';
         
+        // ★★★ DEĞİŞİKLİK BURADA: Artık albümü tamamlayanlar için puan dönüşümü yok. ★★★
         if (box.content.startsWith('card_pack')) {
             startCardPackOpening(itemsGained, `${box.id} numaralı kutu`, finalMultiplier, box.content);
             message = `Tebrikler! Kutudan ${itemsGained} adet ${itemName} buldun!`;
@@ -11834,9 +11842,18 @@ function closeHelpModal() {
         }
     }
 
-    // MEVCUT selectAvatar fonksiyonunu bununla DEĞİŞTİR
+    // MEVCUT selectAvatar FONKSİYONUNU SİLİP BUNU YAPIŞTIR
 async function selectAvatar(itemId, imageUrl) {
     if (isAdmin) return;
+
+    // --- YENİ EKLENEN KISIM BAŞLANGICI: SAVAŞ KONTROLÜ ---
+    // Global `monsterBattleData` değişkenini kontrol et
+    if (monsterBattleData && monsterBattleData.damageLeaderboard && monsterBattleData.damageLeaderboard[currentUser]) {
+        displayMessage("Devam eden bir canavar savaşı varken avatarını değiştiremezsin!");
+        return; // Fonksiyonu burada sonlandır, avatar değişmesin.
+    }
+    // --- SAVAŞ KONTROLÜ SONU ---
+
     const userRef = db.ref('users/' + currentUser);
     const avatarData = {
         id: itemId,
@@ -11846,12 +11863,9 @@ async function selectAvatar(itemId, imageUrl) {
 
     document.getElementById('currentUserAvatar').src = imageUrl;
 
-    // ★★★ YENİ EKLENEN KISIM BAŞLANGICI ★★★
-    // Eğer Canavar Savaşı sekmesi açıksa, arayüzü anında güncelle
     if (currentActiveSection === 'monsterBattle') {
         renderMonsterBattleUI();
     }
-    // ★★★ YENİ EKLENEN KISIM SONU ★★★
 
     displayMessage("Avatar başarıyla seçildi!");
     closeAvatarSelectionModal();
@@ -12097,7 +12111,7 @@ async function buyItem(itemId) {
     }
 }
 
-// MEVCUT renderMonsterBattleUI fonksiyonunu bununla DEĞİŞTİR
+// MEVCUT renderMonsterBattleUI FONKSİYONUNU SİLİP BUNU YAPIŞTIR
 async function renderMonsterBattleUI() {
     const battleArenaContainer = document.getElementById('battleArenaContainer');
     if (!battleArenaContainer) return;
@@ -12109,7 +12123,7 @@ async function renderMonsterBattleUI() {
     const monsterInstanceControls = document.getElementById('monsterInstanceAdminControls');
     const attackBtn = document.getElementById('attackMonsterBtn');
     const reviveBtn = document.getElementById('reviveBtn');
-    const potionsContainer = document.getElementById('playerPotions'); // ★★★ YENİ
+    const potionsContainer = document.getElementById('playerPotions'); 
 
     if (isAdmin) {
         document.getElementById('monsterBattleAdminToggles')?.classList.toggle('hidden', !isAdmin);
@@ -12151,7 +12165,6 @@ async function renderMonsterBattleUI() {
     if (sortedLeaderboard.length === 0) {
         leaderboardEl.innerHTML = '<p class="text-center text-gray-500">Henüz kimse canavara saldırmadı.</p>';
     } else {
-        // Liderlik tablosu renderlama kısmı aynı kalıyor.
         for (const [username, data] of sortedLeaderboard) {
             const userSnap = await db.ref(`users/${username}`).once('value');
             const userData = userSnap.val();
@@ -12192,7 +12205,9 @@ async function renderMonsterBattleUI() {
     
     if (playerData) {
         document.getElementById('playerBattleName').textContent = currentUser;
-        const playerAvatarUrl = playerData.selectedAvatar?.url || defaultAvatarUrl;
+        
+        // ★★★ DEĞİŞİKLİK BURADA BAŞLIYOR: Kilitli avatarı kullanıyoruz ★★★
+        const playerAvatarUrl = playerBattleData?.lockedAvatarUrl || playerData.selectedAvatar?.url || defaultAvatarUrl;
         const sanitizedPlayerAvatarId = sanitizeFirebaseKey(playerAvatarUrl);
 
         const permanentStats = playerData.avatarStats?.[sanitizedPlayerAvatarId] || {};
@@ -12212,9 +12227,13 @@ async function renderMonsterBattleUI() {
         const playerRevivalStones = playerData.inventory?.revival_stone || 0;
         const isPlayerDead = playerCurrentHP <= 0;
 
-        potionsContainer.innerHTML = ''; // İksir/bilgi alanını temizle
+        potionsContainer.innerHTML = ''; 
 
         if (isPlayerDead) {
+            // ★★★ YENİ EKLENEN KISIM: "MAĞLUP OLDUN!" YAZISI ★★★
+            potionsContainer.innerHTML = `<p class="text-lg font-bold text-red-500 animate-pulse">MAĞLUP OLDUN!</p>`;
+            // ★★★ YENİ KISIM SONU ★★★
+
             playerHealthBar.classList.add('bg-gray-500');
             playerHealthBar.classList.remove('bg-green-500');
             attackBtn.classList.add('hidden');
@@ -12223,7 +12242,8 @@ async function renderMonsterBattleUI() {
                 reviveBtn.textContent = `💎 Dirilme Taşı Kullan (${playerRevivalStones})`;
             } else {
                 reviveBtn.classList.add('hidden');
-                potionsContainer.innerHTML = `<p class="text-sm text-red-500">Dirilmek için Dirilme Taşına ihtiyacın var!</p>`;
+                // ★★★ YENİ EKLENEN KISIM: "Taşa ihtiyacın var" yazısı ★★★
+                potionsContainer.innerHTML += `<p class="text-sm text-red-500">Dirilmek için Dirilme Taşına ihtiyacın var!</p>`;
             }
         } else {
             playerHealthBar.classList.add('bg-green-500');
@@ -16230,14 +16250,12 @@ function addRewardToTier(element, rewardData = {}) {
     rewardsListContainer.appendChild(rewardRow);
 }
 
-// BU FONKSİYONU YENİSİYLE DEĞİŞTİR
+// MEVCUT attackMonster FONKSİYONUNU SİLİP BUNU YAPIŞTIR
 async function attackMonster() {
     if (isAdmin || attackCooldown) return;
 
     const attackBtn = document.getElementById('attackMonsterBtn');
-    attackCooldown = true;
-    attackBtn.disabled = true;
-
+    
     try {
         const userRef = db.ref(`users/${currentUser}`);
         const battleRef = db.ref('gameConfig/monsterBattle');
@@ -16250,14 +16268,33 @@ async function attackMonster() {
         if (!userData || !battleData || !battleData.monsterDetails || battleData.monsterDetails.currentHP <= 0) {
             throw new Error("Savaş durumu geçersiz veya canavar zaten ölü.");
         }
-
+        
         const playerBattleData = battleData.damageLeaderboard?.[currentUser];
-        // 1. DEĞİŞİKLİK: Canı 0 olan oyuncu saldıramaz.
+
+        // --- YENİ EKLENEN KISIM BAŞLANGICI: AVATAR KİLİDİ ---
+        // Eğer oyuncu bu canavarla daha önce hiç savaşmamışsa (leaderboard'da kaydı yoksa)
+        if (!playerBattleData) {
+            if (!userData.selectedAvatar || !userData.selectedAvatar.url) {
+                displayMessage("Savaşa katılmak için önce envanterden bir avatar seçmelisin!");
+                return; // Avatar seçilmemişse saldırıyı engelle
+            }
+            const confirmed = await customConfirm(
+                `Canavara ilk saldırını yapıyorsun! Bu saldırıdan sonra, şu an seçili olan avatarın bu canavar ölene kadar kilitlenecek ve değiştirilemeyecek. Devam etmek istiyor musun?`
+            );
+            if (!confirmed) {
+                return; // Kullanıcı iptal ederse saldırıyı durdur
+            }
+        }
+        // --- AVATAR KİLİDİ KISMI SONU ---
+
         if (playerBattleData && playerBattleData.currentHP <= 0) {
             throw new Error("Savaşmak için canın kalmadı! Dirilme Taşı kullanmalısın.");
         }
         
-        const playerAvatarUrl = userData.selectedAvatar?.url || defaultAvatarUrl;
+        attackCooldown = true;
+        attackBtn.disabled = true;
+
+        const playerAvatarUrl = playerBattleData?.lockedAvatarUrl || userData.selectedAvatar?.url || defaultAvatarUrl;
         const sanitizedPlayerAvatarId = sanitizeFirebaseKey(playerAvatarUrl);
         const playerBaseStats = avatarBaseStats[sanitizedPlayerAvatarId] || {};
         
@@ -16314,11 +16351,15 @@ async function attackMonster() {
 
             if (!currentBattleData.damageLeaderboard) currentBattleData.damageLeaderboard = {};
             if (!currentBattleData.damageLeaderboard[currentUser]) {
-                currentBattleData.damageLeaderboard[currentUser] = { totalDamage: 0, currentHP: playerStats.hp, buffs: {} };
+                currentBattleData.damageLeaderboard[currentUser] = { 
+                    totalDamage: 0, 
+                    currentHP: playerStats.hp, 
+                    buffs: {},
+                    lockedAvatarUrl: playerAvatarUrl // Avatarı kilitle
+                };
             }
             const currentPlayerBattleData = currentBattleData.damageLeaderboard[currentUser];
             currentPlayerBattleData.totalDamage += finalDamageToMonster;
-            // 2. DEĞİŞİKLİK: Oyuncunun canı 0'ın altına düşmez.
             currentPlayerBattleData.currentHP = Math.max(0, currentPlayerBattleData.currentHP - finalDamageToPlayer);
 
             for(const buffType in (currentPlayerBattleData.buffs || {})) {
