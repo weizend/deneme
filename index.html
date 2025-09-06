@@ -4252,22 +4252,17 @@ async function afterLogin() {
     }
   }
 
-// ✅ YENİ VE GÜNCEL FONKSİYON
+// ESKİ showSection FONKSİYONUNU SİL
+// ...eski fonksiyonu sil...
+
+// YENİ showSection FONKSİYONUNU YAPIŞTIR
 function showSection(sectionId) {
-    // Kart koleksiyonu sekmesinden başka bir sekmeye geçildiğinde "YENİ" etiketini temizle
     if (currentActiveSection === 'cardCollection' && sectionId !== 'cardCollection') {
         newlyAcquiredCards.clear();
     }
 
-    // Tüm içerik alanlarını ve sekme butonlarını sıfırla
-    const contentIds = [
-    'gameContent', 'storeSection', 'announcementsContent', 'chanceWheelContent',
-    'clickCatchContent', 'cardCollectionContent', 'monsterBattleContent' // MonsterBattle'ı ekle
-];
-    const tabButtonIds = [
-    'gameTabBtn', 'storeTabBtn', 'announcementsTabBtn', 'chanceWheelTabBtn',
-    'clickCatchTabBtn', 'cardCollectionTabBtn', 'monsterBattleTabBtn' // MonsterBattle'ı ekle
-];
+    const contentIds = ['gameContent', 'storeSection', 'announcementsContent', 'chanceWheelContent', 'clickCatchContent', 'cardCollectionContent', 'monsterBattleContent'];
+    const tabButtonIds = ['gameTabBtn', 'storeTabBtn', 'announcementsTabBtn', 'chanceWheelTabBtn', 'clickCatchTabBtn', 'cardCollectionTabBtn', 'monsterBattleTabBtn'];
 
     contentIds.forEach(id => document.getElementById(id)?.classList.add('hidden'));
     tabButtonIds.forEach(btnId => {
@@ -4278,15 +4273,9 @@ function showSection(sectionId) {
         }
     });
 
-    // Bölüme özel tüm admin butonlarını varsayılan olarak gizle
-    document.getElementById('adminStoreManagementButtonContainer').classList.add('hidden');
-    document.getElementById('adminAnnouncementControls').classList.add('hidden');
-    document.getElementById('clickCatchAdminButtonsContainer')?.classList.add('hidden');
-    document.getElementById('kasaSettingsBtn')?.classList.add('hidden');
-    // YÖNETİM PANELİ BUTONU DA ARTIK BURADA GİZLENİYOR
-    document.getElementById('collectionAdminBtn')?.classList.add('hidden');
+    // ★★★ YENİ EKLENEN ADIM: Sekme değiştiğinde tüm admin kontrollerini gizle ★★★
+    hideAllAdminControls();
 
-    // Sadece istenen içeriği ve sekme butonunu aktif et
     document.getElementById(`${sectionId}Content`)?.classList.remove('hidden');
     document.getElementById(`${sectionId}Section`)?.classList.remove('hidden');
 
@@ -4296,7 +4285,6 @@ function showSection(sectionId) {
         activeBtn.classList.remove('bg-gray-700', 'hover:bg-gray-600');
     }
 
-    // Hangi sekmeye tıklandıysa ona özel fonksiyonları çalıştır
     if (sectionId === 'store') {
         loadStoreItems();
         if (isAdmin) {
@@ -4335,18 +4323,16 @@ function showSection(sectionId) {
         loadGrandPrizeDisplay();
         loadCollectionLeaderboard();
         if (isAdmin) {
-            // ARTIK PANEL YERİNE BUTONU GÖSTERİYORUZ
             document.getElementById('collectionAdminBtn').classList.remove('hidden');
             loadMarketSettingsForAdmin();
             loadPrizeSettingsForAdmin();
         }
     } else if (sectionId === 'monsterBattle') {
-    renderMonsterBattleUI(); // Canavar savaşı arayüzünü çiz
-    // Admin ise yönetim butonlarını göster
-    if (isAdmin) {
-        document.getElementById('monsterBattleAdminToggles')?.classList.remove('hidden'); // MonsterBattle Admin Toggles'ı göster
+        renderMonsterBattleUI();
+        if (isAdmin) {
+            document.getElementById('monsterBattleAdminToggles')?.classList.remove('hidden');
+        }
     }
-}
     
     currentActiveSection = sectionId;
 }
@@ -4405,7 +4391,10 @@ function resetGlobalState() {
     document.getElementById('storeCurrentUserKasaBalance').textContent = '0';
 }
 
-// MEVCUT logout FONKSİYONUNU BUL VE BU YENİ VERSİYONLA DEĞİŞTİR
+// ESKİ logout FONKSİYONUNU SİL
+// ...eski fonksiyonu sil...
+
+// YENİ logout FONKSİYONUNU YAPIŞTIR
 async function logout() {
     const confirmed = await customConfirm("Çıkış yapmak istediğinize emin misiniz?");
     if (!confirmed) return;
@@ -4417,6 +4406,9 @@ async function logout() {
     
     // 2. SONRA tüm geçici verileri ve değişkenleri temizle
     resetGlobalState();
+    
+    // ★★★ YENİ EKLENEN ADIM: Tüm admin kontrollerini gizle ★★★
+    hideAllAdminControls();
 
     // 3. UI'ı (arayüzü) güncelle
     document.getElementById("gameDiv").style.display = "none";
@@ -5748,6 +5740,7 @@ function handleRowTypeChange(selectElement) {
     }
 }
 
+// YENİ VE GÜNCEL KODU BURADAN KOPYALA
 async function openBox(index) {
     // --- SÜRPRİZ KUTU UYARI SİSTEMİ ---
     const lastSurpriseSnap = await db.ref('gameStats/lastSurpriseInfo').once('value');
@@ -5900,20 +5893,29 @@ async function openBox(index) {
         boxUpdate.finalPoints = pointsGained;
         logActivity('openBox', currentUser, { boxId: box.id, points: pointsGained, multiplier: finalMultiplier, newBalance: updates['balance'] });
     } else if (box.content === 'iflas') {
-        let shieldWasUsed = (user.iflasShieldUses || 0) > 0;
+        const shieldWasUsed = (user.iflasShieldUses || 0) > 0;
         const lostPoints = user.balance || 0;
+        
         updates['iflasCount'] = (user.iflasCount || 0) + 1;
+
         if (shieldWasUsed) {
+            // Kalkan kullanıldıysa: Hem envanterden düşür hem de kullanım istatistiğini artır.
             updates['iflasShieldUses'] = user.iflasShieldUses - 1;
             updates['iflasShieldUsedCount'] = (user.iflasShieldUsedCount || 0) + 1;
             message = `İflas! 🛡️ Kalkanın seni korudu!`;
+            boxUpdate.shieldUsed = true;
+            boxUpdate.lostPoints = 0;
+            // Aktivite kaydını doğru bilgilerle oluştur.
+            logActivity('iflas', currentUser, { shieldUsed: true, lostPoints: 0, boxId: box.id, multiplier: finalMultiplier, newBalance: user.balance });
         } else {
+            // Kalkan yoksa: Puanları sıfırla.
             updates['balance'] = 0;
             message = `İflas! Tüm puanların (-${lostPoints} puan) silindi.`;
+            boxUpdate.shieldUsed = false;
+            boxUpdate.lostPoints = lostPoints;
+            // Aktivite kaydını doğru bilgilerle oluştur.
+            logActivity('iflas', currentUser, { shieldUsed: false, lostPoints: lostPoints, boxId: box.id, multiplier: finalMultiplier, newBalance: 0 });
         }
-        boxUpdate.shieldUsed = shieldWasUsed;
-        boxUpdate.lostPoints = shieldWasUsed ? 0 : lostPoints;
-        logActivity('iflas', currentUser, { shieldUsed: shieldWasUsed, lostPoints: shieldWasUsed ? 0 : lostPoints, boxId: box.id, multiplier: finalMultiplier, newBalance: updates['balance'] });
     } else if (box.content === 'surpriz') {
         updates['surpriseBoxesOpened'] = (user.surpriseBoxesOpened || 0) + 1;
         const openedInTurnSnap = await db.ref(`gameStats/boxesOpenedByUsers/${currentUser}`).once('value');
@@ -11901,7 +11903,7 @@ async function buyItem(itemId) {
     }
 }
 
-// MEVCUT renderMonsterBattleUI FONKSİYONUNU SİLİP BUNU YAPIŞTIR
+// YENİ KODU YAPIŞTIR
 async function renderMonsterBattleUI() {
     const battleArenaContainer = document.getElementById('battleArenaContainer');
     if (!battleArenaContainer) return;
@@ -12015,8 +12017,7 @@ async function renderMonsterBattleUI() {
         const playerRevivalStones = playerData.inventory?.revival_stone || 0;
         const isPlayerDead = playerCurrentHP <= 0;
 
-        // ★★★ İSTEĞİNİZE GÖRE DÜZENLENEN BÖLÜM ★★★
-        potionsContainer.innerHTML = ''; // Önceki içeriği temizle
+        potionsContainer.innerHTML = ''; 
 
         if (isPlayerDead) {
             potionsContainer.innerHTML = `<p class="text-lg font-bold text-red-500 animate-pulse">MAĞLUP OLDUN!</p>`;
@@ -12031,12 +12032,15 @@ async function renderMonsterBattleUI() {
                 reviveBtn.classList.add('hidden');
             }
         } else {
+            // ★★★ DEĞİŞİKLİK BURADA ★★★
+            // Oyuncu hayattayken "Dirilme Taşı" sayısını gösteriyoruz.
+            potionsContainer.innerHTML = `<p class="text-lg font-bold text-cyan-300">Dirilme Taşı: ${playerRevivalStones}</p>`;
+            
             playerHealthBar.classList.add('bg-green-500');
             playerHealthBar.classList.remove('bg-gray-500');
             attackBtn.classList.remove('hidden');
             reviveBtn.classList.add('hidden');
         }
-        // ★★★ DÜZENLEME SONU ★★★
         
         const buffs = playerBattleData?.buffs || {};
         const now = getSyncedTime();
@@ -12054,6 +12058,21 @@ async function renderMonsterBattleUI() {
         }
         if(!hasActiveBuff) buffsEl.innerHTML = '<span class="text-xs text-gray-500">Aktif iksir yok</span>';
     }
+}
+
+// YENİ YARDIMCI FONKSİYONU EKLE
+function hideAllAdminControls() {
+    // Bu fonksiyon, ID'si bilinen tüm admin elementlerini bulup gizler.
+    document.getElementById('adminPanelToggleButton')?.classList.add('hidden');
+    document.getElementById('boxSettingsButton')?.classList.add('hidden');
+    document.getElementById('adminStoreManagementButtonContainer')?.classList.add('hidden');
+    document.getElementById('adminAnnouncementControls')?.classList.add('hidden');
+    document.getElementById('clickCatchAdminButtonsContainer')?.classList.add('hidden');
+    document.getElementById('kasaSettingsBtn')?.classList.add('hidden');
+    document.getElementById('collectionAdminBtn')?.classList.add('hidden');
+    document.getElementById('monsterBattleAdminToggles')?.classList.add('hidden');
+    document.getElementById('monsterAdminControls')?.classList.add('hidden');
+    document.getElementById('avatarAdminControls')?.classList.add('hidden');
 }
 
 // YENİ: Kart dönüştürme penceresini açar
@@ -16020,9 +16039,16 @@ function addRewardToTier(element, rewardData = {}) {
     rewardsListContainer.appendChild(rewardRow);
 }
 
-// MEVCUT attackMonster FONKSİYONUNU SİLİP BUNU YAPIŞTIR
+// YENİ KODU YAPIŞTIR
 async function attackMonster() {
-    if (isAdmin || attackCooldown) return;
+    // ★★★ YENİ EKLENEN KONTROL ★★★
+    if (isAdmin) {
+        displayMessage("Adminler saldıramaz.");
+        return;
+    }
+    // ★★★ KONTROL SONU ★★★
+    
+    if (attackCooldown) return;
 
     const attackBtn = document.getElementById('attackMonsterBtn');
     
@@ -16041,7 +16067,6 @@ async function attackMonster() {
         
         const playerBattleData = battleData.damageLeaderboard?.[currentUser];
 
-        // ★★★ AVATAR KİLİDİ KONTROLÜ BURADA ★★★
         if (!playerBattleData) {
             if (!userData.selectedAvatar || !userData.selectedAvatar.url) {
                 displayMessage("Savaşa katılmak için önce envanterden bir avatar seçmelisin!");
@@ -16054,7 +16079,6 @@ async function attackMonster() {
                 return; 
             }
         }
-        // ★★★ KONTROL SONU ★★★
 
         if (playerBattleData && playerBattleData.currentHP <= 0) {
             throw new Error("Savaşmak için canın kalmadı! Dirilme Taşı kullanmalısın.");
@@ -16114,7 +16138,7 @@ async function attackMonster() {
             }
         }
         
-        let finalPlayerHP = 0; // Loglama için dışarıda tanımlıyoruz
+        let finalPlayerHP = 0;
         let playerDiedInAttack = false;
 
         await battleRef.transaction(currentBattleData => {
@@ -16135,7 +16159,6 @@ async function attackMonster() {
             currentPlayerBattleData.totalDamage += finalDamageToMonster;
             currentPlayerBattleData.currentHP = Math.max(0, currentPlayerBattleData.currentHP - finalDamageToPlayer);
             
-            // Loglama için son can değerini ve ölüm durumunu kaydediyoruz
             finalPlayerHP = currentPlayerBattleData.currentHP;
             if (finalPlayerHP <= 0) playerDiedInAttack = true;
 
@@ -16155,7 +16178,7 @@ async function attackMonster() {
             const dbKeyMap = { points: 'balance', boxRights: 'kutuHakki', wheelTicket: 'carkBileti', clickCatchTicket: 'clickCatchTickets', iflasShield: 'iflasShieldUses', wildcard: 'wildcards' };
             const prizeName = typeToName[type] || 'Ödül';
             rewardMessage = ` Ek olarak <b class="text-green-400">+${value} ${prizeName}</b> kazandın!`;
-            rewardLogText = `+${value} ${prizeName}`; // Log için metin
+            rewardLogText = `+${value} ${prizeName}`;
 
             if (type === 'points') {
                 updates[`/users/${currentUser}/balance`] = (userData.balance || 0) + value;
@@ -16168,7 +16191,6 @@ async function attackMonster() {
         }
         if (Object.keys(updates).length > 0) await db.ref().update(updates);
         
-        // ★★★ LOGLAMA İŞLEMİ BURADA ★★★
         logActivity('monsterAttack', currentUser, {
             monsterName: monsterStats.name,
             damageDealt: finalDamageToMonster,
@@ -16178,7 +16200,6 @@ async function attackMonster() {
             rewardWon: rewardLogText,
             playerDied: playerDiedInAttack
         });
-        // ★★★ LOGLAMA SONU ★★★
 
         showFloatingText(isPlayerCrit ? `💥 KRİTİK! -${finalDamageToMonster}` : `-${finalDamageToMonster}`, document.getElementById('monsterImage').getBoundingClientRect().left + 100, document.getElementById('monsterImage').getBoundingClientRect().top + 100);
         displayMessage(`Canavara <b>${finalDamageToMonster} hasar</b> verdin ve canavardan <b>${finalDamageToPlayer} hasar</b> aldın.${rewardMessage}`);
