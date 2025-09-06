@@ -1429,8 +1429,11 @@ body.modal-open .modal-content {
                 </div>
 
                 <button id="attackMonsterBtn" onclick="attackMonster()" class="w-full py-3 bg-red-700 hover:bg-red-600 text-white font-bold text-lg rounded-lg shadow-lg disabled:bg-gray-600 disabled:cursor-not-allowed">
-                    SALDIR!
-                </button>
+    SALDIR!
+</button>
+<button id="reviveBtn" onclick="useRevivalStone()" class="hidden w-full py-3 bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-lg rounded-lg shadow-lg">
+    💎 Dirilme Taşı Kullan
+</button>
             </div>
         </div>
     </div>
@@ -15565,66 +15568,52 @@ function listenForAvatarBaseStats() {
     ref.on('value', callback);
 }
 
-// MEVCUT renderMonsterBattleUI FONKSİYONUNU BUL VE BUNUNLA DEĞİŞTİR
-
+// BU FONKSİYONU YENİSİYLE DEĞİŞTİR
 async function renderMonsterBattleUI() {
     const battleArenaContainer = document.getElementById('battleArenaContainer');
-    if (!battleArenaContainer) return; // Sekme değiştirildiğinde hata almamak için kontrol
+    if (!battleArenaContainer) return;
 
     const monster = monsterBattleData.monsterDetails;
     const leaderboard = monsterBattleData.damageLeaderboard || {};
     const battleArena = document.getElementById('battleArena');
     const defeatedScreen = document.getElementById('monsterDefeatedScreen');
     const monsterInstanceControls = document.getElementById('monsterInstanceAdminControls');
+    const attackBtn = document.getElementById('attackMonsterBtn');
+    const reviveBtn = document.getElementById('reviveBtn');
 
-    // Admin kontrolü: Ayar butonlarını göster/gizle
-    const adminToggles = document.getElementById('monsterBattleAdminToggles');
-    if (adminToggles) {
-        adminToggles.style.display = isAdmin ? 'block' : 'none';
+    if (isAdmin) {
+        document.getElementById('monsterBattleAdminToggles')?.classList.toggle('hidden', !isAdmin);
     }
-    
-    // Eğer canavar yoksa veya canı sıfırdan küçükse
+
     if (!monster || monster.currentHP <= 0) {
-        battleArena.style.display = 'none'; // Savaş alanını gizle
-        defeatedScreen.classList.remove('hidden'); // "Öldü" ekranını göster
-        
-        // Kazananı belirle
+        battleArena.style.display = 'none';
+        defeatedScreen.classList.remove('hidden');
         const sortedLeaderboard = Object.entries(leaderboard).sort((a, b) => b[1].totalDamage - a[1].totalDamage);
         const winner = sortedLeaderboard.length > 0 ? sortedLeaderboard[0][0] : null;
         const prize = monsterBattleData.rewards?.onKillLeader;
         
         document.getElementById('monsterDefeatedTitle').textContent = `${monster?.name || 'Canavar'} Mağlup Edildi!`;
-        
         if (winner && prize) {
             const prizeName = typeToName[prize.type] || prize.type;
-            document.getElementById('monsterDefeatedMessage').innerHTML = `
-                En çok hasarı veren <b class="text-yellow-300">${winner}</b> oldu ve <b class="text-green-400">${formatNumber(prize.value)} ${prizeName}</b> ödülünü kazandı!
-                <br><br>
-                <span class="text-gray-400">Adminin yeni bir canavar çağırması bekleniyor...</span>
-            `;
+            document.getElementById('monsterDefeatedMessage').innerHTML = `En çok hasarı veren <b class="text-yellow-300">${winner}</b> oldu ve <b class="text-green-400">${formatNumber(prize.value)} ${prizeName}</b> ödülünü kazandı!<br><br><span class="text-gray-400">Adminin yeni bir canavar çağırması bekleniyor...</span>`;
         } else {
             document.getElementById('monsterDefeatedMessage').textContent = 'Adminin yeni bir canavar çağırması bekleniyor.';
         }
-        
         if(monsterInstanceControls) monsterInstanceControls.classList.add('hidden');
         return;
     }
 
-    // Canavar varsa, "öldü" ekranını gizle, savaş alanını göster
     battleArena.style.display = 'grid';
     defeatedScreen.classList.add('hidden');
     if(monsterInstanceControls) monsterInstanceControls.style.display = isAdmin ? 'flex' : 'none';
 
-    // Canavar bilgilerini güncelle
     document.getElementById('monsterName').textContent = monster.name;
     document.getElementById('monsterImage').src = monster.imageUrl || 'https://i.hizliresim.com/n01dnz4.png';
-    const healthPercent = (monster.currentHP / monster.maxHP) * 100;
-    const healthBar = document.getElementById('monsterHealthBar');
-    healthBar.style.width = `${healthPercent}%`;
-    healthBar.textContent = `${Math.ceil(healthPercent)}%`;
+    const mHealthPercent = (monster.currentHP / monster.maxHP) * 100;
+    document.getElementById('monsterHealthBar').style.width = `${mHealthPercent}%`;
+    document.getElementById('monsterHealthBar').textContent = `${Math.ceil(mHealthPercent)}%`;
     document.getElementById('monsterHealthText').textContent = `${formatNumber(monster.currentHP)} / ${formatNumber(monster.maxHP)} Can`;
 
-    // Liderlik tablosunu güncelle
     const leaderboardEl = document.getElementById('monsterLeaderboard');
     leaderboardEl.innerHTML = '';
     const sortedLeaderboard = Object.entries(leaderboard).sort((a, b) => b[1].totalDamage - a[1].totalDamage);
@@ -15639,8 +15628,9 @@ async function renderMonsterBattleUI() {
 
             const avatarUrl = userData.selectedAvatar?.url || defaultAvatarUrl;
             const sanitizedId = sanitizeFirebaseKey(avatarUrl);
-            const userMaxHP = (avatarBaseStats[sanitizedId]?.hp || 1000); // HATAYI DÜZELTEN KISIM
-            const userHealthPercent = (data.currentHP / userMaxHP) * 100;
+            const userMaxHP = (avatarBaseStats[sanitizedId]?.hp || 1000);
+            const userCurrentHP = data.currentHP < 0 ? 0 : data.currentHP; // Canın eksiye düşmesini engelle
+            const userHealthPercent = (userCurrentHP / userMaxHP) * 100;
 
             const itemHtml = `
                 <div class="leaderboard-item" onclick="openPublicUserDetailModal('${username}')">
@@ -15649,7 +15639,9 @@ async function renderMonsterBattleUI() {
                     <div class="flex-grow">
                         <p class="font-bold text-white">${username}</p>
                         <div class="health-bar-container mt-1">
-                            <div class="health-bar bg-green-500" style="width: ${userHealthPercent}%;">${formatNumber(data.currentHP)} HP</div>
+                            <div class="health-bar ${userCurrentHP <= 0 ? 'bg-gray-500' : 'bg-green-500'}" style="width: ${userHealthPercent}%;">
+                                ${formatNumber(userCurrentHP)} / ${formatNumber(userMaxHP)}
+                            </div>
                         </div>
                     </div>
                     <p class="text-yellow-400 font-bold">${formatNumber(data.totalDamage)} Hasar</p>
@@ -15659,49 +15651,57 @@ async function renderMonsterBattleUI() {
         }
     }
 
-    // Mevcut oyuncunun kendi bilgilerini güncelle
     const playerSnap = await db.ref(`users/${currentUser}`).once('value');
     const playerData = playerSnap.val();
     const playerBattleData = leaderboard[currentUser];
-    const playerControlsEl = document.querySelector('.player-controls');
     
-    if (playerData && playerControlsEl) {
+    if (playerData) {
         document.getElementById('playerBattleName').textContent = currentUser;
         const playerAvatarUrl = playerData.selectedAvatar?.url || defaultAvatarUrl;
         const sanitizedPlayerAvatarId = sanitizeFirebaseKey(playerAvatarUrl);
-        const playerMaxHP = (avatarBaseStats[sanitizedPlayerAvatarId]?.hp || 1000); // HATAYI DÜZELTEN KISIM
+        const playerMaxHP = (avatarBaseStats[sanitizedPlayerAvatarId]?.hp || 1000);
         
         let playerCurrentHP = playerBattleData ? playerBattleData.currentHP : playerMaxHP;
-
-        // Oyuncu henüz savaşmadıysa ama canavar varsa, canını full göster
-        if (!playerBattleData) {
-            playerCurrentHP = playerMaxHP;
-        }
+        if (playerCurrentHP < 0) playerCurrentHP = 0; // Canın eksiye düşmesini engelle
 
         const playerHealthPercent = (playerCurrentHP / playerMaxHP) * 100;
-        document.getElementById('playerHealthBar').style.width = `${playerHealthPercent}%`;
-        document.getElementById('playerHealthBar').textContent = `${Math.ceil(playerHealthPercent)}%`;
+        const playerHealthBar = document.getElementById('playerHealthBar');
+        playerHealthBar.style.width = `${playerHealthPercent}%`;
+        playerHealthBar.textContent = `${formatNumber(playerCurrentHP)} / ${formatNumber(playerMaxHP)}`;
         document.getElementById('playerHealthText').textContent = `${formatNumber(playerCurrentHP)} / ${formatNumber(playerMaxHP)} Can`;
+
+        const playerRevivalStones = playerData.inventory?.revival_stone || 0;
+        const isPlayerDead = playerCurrentHP <= 0;
+
+        if (isPlayerDead) {
+            playerHealthBar.classList.add('bg-gray-500');
+            playerHealthBar.classList.remove('bg-green-500');
+            attackBtn.classList.add('hidden'); // Saldır butonunu gizle
+            if (playerRevivalStones > 0) {
+                reviveBtn.classList.remove('hidden'); // Dirilme taşı varsa butonu göster
+                reviveBtn.textContent = `💎 Dirilme Taşı Kullan (${playerRevivalStones})`;
+            } else {
+                reviveBtn.classList.add('hidden'); // Dirilme taşı yoksa butonu gizle
+            }
+        } else {
+            playerHealthBar.classList.add('bg-green-500');
+            playerHealthBar.classList.remove('bg-gray-500');
+            attackBtn.classList.remove('hidden'); // Saldır butonunu göster
+            reviveBtn.classList.add('hidden'); // Dirilme butonunu gizle
+        }
         
-        // Aktif Buffları (İksirleri) Göster
         const buffs = playerBattleData?.buffs || {};
         const now = getSyncedTime();
         const buffsEl = document.getElementById('playerBuffs');
         buffsEl.innerHTML = '';
         let hasActiveBuff = false;
         
-        const buffInfo = {
-            damage_potion: { icon: '⚔️', text: 'Hasar Artışı' },
-            defense_potion: { icon: '🛡️', text: 'Savunma Artışı' },
-            crit_potion: { icon: '💥', text: 'Kritik Şans Artışı' }
-        };
+        const buffInfo = { damage_potion: { icon: '⚔️', text: 'Hasar Artışı' }, defense_potion: { icon: '🛡️', text: 'Savunma Artışı' }, crit_potion: { icon: '💥', text: 'Kritik Şans Artışı' } };
 
         for (const buffKey in buffs) {
-            const buff = buffs[buffKey];
-            if (buff && buff.expiresAt > now) {
+            if (buffs[buffKey] && buffs[buffKey].expiresAt > now) {
                 hasActiveBuff = true;
-                const info = buffInfo[buffKey];
-                buffsEl.innerHTML += `<span class="text-sm" title="${info.text}">${info.icon}</span>`;
+                buffsEl.innerHTML += `<span class="text-sm" title="${buffInfo[buffKey].text}">${buffInfo[buffKey].icon}</span>`;
             }
         }
         if(!hasActiveBuff) buffsEl.innerHTML = '<span class="text-xs text-gray-500">Aktif iksir yok</span>';
@@ -16052,22 +16052,19 @@ function addRewardToTier(element, rewardData = {}) {
     rewardsListContainer.appendChild(rewardRow);
 }
 
+// BU FONKSİYONU YENİSİYLE DEĞİŞTİR
 async function attackMonster() {
     if (isAdmin || attackCooldown) return;
 
-    attackCooldown = true;
     const attackBtn = document.getElementById('attackMonsterBtn');
+    attackCooldown = true;
     attackBtn.disabled = true;
 
     try {
         const userRef = db.ref(`users/${currentUser}`);
         const battleRef = db.ref('gameConfig/monsterBattle');
 
-        // Gerekli tüm verileri tek seferde çek
-        const [userSnap, battleSnap] = await Promise.all([
-            userRef.once('value'),
-            battleRef.once('value')
-        ]);
+        const [userSnap, battleSnap] = await Promise.all([userRef.once('value'), battleRef.once('value')]);
         
         const userData = userSnap.val();
         const battleData = battleSnap.val();
@@ -16077,23 +16074,19 @@ async function attackMonster() {
         }
 
         const playerBattleData = battleData.damageLeaderboard?.[currentUser];
+        // 1. DEĞİŞİKLİK: Canı 0 olan oyuncu saldıramaz.
         if (playerBattleData && playerBattleData.currentHP <= 0) {
-            throw new Error("Savaşmak için canın kalmadı!");
+            throw new Error("Savaşmak için canın kalmadı! Dirilme Taşı kullanmalısın.");
         }
         
-        // --- Oyuncu ve Canavar Statlarını Hesapla (İKSİR ETKİLERİ DAHİL) ---
         const playerAvatarUrl = userData.selectedAvatar?.url || defaultAvatarUrl;
         const sanitizedPlayerAvatarId = sanitizeFirebaseKey(playerAvatarUrl);
         const playerBaseStats = avatarBaseStats[sanitizedPlayerAvatarId] || {};
         
-        // Aktif iksir (buff) etkilerini al
         const buffs = playerBattleData?.buffs || {};
         const now = getSyncedTime();
-        let damageBuff = 0;
-        let defenseBuff = 0;
-        let critBuff = 0;
+        let damageBuff = 0, defenseBuff = 0, critBuff = 0;
 
-        // Süresi dolmamış buffları hesapla
         if (buffs.damage_potion && buffs.damage_potion.expiresAt > now) damageBuff = buffs.damage_potion.value;
         if (buffs.defense_potion && buffs.defense_potion.expiresAt > now) defenseBuff = buffs.defense_potion.value;
         if (buffs.crit_potion && buffs.crit_potion.expiresAt > now) critBuff = buffs.crit_potion.value;
@@ -16107,13 +16100,11 @@ async function attackMonster() {
         };
         const monsterStats = battleData.monsterDetails;
 
-        // --- Hasar Hesaplaması (RASTGELE VE KRİTİK) ---
         const randomPlayerDamage = Math.floor(Math.random() * (playerStats.maxDamage - playerStats.minDamage + 1)) + playerStats.minDamage;
         const isPlayerCrit = Math.random() * 100 < playerStats.critChance;
         const playerTotalDamage = Math.floor(randomPlayerDamage * (isPlayerCrit ? 1.5 : 1));
         const finalDamageToMonster = Math.max(1, playerTotalDamage - monsterStats.defense);
 
-        // --- Canavarın Geri Saldırısı (RASTGELE VE KRİTİK) ---
         const randomMonsterDamage = Math.floor(Math.random() * (monsterStats.maxDamage - monsterStats.minDamage + 1)) + monsterStats.minDamage;
         const isMonsterCrit = Math.random() * 100 < (monsterStats.critChance || 5);
         const monsterTotalDamage = Math.floor(randomMonsterDamage * (isMonsterCrit ? 1.5 : 1));
@@ -16122,7 +16113,6 @@ async function attackMonster() {
         let randomReward = null;
         let rewardMessage = '';
         
-        // Hasar aralığına göre dinamik ödül sistemi
         const damageTiers = (battleData.damageTiers || []).sort((a, b) => b.minDamage - a.minDamage);
         for (const tier of damageTiers) {
             if (finalDamageToMonster >= tier.minDamage) {
@@ -16139,13 +16129,10 @@ async function attackMonster() {
             }
         }
         
-        // Firebase Transaction ile Güvenli Güncelleme
-        const updates = {};
         await battleRef.transaction(currentBattleData => {
-            if (!currentBattleData || !currentBattleData.monsterDetails || currentBattleData.monsterDetails.currentHP <= 0) {
-                return; // Başka biri canavarı öldürdüyse işlemi iptal et
-            }
-            currentBattleData.monsterDetails.currentHP -= finalDamageToMonster;
+            if (!currentBattleData || !currentBattleData.monsterDetails || currentBattleData.monsterDetails.currentHP <= 0) return;
+
+            currentBattleData.monsterDetails.currentHP = Math.max(0, currentBattleData.monsterDetails.currentHP - finalDamageToMonster);
 
             if (!currentBattleData.damageLeaderboard) currentBattleData.damageLeaderboard = {};
             if (!currentBattleData.damageLeaderboard[currentUser]) {
@@ -16153,9 +16140,9 @@ async function attackMonster() {
             }
             const currentPlayerBattleData = currentBattleData.damageLeaderboard[currentUser];
             currentPlayerBattleData.totalDamage += finalDamageToMonster;
-            currentPlayerBattleData.currentHP -= finalDamageToPlayer;
+            // 2. DEĞİŞİKLİK: Oyuncunun canı 0'ın altına düşmez.
+            currentPlayerBattleData.currentHP = Math.max(0, currentPlayerBattleData.currentHP - finalDamageToPlayer);
 
-            // Süresi dolan buffları temizle
             for(const buffType in (currentPlayerBattleData.buffs || {})) {
                 if(currentPlayerBattleData.buffs[buffType].expiresAt <= now) {
                     delete currentPlayerBattleData.buffs[buffType];
@@ -16165,7 +16152,7 @@ async function attackMonster() {
             return currentBattleData;
         });
         
-        // Ödülleri ve Puanları Ekle
+        const updates = {};
         if (randomReward) {
             const { type, value } = randomReward;
             const dbKeyMap = { points: 'balance', boxRights: 'kutuHakki', wheelTicket: 'carkBileti', clickCatchTicket: 'clickCatchTickets', iflasShield: 'iflasShieldUses', wildcard: 'wildcards' };
@@ -16181,19 +16168,12 @@ async function attackMonster() {
                 updates[`/users/${currentUser}/${dbKeyMap[type]}`] = (userData[dbKeyMap[type]] || 0) + value;
             }
         }
-        
-        if (Object.keys(updates).length > 0) {
-            await db.ref().update(updates);
-        }
+        if (Object.keys(updates).length > 0) await db.ref().update(updates);
 
-        // Arayüzde anlık hasar yazısı göster
-        showFloatingText(isPlayerCrit ? `💥 KRİTİK! -${finalDamageToMonster}` : `-${finalDamageToMonster}`, 
-            document.getElementById('monsterImage').getBoundingClientRect().left + 100, 
-            document.getElementById('monsterImage').getBoundingClientRect().top + 100);
+        showFloatingText(isPlayerCrit ? `💥 KRİTİK! -${finalDamageToMonster}` : `-${finalDamageToMonster}`, document.getElementById('monsterImage').getBoundingClientRect().left + 100, document.getElementById('monsterImage').getBoundingClientRect().top + 100);
 
         displayMessage(`Canavara <b>${finalDamageToMonster} hasar</b> verdin ve canavardan <b>${finalDamageToPlayer} hasar</b> aldın.${rewardMessage}`);
 
-        // Canavarın Ölüm Kontrolü
         const finalBattleSnap = await battleRef.once('value');
         const finalBattleData = finalBattleSnap.val();
         if (finalBattleData && finalBattleData.monsterDetails.currentHP <= 0) {
@@ -16211,9 +16191,8 @@ async function attackMonster() {
                              if (killReward.type === 'points') {
                                 winnerData.balance = (winnerData.balance || 0) + killReward.value;
                                 winnerData.kariyerPuani = (winnerData.kariyerPuani || 0) + killReward.value;
-                            } else if (killReward.type.startsWith('card_pack')) {
-                                // Bu anlık olarak oyuncuya verilemez, adminin manuel vermesi daha sağlıklı
-                            } else if (dbKeyMap[killReward.type]) {
+                            } else if (killReward.type.startsWith('card_pack')) { } 
+                            else if (dbKeyMap[killReward.type]) {
                                 winnerData[dbKeyMap[killReward.type]] = (winnerData[dbKeyMap[killReward.type]] || 0) + killReward.value;
                             }
                         }
@@ -16222,13 +16201,12 @@ async function attackMonster() {
                      displayGlobalNotification(`CANAVAR ÖLDÜ! En çok hasarı veren ${winner}, ${formatNumber(killReward.value)} ${prizeName} kazandı!`);
                 }
             }
-            await battleRef.remove(); // Savaşı bitir
+            await battleRef.remove();
         }
 
     } catch (error) {
         displayMessage(error.message);
     } finally {
-        // 3 saniye bekleme süresi
         let count = 3;
         const interval = setInterval(() => {
             attackBtn.textContent = `BEKLE (${count--})`;
@@ -16239,6 +16217,57 @@ async function attackMonster() {
                 attackBtn.textContent = 'SALDIR!';
             }
         }, 1000);
+    }
+}
+
+// BU YEPYENİ FONKSİYONU EKLE
+async function useRevivalStone() {
+    if (isAdmin) return;
+
+    const reviveBtn = document.getElementById('reviveBtn');
+    reviveBtn.disabled = true;
+
+    try {
+        const userRef = db.ref(`users/${currentUser}`);
+        const battleRef = db.ref('gameConfig/monsterBattle');
+
+        const [userSnap, battleSnap] = await Promise.all([userRef.once('value'), battleRef.once('value')]);
+        
+        const userData = userSnap.val();
+        const battleData = battleSnap.val();
+        
+        const playerBattleData = battleData?.damageLeaderboard?.[currentUser];
+
+        if (!playerBattleData || playerBattleData.currentHP > 0) {
+            throw new Error("Canın zaten dolu veya savaşta değilsin.");
+        }
+
+        const revivalStones = userData.inventory?.revival_stone || 0;
+        if (revivalStones < 1) {
+            throw new Error("Dirilmek için Dirilme Taşın yok! Mağazadan alabilirsin.");
+        }
+
+        // Oyuncunun maksimum canını tekrar hesapla
+        const playerAvatarUrl = userData.selectedAvatar?.url || defaultAvatarUrl;
+        const sanitizedPlayerAvatarId = sanitizeFirebaseKey(playerAvatarUrl);
+        const playerMaxHP = (avatarBaseStats[sanitizedPlayerAvatarId]?.hp || 1000);
+
+        // Transaction ile hem taşı kullan hem de canı doldur
+        await userRef.transaction(user => {
+            if (user && user.inventory && user.inventory.revival_stone > 0) {
+                user.inventory.revival_stone--;
+            }
+            return user;
+        });
+
+        await battleRef.child(`damageLeaderboard/${currentUser}/currentHP`).set(playerMaxHP);
+
+        displayMessage("Dirilme Taşı kullanıldı ve canın tamamen yenilendi. Tekrar savaşa hazırsın!");
+
+    } catch (error) {
+        displayMessage(error.message);
+    } finally {
+        reviveBtn.disabled = false;
     }
 }
 
