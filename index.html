@@ -2650,41 +2650,44 @@ body.modal-open .modal-content {
         <div class="mt-6 pt-4 border-t-2 border-dashed border-purple-400">
             <h4 class="text-lg font-semibold text-purple-300 mb-3 text-center">🏆 Haftalık Otomatik Sıfırlama Yönetimi</h4>
             <div class="bg-gray-900 p-4 rounded-lg border border-gray-700 space-y-4">
-                <div>
-                    <label for="weeklyResetEndDateInput" class="block text-sm font-medium text-gray-300 mb-1">Haftalık Sıfırlama Bitiş Tarihi ve Saati:</label>
-                    <input type="datetime-local" id="weeklyResetEndDateInput" class="box-setting-input">
-                </div>
-                <div>
-                    <label class="block text-sm font-medium text-gray-300 mb-1">Şampiyon Ödülü:</label>
-                    <div class="grid grid-cols-2 gap-4">
-                        <select id="weeklyPrizeType" class="box-setting-input">
-    <option value="points">💰 Puan</option>
-    <option value="boxRights">📦 Kutu Hakkı</option>
-    <option value="wheelTicket">🎫 Çark Bileti</option>
-    <option value="clickCatchTicket">🎟️ Tıkla-Yakala Bileti</option>
-    <option value="iflasShield">🛡️ İflas Kalkanı</option>
-    <option value="tempMultiplier">✖️ Çarpan</option>
-    <option value="avatar">👤 Avatar</option>
-    <option value="wildcard">🃏 Joker Kart</option>
-    <option value="card_pack">🎴 Standart Kart Paketi</option>
-    <option value="card_pack_normal">🥉 Bronz Kart Paketi</option>
-    <option value="card_pack_gumus">🥈 Gümüş Kart Paketi</option>
-    <option value="card_pack_altin">🥇 Altın Kart Paketi</option>
-    <option value="card_pack_efsanevi">🏆 Efsanevi Kart Paketi</option>
-    <option value="health_potion">🧪 Can İksiri</option>
-    <option value="revival_stone">💎 Dirilme Taşı</option>
-    <option value="defense_potion">🛡️ Savunma İksiri</option>
-    <option value="damage_potion">⚔️ Hasar İksiri</option>
-    <option value="crit_potion">💥 Kritik Vuruş İksiri</option>
-</select>
-                        <input type="number" id="weeklyPrizeAmount" class="box-setting-input" value="1000" min="1" placeholder="Miktar">
-                    </div>
-                </div>
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
-                     <button onclick="saveWeeklyResetSettings()" class="w-full py-2 bg-purple-700 hover:bg-purple-600 text-white font-bold rounded-lg shadow-md">Haftalık Geri Sayımı Başlat/Kaydet</button>
-                     <button onclick="stopWeeklyReset()" class="w-full py-2 bg-orange-700 hover:bg-orange-600 text-white font-bold rounded-lg shadow-md">Geri Sayımı İptal Et</button>
-                </div>
+    <div>
+        <label for="weeklyResetEndDateInput" class="block text-sm font-medium text-gray-300 mb-1">Haftalık Sıfırlama Bitiş Tarihi ve Saati:</label>
+        <input type="datetime-local" id="weeklyResetEndDateInput" class="box-setting-input">
+    </div>
+    <div>
+        <label class="block text-sm font-medium text-gray-300 mb-1">Şampiyon Ödülü:</label>
+        <div class="grid grid-cols-2 gap-4">
+            <select id="weeklyPrizeType" class="box-setting-input col-span-2 sm:col-span-1" onchange="handleWeeklyPrizeTypeChange()">
+                <option value="points">💰 Puan</option>
+                <option value="boxRights">📦 Kutu Hakkı</option>
+                <option value="wheelTicket">🎫 Çark Bileti</option>
+                <option value="clickCatchTicket">🎟️ Tıkla-Yakala Bileti</option>
+                <option value="iflasShield">🛡️ İflas Kalkanı</option>
+                <option value="tempMultiplier">✖️ Çarpan</option>
+                <option value="avatar">👤 Avatar</option>
+                <option value="wildcard">🃏 Joker Kart</option>
+                <option value="card_pack">🎴 Standart Kart Paketi</option>
+                <option value="card_pack_normal">🥉 Bronz Kart Paketi</option>
+                <option value="card_pack_gumus">🥈 Gümüş Kart Paketi</option>
+                <option value="card_pack_altin">🥇 Altın Kart Paketi</option>
+                <option value="card_pack_efsanevi">🏆 Efsanevi Kart Paketi</option>
+                <option value="health_potion">🧪 Can İksiri</option>
+                <option value="revival_stone">💎 Dirilme Taşı</option>
+                <option value="defense_potion">🛡️ Savunma İksiri</option>
+                <option value="damage_potion">⚔️ Hasar İksiri</option>
+                <option value="crit_potion">💥 Kritik Vuruş İksiri</option>
+            </select>
+            <div id="weeklyPrizeValueContainer" class="grid grid-cols-2 gap-4 col-span-2 sm:col-span-1">
+                <input type="number" id="weeklyPrizeAmount" class="box-setting-input" placeholder="Miktar">
+                <input type="number" id="weeklyPrizeMultiplierUses" class="box-setting-input hidden" placeholder="Kullanım Hakkı">
             </div>
+        </div>
+    </div>
+    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+         <button onclick="saveWeeklyResetSettings()" class="w-full py-2 bg-purple-700 hover:bg-purple-600 text-white font-bold rounded-lg shadow-md">Haftalık Geri Sayımı Başlat/Kaydet</button>
+         <button onclick="stopWeeklyReset()" class="w-full py-2 bg-orange-700 hover:bg-orange-600 text-white font-bold rounded-lg shadow-md">Geri Sayımı İptal Et</button>
+    </div>
+</div>
         </div>
     </div>
 </div>
@@ -3994,24 +3997,42 @@ async function toggleMaintenanceMode() {
     }
 }
 
+// YENİ KODU YAPIŞTIR
 async function saveWeeklyResetSettings() {
     if (!isAdmin) return;
 
     const dateInput = document.getElementById('weeklyResetEndDateInput').value;
+    if (!dateInput) {
+        displayMessage("Lütfen geçerli bir bitiş tarihi girin.");
+        return;
+    }
+
     const prizeType = document.getElementById('weeklyPrizeType').value;
     const prizeAmount = parseInt(document.getElementById('weeklyPrizeAmount').value);
+    const prizeUses = parseInt(document.getElementById('weeklyPrizeMultiplierUses').value);
 
-    if (!dateInput || isNaN(prizeAmount) || prizeAmount <= 0) {
-        displayMessage("Lütfen geçerli bir bitiş tarihi ve ödül miktarı girin.");
-        return;
+    const prizeData = {};
+
+    if (prizeType === 'tempMultiplier') {
+        if (isNaN(prizeAmount) || isNaN(prizeUses) || prizeAmount <= 1 || prizeUses <= 0) {
+            displayMessage("Lütfen geçerli bir Çarpan Değeri (1'den büyük) ve Kullanım Hakkı girin.");
+            return;
+        }
+        prizeData.type = prizeType;
+        prizeData.amount = prizeAmount;
+        prizeData.uses = prizeUses;
+    } else {
+        if (isNaN(prizeAmount) || prizeAmount <= 0) {
+            displayMessage("Lütfen geçerli bir ödül miktarı girin.");
+            return;
+        }
+        prizeData.type = prizeType;
+        prizeData.amount = prizeAmount;
     }
     
     const settings = {
         endDate: new Date(dateInput).getTime(),
-        prize: {
-            type: prizeType,
-            amount: prizeAmount
-        }
+        prize: prizeData
     };
     
     await db.ref('gameConfig/weeklyClickCatchReset').set(settings);
@@ -4085,14 +4106,13 @@ function listenForWeeklyCountdown() {
     ref.on('value', callback);
 }
 
-// --- YENİ VE DÜZELTİLMİŞ KOD ---
-
+// YENİ KODU YAPIŞTIR
 async function executeWeeklyReset() {
     console.log("Haftalık sıfırlama işlemi tetiklendi...");
     const seasonEndDateSnap = await db.ref('gameConfig/seasonEndDate').once('value');
     if (seasonEndDateSnap.exists()) {
         const seasonEndDate = seasonEndDateSnap.val();
-        if (seasonEndDate - Date.now() < 5 * 60 * 1000) {
+        if (seasonEndDate - getSyncedTime() < 5 * 60 * 1000) {
             console.log("Aylık sezon sıfırlaması yakın. Haftalık sıfırlama atlandı.");
             await db.ref('gameConfig/weeklyClickCatchReset').remove();
             return;
@@ -4118,14 +4138,22 @@ async function executeWeeklyReset() {
         return;
     }
     const prize = settings.prize;
-    const prizeNames = { boxRights: "Kutu Hakkı", points: "Puan", wheelTicket: "Çark Bileti", iflasShield: "İflas Kalkanı" };
-    const prizeName = prizeNames[prize.type];
+    
+    let prizeAwardedText = '';
+    if (prize.type === 'tempMultiplier') {
+        prizeAwardedText = `${prize.amount}x Çarpan (${prize.uses} kullanım)`;
+    } else {
+        const prizeNames = { boxRights: "Kutu Hakkı", points: "Puan", wheelTicket: "Çark Bileti", iflasShield: "İflas Kalkanı", clickCatchTicket: "T-Y Bileti", wildcard: "Joker Kart" };
+        prizeAwardedText = `${prize.amount} ${prizeNames[prize.type] || prize.type}`;
+    }
+
     await db.ref('gameStats/weeklyClickCatchWinner').set({
         winnerName: winner.username,
         winningScore: winner.score,
-        prizeAwarded: `${prize.amount} ${prizeName}`,
+        prizeAwarded: prizeAwardedText,
         timestamp: firebase.database.ServerValue.TIMESTAMP
     });
+
     const allUsersSnap = await db.ref('users').once('value');
     const allUsers = allUsersSnap.val();
     const updates = {};
@@ -4141,8 +4169,11 @@ async function executeWeeklyReset() {
         if (username === winner.username) {
             if (prize.type === 'points') {
                 updates[`${userPath}/balance`] = (allUsers[username].balance || 0) + prize.amount;
-                // KARİYER PUANI GÜNCELLEMESİ
                 updates[`${userPath}/kariyerPuani`] = (allUsers[username].kariyerPuani || 0) + prize.amount;
+            } else if (prize.type === 'tempMultiplier') {
+                updates[`${userPath}/activeMultiplier`] = prize.amount;
+                updates[`${userPath}/multiplierRemainingUses`] = prize.uses;
+                updates[`${userPath}/multiplierSource`] = 'store'; // Mağaza gibi davransın
             } else {
                 const prizeKey = prize.type === 'iflasShield' ? 'iflasShieldUses' : prize.type;
                 updates[`${userPath}/${prizeKey}`] = (allUsers[username][prizeKey] || 0) + prize.amount;
@@ -4391,10 +4422,7 @@ function resetGlobalState() {
     document.getElementById('storeCurrentUserKasaBalance').textContent = '0';
 }
 
-// ESKİ logout FONKSİYONUNU SİL
-// ...eski fonksiyonu sil...
-
-// YENİ logout FONKSİYONUNU YAPIŞTIR
+// YENİ KODU YAPIŞTIR
 async function logout() {
     const confirmed = await customConfirm("Çıkış yapmak istediğinize emin misiniz?");
     if (!confirmed) return;
@@ -4407,10 +4435,12 @@ async function logout() {
     // 2. SONRA tüm geçici verileri ve değişkenleri temizle
     resetGlobalState();
     
-    // ★★★ YENİ EKLENEN ADIM: Tüm admin kontrollerini gizle ★★★
+    // 3. Tüm admin kontrollerini gizle
     hideAllAdminControls();
+    // ★★★ YENİ EKLENEN SATIR: Ana admin butonunu da ayrıca gizle ★★★
+    document.getElementById('adminPanelToggleButton')?.classList.add('hidden');
 
-    // 3. UI'ı (arayüzü) güncelle
+    // 4. UI'ı (arayüzü) güncelle
     document.getElementById("gameDiv").style.display = "none";
     document.getElementById("loginContainer").style.display = "block";
     
@@ -4423,7 +4453,7 @@ async function logout() {
         activityBellContainer.classList.add('hidden');
     }
 
-    // 4. En son Firebase oturumunu kapat
+    // 5. En son Firebase oturumunu kapat
     auth.signOut().catch((error) => {
         console.error("Çıkış yapılırken hata oluştu: ", error);
         displayMessage("Çıkış yapılırken bir hata oluştu.");
@@ -10563,7 +10593,8 @@ function _actuallyStartSoloGame() {
 
 let weeklyCountdownInterval = null
 
-  async function openSoloGameSettingsModal() {
+  // YENİ KODU YAPIŞTIR
+async function openSoloGameSettingsModal() {
     // Mevcut tekli oyun ayarlarını yükle
     await loadSoloGameSettings();
 
@@ -10578,15 +10609,25 @@ let weeklyCountdownInterval = null
         }
         if (settings.prize) {
             document.getElementById('weeklyPrizeType').value = settings.prize.type || 'points';
-            document.getElementById('weeklyPrizeAmount').value = settings.prize.amount || 1000;
+            // Çarpan ise her iki alanı da doldur, değilse sadece miktar alanını doldur
+            if (settings.prize.type === 'tempMultiplier') {
+                document.getElementById('weeklyPrizeAmount').value = settings.prize.amount || '';
+                document.getElementById('weeklyPrizeMultiplierUses').value = settings.prize.uses || '';
+            } else {
+                document.getElementById('weeklyPrizeAmount').value = settings.prize.amount || 1000;
+                document.getElementById('weeklyPrizeMultiplierUses').value = '';
+            }
         }
     } else {
         // Eğer ayar yoksa alanları temizle/varsayılana ayarla
         document.getElementById('weeklyResetEndDateInput').value = '';
         document.getElementById('weeklyPrizeType').value = 'points';
         document.getElementById('weeklyPrizeAmount').value = 1000;
+        document.getElementById('weeklyPrizeMultiplierUses').value = '';
     }
-
+    
+    // Arayüzü doğru duruma getir
+    handleWeeklyPrizeTypeChange();
     soloGameSettingsModal.style.display = 'flex';
 }
   
@@ -12060,10 +12101,9 @@ async function renderMonsterBattleUI() {
     }
 }
 
-// YENİ YARDIMCI FONKSİYONU EKLE
+// YENİ KODU YAPIŞTIR
 function hideAllAdminControls() {
     // Bu fonksiyon, ID'si bilinen tüm admin elementlerini bulup gizler.
-    document.getElementById('adminPanelToggleButton')?.classList.add('hidden');
     document.getElementById('boxSettingsButton')?.classList.add('hidden');
     document.getElementById('adminStoreManagementButtonContainer')?.classList.add('hidden');
     document.getElementById('adminAnnouncementControls')?.classList.add('hidden');
@@ -16409,6 +16449,21 @@ function sanitizeFirebaseKey(key) {
     // Firebase'in yasakladığı karakterleri (. # $ [ ] /) bulur ve kaldırır.
     // DEĞİŞİKLİK: ':' ve '/' karakterlerini de '_' ile değiştirerek URL'leri daha güvenli hale getiriyoruz.
     return key.replace(/[.#$[\]/]/g, '').replace(/:/g, '_');
+}
+
+// BU YENİ FONKSİYONU EKLE
+function handleWeeklyPrizeTypeChange() {
+    const prizeType = document.getElementById('weeklyPrizeType').value;
+    const amountInput = document.getElementById('weeklyPrizeAmount');
+    const usesInput = document.getElementById('weeklyPrizeMultiplierUses');
+
+    if (prizeType === 'tempMultiplier') {
+        amountInput.placeholder = 'Çarpan Değeri (örn: 2)';
+        usesInput.classList.remove('hidden');
+    } else {
+        amountInput.placeholder = 'Miktar';
+        usesInput.classList.add('hidden');
+    }
 }
 // ★★★ YENİ EKLENECEK FONKSİYONLAR SONU ★★★
       
