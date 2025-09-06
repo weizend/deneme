@@ -6098,17 +6098,20 @@ function closeMultiplierChoiceModal() {
     pendingMultiplierChoice = null; 
 }
 
+// MEVCUT getActivityIcon FONKSİYONUNU SİLİP BUNU YAPIŞTIR
 function getActivityIcon(type, details = {}) {
     let icon = '🔔';
     let bgColor = 'bg-gray-500';
 
     switch (type) {
-        // YENİ EKLENEN KISIM BAŞLANGICI
+        case 'monsterAttack': // YENİ EKLENEN CASE
+            icon = details.playerDied ? '☠️' : '⚔️';
+            bgColor = details.playerDied ? 'bg-black' : 'bg-orange-600';
+            break;
         case 'loginStreakClaim':
             icon = '📅';
             bgColor = 'bg-teal-600';
             break;
-        // YENİ EKLENEN KISIM SONU
         case 'tradeOfferCreated':
             icon = '📤';
             bgColor = 'bg-blue-500';
@@ -6158,7 +6161,7 @@ function getActivityIcon(type, details = {}) {
             bgColor = 'bg-indigo-500';
             break;
         case 'multiplierDiscarded':
-        case 'multiplierCombined': // Bu yeni case ❎ ikonunu kullanacak
+        case 'multiplierCombined': 
             icon = '❎';
             bgColor = 'bg-teal-500';
             break;
@@ -6175,37 +6178,16 @@ function getActivityIcon(type, details = {}) {
             break;
         case 'newItemFound':
             const itemType = details.itemType;
-            if (itemType === 'card_pack_efsanevi') {
-                icon = '🏆';
-                bgColor = 'bg-purple-600';
-            } else if (itemType === 'card_pack_altin') {
-                icon = '🥇';
-                bgColor = 'bg-yellow-500';
-            } else if (itemType === 'card_pack_gumus') {
-                icon = '🥈';
-                bgColor = 'bg-gray-500';
-            } else if (itemType === 'card_pack_normal') {
-                icon = '🥉';
-                bgColor = 'bg-amber-600';
-            } else if (itemType === 'card_pack') {
-                icon = '🎴';
-                bgColor = 'bg-indigo-500';
-            } else if (itemType === 'wildcard') {
-                icon = '🃏';
-                bgColor = 'bg-purple-500';
-            } else if (itemType === 'iflasShield') {
-                icon = '🛡️';
-                bgColor = 'bg-cyan-500';
-            } else if (itemType === 'wheelTicket') {
-                icon = '🎫';
-                bgColor = 'bg-cyan-500';
-            } else if (itemType === 'clickCatchTicket') {
-                icon = '🎟️';
-                bgColor = 'bg-cyan-500';
-            } else {
-                icon = '📦';
-                bgColor = 'bg-cyan-500';
-            }
+            if (itemType === 'card_pack_efsanevi') { icon = '🏆'; bgColor = 'bg-purple-600'; } 
+            else if (itemType === 'card_pack_altin') { icon = '🥇'; bgColor = 'bg-yellow-500'; } 
+            else if (itemType === 'card_pack_gumus') { icon = '🥈'; bgColor = 'bg-gray-500'; } 
+            else if (itemType === 'card_pack_normal') { icon = '🥉'; bgColor = 'bg-amber-600'; } 
+            else if (itemType === 'card_pack') { icon = '🎴'; bgColor = 'bg-indigo-500'; } 
+            else if (itemType === 'wildcard') { icon = '🃏'; bgColor = 'bg-purple-500'; } 
+            else if (itemType === 'iflasShield') { icon = '🛡️'; bgColor = 'bg-cyan-500'; } 
+            else if (itemType === 'wheelTicket') { icon = '🎫'; bgColor = 'bg-cyan-500'; } 
+            else if (itemType === 'clickCatchTicket') { icon = '🎟️'; bgColor = 'bg-cyan-500'; } 
+            else { icon = '📦'; bgColor = 'bg-cyan-500'; }
             break;
         case 'spinWheel':
             icon = '🎡';
@@ -6221,19 +6203,10 @@ function getActivityIcon(type, details = {}) {
             bgColor = 'bg-orange-500';
             break;
         case 'dailyReward':
-            if (details.rewardType === 'avatar') {
-                icon = '👤';
-                bgColor = 'bg-sky-500';
-            } else if (details.rewardType === 'wildcard') {
-                icon = '🃏';
-                bgColor = 'bg-purple-600';
-            } else if (details.rewardType === 'card_pack') {
-                icon = '🎴';
-                bgColor = 'bg-indigo-600';
-            } else {
-                icon = '📅';
-                bgColor = 'bg-teal-500';
-            }
+            if (details.rewardType === 'avatar') { icon = '👤'; bgColor = 'bg-sky-500'; } 
+            else if (details.rewardType === 'wildcard') { icon = '🃏'; bgColor = 'bg-purple-600'; } 
+            else if (details.rewardType === 'card_pack') { icon = '🎴'; bgColor = 'bg-indigo-600'; } 
+            else { icon = '📅'; bgColor = 'bg-teal-500'; }
             break;
         case 'surpriseBoxTimeout':
             icon = '⏰';
@@ -6248,6 +6221,7 @@ function getActivityIcon(type, details = {}) {
     `;
 }
 
+// MEVCUT renderActivityFeed FONKSİYONUNU SİLİP BUNU YAPIŞTIR
 function renderActivityFeed(activities) {
     const activityFeedList = document.getElementById('activityFeedList');
     activityFeedList.innerHTML = '';
@@ -6267,21 +6241,6 @@ function renderActivityFeed(activities) {
         activityFeedList.innerHTML += '<p class="text-center text-gray-400 p-4">Gösterilecek eylem bulunamadı.</p>';
         return;
     }
-    
-    const typeToName = {
-        points: 'Puan',
-        boxRights: 'Kutu Hakkı',
-        iflasShield: 'İflas Kalkanı',
-        wheelTicket: 'Çark Bileti',
-        clickCatchTicket: 'Tıkla-Yakala Bileti',
-        tempMultiplier: 'Çarpan',
-        wildcard: 'Joker Kart',
-        card_pack: 'Standart Kart Paketi',
-        card_pack_normal: 'Bronz Kart Paketi',
-        card_pack_gumus: 'Gümüş Kart Paketi',
-        card_pack_altin: 'Altın Kart Paketi',
-        card_pack_efsanevi: 'Efsanevi Kart Paketi'
-    };
 
     activities.forEach(activity => {
         try {
@@ -6301,40 +6260,42 @@ function renderActivityFeed(activities) {
                 : '';
 
             switch (activity.type) {
-                // YENİ EKLENEN KISIM BAŞLANGICI
+                case 'monsterAttack': // YENİ EKLENEN CASE
+                    let attackMessage = `${userHtml}, <b class="text-red-300">${details.monsterName}</b>'a saldırdı: `;
+                    attackMessage += details.isPlayerCrit ? `💥 <b class="text-green-300">+${details.damageDealt} KRİTİK HASAR</b>` : `<b class="text-green-300">+${details.damageDealt} hasar</b>`;
+                    attackMessage += ` verdi, <b class="text-red-400">-${details.damageTaken} hasar</b> aldı.`;
+                    if (details.rewardWon) {
+                        attackMessage += ` <b class="text-cyan-300">${details.rewardWon}</b> kazandı.`;
+                    }
+                    if (details.playerDied) {
+                        attackMessage += ` <b class="text-black bg-red-500 px-1 rounded">MAĞLUP OLDU!</b>`;
+                    } else {
+                        attackMessage += ` (Kalan Can: ${details.playerRemainingHP})`;
+                    }
+                    message = attackMessage;
+                    break;
                 case 'loginStreakClaim':
                     message = `${userHtml}, giriş serisinde <b class="text-teal-300 font-bold">${details.day}. gün</b> <b class="text-white">'${details.packageName}'</b> ödülünü aldı.`;
                     break;
-                // YENİ EKLENEN KISIM SONU
                 case 'tradeOfferCreated':
                     message = `${userHtml}, <b class="text-red-400">-${details.fee} Puan</b> ödeyip pazara yeni bir takas teklifi koydu: <b class="text-cyan-300">${details.offeredCardName}</b> karşılığında <b class="text-pink-300">${details.requestedCardName}</b> istiyor.`;
-                    
-                    if (details.status === 'completed') {
-                        message += ` <span class="text-green-400 font-bold">(Takas Yapıldı)</span>`;
-                    } else if (details.status === 'cancelled') {
-                        message += ` <span class="text-red-500 font-bold">(İşlem İptal Edildi)</span>`;
-                    }
+                    if (details.status === 'completed') { message += ` <span class="text-green-400 font-bold">(Takas Yapıldı)</span>`; } 
+                    else if (details.status === 'cancelled') { message += ` <span class="text-red-500 font-bold">(İşlem İptal Edildi)</span>`; }
                     break;
                 case 'tradeOfferAccepted':
                     message = `${userHtml}, <b class="text-red-400">-${details.fee} Puan</b> ödeyip, ${details.offerer}'in <b class="text-cyan-300">'${details.offeredCardName}'</b> kartı teklifini kabul etti ve karşılığında <b class="text-pink-300">'${details.requestedCardName}'</b> kartını verdi. <span class="text-gray-400">(Kalan Puan: ${formatNumber(details.newBalance)})</span>`;
                     break;
                 case 'newItemFound':
-                    let newItemMultiplierText = (details.multiplier && details.multiplier > 1)
-                        ? ` <span class="text-xs text-purple-400">(${details.multiplier}x çarpan kullandı)</span>`
-                        : ` <span class="text-xs text-gray-400">(çarpan kullanmadı)</span>`;
-                    
+                    let newItemMultiplierText = (details.multiplier && details.multiplier > 1) ? ` <span class="text-xs text-purple-400">(${details.multiplier}x çarpan kullandı)</span>` : ` <span class="text-xs text-gray-400">(çarpan kullanmadı)</span>`;
                     let displayItemName = details.itemType ? typeToName[details.itemType] : details.itemName;
                     let displayItemAmount = details.itemName ? details.itemName.split(' ')[0] : '+1'; 
-                    
                     message = `${userHtml}, <b>${details.boxId}</b> numaralı kutudan <span class="text-cyan-300 font-bold">${displayItemAmount} ${displayItemName}</span> buldu.${newItemMultiplierText}`;
                     break;
-                    case 'dailyRewardMultiplierStacked':
+                case 'dailyRewardMultiplierStacked':
                     message = `${userHtml}, Günlük Ödül'den mevcut <b>${details.multiplierValue}x</b> çarpanıyla aynı değerde bir çarpan daha aldı. Kullanım hakkı <b class="text-teal-300 font-bold">+${details.usesAdded}</b> artırılarak toplam <b class="text-teal-300 font-bold">${details.newTotalUses}</b> oldu.`;
                     break;
                 case 'collectionCompleted':
-                    message = details.isFirst
-                        ? `${userHtml}, koleksiyonu tamamlayan <b class="text-amber-400">İLK KİŞİ</b> oldu ve büyük ödülü kazandı!`
-                        : `${userHtml}, koleksiyonu tamamlayarak büyük ödülü kazandı!`;
+                    message = details.isFirst ? `${userHtml}, koleksiyonu tamamlayan <b class="text-amber-400">İLK KİŞİ</b> oldu ve büyük ödülü kazandı!` : `${userHtml}, koleksiyonu tamamlayarak büyük ödülü kazandı!`;
                     break;
                 case 'wildcardConverted':
                     message = `${userHtml}, Koleksiyonu tamamladığı için ${details.source}'dan aldığı ${details.wildcards} Joker Kart'ı <b class="text-cyan-300 font-bold">+${details.boxRights} Kutu Hakkı</b>'na dönüştürdü.`;
@@ -6342,34 +6303,25 @@ function renderActivityFeed(activities) {
                 case 'cardPackConverted':
                     message = `${userHtml}, Koleksiyonu tamamladığı için ${details.source}'dan aldığı ${details.packs} Kart Paketi'ni <b class="text-green-300 font-bold">+${details.points} Puana</b> dönüştürdü.`;
                     break;
-                case 'multiplierCombined': // YENİ EKLENEN CASE
+                case 'multiplierCombined':
                     message = `${userHtml}, <b>${details.boxId}</b> numaralı kutudan <b>${details.foundValue}x çarpan</b> buldu. Mevcut çarpanıyla birleştirerek tek kullanımlık <b class="text-teal-300 font-bold">${details.combinedValue}x</b> gücüne ulaştı ve <span class="text-green-300 font-bold">+1 Kutu Hakkı</span> iade aldı.`;
                     break;
-                case 'multiplierStacked': // YENİ EKLENEN CASE
+                case 'multiplierStacked':
                      message = `${userHtml}, <b>${details.boxId}</b> numaralı kutudan mevcut <b>${details.value}x</b> çarpanıyla aynı değerde bir çarpan daha buldu. Kullanım hakkı <b class="text-teal-300 font-bold">+1</b> artırıldı.`;
                     break;
                 case 'openBox':
-                    let openBoxMultiplierText = (details.multiplier && details.multiplier > 1)
-                        ? ` <span class="text-xs text-purple-400">(${details.multiplier}x çarpan kullandı)</span>`
-                        : ` <span class="text-xs text-gray-400">(çarpan kullanmadı)</span>`;
+                    let openBoxMultiplierText = (details.multiplier && details.multiplier > 1) ? ` <span class="text-xs text-purple-400">(${details.multiplier}x çarpan kullandı)</span>` : ` <span class="text-xs text-gray-400">(çarpan kullanmadı)</span>`;
                     message = `${userHtml}, <b>${details.boxId}</b> numaralı kutudan <span class="text-green-300 font-bold">+${details.points} Puan</span> kazandı.${openBoxMultiplierText} <span class="text-gray-400">(Mevcut Puan: ${details.newBalance})</span>`;
                     break;
                 case 'iflas':
-                    let iflasMultiplierText = (details.multiplier && details.multiplier > 1)
-                        ? ` <span class="text-xs text-purple-400">(${details.multiplier}x çarpan kullandı)</span>`
-                        : ` <span class="text-xs text-gray-400">(çarpan kullanmadı)</span>`;
-                    
-                    message = details.shieldUsed 
-                        ? `${userHtml}, <b>${details.boxId}</b> numaralı kutudan bomba buldu ama iflas kalkanı onu korudu.${iflasMultiplierText}`
-                        : `${userHtml}, <b>${details.boxId}</b> numaralı kutudan bomba buldu <span class="text-red-400 font-bold">-${details.lostPoints} Puan</span> kaybetti.${iflasMultiplierText} <span class="text-gray-400">(Kalan Puan: ${details.newBalance})</span>`;
+                    let iflasMultiplierText = (details.multiplier && details.multiplier > 1) ? ` <span class="text-xs text-purple-400">(${details.multiplier}x çarpan kullandı)</span>` : ` <span class="text-xs text-gray-400">(çarpan kullanmadı)</span>`;
+                    message = details.shieldUsed ? `${userHtml}, <b>${details.boxId}</b> numaralı kutudan bomba buldu ama iflas kalkanı onu korudu.${iflasMultiplierText}` : `${userHtml}, <b>${details.boxId}</b> numaralı kutudan bomba buldu <span class="text-red-400 font-bold">-${details.lostPoints} Puan</span> kaybetti.${iflasMultiplierText} <span class="text-gray-400">(Kalan Puan: ${details.newBalance})</span>`;
                     break;
                 case 'kasaTransfer':
                     message = `${userHtml}, Kasa'sına <b class="text-purple-300 font-bold">${details.amount} Puan</b> aktardı. <span class="text-gray-400">(Yeni Kasa Puanı: ${details.newKasaBalance})</span>`;
                     break;
                 case 'surpriseBox':
-                    let surpriseMultiplierText = (details.multiplier && details.multiplier > 1)
-                        ? ` <span class="text-xs text-purple-400">(${details.multiplier}x çarpan kullandı)</span>`
-                        : ` <span class="text-xs text-gray-400">(çarpan kullanmadı)</span>`;
+                    let surpriseMultiplierText = (details.multiplier && details.multiplier > 1) ? ` <span class="text-xs text-purple-400">(${details.multiplier}x çarpan kullandı)</span>` : ` <span class="text-xs text-gray-400">(çarpan kullanmadı)</span>`;
                     const source = details.boxId === 'Çark' ? 'Şans Çarkı\'ndan' : `<b>${details.boxId}</b> numaralı kutudan`;
                     message = `${userHtml}, ${source} Sürpriz Kutu buldu ve <span class="text-green-300 font-bold">+${details.points} Puan</span> kazandı!${surpriseMultiplierText} <span class="text-gray-400">(Mevcut Puan: ${details.newBalance})</span>`;
                     break;
@@ -6377,20 +6329,12 @@ function renderActivityFeed(activities) {
                     message = `${userHtml}, <b>${details.boxId}</b> numaralı kutudan <span class="text-purple-300 font-bold">${details.value}x Çarpan</span> buldu.`;
                     break;
                 case 'buyItem':
-                    let balanceText = details.itemType === 'special' 
-                        ? `<span class="text-gray-400">(Kalan Kasa Puanı: ${details.newKasaBalance})</span>` 
-                        : `<span class="text-gray-400">(Kalan Puan: ${details.newBalance})</span>`;
+                    let balanceText = details.itemType === 'special' ? `<span class="text-gray-400">(Kalan Kasa Puanı: ${details.newKasaBalance})</span>` : `<span class="text-gray-400">(Kalan Puan: ${details.newBalance})</span>`;
                     let costText = details.itemType === 'special' ? `-${details.itemCost} KP` : `-${details.itemCost} Puan`;
-
                     let purchasedItemText = '';
-                    if (details.itemType === 'tempMultiplier') {
-                        purchasedItemText = `<span class="text-indigo-300 font-bold">+${details.itemDuration} adet ${details.itemValue}x Çarpan</span>`;
-                    } else if (details.itemValue) {
-                        const itemName = typeToName[details.itemType] || details.itemName;
-                        purchasedItemText = `<span class="text-indigo-300 font-bold">+${details.itemValue} ${itemName}</span>`;
-                    } else {
-                        purchasedItemText = `<span class="text-indigo-300 font-bold">${details.itemName}</span>`;
-                    }
+                    if (details.itemType === 'tempMultiplier') { purchasedItemText = `<span class="text-indigo-300 font-bold">+${details.itemDuration} adet ${details.itemValue}x Çarpan</span>`; } 
+                    else if (details.itemValue) { const itemName = typeToName[details.itemType] || details.itemName; purchasedItemText = `<span class="text-indigo-300 font-bold">+${details.itemValue} ${itemName}</span>`; } 
+                    else { purchasedItemText = `<span class="text-indigo-300 font-bold">${details.itemName}</span>`; }
                     message = `${userHtml}, mağazadan <span class="text-red-400 font-bold">${costText}</span> harcayarak ${purchasedItemText} aldı. ${balanceText}`;
                     break;
                 case 'lobbyJoined':
@@ -6401,32 +6345,19 @@ function renderActivityFeed(activities) {
                     const prizeType = details.type;
                     const prizeValue = details.value;
                     let wheelBalanceText = prizeType === 'points' ? ` <span class="text-gray-400">(Mevcut Puan: ${details.newBalance})</span>` : '';
-
-                    if (prizeType === 'pas') {
-                        message = `${userHtml}, çarkı çevirdi ve <span class="text-gray-400 font-bold">Pas</span> geçti.`;
-                    } else {
-                        if (prizeType === 'points') {
-                            prizeText = `+${prizeValue} Puan`;
-                        } else if (prizeType === 'tempMultiplier') {
-                            prizeText = `${prizeValue}X Çarpan`;
-                        } else {
-                            prizeText = `+${prizeValue} ${typeToName[prizeType] || prizeType}`;
-                        }
+                    if (prizeType === 'pas') { message = `${userHtml}, çarkı çevirdi ve <span class="text-gray-400 font-bold">Pas</span> geçti.`; } 
+                    else {
+                        if (prizeType === 'points') { prizeText = `+${prizeValue} Puan`; } 
+                        else if (prizeType === 'tempMultiplier') { prizeText = `${prizeValue}X Çarpan`; } 
+                        else { prizeText = `+${prizeValue} ${typeToName[prizeType] || prizeType}`; }
                         message = `${userHtml}, çarkı çevirerek <span class="text-pink-300 font-bold">${prizeText}</span> kazandı.${wheelBalanceText}`;
                     }
                     break;
                 case 'clickCatchSolo':
-                    if (details.score > 0) {
-                        message = `${userHtml}, Tıkla-Yakala oynadı ve <span class="text-green-300 font-bold">+${details.score} Skor</span> topladı.${weeklyScoreText}`;
-                    } else if (details.score < 0) {
-                        message = `${userHtml}, Tıkla-Yakala oynadı ve <span class="text-red-400 font-bold">${details.score} Skor</span> kaybetti.${weeklyScoreText}`;
-                    } else {
-                        message = `${userHtml}, Tıkla-Yakala oynadı ancak skor toplayamadı.${weeklyScoreText}`;
-                    }
-
-                    if (details.specialItems && details.specialItems.length > 0) {
-                        message += ` Ayrıca, <span class="text-cyan-300 font-bold">${details.specialItems.join(', ')}</span> kazandı.`;
-                    }
+                    if (details.score > 0) { message = `${userHtml}, Tıkla-Yakala oynadı ve <span class="text-green-300 font-bold">+${details.score} Skor</span> topladı.${weeklyScoreText}`; } 
+                    else if (details.score < 0) { message = `${userHtml}, Tıkla-Yakala oynadı ve <span class="text-red-400 font-bold">${details.score} Skor</span> kaybetti.${weeklyScoreText}`; } 
+                    else { message = `${userHtml}, Tıkla-Yakala oynadı ancak skor toplayamadı.${weeklyScoreText}`; }
+                    if (details.specialItems && details.specialItems.length > 0) { message += ` Ayrıca, <span class="text-cyan-300 font-bold">${details.specialItems.join(', ')}</span> kazandı.`; }
                     break;
                 case 'clickCatchLobby':
                     message = `${userHtml}, lobi oyununu kazanarak <span class="text-yellow-300 font-bold">+${details.prize} Puan</span> ödül aldı! <span class="text-gray-400">(Mevcut Puan: ${details.newBalance})</span>`;
@@ -6442,19 +6373,11 @@ function renderActivityFeed(activities) {
                     const rewardType = details.rewardType;
                     const rewardValue = details.rewardValue;
                     let dailyBalanceText = rewardType === 'points' ? ` <span class="text-gray-400">(Mevcut Puan: ${details.newBalance})</span>` : '';
-                    
-                    if (rewardType === 'avatar') {
-                        rewardText = `<span class="text-sky-300 font-bold">'${details.rewardName}' avatarını</span>`;
-                        message = `${userHtml}, günlük ödül olarak ${rewardText} kazandı.`;
-                    } 
+                    if (rewardType === 'avatar') { rewardText = `<span class="text-sky-300 font-bold">'${details.rewardName}' avatarını</span>`; message = `${userHtml}, günlük ödül olarak ${rewardText} kazandı.`; } 
                     else {
-                        if (rewardType === 'points') {
-                            rewardText = `+${rewardValue} Puan`;
-                        } else if (rewardType === 'tempMultiplier') {
-                            rewardText = `${details.rewardUses} adet ${rewardValue}x Çarpan`;
-                        } else {
-                            rewardText = `+${rewardValue} ${typeToName[rewardType] || details.rewardName}`;
-                        }
+                        if (rewardType === 'points') { rewardText = `+${rewardValue} Puan`; } 
+                        else if (rewardType === 'tempMultiplier') { rewardText = `${details.rewardUses} adet ${rewardValue}x Çarpan`; } 
+                        else { rewardText = `+${rewardValue} ${typeToName[rewardType] || details.rewardName}`; }
                         message = `${userHtml}, günlük ödül olarak <span class="text-teal-300 font-bold">${rewardText}</span> aldı.${dailyBalanceText}`;
                     }
                     break;
@@ -11986,7 +11909,7 @@ async function buyItem(itemId) {
     }
 }
 
-// MEVCUT renderMonsterBattleUI FONKSİYONUNU İKİNCİ KEZ YENİSİYLE DEĞİŞTİR (Bu son versiyon)
+// MEVCUT renderMonsterBattleUI FONKSİYONUNU SİLİP BUNU YAPIŞTIR
 async function renderMonsterBattleUI() {
     const battleArenaContainer = document.getElementById('battleArenaContainer');
     if (!battleArenaContainer) return;
@@ -12100,19 +12023,20 @@ async function renderMonsterBattleUI() {
         const playerRevivalStones = playerData.inventory?.revival_stone || 0;
         const isPlayerDead = playerCurrentHP <= 0;
 
-        potionsContainer.innerHTML = ''; 
+        // ★★★ İSTEĞİNİZE GÖRE DÜZENLENEN BÖLÜM ★★★
+        potionsContainer.innerHTML = ''; // Önceki içeriği temizle
 
         if (isPlayerDead) {
             potionsContainer.innerHTML = `<p class="text-lg font-bold text-red-500 animate-pulse">MAĞLUP OLDUN!</p>`;
             playerHealthBar.classList.add('bg-gray-500');
             playerHealthBar.classList.remove('bg-green-500');
             attackBtn.classList.add('hidden');
+
             if (playerRevivalStones > 0) {
                 reviveBtn.classList.remove('hidden');
                 reviveBtn.textContent = `💎 Dirilme Taşı Kullan (${playerRevivalStones})`;
             } else {
                 reviveBtn.classList.add('hidden');
-                potionsContainer.innerHTML += `<p class="text-sm text-red-500">Dirilmek için Dirilme Taşına ihtiyacın var!</p>`;
             }
         } else {
             playerHealthBar.classList.add('bg-green-500');
@@ -12120,6 +12044,7 @@ async function renderMonsterBattleUI() {
             attackBtn.classList.remove('hidden');
             reviveBtn.classList.add('hidden');
         }
+        // ★★★ DÜZENLEME SONU ★★★
         
         const buffs = playerBattleData?.buffs || {};
         const now = getSyncedTime();
@@ -15776,7 +15701,6 @@ function listenForAvatarBaseStats() {
 }
 
 // openAvatarStatsModal FONKSİYONUNU BULUP BU BLOK İLE DEĞİŞTİRİN
-
 async function openAvatarStatsModal(username) {
     const modal = document.getElementById('avatarStatsModal');
     const contentEl = document.getElementById('statsModalContent');
@@ -15792,39 +15716,50 @@ async function openAvatarStatsModal(username) {
 
         if (!userData || !userData.selectedAvatar || !userData.selectedAvatar.url) {
             titleEl.textContent = `${username} İstatistikleri`; 
-            contentEl.innerHTML = '<p class="text-red-500">Bu kullanıcının seçili bir avatarı veya avatar resmi yok.</p>';
+            contentEl.innerHTML = '<p class="text-red-500">Bu kullanıcının seçili bir avatarı yok.</p>';
             return;
         }
 
-        titleEl.textContent = "Avatar Özellikleri";
+        titleEl.textContent = `${username} Avatar Özellikleri`;
         
-        // ★★★ EN KRİTİK DEĞİŞİKLİK BURADA ★★★
-        // Kullanıcının seçili avatarının resim URL'sini alıp,
-        // admin panelinde kullandığımız aynı yardımcı fonksiyonla temizliyoruz.
         const avatarUrl = userData.selectedAvatar.url;
         const sanitizedId = sanitizeFirebaseKey(avatarUrl);
 
-        // İstatistikleri veritabanından, bu yeni ve güvenilir ID ile çekiyoruz.
-        const statsSnap = await db.ref(`gameConfig/avatarBaseStats/${sanitizedId}`).once('value');
-        const baseStats = statsSnap.val() || {};
+        // Hem temel statları hem de kalıcı (iksir) statlarını çekiyoruz
+        const baseStats = avatarBaseStats[sanitizedId] || {};
+        const permanentStats = userData.avatarStats?.[sanitizedId] || {};
 
+        // İki stat grubunu toplayarak nihai değerleri buluyoruz
         const finalStats = {
-            hp: baseStats.hp || 1000,
-            minDamage: baseStats.minDamage || 50,
-            maxDamage: baseStats.maxDamage || 100,
-            defense: baseStats.defense || 10,
-            critChance: baseStats.critChance || 5,
+            hp: (baseStats.hp || 1000) + (permanentStats.hp || 0),
+            minDamage: (baseStats.minDamage || 50) + (permanentStats.damage || 0),
+            maxDamage: (baseStats.maxDamage || 100) + (permanentStats.damage || 0),
+            defense: (baseStats.defense || 10) + (permanentStats.defense || 0),
+            critChance: (baseStats.critChance || 5) + (permanentStats.critChance || 0),
         };
+        
+        // EKLENEN KISIM: İksirlerden gelen bonusları göstermek için
+        let permanentStatsHtml = '';
+        if (Object.keys(permanentStats).length > 0) {
+            permanentStatsHtml += `<div class="mt-4 pt-3 border-t border-gray-600 text-sm">`;
+            permanentStatsHtml += `<h5 class="font-bold text-teal-300 mb-1">İksir Bonusları:</h5>`;
+            if(permanentStats.hp) permanentStatsHtml += `<p>❤️ +${formatNumber(permanentStats.hp)} Can</p>`;
+            if(permanentStats.damage) permanentStatsHtml += `<p>⚔️ +${formatNumber(permanentStats.damage)} Hasar</p>`;
+            if(permanentStats.defense) permanentStatsHtml += `<p>🛡️ +${formatNumber(permanentStats.defense)} Savunma</p>`;
+            if(permanentStats.critChance) permanentStatsHtml += `<p>💥 +%${permanentStats.critChance} Kritik Şans</p>`;
+            permanentStatsHtml += `</div>`;
+        }
 
         contentEl.innerHTML = `
             <div class="flex flex-col items-center mb-4">
                 <img src="${userData.selectedAvatar.url}" alt="${userData.selectedAvatar.name || 'Avatar'}" class="w-24 h-24 rounded-full border-2 border-green-500 mb-2">
                 <span class="text-lg font-bold text-white">${userData.selectedAvatar.name || 'Seçili Avatar'}</span>
             </div>
-            <p>❤️ Can: <b class="text-white">${formatNumber(finalStats.hp)}</b></p>
-            <p>⚔️ Hasar: <b class="text-white">${formatNumber(finalStats.minDamage)} - ${formatNumber(finalStats.maxDamage)}</b></p>
-            <p>🛡️ Savunma: <b class="text-white">${formatNumber(finalStats.defense)}</b></p>
-            <p>💥 Kritik Şans: <b class="text-white">%${finalStats.critChance}</b></p>
+            <p>❤️ Toplam Can: <b class="text-white">${formatNumber(finalStats.hp)}</b></p>
+            <p>⚔️ Toplam Hasar: <b class="text-white">${formatNumber(finalStats.minDamage)} - ${formatNumber(finalStats.maxDamage)}</b></p>
+            <p>🛡️ Toplam Savunma: <b class="text-white">${formatNumber(finalStats.defense)}</b></p>
+            <p>💥 Toplam Kritik Şans: <b class="text-white">%${finalStats.critChance}</b></p>
+            ${permanentStatsHtml}
         `;
 
     } catch (error) {
@@ -16141,7 +16076,6 @@ async function attackMonster() {
         const playerBattleData = battleData.damageLeaderboard?.[currentUser];
 
         // ★★★ AVATAR KİLİDİ KONTROLÜ BURADA ★★★
-        // Eğer oyuncunun savaş verisi (playerBattleData) henüz oluşturulmamışsa, bu onun İLK SALDIRISIDIR.
         if (!playerBattleData) {
             if (!userData.selectedAvatar || !userData.selectedAvatar.url) {
                 displayMessage("Savaşa katılmak için önce envanterden bir avatar seçmelisin!");
@@ -16151,7 +16085,7 @@ async function attackMonster() {
                 `Canavara ilk saldırını yapıyorsun! Bu saldırıdan sonra, şu an seçili olan avatarın bu canavar ölene kadar kilitlenecek ve değiştirilemeyecek. Devam etmek istiyor musun?`
             );
             if (!confirmed) {
-                return; // Kullanıcı iptal ederse saldırıyı durdur
+                return; 
             }
         }
         // ★★★ KONTROL SONU ★★★
@@ -16167,7 +16101,6 @@ async function attackMonster() {
         const sanitizedPlayerAvatarId = sanitizeFirebaseKey(playerAvatarUrl);
         const playerBaseStats = avatarBaseStats[sanitizedPlayerAvatarId] || {};
         
-        // Geri kalan kod aynı... (Saldırı hesaplamaları vs.)
         const permanentStats = userData.avatarStats?.[sanitizedPlayerAvatarId] || {};
         const buffs = playerBattleData?.buffs || {};
         const now = getSyncedTime();
@@ -16215,6 +16148,9 @@ async function attackMonster() {
             }
         }
         
+        let finalPlayerHP = 0; // Loglama için dışarıda tanımlıyoruz
+        let playerDiedInAttack = false;
+
         await battleRef.transaction(currentBattleData => {
             if (!currentBattleData || !currentBattleData.monsterDetails || currentBattleData.monsterDetails.currentHP <= 0) return;
 
@@ -16232,6 +16168,10 @@ async function attackMonster() {
             const currentPlayerBattleData = currentBattleData.damageLeaderboard[currentUser];
             currentPlayerBattleData.totalDamage += finalDamageToMonster;
             currentPlayerBattleData.currentHP = Math.max(0, currentPlayerBattleData.currentHP - finalDamageToPlayer);
+            
+            // Loglama için son can değerini ve ölüm durumunu kaydediyoruz
+            finalPlayerHP = currentPlayerBattleData.currentHP;
+            if (finalPlayerHP <= 0) playerDiedInAttack = true;
 
             for(const buffType in (currentPlayerBattleData.buffs || {})) {
                 if(currentPlayerBattleData.buffs[buffType].expiresAt <= now) {
@@ -16243,11 +16183,13 @@ async function attackMonster() {
         });
         
         const updates = {};
+        let rewardLogText = '';
         if (randomReward) {
             const { type, value } = randomReward;
             const dbKeyMap = { points: 'balance', boxRights: 'kutuHakki', wheelTicket: 'carkBileti', clickCatchTicket: 'clickCatchTickets', iflasShield: 'iflasShieldUses', wildcard: 'wildcards' };
             const prizeName = typeToName[type] || 'Ödül';
             rewardMessage = ` Ek olarak <b class="text-green-400">+${value} ${prizeName}</b> kazandın!`;
+            rewardLogText = `+${value} ${prizeName}`; // Log için metin
 
             if (type === 'points') {
                 updates[`/users/${currentUser}/balance`] = (userData.balance || 0) + value;
@@ -16259,14 +16201,45 @@ async function attackMonster() {
             }
         }
         if (Object.keys(updates).length > 0) await db.ref().update(updates);
+        
+        // ★★★ LOGLAMA İŞLEMİ BURADA ★★★
+        logActivity('monsterAttack', currentUser, {
+            monsterName: monsterStats.name,
+            damageDealt: finalDamageToMonster,
+            damageTaken: finalDamageToPlayer,
+            isPlayerCrit: isPlayerCrit,
+            playerRemainingHP: finalPlayerHP,
+            rewardWon: rewardLogText,
+            playerDied: playerDiedInAttack
+        });
+        // ★★★ LOGLAMA SONU ★★★
 
         showFloatingText(isPlayerCrit ? `💥 KRİTİK! -${finalDamageToMonster}` : `-${finalDamageToMonster}`, document.getElementById('monsterImage').getBoundingClientRect().left + 100, document.getElementById('monsterImage').getBoundingClientRect().top + 100);
         displayMessage(`Canavara <b>${finalDamageToMonster} hasar</b> verdin ve canavardan <b>${finalDamageToPlayer} hasar</b> aldın.${rewardMessage}`);
-
+        
         const finalBattleSnap = await battleRef.once('value');
         const finalBattleData = finalBattleSnap.val();
         if (finalBattleData && finalBattleData.monsterDetails.currentHP <= 0) {
-            // Canavar öldüğünde ödül verme mantığı... (değişmedi)
+            const sortedLeaderboard = Object.entries(finalBattleData.damageLeaderboard).sort((a,b) => b[1].totalDamage - a[1].totalDamage);
+            const winner = sortedLeaderboard.length > 0 ? sortedLeaderboard[0][0] : null;
+            const prize = finalBattleData.rewards?.onKillLeader;
+
+            if (winner && prize) {
+                const winnerRef = db.ref(`users/${winner}`);
+                await winnerRef.transaction(winnerData => {
+                    if (winnerData) {
+                         const { type, value } = prize;
+                         const dbKeyMap = { points: 'balance', boxRights: 'kutuHakki', wheelTicket: 'carkBileti', clickCatchTicket: 'clickCatchTickets', iflasShield: 'iflasShieldUses', wildcard: 'wildcards' };
+                         if (type === 'points') {
+                            winnerData.balance = (winnerData.balance || 0) + value;
+                            winnerData.kariyerPuani = (winnerData.kariyerPuani || 0) + value;
+                         } else if (dbKeyMap[type]) {
+                             winnerData[dbKeyMap[type]] = (winnerData[dbKeyMap[type]] || 0) + value;
+                         }
+                    }
+                    return winnerData;
+                });
+            }
         }
 
     } catch (error) {
