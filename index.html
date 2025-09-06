@@ -11717,8 +11717,7 @@ async function buyItem(itemId) {
     const item = itemSnap.val();
 
     if (!user || !item) return;
-
-    // ★★★ YENİ KISIM BAŞLANGICI: İKSİR SATIN ALMA MANTIĞI ★★★
+    
     const isPotion = ['health_potion', 'damage_potion', 'defense_potion', 'crit_potion'].includes(item.type);
 
     if (isPotion) {
@@ -11761,11 +11760,9 @@ async function buyItem(itemId) {
         });
 
         displayMessage(`Başarılı! Avatarınızın '${statToUpdate}' özelliği kalıcı olarak +${value} arttı.`);
-        return; // İşlemi burada bitir.
+        return; 
     }
-    // ★★★ İKSİR MANTIĞI SONU ★★★
     
-    // Normal satın alma işlemleri buradan devam ediyor
     if ((user.balance || 0) < item.cost) {
         displayMessage("Yetersiz Puan!");
         return;
@@ -11883,14 +11880,9 @@ async function buyItem(itemId) {
             updates.activeStoreMultiplierItemId = itemId;
         } 
         else if (item.type === 'wildcard') {
-            if (user.completedCollection === true) {
-                const boxRightsToGain = itemValue * 5;
-                updates.kutuHakki = (user.kutuHakki || 0) + boxRightsToGain;
-                message = `Koleksiyonu tamamladığın için, aldığın ${itemValue} Joker Kart, <b class="text-green-400">+${boxRightsToGain} Kutu Hakkına</b> dönüştürüldü!`;
-            } else {
-                updates.wildcards = (user.wildcards || 0) + itemValue;
-                message = `Tebrikler! Mağazadan ${itemValue} adet Joker Kart satın aldın!`;
-            }
+            // JOKER KART İÇİN DÖNÜŞÜM KONTROLÜ KALDIRILDI
+            updates.wildcards = (user.wildcards || 0) + itemValue;
+            message = `Tebrikler! Mağazadan ${itemValue} adet Joker Kart satın aldın!`;
         } 
         else if (item.type === 'avatar') {
             const newAvatarId = db.ref().push().key;
@@ -13011,7 +13003,6 @@ async function loadCollectionAlbum() {
     const userSnap = await userRef.once('value');
     const userData = userSnap.val() || {};
     const userCards = userData.cardCollection || {};
-    // ★★★ YENİ EKLENEN KONTROL ★★★
     const hasCompletedCollection = userData.completedCollection === true;
     
     const wildcardIndicator = document.getElementById('wildcardIndicator');
@@ -13059,18 +13050,18 @@ async function loadCollectionAlbum() {
                 <h4 class="card-name">${cardInfo.cardName}</h4>
             `;
 
-            // ★★★ EN KRİTİK DEĞİŞİKLİK BURADA ★★★
-            // Eğer kullanıcı albümü tamamlamışsa VE karttan 1'den fazla varsa, dönüştürme fonksiyonunu çağır.
+            // ★★★ İSTEĞİNE GÖRE GÜNCELLENEN AKILLI TIKLAMA MANTIĞI ★★★
+            // 1. Durum: Koleksiyonu tamamlamış VE bu karttan fazlası var -> DÖNÜŞTÜRME penceresini açar.
             if (hasCompletedCollection && userHasCard && userHasCard.count > 1) {
                 const rates = { normal: 1, gumus: 2, altin: 3, efsanevi: 5 };
                 const boxRightsToGain = rates[cardInfo.rarity] || 1;
                 cardItem.onclick = () => openCardConversionModal(cardId, cardInfo.cardName, cardInfo.rarity, boxRightsToGain);
             }
-            // Eğer albümü tamamlamamışsa VE karttan 1'den fazla varsa, eskisi gibi takas menüsünü aç.
+            // 2. Durum: Koleksiyonu tamamlamamış VE bu karttan fazlası var -> TAKAS menüsünü açar.
             else if (!hasCompletedCollection && userHasCard && userHasCard.count > 1) {
                 cardItem.onclick = () => openTradeMenu(cardId, cardInfo.cardName);
             }
-            // ★★★ DEĞİŞİKLİK SONU ★★★
+            // 3. Durum: Diğer tüm hallerde kart tıklanamazdır.
             
             slot.appendChild(cardItem);
 
@@ -13995,29 +13986,12 @@ async function cancelTradeOffer(tradeId, asAdmin = false) {
 let packsToReveal = [];
 let packsRevealedCount = 0;
 
+// MEVCUT startCardPackOpening FONKSİYONUNU SİLİP BUNU YAPIŞTIR
 async function startCardPackOpening(packCount, source = 'Bilinmeyen Kaynak', multiplier = 1, packType = 'card_pack') {
     if (packCount <= 0) return;
     
-    if (packType === 'card_pack') {
-        const userSnapCheck = await db.ref(`users/${currentUser}`).once('value');
-        const userDataCheck = userSnapCheck.val();
-        if (userDataCheck.completedCollection === true) {
-            const pointsToGain = packCount * 500;
-            const newBalance = (userDataCheck.balance || 0) + pointsToGain;
-            const newKariyerPuani = (userDataCheck.kariyerPuani || 0) + pointsToGain;
-
-            await db.ref(`users/${currentUser}`).update({
-                balance: newBalance,
-                kariyerPuani: newKariyerPuani
-            });
-            logActivity('cardPackConverted', currentUser, { 
-                source: source, packs: packCount, points: pointsToGain, 
-                newBalance: newBalance, multiplier: multiplier
-            });
-            displayMessage(`Tebrikler! Koleksiyonu zaten tamamladığın için kazandığın ${packCount} Kart Paketi, hesabına <b class="text-green-400">+${pointsToGain} Puan</b> olarak eklendi!`);
-            return;
-        }
-    }
+    // Koleksiyon tamamlansa bile puan dönüşümü YAPAN KOD BLOKU KALDIRILDI.
+    // Artık her zaman paket açma ekranı gelecek.
 
     const masterCardsSnap = await db.ref('gameConfig/cardCollection').once('value');
     const masterCards = masterCardsSnap.val();
@@ -14094,7 +14068,6 @@ async function startCardPackOpening(packCount, source = 'Bilinmeyen Kaynak', mul
     title.textContent = `${packCount} Kart Paketini Aç!`;
     area.innerHTML = '';
 
-    // --- YENİ GÖRSEL OLUŞTURMA MANTIĞI BURADA ---
     const packInfoMap = {
         'card_pack_efsanevi': { className: 'pack-front-efsanevi', icon: '🏆' },
         'card_pack_altin': { className: 'pack-front-altin', icon: '🥇' },
@@ -14117,7 +14090,6 @@ async function startCardPackOpening(packCount, source = 'Bilinmeyen Kaynak', mul
         `;
         area.innerHTML += cardHtml;
     }
-    // --- YENİ GÖRSEL OLUŞTURMA SONU ---
 
     modal.style.display = 'flex';
 }
