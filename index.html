@@ -12075,7 +12075,7 @@ async function renderMonsterBattleUI() {
         } else {
             // ★★★ DEĞİŞİKLİK BURADA ★★★
             // Oyuncu hayattayken "Dirilme Taşı" sayısını gösteriyoruz.
-            potionsContainer.innerHTML = `<p class="text-lg font-bold text-cyan-300">Dirilme Taşı: ${playerRevivalStones}</p>`;
+            potionsContainer.innerHTML = `<p class="text-lg font-bold text-cyan-300">💎 Dirilme Taşı: ${playerRevivalStones}</p>`;
             
             playerHealthBar.classList.add('bg-green-500');
             playerHealthBar.classList.remove('bg-gray-500');
@@ -12097,7 +12097,7 @@ async function renderMonsterBattleUI() {
                 buffsEl.innerHTML += `<span class="text-sm" title="${buffInfo[buffKey].text}">${buffInfo[buffKey].icon}</span>`;
             }
         }
-        if(!hasActiveBuff) buffsEl.innerHTML = '<span class="text-xs text-gray-500">Aktif iksir yok</span>';
+        if(!hasActiveBuff) buffsEl.innerHTML = '<span class="text-xs text-gray-500">Avatarına iksir kullanmayı unutma! Ne kadar iksir o kadar hasar demek.</span>';
     }
 }
 
