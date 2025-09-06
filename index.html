@@ -15915,9 +15915,7 @@ async function saveAvatarStats() {
     toggleAvatarAdminPanel();
 }
 
-/**
- * GÜNCELLENMİŞ: Yeni hasar aralığı ödüllerini ve Min/Max hasarı kaydeder.
- */
+// BU YENİ VE DÜZELTİLMİŞ KODU KULLANIN
 async function saveAndSpawnMonster() {
     if (!isAdmin) return;
 
@@ -15940,15 +15938,14 @@ async function saveAndSpawnMonster() {
     };
     monsterDetails.currentHP = monsterDetails.maxHP;
 
+    // Hatalı olan 'perAttack' satırı kaldırıldı.
     const rewards = {
-        perAttack: parseInt(document.getElementById('adminMonsterDmgReward').value) || 100,
-        onKillLeader: { // Ödülü bir obje olarak saklıyoruz
+        onKillLeader: {
             type: document.getElementById('adminMonsterKillRewardType').value,
             value: parseInt(document.getElementById('adminMonsterKillReward').value) || 50000
         }
     };
     
-    // Hasar aralıklarını oku
     const damageTiers = [];
     document.querySelectorAll('.damage-tier-row').forEach(tierRow => {
         const minDamage = parseInt(tierRow.querySelector('.min-damage').value);
