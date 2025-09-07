@@ -5364,7 +5364,7 @@ async function confirmBulkSendItem(isAdding = true) {
             }
             
             // Her kullanıcıya bildirim gönder
-            const notificationMessage = `Yönetici, tüm kullanıcılara ${value} adet ${typeToName[type]} ${isAdding ? 'hediye etti' : 'sildi'}.`;
+            const notificationMessage = `Yönetici, tüm kullanıcılardan ${value} adet ${typeToName[type]} ${isAdding ? 'hediye etti' : 'sildi'}.`;
             const notifKey = db.ref().push().key;
             updates[`${userPath}/notifications/${notifKey}`] = { message: notificationMessage, timestamp: firebase.database.ServerValue.TIMESTAMP };
         }
