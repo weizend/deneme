@@ -5152,7 +5152,7 @@ function handleSendItemTypeChange(selectElement) {
     }
 }
 
-// MEVCUT confirmSendItem FONKSİYONUNU SİL VE BUNU YAPIŞTIR
+// MEVCUT confirmSendItem FONKSİYONUNU SİLİP BU YENİ VERSİYONU YAPIŞTIRIN
 
 async function confirmSendItem(isAdding = true) {
     if (!isAdmin || !targetUserForSend) return;
@@ -5165,7 +5165,7 @@ async function confirmSendItem(isAdding = true) {
 
     let value, uses, avatarName, avatarImageUrl;
     const actionText = isAdding ? "gönderilecek" : "silinecek";
-    const op = isAdding ? 1 : -1; // Ekleme için +1, silme için -1
+    const actionVerb = isAdding ? "ekledi" : "çıkardı";
 
     // Önce inputları doğrula
     try {
@@ -5194,43 +5194,72 @@ async function confirmSendItem(isAdding = true) {
     let notificationMessage = '';
 
     try {
-        // Kart paketleri ve avatarlar transaction dışında, diğerleri içinde işlenir.
-        if (type.startsWith('card_pack')) {
+        // --- İKSİR MANTIĞI TAMAMEN YENİLENDİ ---
+        if (type.endsWith('_potion')) {
+            const userSnap = await userRef.once('value');
+            const userData = userSnap.val();
+
+            if (!userData.selectedAvatar || !userData.selectedAvatar.url) {
+                throw new Error("Bu kullanıcıya iksir göndermek için önce bir avatar seçmiş olması gerekir.");
+            }
+            const avatarId = sanitizeFirebaseKey(userData.selectedAvatar.url);
+            
+            const statKeyMap = { 
+                'health_potion': { key: 'hp', name: 'Can' }, 
+                'damage_potion': { key: 'damage', name: 'Hasar' }, 
+                'defense_potion': { key: 'defense', name: 'Savunma' }, 
+                'crit_potion': { key: 'critChance', name: 'Kritik Şans' }
+            };
+            const statInfo = statKeyMap[type];
+            if (!statInfo) throw new Error("Geçersiz iksir tipi.");
+
+            const statRef = userRef.child(`avatarStats/${avatarId}/${statInfo.key}`);
+            
+            await statRef.transaction(currentValue => {
+                const currentStat = currentValue || 0;
+                return isAdding ? currentStat + value : Math.max(0, currentStat - value);
+            });
+            
+            successMessage = `${targetUserForSend} kullanıcısının seçili avatarının '${statInfo.name}' özelliği başarıyla güncellendi.`;
+            notificationMessage = `Yönetici, seçili avatarının '${statInfo.name}' özelliğine ${value} puan ${actionVerb}.`;
+        
+        } else if (type.startsWith('card_pack')) {
             if (!isAdding) throw new Error("Kart paketleri sadece gönderilebilir, silinemez.");
             await db.ref(`users/${targetUserForSend}/pendingActions/cardPacks`).push({ type: type, count: value });
-            successMessage = `${targetUserForSend} kullanıcısına ${value} adet ${typeToName[type] || type} gönderildi ve açması için bildirim iletildi.`;
-            notificationMessage = `Yönetici sana ${value} adet ${typeToName[type] || type} hediye etti!`;
+            successMessage = `${targetUserForSend} kullanıcısına ${value} adet ${typeToName[type]} gönderildi ve açması için bildirim iletildi.`;
+            notificationMessage = `Yönetici sana ${value} adet ${typeToName[type]} hediye etti!`;
+        
         } else if (type === 'avatar') {
             if (!isAdding) throw new Error("Avatarlar sadece gönderilebilir, silinemez.");
             const newAvatarId = db.ref().push().key;
             await userRef.child('avatars').child(newAvatarId).set({ id: newAvatarId, name: avatarName, imageUrl: avatarImageUrl });
             successMessage = `${targetUserForSend} kullanıcısına '${avatarName}' avatarı başarıyla eklendi.`;
             notificationMessage = `Yönetici sana '${avatarName}' avatarını hediye etti! Envanterinden seçebilirsin.`;
+        
         } else {
             // Geri kalan tüm envanter eşyaları için transaction
             await userRef.transaction(userData => {
                 if (userData) {
+                    const op = isAdding ? 1 : -1;
                     const keyMap = {
                         points: 'balance', kasaPuani: 'kasaPuani', boxRights: 'kutuHakki',
                         wheelTicket: 'carkBileti', clickCatchTicket: 'clickCatchTickets',
                         iflasShield: 'iflasShieldUses', wildcard: 'wildcards',
-                        health_potion: 'health_potion', revival_stone: 'revival_stone',
-                        defense_potion: 'defense_potion', damage_potion: 'damage_potion',
-                        crit_potion: 'crit_potion'
+                        revival_stone: 'revival_stone'
                     };
                     const dbKey = keyMap[type];
 
                     if (type === 'points') {
                         userData.balance = (userData.balance || 0) + (value * op);
                         if (isAdding) userData.kariyerPuani = (userData.kariyerPuani || 0) + value;
-                        notificationMessage = `Yönetici hesabına ${value} Puan ${isAdding ? 'ekledi' : 'çıkardı'}.`;
-                    } else if (type.endsWith('_potion') || type === 'revival_stone') {
+                        notificationMessage = `Yönetici hesabına ${value} Puan ${actionVerb}.`;
+                    } else if (type === 'revival_stone') {
                         if (!userData.inventory) userData.inventory = {};
-                        userData.inventory[dbKey] = Math.max(0, (userData.inventory[dbKey] || 0) + (value * op));
-                        notificationMessage = `Yönetici envanterine ${value} adet ${typeToName[type]} ${isAdding ? 'ekledi' : 'çıkardı'}.`;
+                        userData.inventory.revival_stone = Math.max(0, (userData.inventory.revival_stone || 0) + (value * op));
+                        notificationMessage = `Yönetici envanterine ${value} adet ${typeToName[type]} ${actionVerb}.`;
                     } else if (dbKey) {
                         userData[dbKey] = Math.max(0, (userData[dbKey] || 0) + (value * op));
-                        notificationMessage = `Yönetici envanterine ${value} adet ${typeToName[type]} ${isAdding ? 'ekledi' : 'çıkardı'}.`;
+                        notificationMessage = `Yönetici envanterine ${value} adet ${typeToName[type]} ${actionVerb}.`;
                     }
                 }
                 return userData;
@@ -5238,7 +5267,6 @@ async function confirmSendItem(isAdding = true) {
             successMessage = `${targetUserForSend} kullanıcısının envanteri başarıyla güncellendi.`;
         }
 
-        // Başarılı olursa bildirim gönder
         if (notificationMessage) {
             notifyUser(targetUserForSend, notificationMessage);
         }
@@ -11447,15 +11475,26 @@ function loadWheelHistory() {
         snapshot.forEach(child => { history.push({ key: child.key, ...child.val() }); });
         history.reverse();
 
-        // --- DÜZELTME BURADA BAŞLIYOR ---
         const typeToName = {
-            wildcard: 'Joker Kart',
-            card_pack: 'Standart Kart Paketi',
-            card_pack_normal: 'Bronz Kart Paketi',
-            card_pack_gumus: 'Gümüş Kart Paketi',
-            card_pack_altin: 'Altın Kart Paketi',
-            card_pack_efsanevi: 'Efsanevi Kart Paketi'
-        };
+    points: 'Puan',
+    boxRights: 'Kutu Hakkı',
+    iflasShield: 'İflas Kalkanı',
+    wheelTicket: 'Çark Bileti',
+    clickCatchTicket: 'Tıkla-Yakala Bileti',
+    tempMultiplier: 'Çarpan',
+    wildcard: 'Joker Kart',
+    card_pack: 'Standart Kart Paketi',
+    card_pack_normal: 'Bronz Kart Paketi',
+    card_pack_gumus: 'Gümüş Kart Paketi',
+    card_pack_altin: 'Altın Kart Paketi',
+    card_pack_efsanevi: 'Efsanevi Kart Paketi',
+    // --- YENİ EKLENEN İKSİR İSİMLERİ ---
+    health_potion: 'Can İksiri',
+    revival_stone: 'Dirilme Taşı',
+    defense_potion: 'Savunma İksiri',
+    damage_potion: 'Hasar İksiri',
+    crit_potion: 'Kritik Vuruş İksiri'
+};
 
         const typeToIcon = {
             wildcard: '🃏', card_pack: '🎴', card_pack_normal: '🥉',
@@ -14991,19 +15030,25 @@ function handleSoloSpecialTypeChange() {
 let loginStreakRewardsCache = []; // Admin ayarlarını önbellekte tutmak için
 
 const typeToName = {
-        points: 'Puan',
-        boxRights: 'Kutu Hakkı',
-        iflasShield: 'İflas Kalkanı',
-        wheelTicket: 'Çark Bileti',
-        clickCatchTicket: 'Tıkla-Yakala Bileti',
-        tempMultiplier: 'Çarpan',
-        wildcard: 'Joker Kart',
-        card_pack: 'Standart Kart Paketi',
-        card_pack_normal: 'Bronz Kart Paketi',
-        card_pack_gumus: 'Gümüş Kart Paketi',
-        card_pack_altin: 'Altın Kart Paketi',
-        card_pack_efsanevi: 'Efsanevi Kart Paketi'
-    };
+    points: 'Puan',
+    boxRights: 'Kutu Hakkı',
+    iflasShield: 'İflas Kalkanı',
+    wheelTicket: 'Çark Bileti',
+    clickCatchTicket: 'Tıkla-Yakala Bileti',
+    tempMultiplier: 'Çarpan',
+    wildcard: 'Joker Kart',
+    card_pack: 'Standart Kart Paketi',
+    card_pack_normal: 'Bronz Kart Paketi',
+    card_pack_gumus: 'Gümüş Kart Paketi',
+    card_pack_altin: 'Altın Kart Paketi',
+    card_pack_efsanevi: 'Efsanevi Kart Paketi',
+    // --- YENİ EKLENEN İKSİR İSİMLERİ ---
+    health_potion: 'Can İksiri',
+    revival_stone: 'Dirilme Taşı',
+    defense_potion: 'Savunma İksiri',
+    damage_potion: 'Hasar İksiri',
+    crit_potion: 'Kritik Vuruş İksiri'
+};
       
 // Giriş Serisi penceresini kapatır (Zamanlayıcıları temizler)
 function closeLoginStreakModal() {
@@ -15652,7 +15697,7 @@ async function openAvatarStatsModal(username) {
         };
         
         let permanentStatsHtml = '';
-        if (Object.keys(permanentStats).length > 0) {
+        if (permanentStats && Object.keys(permanentStats).length > 0 && (permanentStats.hp || permanentStats.damage || permanentStats.defense || permanentStats.critChance)) {
             permanentStatsHtml += `<div class="mt-4 pt-3 border-t border-gray-600 text-sm">`;
             permanentStatsHtml += `<h5 class="font-bold text-teal-300 mb-1">İksir Bonusları:</h5>`;
             if(permanentStats.hp) permanentStatsHtml += `<p>❤️ +${formatNumber(permanentStats.hp)} Can</p>`;
