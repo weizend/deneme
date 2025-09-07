@@ -5330,7 +5330,7 @@ async function confirmBulkSendItem(isAdding = true) {
     }
 
     const itemText = `${value} ${typeToName[type]}`;
-    const actionText = isAdding ? "gönderecek" : "silecek";
+    const actionText = isAdding ? "gönderdi" : "sildi";
     const confirmed = await customConfirm(`Tüm aktif kullanıcılardan <b>${itemText}</b> ${actionText}. Bu işlem geri alınamaz. Emin misiniz?`);
     if (!confirmed) return;
 
