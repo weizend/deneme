@@ -5054,38 +5054,40 @@ async function listenForPendingActions() {
     const ref = db.ref(`users/${currentUser}/pendingActions/cardPacks`);
     
     const callback = async (snapshot) => {
-        const actionKey = snapshot.key;
+        // Gelen görevin referansını alıyoruz.
         const actionRef = snapshot.ref;
         
-        // Hileyi önlemek için Firebase Transaction kullanıyoruz.
-        // Sadece ilk seans bu işlemi başarıyla tamamlayabilir.
+        // 1. Güvenli işlem (Transaction) başlatılıyor.
+        // Bu, birden fazla sekme olsa bile sadece BİR tanesinin bu işlemi tamamlayabilmesini garanti eder.
         const { committed, snapshot: finalSnapshot } = await actionRef.transaction(currentAction => {
             // Eğer başka bir sekme bu veriyi çoktan sildiyse (null ise), işlemi iptal et.
             if (currentAction === null) {
-                return; // Abort the transaction
+                return; // İşlem iptal edilir.
             }
-            // Bu sekme kazandı, veriyi silerek diğer sekmelerin almasını engelle.
+            // Bu sekme yarışı kazandı. Veriyi silerek diğer sekmelerin almasını engelle.
             return null; 
         });
 
-        // Sadece transaction'ı bizim sekmelerimizden biri başarıyla tamamladıysa devam et.
+        // 2. Sadece yarışı kazanan sekme bu bloğun içine girebilir.
         if (committed) {
-            const action = finalSnapshot.val(); // Silinmeden önceki veriyi al
+            const action = finalSnapshot.val(); // Silinmeden hemen önceki veriyi al
             
+            // 3. İşte senin istediğin bildirim ekranı!
+            // Gelen verinin geçerli olup olmadığını kontrol et.
             if (action && action.type && action.count > 0) {
                 const packName = typeToName[action.type] || 'Kart Paketi';
                 const message = `Yönetici size <b>${action.count} adet ${packName}</b> hediye etti. Paketi açmak için tamama tıklayın.`;
                 
-                // Ödülün alındığını kullanıcıya bildir ve onayını bekle.
+                // Kullanıcıya hediyesini bildiren ve onayını bekleyen o meşhur ekran.
                 await customAlert(message);
 
-                // Kullanıcı onayladıktan sonra paket açma ekranını göster.
+                // 4. Kullanıcı "Tamam" butonuna bastıktan sonra paket açma ekranı başlar.
                 startCardPackOpening(action.count, 'Admin Hediyesi', 1, action.type);
             }
         }
     };
 
-    // Dinleyiciyi tekrar tekrar eklememek için kontrol
+    // Dinleyiciyi tekrar tekrar eklememek için kontrol et ve kaydet
     if (activeListeners.pendingActions) {
         activeListeners.pendingActions.ref.off('child_added', activeListeners.pendingActions.callback);
     }
