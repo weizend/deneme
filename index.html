@@ -5016,6 +5016,8 @@ function notifyUser(username, message) {
       });
 }
 
+// MEVCUT listenForAdminNotifications FONKSİYONUNU SİL VE BU YENİ VERSİYONU YAPIŞTIR
+
 function listenForAdminNotifications() {
       // Sadece o anki kullanıcıyı dinler.
       const ref = db.ref(`users/${currentUser}/notifications`);
@@ -5024,9 +5026,9 @@ function listenForAdminNotifications() {
           const notification = snap.val();
           // Yeni bir bildirim geldiğinde...
           if (notification && notification.message) {
-              // ...mesajı ekranda göster...
-              displayMessage(notification.message);
-              // ...ve gösterdikten sonra veritabanından sil ki tekrar görünmesin.
+              // HATA BURADAYDI: Pop-up gösteren 'displayMessage' yerine mavi bandı gösteren 'displayGlobalNotification' kullanılacak.
+              displayGlobalNotification(notification.message);
+              // ...gösterdikten sonra veritabanından sil ki tekrar görünmesin.
               snap.ref.remove();
           }
       };
@@ -5043,36 +5045,47 @@ function listenForAdminNotifications() {
       // 'child_added' ile sadece YENİ eklenen bildirimleri yakalarız.
       ref.orderByChild('timestamp').startAt(sessionStartTime).on('child_added', callback);
 }
-
-// MEVCUT listenForPendingActions FONKSİYONUNU SİL VE BUNU YAPIŞTIR
-
-// MEVCUT listenForPendingActions FONKSİYONUNU SİL VE BU YENİ VERSİYONU YAPIŞTİR
+      
+// MEVCUT listenForPendingActions FONKSİYONUNU SİL VE BU YENİ VERSİYONU YAPIŞTIR
 
 async function listenForPendingActions() {
     if (isAdmin) return;
 
     const ref = db.ref(`users/${currentUser}/pendingActions/cardPacks`);
     
-    // Fonksiyonu 'async' olarak güncelledik çünkü artık içinde 'await' kullanacağız.
     const callback = async (snapshot) => {
-        const action = snapshot.val(); 
+        const actionKey = snapshot.key;
+        const actionRef = snapshot.ref;
         
-        if (action && action.type && action.count > 0) {
-            // ÖNEMLİ: Görevi, tekrar tetiklenmemesi için en başta kuyruktan siliyoruz.
-            await snapshot.ref.remove();
+        // Hileyi önlemek için Firebase Transaction kullanıyoruz.
+        // Sadece ilk seans bu işlemi başarıyla tamamlayabilir.
+        const { committed, snapshot: finalSnapshot } = await actionRef.transaction(currentAction => {
+            // Eğer başka bir sekme bu veriyi çoktan sildiyse (null ise), işlemi iptal et.
+            if (currentAction === null) {
+                return; // Abort the transaction
+            }
+            // Bu sekme kazandı, veriyi silerek diğer sekmelerin almasını engelle.
+            return null; 
+        });
 
-            // Kullanıcıya gösterilecek mesajı oluşturuyoruz.
-            const packName = typeToName[action.type] || 'Kart Paketi';
-            const message = `Yönetici size <b>${action.count} adet ${packName}</b> hediye etti. Paketi açmak için tamama tıklayın.`;
+        // Sadece transaction'ı bizim sekmelerimizden biri başarıyla tamamladıysa devam et.
+        if (committed) {
+            const action = finalSnapshot.val(); // Silinmeden önceki veriyi al
             
-            // Yeni customAlert fonksiyonumuzu çağırıyoruz ve kullanıcının "Tamam" butonuna basmasını BEKLİYORUZ.
-            await customAlert(message);
+            if (action && action.type && action.count > 0) {
+                const packName = typeToName[action.type] || 'Kart Paketi';
+                const message = `Yönetici size <b>${action.count} adet ${packName}</b> hediye etti. Paketi açmak için tamama tıklayın.`;
+                
+                // Ödülün alındığını kullanıcıya bildir ve onayını bekle.
+                await customAlert(message);
 
-            // Kullanıcı butona bastıktan SONRA paket açma ekranını tetikliyoruz.
-            startCardPackOpening(action.count, 'Admin Hediyesi', 1, action.type);
+                // Kullanıcı onayladıktan sonra paket açma ekranını göster.
+                startCardPackOpening(action.count, 'Admin Hediyesi', 1, action.type);
+            }
         }
     };
 
+    // Dinleyiciyi tekrar tekrar eklememek için kontrol
     if (activeListeners.pendingActions) {
         activeListeners.pendingActions.ref.off('child_added', activeListeners.pendingActions.callback);
     }
