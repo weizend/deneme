@@ -4460,7 +4460,8 @@ async function logout() {
     });
 }
 
-// MEVCUT loadBalanceAndBoxRights fonksiyonunu bununla değiştir
+// MEVCUT loadBalanceAndBoxRights FONKSİYONUNU SİL VE BU YENİ VERSİYONU YAPIŞTIR
+
 function loadBalanceAndBoxRights() {
     if (isAdmin) {
         document.getElementById("balance").textContent = "Admin Paneli Aktif";
@@ -4490,9 +4491,17 @@ function loadBalanceAndBoxRights() {
         document.getElementById("balance").textContent = statusText;
         document.getElementById('storeCurrentUserBalance').textContent = userData.balance || 0;
         document.getElementById('storeCurrentUserSpent').textContent = userData.totalSpentPoints || 0;
-        // GÜNCELLENEN SATIR BURADA
         document.getElementById('storeCurrentUserKasaBalance').textContent = userData.kasaPuani || 0;
         document.getElementById('wheelTicketBalance').textContent = userData.carkBileti || 0;
+
+        // ★★★ YENİ EKLENEN KISIM BAŞLANGICI ★★★
+        // Eğer kullanıcı şu anda Canavar Savaşı sekmesindeyse,
+        // kullanıcı verilerindeki herhangi bir değişiklik (iksir ekleme/çıkarma gibi)
+        // savaş arayüzünü anında yeniden çizer.
+        if (currentActiveSection === 'monsterBattle') {
+            renderMonsterBattleUI();
+        }
+        // ★★★ YENİ EKLENEN KISIM SONU ★★★
 
         const allUsersSnap = await allUsersRef.once('value');
         const leaders = await calculateAllLeaders(allUsersSnap.val());
@@ -5152,7 +5161,7 @@ function handleSendItemTypeChange(selectElement) {
     }
 }
 
-// MEVCUT confirmSendItem FONKSİYONUNU SİLİP BU YENİ VERSİYONU YAPIŞTIRIN
+// MEVCUT confirmSendItem FONKSİYONUNU SİL VE BU YENİ VERSİYONU YAPIŞTIR
 
 async function confirmSendItem(isAdding = true) {
     if (!isAdmin || !targetUserForSend) return;
@@ -5194,7 +5203,6 @@ async function confirmSendItem(isAdding = true) {
     let notificationMessage = '';
 
     try {
-        // --- İKSİR MANTIĞI TAMAMEN YENİLENDİ ---
         if (type.endsWith('_potion')) {
             const userSnap = await userRef.once('value');
             const userData = userSnap.val();
@@ -5221,13 +5229,14 @@ async function confirmSendItem(isAdding = true) {
             });
             
             successMessage = `${targetUserForSend} kullanıcısının seçili avatarının '${statInfo.name}' özelliği başarıyla güncellendi.`;
-            notificationMessage = `Yönetici, seçili avatarının '${statInfo.name}' özelliğinden ${value} puan ${actionVerb}.`;
+            notificationMessage = `Yönetici, seçili avatarının '${statInfo.name}' özelliğine ${value} puan ${actionVerb}.`;
         
         } else if (type.startsWith('card_pack')) {
             if (!isAdding) throw new Error("Kart paketleri sadece gönderilebilir, silinemez.");
             await db.ref(`users/${targetUserForSend}/pendingActions/cardPacks`).push({ type: type, count: value });
             successMessage = `${targetUserForSend} kullanıcısına ${value} adet ${typeToName[type]} gönderildi ve açması için bildirim iletildi.`;
-            notificationMessage = `Yönetici sana ${value} adet ${typeToName[type]} hediye etti!`;
+            // ★★★ DÜZELTME BURADA: Bildirim mesajını siliyoruz, çünkü kart açma ekranı zaten bildirim görevi görecek.
+            // notificationMessage = `Yönetici sana ${value} adet ${typeToName[type]} hediye etti!`;
         
         } else if (type === 'avatar') {
             if (!isAdding) throw new Error("Avatarlar sadece gönderilebilir, silinemez.");
@@ -5267,6 +5276,7 @@ async function confirmSendItem(isAdding = true) {
             successMessage = `${targetUserForSend} kullanıcısının envanteri başarıyla güncellendi.`;
         }
 
+        // Başarılı olursa bildirim gönder (Kart paketi hariç)
         if (notificationMessage) {
             notifyUser(targetUserForSend, notificationMessage);
         }
