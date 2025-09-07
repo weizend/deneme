@@ -1913,30 +1913,59 @@ body.modal-open .modal-content {
       </div>
       
       <div class="bg-gray-800/80 p-6 rounded-xl border border-gray-700">
-    <h4 class="text-yellow-200 text-xl font-semibold mb-4 border-b border-gray-600 pb-2">Toplu Eşya Gönderimi</h4>
-    <div class="space-y-4">
-        <div>
-            <label for="bulkSendItemType" class="block text-sm font-medium text-gray-300 mb-1">Tüm Kullanıcılara Gönderilecek Eşya:</label>
-            <select id="bulkSendItemType" class="box-setting-input" onchange="handleBulkSendItemTypeChange(this)">
-                <option value="">-- Tip Seçin --</option>
-                <option value="points">💰 Puan</option>
-                <option value="kasaPuani">🏦 Kasa Puanı</option>
-                <option value="boxRights">📦 Kutu Hakkı</option>
-                <option value="wheelTicket">🎫 Çark Bileti</option>
-                <option value="clickCatchTicket">🎟️ Tıkla-Yakala Bileti</option>
-                <option value="iflasShield">🛡️ İflas Kalkanı</option>
-                <option value="tempMultiplier">✖️ Çarpan</option>
-                <option value="wildcard">🃏 Joker Kart</option>
-            </select>
-        </div>
-        <div id="bulkSendItemFieldsContainer" class="space-y-3">
+        <h4 class="text-yellow-200 text-xl font-semibold mb-4 border-b border-gray-600 pb-2">Toplu Kullanıcı İşlemleri</h4>
+        <div class="space-y-6">
+          <div>
+            <label for="globalPoint" class="block text-gray-300 mb-1">Toplu Puan İşlemi</label>
+            <input type="number" id="globalPoint" placeholder="Puan Miktarı" min="1" class="w-full p-3 mb-2 bg-gray-700 border border-gray-600 rounded-lg text-white">
+            <div class="flex gap-2">
+              <button onclick="changeAllPoints(true)" class="flex-1 py-2 bg-green-700 hover:bg-green-600 text-white font-bold rounded-lg text-sm">Ekle</button>
+              <button onclick="changeAllPoints(false)" class="flex-1 py-2 bg-red-700 hover:bg-red-600 text-white font-bold rounded-lg text-sm">Sil</button>
             </div>
-        <div class="mt-4 flex gap-4">
-    <button onclick="confirmBulkSendItem(false)" class="flex-1 py-3 bg-red-800 hover:bg-red-700 text-white font-bold rounded-lg shadow-md">TÜM KULLANICILARDAN SİL</button>
-    <button onclick="confirmBulkSendItem(true)" class="flex-1 py-3 bg-green-800 hover:bg-green-700 text-white font-bold rounded-lg shadow-md">TÜM KULLANICILARA GÖNDER</button>
-</div>
-    </div>
-</div>
+          </div>
+          <div>
+            <label for="globalBoxRight" class="block text-gray-300 mb-1">Toplu Kutu Hakkı İşlemi</label>
+            <input type="number" id="globalBoxRight" placeholder="Kutu Hakkı Miktarı" min="1" class="w-full p-3 mb-2 bg-gray-700 border border-gray-600 rounded-lg text-white">
+            <div class="flex gap-2">
+              <button onclick="changeAllBoxRights(true)" class="flex-1 py-2 bg-green-700 hover:bg-green-600 text-white font-bold rounded-lg text-sm">Ekle</button>
+              <button onclick="changeAllBoxRights(false)" class="flex-1 py-2 bg-red-700 hover:bg-red-600 text-white font-bold rounded-lg text-sm">Sil</button>
+            </div>
+          </div>
+          <div>
+            <label for="globalShield" class="block text-gray-300 mb-1">Toplu İflas Kalkanı İşlemi</label>
+            <input type="number" id="globalShield" placeholder="Kalkan Miktarı" min="1" class="w-full p-3 mb-2 bg-gray-700 border border-gray-600 rounded-lg text-white">
+            <div class="flex gap-2">
+              <button onclick="changeAllShields(true)" class="flex-1 py-2 bg-green-700 hover:bg-green-600 text-white font-bold rounded-lg text-sm">Ekle</button>
+              <button onclick="changeAllShields(false)" class="flex-1 py-2 bg-red-700 hover:bg-red-600 text-white font-bold rounded-lg text-sm">Sil</button>
+            </div>
+          </div>
+          <div>
+            <label for="globalWheelTicket" class="block text-gray-300 mb-1">Toplu Çark Bileti İşlemi</label>
+            <input type="number" id="globalWheelTicket" placeholder="Bilet Miktarı" min="1" class="w-full p-3 mb-2 bg-gray-700 border border-gray-600 rounded-lg text-white">
+            <div class="flex gap-2">
+              <button onclick="changeAllWheelTickets(true)" class="flex-1 py-2 bg-green-700 hover:bg-green-600 text-white font-bold rounded-lg text-sm">Ekle</button>
+              <button onclick="changeAllWheelTickets(false)" class="flex-1 py-2 bg-red-700 hover:bg-red-600 text-white font-bold rounded-lg text-sm">Sil</button>
+            </div>
+          </div>
+          <div>
+            <label for="globalClickCatchTicket" class="block text-gray-300 mb-1">Toplu Tıkla-Yakala Bileti İşlemi</label>
+            <input type="number" id="globalClickCatchTicket" placeholder="Bilet Miktarı" min="1" class="w-full p-3 mb-2 bg-gray-700 border border-gray-600 rounded-lg text-white">
+            <div class="flex gap-2">
+              <button onclick="changeAllClickCatchTickets(true)" class="flex-1 py-2 bg-green-700 hover:bg-green-600 text-white font-bold rounded-lg text-sm">Ekle</button>
+              <button onclick="changeAllClickCatchTickets(false)" class="flex-1 py-2 bg-red-700 hover:bg-red-600 text-white font-bold rounded-lg text-sm">Sil</button>
+            </div>
+          </div>
+          <div>
+            <label for="globalMultiplier" class="block text-gray-300 mb-1">Toplu Çarpan İşlemi</label>
+            <input type="number" id="globalMultiplier" placeholder="Çarpan Değeri (örn: 2, 3)" min="2" class="w-full p-3 mb-2 bg-gray-700 border border-gray-600 rounded-lg text-white">
+            <input type="number" id="globalMultiplierUses" placeholder="Kullanım Sayısı" min="1" class="w-full p-3 mb-2 bg-gray-700 border border-gray-600 rounded-lg text-white">
+            <div class="flex gap-2">
+              <button onclick="setAllMultipliers()" class="flex-1 py-2 bg-green-700 hover:bg-green-600 text-white font-bold rounded-lg text-sm">Uygula</button>
+              <button onclick="clearAllMultipliers()" class="flex-1 py-2 bg-red-700 hover:bg-red-600 text-white font-bold rounded-lg text-sm">Sıfırla</button>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </div>
@@ -2137,49 +2166,6 @@ body.modal-open .modal-content {
         <h4 class="text-yellow-400 text-2xl font-bold">Kullanıcı Yönetimi: <span id="managedUserName"></span></h4>
     </div>
 
-      <div id="adminSendItemModal" class="modal-overlay fixed inset-0 bg-black bg-opacity-70 flex justify-center items-center z-[9999] hidden">
-  <div class="modal-content bg-gray-800 p-8 rounded-xl shadow-2xl border border-green-500 w-11/12 max-w-lg text-left relative">
-    <button class="modal-close-button" onclick="closeAdminSendItemModal()">&times;</button>
-    <h4 class="text-green-300 text-2xl font-bold mb-6 text-center">Kullanıcıya Eşya Gönder: <span id="sendItemUserName"></span></h4>
-    
-    <div class="space-y-4">
-      <div>
-        <label for="sendItemType" class="block text-sm font-medium text-gray-300 mb-1">Gönderilecek Eşya/Ödül:</label>
-        <select id="sendItemType" class="box-setting-input" onchange="handleSendItemTypeChange(this)">
-            <option value="">-- Tip Seçin --</option>
-            <option value="points">💰 Puan</option>
-            <option value="kasaPuani">🏦 Kasa Puanı</option>
-            <option value="boxRights">📦 Kutu Hakkı</option>
-            <option value="wheelTicket">🎫 Çark Bileti</option>
-            <option value="clickCatchTicket">🎟️ Tıkla-Yakala Bileti</option>
-            <option value="iflasShield">🛡️ İflas Kalkanı</option>
-            <option value="tempMultiplier">✖️ Çarpan</option>
-            <option value="avatar">👤 Avatar</option>
-            <option value="wildcard">🃏 Joker Kart</option>
-            <option value="card_pack">🎴 Standart Kart Paketi</option>
-            <option value="card_pack_normal">🥉 Bronz Kart Paketi</option>
-            <option value="card_pack_gumus">🥈 Gümüş Kart Paketi</option>
-            <option value="card_pack_altin">🥇 Altın Kart Paketi</option>
-            <option value="card_pack_efsanevi">🏆 Efsanevi Kart Paketi</option>
-            <option value="health_potion">🧪 Can İksiri</option>
-            <option value="revival_stone">💎 Dirilme Taşı</option>
-            <option value="defense_potion">🛡️ Savunma İksiri</option>
-            <option value="damage_potion">⚔️ Hasar İksiri</option>
-            <option value="crit_potion">💥 Kritik Vuruş İksiri</option>
-        </select>
-      </div>
-      
-      <div id="sendItemFieldsContainer" class="space-y-3">
-        </div>
-    </div>
-
-    <div class="mt-6 flex gap-4">
-  <button onclick="confirmSendItem(false)" class="flex-1 py-3 bg-red-700 hover:bg-red-600 text-white font-bold rounded-lg shadow-md">SİL (-)</button>
-  <button onclick="confirmSendItem(true)" class="flex-1 py-3 bg-green-700 hover:bg-green-600 text-white font-bold rounded-lg shadow-md">GÖNDER (+)</button>
-</div>
-  </div>
-</div>
-
     <div class="overflow-y-auto px-8 pb-8">
         <div id="managedUserDetails" class="text-left text-gray-300 mb-6 space-y-1">
             <p><span id="managedBadgeBalance" class="inline-block w-6 text-center"></span>Mevcut Puanı: <span id="managedUserBalance" class="font-bold text-yellow-300"></span></p>
@@ -2202,12 +2188,18 @@ body.modal-open .modal-content {
             <p><span id="managedBadgeClickCatch" class="inline-block w-6 text-center"></span>Tıkla-Yakala Rekoru: <span id="managedUserClickCatchScore" class="font-bold text-fuchsia-400"></span></p>
             <p><span id="managedBadgeWheel" class="inline-block w-6 text-center"></span>Çevrilen Çark Sayısı: <span id="managedUserWheelSpins" class="font-bold text-fuchsia-400"></span></p>
         </div>
+
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-    <button onclick="openAdminSendItemModal(selectedUserForManagement)" class="py-3 bg-green-600 hover:bg-green-500 text-white font-bold rounded-lg shadow-md lg:col-span-3">🎁 Eşya/Puan Gönder</button>
-    <button id="toggleBlockUserBtn" class="py-3 bg-red-600 hover:bg-red-500 text-white font-bold rounded-lg shadow-md">Engelle / Engeli Kaldır</button>
-    <button onclick="resetUser(selectedUserForManagement)" class="py-3 bg-orange-600 hover:bg-orange-500 text-white font-bold rounded-lg shadow-md">Kullanıcıyı Sıfırla</button>
-    <button onclick="denyUser(selectedUserForManagement, false, true)" class="py-3 bg-gray-600 hover:bg-gray-500 text-white font-bold rounded-lg shadow-md">Kullanıcıyı Sil</button>
-</div>
+            <button onclick="openPointAdjustmentModal(selectedUserForManagement)" class="py-3 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-lg shadow-md">Puan Ayarı</button>
+            <button onclick="openBoxRightAdjustmentModal(selectedUserForManagement)" class="py-3 bg-purple-600 hover:bg-purple-500 text-white font-bold rounded-lg shadow-md">Kutu Hakkı Ayarı</button>
+            <button onclick="openIflasShieldAdjustmentModal(selectedUserForManagement)" class="py-3 bg-teal-600 hover:bg-teal-500 text-white font-bold rounded-lg shadow-md">İflas Kalkanı Ayarı</button>
+            <button onclick="openWheelTicketAdjustmentModal(selectedUserForManagement)" class="py-3 bg-pink-600 hover:bg-pink-500 text-white font-bold rounded-lg shadow-md">Çark Bileti Ayarı</button>
+            <button onclick="openClickCatchTicketAdjustmentModal(selectedUserForManagement)" class="py-3 bg-fuchsia-600 hover:bg-fuchsia-500 text-white font-bold rounded-lg shadow-md">Tıkla-Yakala Bileti Ayarı</button>
+            <button onclick="openMultiplierAdjustmentModal(selectedUserForManagement)" class="py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-lg shadow-md">Çarpan Ayarı</button>
+            <button id="toggleBlockUserBtn" class="py-3 bg-red-600 hover:bg-red-500 text-white font-bold rounded-lg shadow-md">Engelle / Engeli Kaldır</button>
+            <button onclick="resetUser(selectedUserForManagement)" class="py-3 bg-orange-600 hover:bg-orange-500 text-white font-bold rounded-lg shadow-md">Kullanıcıyı Sıfırla</button>
+            <button onclick="denyUser(selectedUserForManagement, false, true)" class="py-3 bg-gray-600 hover:bg-gray-500 text-white font-bold rounded-lg shadow-md lg:col-span-3">Kullanıcıyı Sil</button>
+        </div>
         <div class="bg-gray-900 p-6 rounded-lg border border-gray-700 mt-6">
             <h4 class="text-yellow-300 text-xl font-semibold mb-4">Avatar Yönetimi</h4>
             <div id="managedUserAvatarGrid" class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-4 scrollable-list max-h-60 overflow-y-auto p-3 bg-gray-800 rounded-md">
@@ -2406,119 +2398,133 @@ body.modal-open .modal-content {
       
       <div class="overflow-y-auto scrollable-list p-6">
         <div class="space-y-8 text-gray-300">
-    
-    <div>
-        <h4 class="text-2xl font-bold text-yellow-300 mb-3">👋 Oyuna Hoş Geldin!</h4>
-        <p>Weizend Oyun Dünyası'na hoş geldin! Burası, çeşitli oyunlar oynayarak puan kazandığın, liderlik tablolarında yarıştığın ve harika ödüller için koleksiyonunu tamamladığın bir platformdur. Bu rehber, oyundaki her şeyi anlaman için hazırlandı.</p>
-    </div>
-
-    <hr class="border-gray-700">
-
-    <div>
-        <h4 class="text-2xl font-bold text-yellow-300 mb-3">🏆 Oyunun Temel Amacı Nedir?</h4>
-        <p class="mb-2">Sitedeki nihai hedeflerin şunlardır:</p>
-        <ul class="list-disc list-inside mt-2 space-y-2 pl-4">
-            <li><b class="text-green-400">Liderlik Tablolarında Yükselmek:</b> "Aylık Sezon Sıralaması" ve "Haftalık Tıkla-Yakala Sıralaması" gibi tablolarda en tepeye tırmanarak sezonun en iyisi olduğunu kanıtla ve özel ödüller kazan.</li>
-            <li><b class="text-purple-400">Kart Koleksiyonu Albümünü Tamamlamak:</b> Oyunun en büyük ve en prestijli hedefi! Sezon bitmeden tüm kartları toplayan herkes, admin tarafından belirlenen büyük ödülleri kazanır.</li>
-             <li><b class="text-yellow-200">Gerçek Ödüller Kazanmak:</b> Oyun içinde kazandığın puanları biriktirerek "Özel Ürün Mağazası"ndan gerçek dünyada geçerli ödüller (oyun, hediye kartı vb.) alabilirsin.</li>
-        </ul>
-    </div>
-
-    <hr class="border-gray-700">
-
-    <div>
-        <h4 class="text-2xl font-bold text-yellow-300 mb-3">🏦 Puan Sistemi ve Ekonomi</h4>
-        <p class="mb-2">Oyundaki stratejini belirleyecek 3 farklı puan türü vardır:</p>
-         <ul class="list-disc list-inside mt-2 space-y-2 pl-4">
-            <li><b class="text-green-400">Mevcut Puan:</b> Bu, senin <b class="text-white">harcanabilir</b> puanındır. Mağazadan bir şey satın aldığında veya lobi oyunlarına giriş ücreti ödediğinde bu puan düşer. Kutu oyunundan kazandığın ana puan türüdür.</li>
-            <li><b class="text-yellow-200">Kariyer Puanı:</b> Bu, senin <b class="text-white">sıralama</b> puanındır. Sezon boyunca kazandığın tüm puanların toplamını gösterir ve mağazada harcama yapsan bile <b class="text-red-400">asla düşmez</b>. Aylık liderlik tablosu bu puana göre sıralanır.</li>
-            <li><b class="text-purple-300">Kasa Puanı:</b> Sezon sıfırlamasından etkilenmeyen özel "banka" hesabındır. Puanlarını buraya aktararak bir sonraki sezona taşıyabilirsin. Kasa puanları sadece <b class="text-white">Özel Ürün Mağazası'nda</b> kullanılabilir ve sıralamaya etki etmez.</li>
-        </ul>
-    </div>
-
-    <hr class="border-gray-700">
-
-    <div>
-        <h4 class="text-2xl font-bold text-yellow-300 mb-3">🎲 Oyun Modları ve Özellikler</h4>
-        <div class="space-y-6">
             
             <div>
-                <h5 class="text-xl font-semibold text-red-400 mb-2">🎁 Kutu Oyunu</h5>
-                <p>Oyunun kalbi ve ana kaynak motorudur. "Kutu Hakları" kullanarak kutuları açar ve içlerindeki sürprizleri keşfedersin. Puan, bilet, kalkan, çarpan ve en önemlisi <b class="text-purple-400">kart paketleri</b> buradan çıkar.</p>
+                <h4 class="text-2xl font-bold text-yellow-300 mb-3">👋 Oyuna Hoş Geldin!</h4>
+                <p>Weizend Oyun Dünyası'na hoş geldin! Bu rehber, oyundaki tüm özellikleri anlaman ve en iyi stratejileri geliştirmen için hazırlandı. Temel amacın puan toplayarak liderlik sıralamalarında yükselmek, mini oyunlarda en iyi skorları yapmak ve sezonun şampiyonu olmaktır.</p>
             </div>
 
+            <hr class="border-gray-700">
+
             <div>
-                <h5 class="text-xl font-semibold text-teal-500 mb-2">📅 Giriş Serisi</h5>
-                <p>Her gün siteye giriş yaparak özel ödül paketleri kazanırsın. Seriyi ne kadar uzun süre devam ettirirsen, ödüllerin o kadar değerli olur. Dikkat: İki gün boyunca ödül almazsan serin sıfırlanır!</p>
-            </div>
-            
-            <div>
-                <h5 class="text-xl font-semibold text-orange-600 mb-2">👹 Canavar Savaşı</h5>
-                <p class="mb-2">Tüm sunucunun ortak bir düşmana karşı savaştığı bir etkinliktir. Amaç, canavar ölmeden önce ona en çok hasarı vererek liderlik tablosunda yükselmek ve harika ödüller kazanmaktır.</p>
-                 <ul class="list-disc list-inside mt-2 space-y-2 pl-4">
-                    <li><b>Avatar Kilidi:</b> Canavara ilk saldırını yaptığın anda, o an seçili olan avatarın bu savaş için kilitlenir ve canavar ölene kadar değiştirilemez.</li>
-                    <li><b>İksirler ve Kalıcı Güçlendirme:</b> Mağazadan aldığın iksirler, seçili avatarının istatistiklerini (Can, Hasar, Savunma vb.) <b class="text-red-400">kalıcı olarak</b> artırır.</li>
-                     <li><b>Dirilme Taşı:</b> Savaşta canın biterse, bu taş ile yeniden canlanıp savaşa dönebilirsin.</li>
+                <h4 class="text-2xl font-bold text-yellow-300 mb-3">🏆 Oyunun Temel Amacı</h4>
+                <p class="mb-2">Oyunda iki ana hedef bulunur:</p>
+                <ul class="list-disc list-inside mt-2 space-y-2 pl-4">
+                    <li><b class="text-green-400">Liderlik Tabloları:</b> "Kariyer Puanı" ve "Tıkla-Yakala Skoru" gibi farklı kategorilerde en tepeye tırmanarak sezonun en iyisi olduğunu kanıtla.</li>
+                    <li><b class="text-purple-400">Kart Koleksiyonu Albümü:</b> Oyunun en büyük ve en prestijli hedefi! Sezon bitmeden tüm kartları toplayan herkes, admin tarafından belirlenen büyük ödülleri kazanır.</li>
                 </ul>
             </div>
 
-            <div>
-                <h5 class="text-xl font-semibold text-purple-400 mb-2">🃏 Kart Koleksiyonu & Takas Pazarı</h5>
-                <p class="mb-2">Koleksiyonu tamamlamak için oyun içinden kazandığın <b class="text-white">Kart Paketlerini</b> açarak kart elde edersin. Fazla kartlarını <b class="text-green-400">Takas Pazarı</b>'nda diğer oyuncularla takas ederek eksiklerini tamamlayabilirsin.</p>
-            </div>
+            <hr class="border-gray-700">
 
             <div>
-                <h5 class="text-xl font-semibold text-teal-400 mb-2">🎡 Şans Çarkı</h5>
-                <p>"Çark Biletleri" kullanarak çarkı çevir ve birçok farklı ödülden birini anında kazanma şansı yakala!</p>
+                <h4 class="text-2xl font-bold text-yellow-300 mb-3">🏦 Puan Sistemi ve Ekonomi</h4>
+                <p class="mb-2">Oyunda stratejini belirleyecek 3 farklı puan türü vardır:</p>
+                 <ul class="list-disc list-inside mt-2 space-y-2 pl-4">
+                    <li><b class="text-green-400">Mevcut Puan:</b> Bu, senin <b class="text-white">harcanabilir</b> puanındır. Mağazadan bir şey satın aldığında veya lobi oyunlarına giriş ücreti ödediğinde bu puan düşer. Kutu oyunundan kazandığın ana puan türüdür.</li>
+                    <li><b class="text-yellow-200">Kariyer Puanı:</b> Bu, senin <b class="text-white">sıralama</b> puanındır. Sezon boyunca kazandığın tüm puanların toplamını gösterir ve mağazada harcama yapsan bile <b class="text-red-400">asla düşmez</b>. Ana liderlik tablosu bu puana göre sıralanır.</li>
+                    <li><b class="text-purple-300">Kasa Puanı:</b> Sezon sıfırlamasından etkilenmeyen özel bir "banka" hesabıdır. Puanlarını buraya aktararak bir sonraki sezona taşıyabilirsin. Kasa puanları sadece "Özel Ürün Mağazası"nda kullanılabilir ve sıralamaya etki etmez.</li>
+                </ul>
             </div>
 
+            <hr class="border-gray-700">
+
             <div>
-                <h5 class="text-xl font-semibold text-orange-400 mb-2">🎯 Tıkla-Yakala</h5>
-                <p class="mb-2">İki modu vardır: <b class="text-white">Tekli Oyun</b> modunda haftalık liderlik için yarışırsın. <b class="text-white">Lobi Oyunu</b> modunda ise admin tarafından kurulan anlık bir yarışa katılarak büyük ödülü kazanmaya çalışırsın.</p>
+                <h4 class="text-2xl font-bold text-yellow-300 mb-3">🎲 Oyun Modları Detaylı Anlatım</h4>
+                <div class="space-y-6">
+                    <div>
+                        <h5 class="text-xl font-semibold text-red-400 mb-2">🎁 Kutu Oyunu</h5>
+                        <p class="mb-2">Oyunun kalbi ve ana kaynak motorudur. "Kutu Hakları" kullanarak kutuları açar ve içlerindeki sürprizleri keşfedersin. Puan, bilet, kalkan, çarpan ve en önemlisi <b class="text-purple-400">kart paketleri</b> buradan çıkar.</p>
+                    </div>
+                    
+                    <div>
+                        <h5 class="text-xl font-semibold text-purple-400 mb-2">🃏 Kart Koleksiyonu & Takas Pazarı</h5>
+                        <p class="mb-2">Koleksiyonu tamamlamak için kartları doğrudan bulmazsın; oyun içinden kazandığın <b class="text-white">Kart Paketlerini</b> açarak kart elde edersin.</p>
+                        <ul class="list-disc list-inside mt-2 space-y-2 pl-4">
+                            <li><b>Fazla Kartlar:</b> Aynı karttan birden fazla kazandığında, bunlar "fazla" olarak birikir. Fazla kartlarını <b class="text-green-400">Takas Pazarı</b>'nda diğer oyuncularla takas ederek eksiklerini tamamlayabilirsin.</li>
+                             <li><b>Joker Kart:</b> Çok nadirdir! Koleksiyon albümünde eksik olan bir kartın üzerine tıklayarak Joker Kart'ını kullanabilir ve o kartı anında envanterine ekleyebilirsin.</li>
+                        </ul>
+                    </div>
+
+                    <div>
+                        <h5 class="text-xl font-semibold text-teal-400 mb-2">🎡 Şans Çarkı</h5>
+                        <p>"Çark Biletleri" kullanarak çarkı çevir ve birçok farklı ödülden birini anında kazanma şansı yakala!</p>
+                    </div>
+
+                    <div>
+                        <h5 class="text-xl font-semibold text-orange-400 mb-2">🎯 Tıkla-Yakala</h5>
+                        <p class="mb-2">İki modu vardır: <b class="text-white">Tekli Oyun</b> modunda haftalık liderlik için yarışırsın. <b class="text-white">Lobi Oyunu</b> modunda ise admin tarafından kurulan anlık bir yarışa katılarak büyük ödülü kazanmaya çalışırsın.</p>
+                    </div>
+                </div>
             </div>
+
+            <hr class="border-gray-700">
+
+            <div>
+                <h4 class="text-2xl font-bold text-yellow-300 mb-3">⭐ Çarpan Sistemi: Strateji Rehberi</h4>
+                <p class="mb-2">Çarpanlar, oyundaki en stratejik öğelerden biridir. İki ana türü vardır:</p>
+                <ul class="list-disc list-inside mt-2 space-y-4 pl-4">
+                    <li>
+                        <b class="text-white">Tek Kullanımlık Çarpan (Kutudan Gelen):</b>
+                        <ul class="list-circle list-inside ml-4 mt-1">
+                            <li>Bir sonraki kutu açılışında <b class="text-green-400">otomatik olarak</b> kullanılır.</li>
+                            <li>Eğer tek kullanımlık bir çarpanın varken kutudan yeni bir tane daha bulursan, ikisinin değerleri <b class="text-teal-300">otomatik olarak birleşir!</b> (Örn: 2x varken 3x bulursan, yeni çarpanın tek kullanımlık 5x olur).</li>
+                        </ul>
+                    </li>
+                    <li>
+                        <b class="text-white">Kalıcı Çarpan (Mağaza, Ödül vb.):</b>
+                        <ul class="list-circle list-inside ml-4 mt-1 space-y-1">
+                            <li>Birden çok kullanım hakkı vardır ve kutu açarken kullanıp kullanmamayı <b class="text-yellow-400">sen seçersin.</b></li>
+                            <li>Kalıcı bir çarpanın varken kutudan yeni bir çarpan bulduğunda bir seçim ekranı çıkar:
+                                <ul class="list-disc list-inside ml-6 mt-1 text-gray-400">
+                                    <li>Eğer yeni çarpan <b class="text-green-400">daha güçlüyse</b>, eskisini Kutu Hakkı'na çevirip yenisine geçebilirsin.</li>
+                                    <li>Eğer yeni çarpan <b class="text-red-400">daha zayıfsa</b>, eskisini koruyup yenisini Kutu Hakkı'na çevirebilirsin.</li>
+                                    <li>Eğer yeni çarpan <b class="text-blue-400">aynı değerdeyse</b>, mevcut çarpanının kullanım hakkı otomatik olarak +1 artar.</li>
+                                </ul>
+                            </li>
+                        </ul>
+                    </li>
+                </ul>
+            </div>
+            
+            <hr class="border-gray-700">
+
+            <div>
+                <h4 class="text-2xl font-bold text-yellow-300 mb-3">📅 Sezonluk Sıfırlama</h4>
+                <p class="mb-2">Rekabeti taze tutmak için her ay oyun sıfırlanır. Ana ekrandaki geri sayım bittiğinde yeni sezon başlar.</p>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                    <div class="bg-red-900/50 p-4 rounded-lg">
+                        <h5 class="font-bold text-red-300">Neler Sıfırlanır? ❌</h5>
+                        <ul class="list-disc list-inside text-sm mt-2">
+                            <li>Mevcut Puan ve Kariyer Puanı</li>
+                            <li>Kart Koleksiyonu Albümü ve Joker Kartlar</li>
+                            <li>Tüm oyun istatistikleri (kutu sayısı vb.)</li>
+                            <li>Tüm liderlik tabloları</li>
+                        </ul>
+                    </div>
+                    <div class="bg-green-900/50 p-4 rounded-lg">
+                        <h5 class="font-bold text-green-300">Neler Kalıcıdır? ✅</h5>
+                         <ul class="list-disc list-inside text-sm mt-2">
+                            <li>Kullanıcı hesapların</li>
+                            <li><b class="text-purple-300">Kasa'ya</b> aktardığın puanlar</li>
+                            <li>Mağazadan alınan <b class="text-white">Avatarlar</b></li>
+                            <li>Kazanılan <b class="text-yellow-200">Şampiyonluk Unvanları</b> (Profilde görünür)</li>
+                            <li>Sezon sonunda hediye edilen envanter</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <hr class="border-gray-700">
+
+            <div class="text-center">
+                <p class="text-lg">Unutma, oyunun en önemli amacı eğlenmek! Liderlik tablolarında tırmanırken ve koleksiyonunu tamamlarken herkese bol şans ve iyi oyunlar dileriz!</p>
+                <p class="text-2xl mt-2">🎉🏆🃏</p>
+            </div>
+
         </div>
-    </div>
-    
-    <hr class="border-gray-700">
-
-    <div>
-        <h4 class="text-2xl font-bold text-yellow-300 mb-3">🛒 Mağaza Sistemi</h4>
-        <div class="space-y-4">
-            <div>
-                <h5 class="text-xl font-semibold text-green-400 mb-2">Oyun Mağazası</h5>
-                <p>Normal <b class="text-white">Mevcut Puanlarını</b> kullanarak oyun içi avantajlar ve kozmetikler satın alabilirsin. Bunlar arasında Kutu Hakkı, Biletler, İksirler ve Avatarlar bulunur.</p>
-            </div>
-             <div>
-                <h5 class="text-xl font-semibold text-purple-400 mb-2">⭐ Özel Ürün Mağazası ⭐</h5>
-                <p>Burası en değerli ödüllerin bulunduğu yerdir. Sezon sıfırlamasından etkilenmeyen <b class="text-white">Kasa Puanlarını</b> kullanarak buradan alışveriş yapabilirsin. Bu mağazadaki ürünler, <b class="text-yellow-200">gerçek dünyada geçerli ödüller (dijital oyun kodları, hediye kartları vb.) olabilir.</b> Satın alımlar admin onayına tabidir.</p>
-            </div>
-        </div>
-    </div>
-
-    <hr class="border-gray-700">
-
-    <div>
-        <h4 class="text-2xl font-bold text-yellow-300 mb-3">📅 Haftalık ve Aylık Sıfırlamalar</h4>
-        <p class="mb-2">Rekabeti taze tutmak için düzenli olarak sıfırlamalar yapılır.</p>
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-            <div class="bg-orange-900/50 p-4 rounded-lg">
-                <h5 class="font-bold text-orange-300">Haftalık Sıfırlama (Tıkla-Yakala) 🎯</h5>
-                <p class="text-sm mt-2">Her hafta Tıkla-Yakala skor tablosu sıfırlanır. Haftanın birincisi özel bir ödül kazanır ve o hafta oyuna katılmış olan herkese +1 Bilet hediye edilir.</p>
-            </div>
-            <div class="bg-red-900/50 p-4 rounded-lg">
-                <h5 class="font-bold text-red-300">Aylık Sıfırlama (Ana Sezon) 🏆</h5>
-                <p class="text-sm mt-2">Her ay ana oyun sıfırlanır. Puanlar, kart koleksiyonları ve liderlik tabloları sıfırlanır. Sezonun şampiyonları özel ödüller ve unvanlar kazanırken, tüm oyunculara yeni sezona başlangıç için bir hediye paketi verilir. <b class="text-white">Kasa Puanların ve Avatarların kalıcıdır.</b></p>
-            </div>
-        </div>
-    </div>
-
-    <hr class="border-gray-700">
-
-    <div class="text-center">
-        <p class="text-lg">Unutma, oyunun en önemli amacı eğlenmek! Liderlik tablolarında tırmanırken ve koleksiyonunu tamamlarken herkese bol şans ve iyi oyunlar dileriz!</p>
-        <p class="text-2xl mt-2">🎉🏆🃏</p>
-    </div>
-
+      </div>
+  </div>
 </div>
 
 <div id="avatarSelectionModal" class="modal-overlay fixed inset-0 bg-black bg-opacity-70 flex justify-center items-center z-50 hidden">
@@ -4231,7 +4237,6 @@ async function afterLogin() {
     listenForForceUpdateSignal();
     listenForTradeNotifications();
     checkLoginStreakIndicator();
-    listenForPendingActions();
     listenForMonsterBattleData();
     listenForAvatarBaseStats();
     
@@ -4997,6 +5002,237 @@ function customConfirm(message, callback) {
       });
   }
 
+  function openPointAdjustmentModal(username) {
+    targetUserForAdjustment = username;
+    document.getElementById('adjUserName').textContent = username;
+    db.ref('users/' + username + '/balance').once('value').then(snap => {
+      document.getElementById('adjUserBalance').textContent = snap.val() || 0;
+    });
+    pointAdjustmentModal.style.display = 'flex';
+  }
+
+  function closePointAdjustmentModal() {
+    pointAdjustmentModal.style.display = 'none';
+    document.getElementById('adjAmount').value = '';
+    targetUserForAdjustment = null;
+    if (selectedUserForManagement) openUserManagementModal(selectedUserForManagement);
+  }
+
+  // MEVCUT adjustUserPoints fonksiyonunu bununla değiştir
+function adjustUserPoints(add) {
+    const amount = parseInt(document.getElementById('adjAmount').value);
+    if (isNaN(amount) || amount <= 0) {
+      displayMessage("Geçerli bir miktar girin.");
+      return;
+    }
+    db.ref('users/' + targetUserForAdjustment).once('value').then(snap => {
+      let data = snap.val();
+      let bal = data.balance || 0;
+      let highBal = data.highestBalanceEver || 0;
+      
+      // KARİYER PUANI GÜNCELLEMESİ
+      let kariyerPuani = data.kariyerPuani || 0;
+      if (add) {
+          kariyerPuani += amount;
+      }
+      
+      bal = add ? bal + amount : Math.max(0, bal - amount);
+      if (bal > highBal) highBal = bal;
+      db.ref('users/' + targetUserForAdjustment).update({
+        balance: bal,
+        highestBalanceEver: highBal,
+        kariyerPuani: kariyerPuani // Yeni alanı da güncelle
+      }).then(() => {
+        const message = `Admin tarafından hesabınıza ${amount} puan ${add ? 'eklendi' : 'silindi'}.`;
+        notifyUser(targetUserForAdjustment, message);
+        displayMessage(`${targetUserForAdjustment} yeni bakiyesi: ${bal}`);
+        closePointAdjustmentModal();
+      });
+    });
+}
+
+  function openBoxRightAdjustmentModal(username) {
+    targetUserForBoxRightAdjustment = username;
+    document.getElementById('adjBoxRightUserName').textContent = username;
+    db.ref('users/' + username + '/kutuHakki').once('value').then(snap => {
+      document.getElementById('adjUserBoxRight').textContent = snap.val() || 0;
+    });
+    boxRightAdjustmentModal.style.display = 'flex';
+  }
+
+  function closeBoxRightAdjustmentModal() {
+    boxRightAdjustmentModal.style.display = 'none';
+    document.getElementById('adjBoxRightAmount').value = '';
+    targetUserForBoxRightAdjustment = null;
+    if (selectedUserForManagement) openUserManagementModal(selectedUserForManagement);
+  }
+
+  function adjustUserBoxRights(add) {
+    const amount = parseInt(document.getElementById('adjBoxRightAmount').value);
+    if (isNaN(amount) || amount <= 0) {
+      displayMessage("Geçerli bir miktar girin.");
+      return;
+    }
+    db.ref('users/' + targetUserForBoxRightAdjustment + '/kutuHakki').once('value').then(snap => {
+      let val = snap.val() || 0;
+      val = add ? val + amount : Math.max(0, val - amount);
+      db.ref('users/' + targetUserForBoxRightAdjustment).update({
+        kutuHakki: val
+      }).then(() => {
+        const message = `Admin tarafından hesabınıza ${amount} kutu hakkı ${add ? 'eklendi' : 'silindi'}.`;
+        notifyUser(targetUserForBoxRightAdjustment, message);
+        displayMessage(`${targetUserForBoxRightAdjustment} yeni kutu hakkı: ${val}`);
+        closeBoxRightAdjustmentModal();
+      });
+    });
+  }
+
+  function openIflasShieldAdjustmentModal(username) {
+    targetUserForIflasShieldAdjustment = username;
+    document.getElementById('adjIflasShieldUserName').textContent = username;
+    db.ref('users/' + username + '/iflasShieldUses').once('value').then(snap => {
+      document.getElementById('adjUserIflasShield').textContent = snap.val() || 0;
+    });
+    iflasShieldAdjustmentModal.style.display = 'flex';
+  }
+
+  function closeIflasShieldAdjustmentModal() {
+    iflasShieldAdjustmentModal.style.display = 'none';
+    document.getElementById('adjIflasShieldAmount').value = '';
+    targetUserForIflasShieldAdjustment = null;
+    if (selectedUserForManagement) openUserManagementModal(selectedUserForManagement);
+  }
+
+  async function adjustUserIflasShields(add) {
+    const amount = parseInt(document.getElementById('adjIflasShieldAmount').value);
+    if (isNaN(amount) || amount <= 0) {
+      displayMessage("Geçerli bir miktar girin.");
+      return;
+    }
+    const userRef = db.ref('users/' + targetUserForIflasShieldAdjustment + '/iflasShieldUses');
+    userRef.once('value').then(snap => {
+      let currentShields = snap.val() || 0;
+      const newShields = add ? currentShields + amount : Math.max(0, currentShields - amount);
+      userRef.set(newShields).then(() => {
+        const message = `Admin tarafından hesabınıza ${amount} İflas Kalkanı ${add ? 'eklendi' : 'silindi'}.`;
+        notifyUser(targetUserForIflasShieldAdjustment, message);
+        displayMessage(`${targetUserForIflasShieldAdjustment} için kalkan ayarlandı: ${newShields}`);
+        closeIflasShieldAdjustmentModal();
+      });
+    });
+  }
+
+  async function openMultiplierAdjustmentModal(username) {
+    targetUserForMultiplierAdjustment = username;
+    document.getElementById('adjMultiplierUserName').textContent = username;
+    const userSnap = await db.ref('users/' + username).once('value');
+    const userData = userSnap.val();
+    if (userData) {
+      document.getElementById('adjUserMultiplier').textContent = `${userData.activeMultiplier || 1}x`;
+      document.getElementById('adjUserMultiplierUses').textContent = userData.multiplierRemainingUses || 0;
+      document.getElementById('setMultiplierValue').value = userData.activeMultiplier || 1;
+      document.getElementById('setMultiplierSource').value = userData.multiplierSource || 'none';
+      document.getElementById('setMultiplierUses').value = userData.multiplierRemainingUses || 0;
+    }
+    multiplierAdjustmentModal.style.display = 'flex';
+  }
+
+  function closeMultiplierAdjustmentModal() {
+    multiplierAdjustmentModal.style.display = 'none';
+    targetUserForMultiplierAdjustment = null;
+    if (selectedUserForManagement) openUserManagementModal(selectedUserForManagement);
+  }
+
+  async function setMultiplier() {
+    const multiplierValue = parseInt(document.getElementById('setMultiplierValue').value);
+    const multiplierSource = document.getElementById('setMultiplierSource').value;
+    const multiplierUses = parseInt(document.getElementById('setMultiplierUses').value);
+    if (isNaN(multiplierValue) || multiplierValue <= 0) {
+      displayMessage("Geçerli çarpan değeri girin.");
+      return;
+    }
+    const updates = {
+      activeMultiplier: multiplierValue,
+      multiplierSource: multiplierSource,
+      multiplierRemainingUses: multiplierSource === 'store' ? (isNaN(multiplierUses) ? 0 : multiplierUses) : (multiplierSource === 'box' ? 1 : 0)
+    };
+    await db.ref('users/' + targetUserForMultiplierAdjustment).update(updates);
+    const message = `Admin tarafından hesabınıza ${multiplierValue}x çarpan ayarlandı.`;
+    notifyUser(targetUserForMultiplierAdjustment, message);
+    displayMessage("Çarpan ayarlandı.");
+    closeMultiplierAdjustmentModal();
+  }
+
+  async function resetMultiplier() {
+    const updates = {
+      activeMultiplier: 1,
+      multiplierSource: 'none',
+      multiplierRemainingUses: 0,
+      activeStoreMultiplierItemId: null
+    };
+    await db.ref('users/' + targetUserForMultiplierAdjustment).update(updates);
+    notifyUser(targetUserForMultiplierAdjustment, "Çarpanınız admin tarafından sıfırlandı.");
+    displayMessage("Çarpan sıfırlandı.");
+    closeMultiplierAdjustmentModal();
+  }
+function openWheelTicketAdjustmentModal(username) { 
+    targetUserForWheelTicket = username; 
+    document.getElementById('adjWheelTicketUserName').textContent = username; 
+    db.ref('users/' + username + '/carkBileti').once('value').then(snap => { 
+        document.getElementById('adjUserWheelTicket').textContent = snap.val() || 0; 
+    }); 
+    wheelTicketAdjustmentModal.style.display = 'flex'; 
+}
+function closeWheelTicketAdjustmentModal() { 
+    wheelTicketAdjustmentModal.style.display = 'none'; 
+    document.getElementById('adjWheelTicketAmount').value = ''; 
+    targetUserForWheelTicket = null; 
+    if (selectedUserForManagement) openUserManagementModal(selectedUserForManagement); 
+}
+function adjustUserWheelTickets(add) { 
+    const amount = parseInt(document.getElementById('adjWheelTicketAmount').value); 
+    if(isNaN(amount) || amount <= 0) { displayMessage("Geçerli bir miktar girin."); return; } 
+    const userRef = db.ref('users/' + targetUserForWheelTicket + '/carkBileti');
+    userRef.transaction(currentTickets => {
+        currentTickets = currentTickets || 0;
+        return add ? currentTickets + amount : Math.max(0, currentTickets - amount);
+    }).then(() => {
+        const message = `Admin tarafından ${targetUserForWheelTicket} hesabına ${amount} çark bileti ${add ? 'eklendi' : 'silindi'}.`;
+        notifyUser(targetUserForWheelTicket, message);
+        displayMessage(message); 
+        closeWheelTicketAdjustmentModal(); 
+    });
+}
+
+function openClickCatchTicketAdjustmentModal(username) { 
+    targetUserForClickCatchTicket = username; 
+    document.getElementById('adjClickCatchTicketUserName').textContent = username; 
+    db.ref('users/' + username + '/clickCatchTickets').once('value').then(snap => { 
+        document.getElementById('adjUserClickCatchTicket').textContent = snap.val() || 0; 
+    }); 
+    clickCatchTicketAdjustmentModal.style.display = 'flex'; 
+}
+function closeClickCatchTicketAdjustmentModal() { 
+    clickCatchTicketAdjustmentModal.style.display = 'none'; 
+    document.getElementById('adjClickCatchTicketAmount').value = ''; 
+    targetUserForClickCatchTicket = null; 
+    if (selectedUserForManagement) openUserManagementModal(selectedUserForManagement); 
+}
+function adjustUserClickCatchTickets(add) { 
+    const amount = parseInt(document.getElementById('adjClickCatchTicketAmount').value); 
+    if(isNaN(amount) || amount <= 0) { displayMessage("Geçerli bir miktar girin."); return; } 
+    const userRef = db.ref('users/' + targetUserForClickCatchTicket + '/clickCatchTickets');
+    userRef.transaction(currentTickets => {
+        currentTickets = currentTickets || 0;
+        return add ? currentTickets + amount : Math.max(0, currentTickets - amount);
+    }).then(() => {
+        const message = `Admin tarafından ${targetUserForClickCatchTicket} hesabına ${amount} Tıkla-Yakala bileti ${add ? 'eklendi' : 'silindi'}.`;
+        notifyUser(targetUserForClickCatchTicket, message);
+        displayMessage(message); 
+        closeClickCatchTicketAdjustmentModal(); 
+    });
+}
+
 // --- YENİ BİLET YÖNETİM FONKSİYONLARI BİTİŞ ---
   // Admin işlemleri
   function openBlockDurationModal(username) { targetUserForBlock = username; document.getElementById('blockUserName').textContent = username; blockDurationModal.style.display = 'flex'; }
@@ -5043,196 +5279,170 @@ function customConfirm(message, callback) {
     }
 }
 
-let targetUserForSend = null;
+    // MEVCUT changeAllPoints fonksiyonunu bununla değiştir
+async function changeAllPoints(add) {
+    const amount = parseInt(document.getElementById("globalPoint").value);
+    if (isNaN(amount) || amount <= 0) { displayMessage("Geçerli miktar girin."); return; }
+    const confirmed = await customConfirm(`Tüm kullanıcılara ${amount} puan ${add ? 'eklemek' : 'silmek'} istediğinizden emin misiniz?`);
+    if (confirmed) {
+        db.ref('users').once('value').then(snap => {
+            const updates = {};
+            snap.forEach(child => {
+                if (child.val().approved && !child.val().blocked && child.key !== "weizendtv") {
+                    let balance = child.val().balance || 0;
+                    let highestBalanceEver = child.val().highestBalanceEver || 0;
+                    
+                    // KARİYER PUANI GÜNCELLEMESİ
+                    let kariyerPuani = child.val().kariyerPuani || 0;
+                    if (add) {
+                        kariyerPuani += amount;
+                    }
 
-// Tekli Eşya Gönderme Modalını Açar
-function openAdminSendItemModal(username) {
-    targetUserForSend = username;
-    document.getElementById('sendItemUserName').textContent = username;
-    document.getElementById('sendItemType').value = '';
-    document.getElementById('sendItemFieldsContainer').innerHTML = '';
-    document.getElementById('adminSendItemModal').style.display = 'flex';
-}
-
-// Tekli Eşya Gönderme Modalını Kapatır
-function closeAdminSendItemModal() {
-    document.getElementById('adminSendItemModal').style.display = 'none';
-    targetUserForSend = null;
-    if (selectedUserForManagement) openUserManagementModal(event, selectedUserForManagement);
-}
-
-// Tekli Eşya Gönderme formunda tip seçimine göre inputları değiştirir
-function handleSendItemTypeChange(selectElement) {
-    const type = selectElement.value;
-    const container = document.getElementById('sendItemFieldsContainer');
-    container.innerHTML = ''; // Önceki alanları temizle
-
-    if (type === 'tempMultiplier') {
-        container.innerHTML = `
-            <input type="number" id="sendItemValue" class="box-setting-input" placeholder="Çarpan Değeri (örn: 2, 3)">
-            <input type="number" id="sendItemUses" class="box-setting-input" placeholder="Kullanım Hakkı">
-        `;
-    } else if (type === 'avatar') {
-        container.innerHTML = `
-            <input type="text" id="sendItemAvatarName" class="box-setting-input" placeholder="Avatarın Adı">
-            <input type="text" id="sendItemAvatarImageUrl" class="box-setting-input" placeholder="Avatar Resim URL">
-        `;
-    } else if (type) { // Diğer tüm tipler için sadece miktar yeterli
-        container.innerHTML = `<input type="number" id="sendItemValue" class="box-setting-input" placeholder="Miktar / Adet">`;
-    }
-}
-
-// Tekli Eşya Gönderme işlemini onaylar ve gerçekleştirir
-// confirmSendItem fonksiyonunu bul ve bu yeni versiyonla değiştir.
-async function confirmSendItem(isAdding = true) {
-    if (!isAdmin || !targetUserForSend) return;
-    
-    const type = document.getElementById('sendItemType').value;
-    if (!type) {
-        displayMessage("Lütfen bir eşya tipi seçin.");
-        return;
-    }
-
-    let value, uses;
-    if (type === 'tempMultiplier') {
-        value = parseInt(document.getElementById('sendItemValue').value);
-        uses = parseInt(document.getElementById('sendItemUses').value);
-        if (isNaN(value) || isNaN(uses) || value <= 1 || uses <= 0) {
-            displayMessage("Lütfen geçerli bir Çarpan Değeri (>1) ve Kullanım Hakkı (>0) girin.");
-            return;
-        }
-    } else if (type !== 'avatar') {
-        value = parseInt(document.getElementById('sendItemValue').value);
-        if (isNaN(value) || value <= 0) {
-            displayMessage("Lütfen geçerli bir Miktar/Adet girin.");
-            return;
-        }
-    }
-
-    const actionText = isAdding ? "gönderilecek" : "silinecek";
-    const confirmed = await customConfirm(`${targetUserForSend} kullanıcısına seçilen eşya ${actionText}. Onaylıyor musunuz?`);
-    if(!confirmed) return;
-
-    const userRef = db.ref(`users/${targetUserForSend}`);
-    let successMessage = '';
-    
-    // İşlemi transaction ile güvenli hale getiriyoruz
-    await userRef.transaction(userData => {
-        if (userData) {
-            const op = isAdding ? 1 : -1; // Ekleme için +1, silme için -1
-
-            const keyMap = {
-                points: 'balance', kasaPuani: 'kasaPuani', boxRights: 'kutuHakki',
-                wheelTicket: 'carkBileti', clickCatchTicket: 'clickCatchTickets',
-                iflasShield: 'iflasShieldUses', wildcard: 'wildcards',
-                health_potion: 'health_potion', revival_stone: 'revival_stone',
-                defense_potion: 'defense_potion', damage_potion: 'damage_potion',
-                crit_potion: 'crit_potion'
-            };
-
-            const dbKey = keyMap[type];
-
-            if (type === 'points') {
-                userData.balance = (userData.balance || 0) + (value * op);
-                // ÖNEMLİ: Puan silinirse kariyer puanı etkilenmez, sadece eklenirse etkilenir.
-                if (isAdding) {
-                    userData.kariyerPuani = (userData.kariyerPuani || 0) + value;
+                    balance = add ? balance + amount : Math.max(balance - amount, 0);
+                    if (balance > highestBalanceEver) highestBalanceEver = balance;
+                    updates['users/' + child.key + '/balance'] = balance;
+                    updates['users/' + child.key + '/highestBalanceEver'] = highestBalanceEver;
+                    updates['users/' + child.key + '/kariyerPuani'] = kariyerPuani; // Yeni alanı da güncelle
                 }
-            } else if (type.startsWith('card_pack')) {
-                // Kart paketleri sadece gönderilebilir, silinemez.
-                if (isAdding) {
-                    // Bu kısmı Sorun 3'te düzelteceğiz. Şimdilik böyle kalsın.
-                }
-            } else if (type.endsWith('_potion') || type === 'revival_stone') {
-                if (!userData.inventory) userData.inventory = {};
-                userData.inventory[dbKey] = Math.max(0, (userData.inventory[dbKey] || 0) + (value * op));
-            } else if (dbKey) {
-                userData[dbKey] = Math.max(0, (userData[dbKey] || 0) + (value * op));
-            }
-        }
-        return userData;
-    });
-
-    // Kart paketi gönderme işlemi transaction dışında yapılır.
-    if (isAdding && type.startsWith('card_pack')) {
-        await db.ref(`users/${targetUserForSend}/pendingActions/cardPacks`).push({ type: type, count: value });
-        successMessage = `${targetUserForSend} kullanıcısına ${value} adet ${typeToName[type] || type} gönderildi ve açması için bildirim iletildi.`;
-    } else {
-        successMessage = `${targetUserForSend} kullanıcısının envanteri güncellendi.`;
+            });
+            db.ref().update(updates).then(() => {
+                displayMessage("Tüm kullanıcılara puan işlemi başarıyla uygulandı.");
+                const actionText = add ? 'ekledi' : 'çıkardı';
+                const notificationMessage = `Admin, tüm kullanıcılara ${amount} Puan ${actionText}.`;
+                db.ref('globalNotifications').push({ message: notificationMessage, timestamp: firebase.database.ServerValue.TIMESTAMP });
+            });
+        });
     }
+}
     
-    displayMessage(successMessage);
-    closeAdminSendItemModal();
-}
-
-// Toplu Eşya Gönderme formunda tip seçimine göre inputları değiştirir
-function handleBulkSendItemTypeChange(selectElement) {
-    const type = selectElement.value;
-    const container = document.getElementById('bulkSendItemFieldsContainer');
-    container.innerHTML = ''; 
-
-    if (type === 'tempMultiplier') {
-        container.innerHTML = `
-            <input type="number" id="bulkSendItemValue" class="box-setting-input" placeholder="Çarpan Değeri (örn: 2, 3)">
-            <input type="number" id="bulkSendItemUses" class="box-setting-input" placeholder="Kullanım Hakkı">
-        `;
-    } else if (type) {
-        container.innerHTML = `<input type="number" id="bulkSendItemValue" class="box-setting-input" placeholder="Miktar / Adet">`;
-    }
-}
-
-// confirmBulkSendItem fonksiyonunu bul ve bu yeni versiyonla değiştir.
-async function confirmBulkSendItem(isAdding = true) {
-    if (!isAdmin) return;
-
-    const type = document.getElementById('bulkSendItemType').value;
-    if (!type) {
-        displayMessage("Lütfen bir eşya tipi seçin.");
-        return;
-    }
-
-    let value = parseInt(document.getElementById('bulkSendItemValue').value);
-    if (isNaN(value) || value <= 0) {
-        displayMessage("Lütfen geçerli bir Miktar/Adet girin.");
-        return;
-    }
-
-    const itemText = `${value} ${typeToName[type]}`;
-    const actionText = isAdding ? "gönderilecek" : "silinecek";
-    const confirmed = await customConfirm(`Tüm aktif kullanıcılardan <b>${itemText}</b> ${actionText}. Bu işlem geri alınamaz. Emin misiniz?`);
-    if (!confirmed) return;
-
-    const usersSnap = await db.ref('users').once('value');
-    const allUsers = usersSnap.val();
-    const updates = {};
-    const op = isAdding ? 1 : -1;
-
-    for (const username in allUsers) {
-        const user = allUsers[username];
-        if (user.approved && !user.blocked && username !== "weizendtv") {
-            const userPath = `/users/${username}`;
-            const keyMap = {
-                points: 'balance', kasaPuani: 'kasaPuani', boxRights: 'kutuHakki',
-                wheelTicket: 'carkBileti', clickCatchTicket: 'clickCatchTickets',
-                iflasShield: 'iflasShieldUses', wildcard: 'wildcards'
-            };
-            const dbKey = keyMap[type];
-
-            if (dbKey) {
-                updates[`${userPath}/${dbKey}`] = Math.max(0, (user[dbKey] || 0) + (value * op));
-                if (type === 'points' && isAdding) {
-                    updates[`${userPath}/kariyerPuani`] = (user.kariyerPuani || 0) + value;
+  async function changeAllBoxRights(add) {
+    const amount = parseInt(document.getElementById("globalBoxRight").value);
+    if (isNaN(amount) || amount <= 0) { displayMessage("Geçerli miktar girin."); return; }
+    const confirmed = await customConfirm(`Tüm kullanıcılara ${amount} kutu hakkı ${add ? 'eklemek' : 'silmek'} istediğinizden emin misiniz?`);
+    if (confirmed) {
+        db.ref('users').once('value').then(snap => {
+            const updates = {};
+            snap.forEach(child => {
+                if (child.val().approved && !child.val().blocked && child.key !== "weizendtv") {
+                    let kutuHakki = child.val().kutuHakki || 0;
+                    kutuHakki = add ? kutuHakki + amount : Math.max(kutuHakki - amount, 0);
+                    updates['users/' + child.key + '/kutuHakki'] = kutuHakki;
                 }
-            }
-        }
+            });
+            db.ref().update(updates).then(() => {
+                displayMessage("Tüm kullanıcılara kutu hakkı işlemi başarıyla uygulandı.");
+                // YENİ EKLENEN KOD BAŞLANGICI
+                const actionText = add ? 'verdi' : 'sildi';
+                const notificationMessage = `Admin, tüm kullanıcılara ${amount} Kutu Hakkı ${actionText}.`;
+                db.ref('globalNotifications').push({ message: notificationMessage, timestamp: firebase.database.ServerValue.TIMESTAMP });
+                // YENİ EKLENEN KOD SONU
+            });
+        });
     }
-    
-    await db.ref().update(updates);
-    const notificationMessage = `Admin, tüm kullanıcılara ${itemText} ${actionText}.`;
-    db.ref('globalNotifications').push({ message: notificationMessage, timestamp: firebase.database.ServerValue.TIMESTAMP });
-    displayMessage(`İşlem başarılı!`);
 }
-      
+    
+async function changeAllShields(add) {
+    const amount = parseInt(document.getElementById("globalShield").value);
+    if (isNaN(amount) || amount <= 0) { displayMessage("Geçerli bir kalkan miktarı girin."); return; }
+    const confirmed = await customConfirm(`Tüm kullanıcılara ${amount} adet İflas Kalkanı ${add ? 'eklemek' : 'silmek'} istediğinizden emin misiniz?`);
+    if (confirmed) {
+        db.ref('users').once('value').then(snap => {
+            const updates = {};
+            snap.forEach(child => {
+                if (child.val().approved && !child.val().blocked && child.key !== "weizendtv") {
+                    let currentShields = child.val().iflasShieldUses || 0;
+                    currentShields = add ? currentShields + amount : Math.max(0, currentShields - amount);
+                    updates['users/' + child.key + '/iflasShieldUses'] = currentShields;
+                }
+            });
+            db.ref().update(updates).then(() => {
+                displayMessage("Tüm kullanıcılara kalkan işlemi başarıyla uygulandı.");
+                // YENİ EKLENEN KOD BAŞLANGICI
+                const actionText = add ? 'gönderdi' : 'sildi';
+                const notificationMessage = `Admin, tüm kullanıcılara ${amount} İflas Kalkanı ${actionText}.`;
+                db.ref('globalNotifications').push({ message: notificationMessage, timestamp: firebase.database.ServerValue.TIMESTAMP });
+                // YENİ EKLENEN KOD SONU
+            });
+        });
+    }
+}
+    
+async function changeAllWheelTickets(add) {
+    const amount = parseInt(document.getElementById("globalWheelTicket").value);
+    if (isNaN(amount) || amount <= 0) { displayMessage("Geçerli bir bilet miktarı girin."); return; }
+    const confirmed = await customConfirm(`Tüm kullanıcılara ${amount} adet Çark Bileti ${add ? 'eklemek' : 'silmek'} istediğinizden emin misiniz?`);
+    if (confirmed) {
+        db.ref('users').once('value').then(snap => {
+            const updates = {};
+            snap.forEach(child => {
+                if (child.val().approved && !child.val().blocked && child.key !== "weizendtv") {
+                    let currentTickets = child.val().carkBileti || 0;
+                    currentTickets = add ? currentTickets + amount : Math.max(0, currentTickets - amount);
+                    updates['users/' + child.key + '/carkBileti'] = currentTickets;
+                }
+            });
+            db.ref().update(updates).then(() => {
+                displayMessage("Tüm kullanıcılara Çark Bileti işlemi başarıyla uygulandı.");
+                // YENİ EKLENEN KOD BAŞLANGICI
+                const actionText = add ? 'gönderdi' : 'sildi';
+                const notificationMessage = `Admin, tüm kullanıcılara ${amount} Çark Bileti ${actionText}.`;
+                db.ref('globalNotifications').push({ message: notificationMessage, timestamp: firebase.database.ServerValue.TIMESTAMP });
+                // YENİ EKLENEN KOD SONU
+            });
+        });
+    }
+}
+    
+async function setAllMultipliers() {
+    const multiplier = parseInt(document.getElementById("globalMultiplier").value);
+    const uses = parseInt(document.getElementById("globalMultiplierUses").value);
+    if (isNaN(multiplier) || multiplier < 2) { displayMessage("Geçerli bir çarpan değeri girin (en az 2)."); return; }
+    if (isNaN(uses) || uses <= 0) { displayMessage("Geçerli bir kullanım sayısı girin."); return; }
+    const confirmed = await customConfirm(`Tüm kullanıcılara ${multiplier}x çarpanı ${uses} kullanım hakkı ile uygulamak istediğinizden emin misiniz?`);
+    if (confirmed) {
+        db.ref('users').once('value').then(snap => {
+            const updates = {};
+            snap.forEach(child => {
+                if (child.val().approved && !child.val().blocked && child.key !== "weizendtv") {
+                    const userPath = 'users/' + child.key;
+                    updates[userPath + '/activeMultiplier'] = multiplier;
+                    updates[userPath + '/multiplierRemainingUses'] = uses;
+                    updates[userPath + '/multiplierSource'] = 'store';
+                }
+            });
+            db.ref().update(updates).then(() => {
+                displayMessage("Tüm kullanıcılara çarpan işlemi başarıyla uygulandı.");
+                // YENİ EKLENEN KOD BAŞLANGICI
+                const notificationMessage = `Admin, tüm kullanıcılara ${uses} kullanımlık ${multiplier}x Çarpan verdi.`;
+                db.ref('globalNotifications').push({ message: notificationMessage, timestamp: firebase.database.ServerValue.TIMESTAMP });
+                // YENİ EKLENEN KOD SONU
+            });
+        });
+    }
+}
+    
+async function clearAllMultipliers() {
+    const confirmed = await customConfirm("Tüm kullanıcıların aktif çarpanlarını sıfırlamak istediğinizden emin misiniz? Bu işlem geri alınamaz.");
+    if (confirmed) {
+        db.ref('users').once('value').then(snap => {
+            const updates = {};
+            snap.forEach(child => {
+                if (child.val().approved && !child.val().blocked && child.key !== "weizendtv") {
+                    const userPath = 'users/' + child.key;
+                    updates[userPath + '/activeMultiplier'] = 1;
+                    updates[userPath + '/multiplierRemainingUses'] = 0;
+                    updates[userPath + '/multiplierSource'] = 'none';
+                    updates[userPath + '/activeStoreMultiplierItemId'] = null;
+                }
+            });
+            db.ref().update(updates).then(() => {
+                displayMessage("Tüm kullanıcıların çarpanları başarıyla sıfırlandı.");
+                const notificationMessage = `Admin, tüm kullanıcıların aktif çarpanlarını sıfırladı.`;
+                db.ref('globalNotifications').push({ message: notificationMessage, timestamp: firebase.database.ServerValue.TIMESTAMP });
+            });
+        });
+    }
+}
   async function resetUser(username) {
     const confirmed = await customConfirm(`<b>${username}</b> kullanıcısını sıfırlamak istediğinize emin misiniz? Bu işlem kullanıcının puanlarını, biletlerini ve istatistiklerini sıfırlar!`);
     if (!confirmed) return;
@@ -6132,20 +6342,18 @@ function renderActivityFeed(activities) {
                      message = `${userHtml}, <b>${details.boxId}</b> numaralı kutudan mevcut <b>${details.value}x</b> çarpanıyla aynı değerde bir çarpan daha buldu. Kullanım hakkı <b class="text-teal-300 font-bold">+1</b> artırıldı.`;
                     break;
                 case 'multiplierConvertedToBoxRights':
-case 'multiplierConvertedOnUsedOpen':
-case 'multiplierConvertedOnUnusedOpen':
-case 'dailyRewardMultiplierConverted':
-    let sourceText = details.source ? `${details.source}'dan` : 'bir yerden';
-    
-    // Bu bölüm, Tıkla-Yakala'dan geldiğinde "kutudan" yazmasını engeller.
-    if (activity.type.includes('OnUsedOpen') || activity.type.includes('OnUnusedOpen')) {
-        sourceText = `kutudan`;
-    }
-    
-    const keptMultiplierText = details.keptMultiplierValue ? ` mevcut <b>${details.keptMultiplierValue}x</b> çarpanını koruyarak` : '';
-    
-    message = `${userHtml}, ${sourceText} kazandığı <b>${details.rewardValue || details.foundValue}x</b> çarpanı,${keptMultiplierText} <span class="text-lime-300 font-bold">+${details.boxRights} Kutu Hakkı</span>'na dönüştürdü.`;
-    break;
+                case 'multiplierConvertedOnUsedOpen':
+                case 'multiplierConvertedOnUnusedOpen':
+                case 'dailyRewardMultiplierConverted':
+                    let sourceText = details.source ? `${details.source}'dan` : 'bir yerden';
+                    if (activity.type.includes('OnUsedOpen') || activity.type.includes('OnUnusedOpen')) {
+                        sourceText = `kutudan`;
+                    }
+                    
+                    const keptMultiplierText = details.keptMultiplierValue ? ` mevcut <b>${details.keptMultiplierValue}x</b> çarpanını koruyarak` : '';
+                    
+                    message = `${userHtml}, ${sourceText} kazandığı <b>${details.rewardValue || details.foundValue}x</b> çarpanı,${keptMultiplierText} <span class="text-lime-300 font-bold">+${details.boxRights} Kutu Hakkı</span>'na dönüştürdü.`;
+                    break;
                 case 'openBox':
                     let openBoxMultiplierText = (details.multiplier && details.multiplier > 1) ? ` <span class="text-xs text-purple-400">(${details.multiplier}x çarpan kullandı)</span>` : ` <span class="text-xs text-gray-400">(çarpan kullanmadı)</span>`;
                     message = `${userHtml}, <b>${details.boxId}</b> numaralı kutudan <span class="text-green-300 font-bold">+${details.points} Puan</span> kazandı.${openBoxMultiplierText} <span class="text-gray-400">(Mevcut Puan: ${details.newBalance})</span>`;
@@ -8404,9 +8612,8 @@ function loadAnnouncements() {
         adminDailyRewardModal.style.display = 'none';
     }
 
-// ESKİSİNİ SİL, BU YENİSİNİ YAPIŞTIR
+    // DEĞİŞTİRİLECEK FONKSİYON
 function closeDailyRewardModal() { 
-    document.body.classList.remove('modal-open'); // BU SATIRI EKLE
     Object.values(activeDailyRewardTimers).forEach(clearInterval);
     activeDailyRewardTimers = {};
     const dailyRewardModal = document.getElementById('dailyRewardModal');
@@ -8466,9 +8673,7 @@ function closeDailyRewardModal() {
     }
 }
     
-// ESKİSİNİ SİL, BU YENİSİNİ YAPIŞTIR
 async function openDailyRewardModal() {
-    document.body.classList.add('modal-open'); // BU SATIRI EKLE
     const dailyRewardModal = document.getElementById('dailyRewardModal');
     if (!dailyRewardModal) {
         console.error("HATA: 'dailyRewardModal' elementi HTML'de bulunamadı!");
@@ -8512,15 +8717,20 @@ async function openDailyRewardModal() {
             const cooldown = reward.cooldownMs || 0;
             const nextAvailableTime = lastClaim + cooldown;
 
+            // --- DEĞİŞTİRİLEN KONTROL MANTIĞI BAŞLANGICI ---
             let canClaim = false;
             if (!isAdmin) {
+                // Eğer bekleme süresi 0 ise (tek seferlik) VE daha önce alınmamışsa (lastClaim === 0), alınabilir.
                 if (cooldown === 0) {
                     canClaim = (lastClaim === 0);
                 } 
+                // Eğer bekleme süresi varsa, normal zaman kontrolü yapılır.
                 else {
                     canClaim = (Date.now() > nextAvailableTime);
                 }
             }
+            // --- DEĞİŞTİRİLEN KONTROL MANTIĞI SONU ---
+
 
             const card = document.createElement('div');
             card.className = 'relative bg-gray-900 p-4 rounded-xl shadow-lg border border-yellow-600 text-center flex flex-col justify-between';
@@ -8561,6 +8771,7 @@ async function openDailyRewardModal() {
                         }
 
                         if (timeLeft <= 0) {
+                            // DEĞİŞTİRİLEN KISIM: Tek seferlik ödüller için bu blok çalışmamalı.
                             if(cooldown > 0){
                                 el.innerHTML = '<span class="text-green-400">Şimdi Alınabilir!</span>';
                                 const claimButton = el.closest('.relative').querySelector('button');
@@ -10006,6 +10217,59 @@ function listenForLobbyChanges() {
     lobbyRef.on('value', callback);
 }
 
+    // === BU YENİ FONKSİYONLARI DOSYANIN SONUNA EKLE ===
+
+async function changeAllWheelTickets(add) {
+    const amount = parseInt(document.getElementById("globalWheelTicket").value);
+    if (isNaN(amount) || amount <= 0) {
+        displayMessage("Geçerli miktar girin.");
+        return;
+    }
+    const confirmed = await customConfirm(`Tüm kullanıcılara ${amount} adet Çark Bileti ${add ? 'eklemek' : 'silmek'} istediğinizden emin misiniz?`);
+    if (confirmed) {
+        db.ref('users').once('value').then(snap => {
+            const updates = {};
+            snap.forEach(child => {
+                if (child.val().approved && !child.val().blocked && child.key !== "weizendtv") {
+                    let currentTickets = child.val().carkBileti || 0;
+                    currentTickets = add ? currentTickets + amount : Math.max(0, currentTickets - amount);
+                    updates['users/' + child.key + '/carkBileti'] = currentTickets;
+                }
+            });
+            db.ref().update(updates).then(() => displayMessage("Tüm kullanıcılara Çark Bileti işlemi başarıyla uygulandı."));
+        });
+    }
+}
+
+async function changeAllClickCatchTickets(add) {
+    const amount = parseInt(document.getElementById("globalClickCatchTicket").value);
+    if (isNaN(amount) || amount <= 0) {
+        displayMessage("Geçerli miktar girin.");
+        return;
+    }
+    const confirmed = await customConfirm(`Tüm kullanıcılara ${amount} adet Tıkla-Yakala Bileti ${add ? 'eklemek' : 'silmek'} istediğinizden emin misiniz?`);
+    if (confirmed) {
+        db.ref('users').once('value').then(snap => {
+            const updates = {};
+            snap.forEach(child => {
+                if (child.val().approved && !child.val().blocked && child.key !== "weizendtv") {
+                    let currentTickets = child.val().clickCatchTickets || 0;
+                    currentTickets = add ? currentTickets + amount : Math.max(0, currentTickets - amount);
+                    updates['users/' + child.key + '/clickCatchTickets'] = currentTickets;
+                }
+            });
+            db.ref().update(updates).then(() => {
+                 displayMessage("Tüm kullanıcılara Tıkla-Yakala Bileti işlemi başarıyla uygulandı.");
+                 // YENİ EKLENEN KOD BAŞLANGICI
+                 const actionText = add ? 'gönderdi' : 'sildi';
+                 const notificationMessage = `Admin, tüm kullanıcılara ${amount} Tıkla-Yakala Bileti ${actionText}.`;
+                 db.ref('globalNotifications').push({ message: notificationMessage, timestamp: firebase.database.ServerValue.TIMESTAMP });
+                 // YENİ EKLENEN KOD SONU
+            });
+        });
+    }
+}
+
 let globalNotificationTimeout;
 
 /**
@@ -10537,8 +10801,6 @@ async function startSoloClickCatchGame() {
     showGameCountdown(_actuallyStartSoloGame);
 }
 
-// ESKİ endSoloClickCatchGame FONKSİYONUNU SİLİP BUNU YAPIŞTIRIN
-
 async function endSoloClickCatchGame() {
     clickCatchGameActive = false;
     clearInterval(clickCatchTimerInterval);
@@ -10563,6 +10825,8 @@ async function endSoloClickCatchGame() {
         collectedMultipliers.forEach(m => specialItemsWonLog.push(`${m.value}x Çarpan (${m.uses} kullanım)`));
     }
     
+    // --- HATA BURADAYDI, DÜZELTİLDİ ---
+    // Kazanılan kart paketlerini de log listesine ekliyoruz.
     if (collectedCardPacks.length > 0) {
         const packNames = {
             'card_pack': 'Standart Kart Paketi', 'card_pack_normal': 'Bronz Kart Paketi',
@@ -10577,6 +10841,7 @@ async function endSoloClickCatchGame() {
             specialItemsWonLog.push(`+${packsByType[packType]} ${packNames[packType]}`);
         }
     }
+    // ------------------------------------
 
     let endMessage = `Oyun bitti! Bu turdaki skorun: <b>${clickCatchScore}</b>.`;
     if (specialItemsWonLog.length > 0) {
@@ -10613,45 +10878,32 @@ async function endSoloClickCatchGame() {
         let currentUserMultiplier = user.activeMultiplier || 1;
         let currentUserUses = user.multiplierRemainingUses || 0;
         let currentUserSource = user.multiplierSource || 'none';
-        const hasActiveMultiplier = currentUserSource !== 'none' && currentUserMultiplier > 1;
 
         for (const newMultiplier of collectedMultipliers) {
-            if (!hasActiveMultiplier) {
-                // Eğer kullanıcının hiç çarpanı yoksa, yenisini direkt ekle
+            if (currentUserSource === 'none') {
                 currentUserMultiplier = newMultiplier.value;
                 currentUserUses = newMultiplier.uses;
-                currentUserSource = 'store'; // T-Y'den gelenler mağaza gibi davransın
+                currentUserSource = 'store';
             } else if (newMultiplier.value > currentUserMultiplier) {
-                // Yeni çarpan daha GÜÇLÜYSE: Eskisini Kutu Hakkına çevir, yenisini ekle
                 const kutuHakkiDonusum = currentUserUses || 0;
                 updates[`users/${currentUser}/kutuHakki`] = (updates[`users/${currentUser}/kutuHakki`] || user.kutuHakki) + kutuHakkiDonusum;
-                logActivity('multiplierUpgraded', currentUser, { 
-                    source: "Tıkla-Yakala'dan",
-                    oldValue: currentUserMultiplier, 
-                    newValue: newMultiplier.value, 
-                    boxRights: kutuHakkiDonusum 
-                });
+                logActivity('multiplierUpgraded', currentUser, { oldValue: currentUserMultiplier, newValue: newMultiplier.value, boxRights: kutuHakkiDonusum });
                 currentUserMultiplier = newMultiplier.value;
                 currentUserUses = newMultiplier.uses;
+                } else if (item.type === 'health_potion') {
+    updates['inventory/health_potion'] = (user.inventory?.health_potion || 0) + itemValue;
+} else if (item.type === 'revival_stone') {
+    updates['inventory/revival_stone'] = (user.inventory?.revival_stone || 0) + itemValue;
             } else if (newMultiplier.value === currentUserMultiplier) {
-                // Çarpanlar AYNIYSA: Kullanım hakkını ekle
                 currentUserUses += newMultiplier.uses;
-                 logActivity('multiplierStacked', currentUser, {
-                    source: "Tıkla-Yakala'dan",
-                    value: newMultiplier.value,
-                    uses: newMultiplier.uses
-                });
             } else {
-                // YENİ ÇARPAN DAHA ZAYIFSA (İSTEDİĞİN SENARYO BURADA)
-                const kutuHakkiDonusum = newMultiplier.uses || 0; // Kullanım hakkı kadar Kutu Hakkı ver
+                const kutuHakkiDonusum = newMultiplier.uses || 0;
                 updates[`users/${currentUser}/kutuHakki`] = (updates[`users/${currentUser}/kutuHakki`] || user.kutuHakki) + kutuHakkiDonusum;
-                
-                // İSTEDİĞİN AKTİVİTE KAYDINI OLUŞTURAN KISIM
                 logActivity('multiplierConvertedToBoxRights', currentUser, { 
-                    rewardValue: newMultiplier.value, // Yakalanan çarpanın değeri (2x)
-                    boxRights: kutuHakkiDonusum, // Dönüşen Kutu Hakkı sayısı (2)
-                    keptMultiplierValue: currentUserMultiplier, // Korunan çarpan (3x)
-                    source: "Tıkla-Yakala'dan" // Kaynak
+                    rewardValue: newMultiplier.value, 
+                    boxRights: kutuHakkiDonusum, 
+                    keptMultiplierValue: currentUserMultiplier,
+                    source: "Tıkla-Yakala'dan"
                 });
             }
         }
@@ -10674,6 +10926,7 @@ async function endSoloClickCatchGame() {
         }
     }
 }
+
   // ... VE YERİNE BU YENİ VERSİYONU YAPIŞTIR
 async function openSelectWinnerModal() {
     if (!isAdmin) return;
@@ -11425,6 +11678,14 @@ function loadWheelHistory() {
     historyRef.on('value', callback);
 }
 
+  function openHelpModal() {
+  helpModal.style.display = 'flex';
+}
+
+function closeHelpModal() {
+  helpModal.style.display = 'none';
+}
+
   function closeAvatarSelectionModal() {
         avatarSelectionModal.style.display = 'none';
     }
@@ -11985,17 +12246,14 @@ function updateTotalBoxCount() {
     document.getElementById('totalBoxCountDisplay').textContent = total;
 }
 
-// ESKİSİNİ SİL, BU YENİSİNİ YAPIŞTIR
 function openHelpModal() {
-  document.body.classList.add('modal-open'); // BU SATIRI EKLE
   helpModal.style.display = 'flex';
 }
-
 function closeHelpModal() {
-  document.body.classList.remove('modal-open'); // BU SATIRI EKLE
   helpModal.style.display = 'none';
 }
 
+    // BU FONKSİYONU SCRIPT BLOĞUNUN İÇİNE EKLE
 // BU FONKSİYONU SCRIPT BLOĞUNUN İÇİNE EKLE
 function closeModalOnClickOutside(event) {
   // Eğer tıklanan elementin ID'si modalın kendisi ise (yani dıştaki karanlık alan ise)
@@ -12092,7 +12350,11 @@ function getIconForWheelLabel(label) {
     
     return '🎡'; // Varsayılan simge
 }
-      
+
+function closeWheelLegendModal() {
+    document.getElementById('wheelLegendModal').style.display = 'none';
+}
+
 function openWheelLegendModal() {
     document.body.classList.add('modal-open');
     const contentDiv = document.getElementById('wheelLegendContent');
@@ -14883,15 +15145,15 @@ const typeToName = {
         card_pack_altin: 'Altın Kart Paketi',
         card_pack_efsanevi: 'Efsanevi Kart Paketi'
     };
-
-// ESKİSİNİ SİL, BU YENİSİNİ YAPIŞTIR
+      
+// Giriş Serisi penceresini kapatır (Zamanlayıcıları temizler)
 function closeLoginStreakModal() {
-    document.body.classList.remove('modal-open'); // BU SATIRI EKLE
+    // YENİ EKLENEN KISIM: Aktif zamanlayıcıları temizle
     Object.values(activeStreakTimers).forEach(clearInterval);
     activeStreakTimers = {};
+    // YENİ EKLENEN KISIM SONU
     document.getElementById('loginStreakModal').style.display = 'none';
 }
-      
 // Ana butondaki kırmızı noktayı kontrol eder ve günceller
 async function checkLoginStreakIndicator() {
     if (isAdmin) return;
@@ -15116,9 +15378,8 @@ async function saveLoginStreakRewards() {
     }
 }
       
-// ESKİSİNİ TAMAMEN SİL VE BU YENİSİNİ YAPIŞTIR
-async function openLoginStreakModal() { // <-- DEĞİŞİKLİK BURADA: 'async' kelimesi eklendi
-    document.body.classList.add('modal-open');
+// --- YENİ KOD (BUNU YAPIŞTIR) ---
+async function openLoginStreakModal() {
     document.getElementById('loginStreakModal').style.display = 'flex';
     const container = document.getElementById('loginStreakRewardsContainer');
     const messageEl = document.getElementById('loginStreakMessage'); 
@@ -15157,6 +15418,7 @@ async function openLoginStreakModal() { // <-- DEĞİŞİKLİK BURADA: 'async' k
         const canClaimToday = now > (lastClaimTime + cooldownMs);
         const streakWillResetTime = lastClaimTime + resetMs;
 
+        // DÜZELTME BURADA: Geri sayım mantığı artık admin/kullanıcı ayrımı yapmıyor.
         if (lastClaimTime > 0 && now < streakWillResetTime) {
             startStreakResetCountdown(messageEl, streakWillResetTime);
         } else {
@@ -15190,7 +15452,7 @@ async function openLoginStreakModal() { // <-- DEĞİŞİKLİK BURADA: 'async' k
             const card = document.createElement('div');
             card.className = `streak-card ${status}`;
             card.id = `streak-card-${day}`;
-            
+            // DEĞİŞİKLİK BURADA
             card.innerHTML = `
                 <div class="day-number">${day}. Gün</div>
                 <img src="${dayData.imageUrl || 'https://i.hizliresim.com/pntfb6j.png'}" alt="${dayData.name}" class="reward-image">
@@ -16223,32 +16485,8 @@ function handleWeeklyPrizeTypeChange() {
         usesInput.classList.add('hidden');
     }
 }
-      // BU YENİ FONKSİYONU OLDUĞU GİBİ EKLE
-function listenForPendingActions() {
-    if (isAdmin) return;
-
-    const ref = db.ref(`users/${currentUser}/pendingActions/cardPacks`);
-    const callback = (snapshot) => {
-        if (!snapshot.exists()) return;
-
-        snapshot.forEach(childSnapshot => {
-            const action = childSnapshot.val();
-            if (action && action.type && action.count > 0) {
-                // Kart paketi açma fonksiyonunu gelen veriyle tetikle
-                startCardPackOpening(action.count, 'Admin Hediyesi', 1, action.type);
-                // İşlem yapıldıktan sonra bu kaydı kuyruktan sil ki tekrar tetiklenmesin.
-                childSnapshot.ref.remove();
-            }
-        });
-    };
-
-    if (activeListeners.pendingActions) {
-        activeListeners.pendingActions.ref.off('child_added', activeListeners.pendingActions.callback);
-    }
-    activeListeners.pendingActions = { ref, event: 'child_added', callback };
-    ref.on('child_added', callback);
-}
-
+// ★★★ YENİ EKLENECEK FONKSİYONLAR SONU ★★★
+      
 </script>
 </body>
 </html>
