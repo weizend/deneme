@@ -4494,14 +4494,15 @@ function loadBalanceAndBoxRights() {
         document.getElementById('storeCurrentUserKasaBalance').textContent = userData.kasaPuani || 0;
         document.getElementById('wheelTicketBalance').textContent = userData.carkBileti || 0;
 
-        // ★★★ YENİ EKLENEN KISIM BAŞLANGICI ★★★
-        // Eğer kullanıcı şu anda Canavar Savaşı sekmesindeyse,
-        // kullanıcı verilerindeki herhangi bir değişiklik (iksir ekleme/çıkarma gibi)
-        // savaş arayüzünü anında yeniden çizer.
-        if (currentActiveSection === 'monsterBattle') {
-            renderMonsterBattleUI();
+        // ★★★ ANLIK GÜNCELLEMEYİ SAĞLAYAN KRİTİK KOD BAŞLANGICI ★★★
+        // Kullanıcının verisi her güncellendiğinde, o an açık olan sekmeyi yeniden çiziyoruz.
+        if (currentActiveSection === 'cardCollection') {
+            loadCollectionAlbum(); // Kart koleksiyonu açıksa, albümü anında yenile.
         }
-        // ★★★ YENİ EKLENEN KISIM SONU ★★★
+        if (currentActiveSection === 'monsterBattle') {
+            renderMonsterBattleUI(); // Canavar Savaşı açıksa, arayüzü anında yenile.
+        }
+        // ★★★ ANLIK GÜNCELLEMEYİ SAĞLAYAN KRİTİK KOD SONU ★★★
 
         const allUsersSnap = await allUsersRef.once('value');
         const leaders = await calculateAllLeaders(allUsersSnap.val());
@@ -4526,7 +4527,7 @@ function loadBalanceAndBoxRights() {
     activeListeners.balance = { ref, event: 'value', callback };
     ref.on('value', callback);
 }
-
+      
 // --- YENİ EKLENECEK SİHİRLİ ROZET FONKSİYONU ---
 function getInlineBadgesHtmlFromStatus(userLeaderStatus) {
     if (!userLeaderStatus) return '';
@@ -5043,6 +5044,8 @@ function listenForAdminNotifications() {
       ref.orderByChild('timestamp').startAt(sessionStartTime).on('child_added', callback);
 }
 
+// BU YEPYENİ FONKSİYONU, SCRİPT BLOĞUNUZUN UYGUN BİR YERİNE EKLEYİN
+
 function listenForPendingActions() {
     if (isAdmin) return;
 
@@ -5232,11 +5235,13 @@ async function confirmSendItem(isAdding = true) {
             notificationMessage = `Yönetici, seçili avatarının '${statInfo.name}' özelliğine işlem yaptı ve ${value} iksir etkisi ${actionVerb}.`;
         
         } else if (type.startsWith('card_pack')) {
+            // ★★★ SORUNU ÇÖZEN DEĞİŞİKLİK BURADA ★★★
             if (!isAdding) throw new Error("Kart paketleri sadece gönderilebilir, silinemez.");
+            // Paketi direkt envantere eklemek yerine, kullanıcının "bekleyen eylemler" kuyruğuna yazıyoruz.
             await db.ref(`users/${targetUserForSend}/pendingActions/cardPacks`).push({ type: type, count: value });
             successMessage = `${targetUserForSend} kullanıcısına ${value} adet ${typeToName[type]} gönderildi ve açması için bildirim iletildi.`;
-            // ★★★ DÜZELTME BURADA: Bildirim mesajını siliyoruz, çünkü kart açma ekranı zaten bildirim görevi görecek.
-            // notificationMessage = `Yönetici sana ${value} adet ${typeToName[type]} hediye etti!`;
+            // Kullanıcıya ayrıca bir bildirim göndermeye gerek yok, çünkü paket açma ekranı zaten bir bildirim görevi görecek.
+            notificationMessage = null; 
         
         } else if (type === 'avatar') {
             if (!isAdding) throw new Error("Avatarlar sadece gönderilebilir, silinemez.");
@@ -13968,11 +13973,12 @@ let packsToReveal = [];
 let packsRevealedCount = 0;
 
 // MEVCUT startCardPackOpening FONKSİYONUNU SİLİP BUNU YAPIŞTIR
+
 async function startCardPackOpening(packCount, source = 'Bilinmeyen Kaynak', multiplier = 1, packType = 'card_pack') {
     if (packCount <= 0) return;
     
-    // Koleksiyon tamamlansa bile puan dönüşümü YAPAN KOD BLOKU KALDIRILDI.
-    // Artık her zaman paket açma ekranı gelecek.
+    // ★★★ DEĞİŞİKLİK BURADA: Koleksiyon tamamlansa bile paket açma ekranını göstermek için
+    // baştaki "if (userData.completedCollection)" kontrolünü tamamen kaldırdık. ★★★
 
     const masterCardsSnap = await db.ref('gameConfig/cardCollection').once('value');
     const masterCards = masterCardsSnap.val();
