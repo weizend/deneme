@@ -5314,6 +5314,8 @@ function handleBulkSendItemTypeChange(selectElement) {
 
 // MEVCUT confirmBulkSendItem FONKSİYONUNU SİL VE BUNU YAPIŞTIR
 
+// MEVCUT confirmBulkSendItem FONKSİYONUNU SİL VE BU YENİ VERSİYONU YAPIŞTIR
+
 async function confirmBulkSendItem(isAdding = true) {
     if (!isAdmin) return;
 
@@ -5330,8 +5332,12 @@ async function confirmBulkSendItem(isAdding = true) {
     }
 
     const itemText = `${value} ${typeToName[type]}`;
-    const actionText = isAdding ? "gönderdi" : "sildi";
-    const confirmed = await customConfirm(`Tüm aktif kullanıcılardan <b>${itemText}</b> ${actionText}. Bu işlem geri alınamaz. Emin misiniz?`);
+    
+    // ★★★ DEĞİŞİKLİK 1: Cümle yapısını düzeltmek için yeni değişkenler ★★★
+    const actionText = isAdding ? "gönderecek" : "silecek";
+    const targetText = isAdding ? "Tüm aktif kullanıcılara" : "Tüm aktif kullanıcılardan";
+
+    const confirmed = await customConfirm(`${targetText} <b>${itemText}</b> ${actionText}. Bu işlem geri alınamaz. Emin misiniz?`);
     if (!confirmed) return;
 
     const usersSnap = await db.ref('users').once('value');
@@ -5352,9 +5358,13 @@ async function confirmBulkSendItem(isAdding = true) {
                 crit_potion: 'crit_potion'
             };
             const dbKey = keyMap[type];
+            
+            // ★★★ DEĞİŞİKLİK 2: Kullanıcılara giden bildirimdeki cümle yapısı da düzeltildi ★★★
+            const individualTargetText = isAdding ? 'hesabına' : 'hesabından';
+            const individualVerb = isAdding ? 'hediye etti' : 'sildi';
 
             if (type.endsWith('_potion') || type === 'revival_stone') {
-                if (!user.inventory) user.inventory = {}; // Eğer envanter yoksa oluştur
+                if (!user.inventory) user.inventory = {};
                 updates[`${userPath}/inventory/${dbKey}`] = Math.max(0, (user.inventory[dbKey] || 0) + (value * op));
             } else if (dbKey) {
                 updates[`${userPath}/${dbKey}`] = Math.max(0, (user[dbKey] || 0) + (value * op));
@@ -5363,17 +5373,20 @@ async function confirmBulkSendItem(isAdding = true) {
                 }
             }
             
-            // Her kullanıcıya bildirim gönder
-            const notificationMessage = `Yönetici, tüm kullanıcılardan ${value} adet ${typeToName[type]} ${isAdding ? 'hediye etti' : 'sildi'}.`;
+            const notificationMessage = `Yönetici, tüm kullanıcıların ${individualTargetText} ${value} adet ${typeToName[type]} ${individualVerb}.`;
             const notifKey = db.ref().push().key;
             updates[`${userPath}/notifications/${notifKey}`] = { message: notificationMessage, timestamp: firebase.database.ServerValue.TIMESTAMP };
         }
     }
     
     await db.ref().update(updates);
-    const globalNotificationMessage = `Admin, tüm kullanıcılara ${itemText} ${actionText}.`;
+    
+    const globalVerb = isAdding ? 'gönderdi' : 'sildi';
+    const globalNotificationMessage = `Admin, ${targetText} ${itemText} ${globalVerb}.`;
     db.ref('globalNotifications').push({ message: globalNotificationMessage, timestamp: firebase.database.ServerValue.TIMESTAMP });
-    displayMessage(`İşlem başarılı!`);
+    
+    // ★★★ DEĞİŞİKLİK 3: Onay penceresi yerine üstte çıkan mavi bildirim kullanıldı ★★★
+    displayGlobalNotification(`İşlem başarılı! ${targetText} ${itemText} ${globalVerb}.`);
 }
     
   async function resetUser(username) {
