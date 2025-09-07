@@ -5046,30 +5046,33 @@ function listenForAdminNotifications() {
 
 // MEVCUT listenForPendingActions FONKSİYONUNU SİL VE BUNU YAPIŞTIR
 
-function listenForPendingActions() {
+// MEVCUT listenForPendingActions FONKSİYONUNU SİL VE BU YENİ VERSİYONU YAPIŞTİR
+
+async function listenForPendingActions() {
     if (isAdmin) return;
 
-    // Kullanıcının bekleyen kart paketi açma eylemlerini dinler
     const ref = db.ref(`users/${currentUser}/pendingActions/cardPacks`);
     
-    // ★★★ SORUNU ÇÖZEN DÜZELTME BURADA ★★★
-    // 'child_added' olayı, her zaman TEK BİR yeni eklenen çocuğu (snapshot) döndürür.
-    // Bu yüzden .forEach() döngüsüne gerek yoktur, bu hata veriyordu.
-    // Artık doğrudan gelen snapshot'ı işliyoruz.
-    const callback = (snapshot) => {
-        const action = snapshot.val(); // Gelen tekil görevin verisini al
+    // Fonksiyonu 'async' olarak güncelledik çünkü artık içinde 'await' kullanacağız.
+    const callback = async (snapshot) => {
+        const action = snapshot.val(); 
         
-        // Verinin geçerli olup olmadığını kontrol et
         if (action && action.type && action.count > 0) {
-            // Kart paketi açma ekranını tetikle
-            startCardPackOpening(action.count, 'Admin Hediyesi', 1, action.type);
+            // ÖNEMLİ: Görevi, tekrar tetiklenmemesi için en başta kuyruktan siliyoruz.
+            await snapshot.ref.remove();
+
+            // Kullanıcıya gösterilecek mesajı oluşturuyoruz.
+            const packName = typeToName[action.type] || 'Kart Paketi';
+            const message = `Yönetici size <b>${action.count} adet ${packName}</b> hediye etti. Paketi açmak için tamama tıklayın.`;
             
-            // İşlem tamamlandıktan sonra bu görevi kuyruktan sil ki tekrar çalışmasın
-            snapshot.ref.remove();
+            // Yeni customAlert fonksiyonumuzu çağırıyoruz ve kullanıcının "Tamam" butonuna basmasını BEKLİYORUZ.
+            await customAlert(message);
+
+            // Kullanıcı butona bastıktan SONRA paket açma ekranını tetikliyoruz.
+            startCardPackOpening(action.count, 'Admin Hediyesi', 1, action.type);
         }
     };
 
-    // Dinleyiciyi tekrar tekrar eklememek için kontrol
     if (activeListeners.pendingActions) {
         activeListeners.pendingActions.ref.off('child_added', activeListeners.pendingActions.callback);
     }
@@ -16432,6 +16435,30 @@ function handleWeeklyPrizeTypeChange() {
         usesInput.classList.add('hidden');
     }
 }
+
+      // BU YEPYENİ FONKSİYONU SCRIPT BLOĞUNUZUN UYGUN BİR YERİNE EKLEYİN
+
+function customAlert(message) {
+    return new Promise(resolve => {
+        const alertBox = document.createElement('div');
+        // Z-index'i yüksek tutarak diğer modalların üzerinde görünmesini sağlıyoruz.
+        alertBox.className = 'fixed inset-0 bg-black bg-opacity-80 flex justify-center items-center z-[99999]';
+        alertBox.innerHTML = `
+          <div class="bg-gray-800 p-8 rounded-xl shadow-2xl border border-blue-500 w-11/12 max-w-md text-center relative">
+            <p class="text-lg text-gray-300 mb-6">${message}</p>
+            <button id="alertOkBtn" class="w-full py-3 bg-blue-700 hover:bg-blue-600 text-white font-bold rounded-lg">Tamam</button>
+          </div>
+        `;
+        document.body.appendChild(alertBox);
+        
+        document.getElementById('alertOkBtn').onclick = (event) => { 
+            event.preventDefault(); 
+            alertBox.remove(); 
+            resolve(true); // "Tamam" butonuna basıldığında Promise'i çözerek beklemenin bitmesini sağlıyoruz.
+        };
+    });
+}
+      
 // ★★★ YENİ EKLENECEK FONKSİYONLAR SONU ★★★
       
 </script>
