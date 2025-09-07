@@ -5044,7 +5044,7 @@ function listenForAdminNotifications() {
       ref.orderByChild('timestamp').startAt(sessionStartTime).on('child_added', callback);
 }
 
-// BU YEPYENİ FONKSİYONU, SCRİPT BLOĞUNUZUN UYGUN BİR YERİNE EKLEYİN
+// MEVCUT listenForPendingActions FONKSİYONUNU SİL VE BUNU YAPIŞTIR
 
 function listenForPendingActions() {
     if (isAdmin) return;
@@ -5052,19 +5052,21 @@ function listenForPendingActions() {
     // Kullanıcının bekleyen kart paketi açma eylemlerini dinler
     const ref = db.ref(`users/${currentUser}/pendingActions/cardPacks`);
     
+    // ★★★ SORUNU ÇÖZEN DÜZELTME BURADA ★★★
+    // 'child_added' olayı, her zaman TEK BİR yeni eklenen çocuğu (snapshot) döndürür.
+    // Bu yüzden .forEach() döngüsüne gerek yoktur, bu hata veriyordu.
+    // Artık doğrudan gelen snapshot'ı işliyoruz.
     const callback = (snapshot) => {
-        if (!snapshot.exists()) return;
-
-        // Kuyruktaki her eylem için...
-        snapshot.forEach(childSnapshot => {
-            const action = childSnapshot.val();
-            if (action && action.type && action.count > 0) {
-                // ...kart paketi açma fonksiyonunu gelen veriyle tetikle...
-                startCardPackOpening(action.count, 'Admin Hediyesi', 1, action.type);
-                // ...ve işlem yapıldıktan sonra bu kaydı kuyruktan sil.
-                childSnapshot.ref.remove();
-            }
-        });
+        const action = snapshot.val(); // Gelen tekil görevin verisini al
+        
+        // Verinin geçerli olup olmadığını kontrol et
+        if (action && action.type && action.count > 0) {
+            // Kart paketi açma ekranını tetikle
+            startCardPackOpening(action.count, 'Admin Hediyesi', 1, action.type);
+            
+            // İşlem tamamlandıktan sonra bu görevi kuyruktan sil ki tekrar çalışmasın
+            snapshot.ref.remove();
+        }
     };
 
     // Dinleyiciyi tekrar tekrar eklememek için kontrol
