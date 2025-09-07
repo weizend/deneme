@@ -4993,15 +4993,75 @@ function customConfirm(message, callback) {
     });
 }
 
-  function notifyUser(username, message) {
+  // BU 3 YARDIMCI FONKSİYONU KODUNUZDA BULUNAN ESKİ VERSİYONLARIYLA DEĞİŞTİRİN
+
+function notifyUser(username, message) {
       if (!username || !message) return;
+      // Kullanıcının 'notifications' yoluna yeni bir bildirim ekliyoruz.
+      // push() ile benzersiz bir ID oluşturulur.
       const notifRef = db.ref(`users/${username}/notifications`).push();
       notifRef.set({
           message: message,
           timestamp: firebase.database.ServerValue.TIMESTAMP
       });
-  }
+}
 
+function listenForAdminNotifications() {
+      // Sadece o anki kullanıcıyı dinler.
+      const ref = db.ref(`users/${currentUser}/notifications`);
+      
+      const callback = snap => {
+          const notification = snap.val();
+          // Yeni bir bildirim geldiğinde...
+          if (notification && notification.message) {
+              // ...mesajı ekranda göster...
+              displayMessage(notification.message);
+              // ...ve gösterdikten sonra veritabanından sil ki tekrar görünmesin.
+              snap.ref.remove();
+          }
+      };
+      
+      // Dinleyiciyi tekrar tekrar eklememek için kontrol
+      if (activeListeners.adminNotifications) {
+        activeListeners.adminNotifications.ref.off('child_added', activeListeners.adminNotifications.callback);
+      }
+      activeListeners.adminNotifications = { 
+          ref: ref.orderByChild('timestamp').startAt(sessionStartTime), 
+          event: 'child_added', 
+          callback 
+      };
+      // 'child_added' ile sadece YENİ eklenen bildirimleri yakalarız.
+      ref.orderByChild('timestamp').startAt(sessionStartTime).on('child_added', callback);
+}
+
+function listenForPendingActions() {
+    if (isAdmin) return;
+
+    // Kullanıcının bekleyen kart paketi açma eylemlerini dinler
+    const ref = db.ref(`users/${currentUser}/pendingActions/cardPacks`);
+    
+    const callback = (snapshot) => {
+        if (!snapshot.exists()) return;
+
+        // Kuyruktaki her eylem için...
+        snapshot.forEach(childSnapshot => {
+            const action = childSnapshot.val();
+            if (action && action.type && action.count > 0) {
+                // ...kart paketi açma fonksiyonunu gelen veriyle tetikle...
+                startCardPackOpening(action.count, 'Admin Hediyesi', 1, action.type);
+                // ...ve işlem yapıldıktan sonra bu kaydı kuyruktan sil.
+                childSnapshot.ref.remove();
+            }
+        });
+    };
+
+    // Dinleyiciyi tekrar tekrar eklememek için kontrol
+    if (activeListeners.pendingActions) {
+        activeListeners.pendingActions.ref.off('child_added', activeListeners.pendingActions.callback);
+    }
+    activeListeners.pendingActions = { ref, event: 'child_added', callback };
+    ref.on('child_added', callback);
+}
 // --- YENİ BİLET YÖNETİM FONKSİYONLARI BİTİŞ ---
   // Admin işlemleri
   function openBlockDurationModal(username) { targetUserForBlock = username; document.getElementById('blockUserName').textContent = username; blockDurationModal.style.display = 'flex'; }
@@ -5091,86 +5151,103 @@ function handleSendItemTypeChange(selectElement) {
     }
 }
 
-// confirmSendItem fonksiyonunu bul ve bu yeni versiyonla değiştir.
+// MEVCUT confirmSendItem FONKSİYONUNU SİL VE BUNU YAPIŞTIR
+
 async function confirmSendItem(isAdding = true) {
     if (!isAdmin || !targetUserForSend) return;
-    
+
     const type = document.getElementById('sendItemType').value;
     if (!type) {
         displayMessage("Lütfen bir eşya tipi seçin.");
         return;
     }
 
-    let value, uses;
-    if (type === 'tempMultiplier') {
-        value = parseInt(document.getElementById('sendItemValue').value);
-        uses = parseInt(document.getElementById('sendItemUses').value);
-        if (isNaN(value) || isNaN(uses) || value <= 1 || uses <= 0) {
-            displayMessage("Lütfen geçerli bir Çarpan Değeri (>1) ve Kullanım Hakkı (>0) girin.");
-            return;
-        }
-    } else if (type !== 'avatar') {
-        value = parseInt(document.getElementById('sendItemValue').value);
-        if (isNaN(value) || value <= 0) {
-            displayMessage("Lütfen geçerli bir Miktar/Adet girin.");
-            return;
-        }
-    }
-
+    let value, uses, avatarName, avatarImageUrl;
     const actionText = isAdding ? "gönderilecek" : "silinecek";
+    const op = isAdding ? 1 : -1; // Ekleme için +1, silme için -1
+
+    // Önce inputları doğrula
+    try {
+        if (type === 'tempMultiplier') {
+            value = parseInt(document.getElementById('sendItemValue').value);
+            uses = parseInt(document.getElementById('sendItemUses').value);
+            if (isNaN(value) || isNaN(uses) || value <= 1 || uses <= 0) throw new Error("Lütfen geçerli bir Çarpan Değeri (>1) ve Kullanım Hakkı (>0) girin.");
+        } else if (type === 'avatar') {
+            avatarName = document.getElementById('sendItemAvatarName').value.trim();
+            avatarImageUrl = document.getElementById('sendItemAvatarImageUrl').value.trim();
+            if (!avatarName || !avatarImageUrl) throw new Error("Lütfen Avatar Adı ve Resim URL'si girin.");
+        } else if (type) {
+            value = parseInt(document.getElementById('sendItemValue').value);
+            if (isNaN(value) || value <= 0) throw new Error("Lütfen geçerli bir Miktar/Adet girin.");
+        }
+    } catch (error) {
+        displayMessage(error.message);
+        return;
+    }
+    
     const confirmed = await customConfirm(`${targetUserForSend} kullanıcısına seçilen eşya ${actionText}. Onaylıyor musunuz?`);
     if(!confirmed) return;
 
     const userRef = db.ref(`users/${targetUserForSend}`);
     let successMessage = '';
-    
-    // İşlemi transaction ile güvenli hale getiriyoruz
-    await userRef.transaction(userData => {
-        if (userData) {
-            const op = isAdding ? 1 : -1; // Ekleme için +1, silme için -1
+    let notificationMessage = '';
 
-            const keyMap = {
-                points: 'balance', kasaPuani: 'kasaPuani', boxRights: 'kutuHakki',
-                wheelTicket: 'carkBileti', clickCatchTicket: 'clickCatchTickets',
-                iflasShield: 'iflasShieldUses', wildcard: 'wildcards',
-                health_potion: 'health_potion', revival_stone: 'revival_stone',
-                defense_potion: 'defense_potion', damage_potion: 'damage_potion',
-                crit_potion: 'crit_potion'
-            };
+    try {
+        // Kart paketleri ve avatarlar transaction dışında, diğerleri içinde işlenir.
+        if (type.startsWith('card_pack')) {
+            if (!isAdding) throw new Error("Kart paketleri sadece gönderilebilir, silinemez.");
+            await db.ref(`users/${targetUserForSend}/pendingActions/cardPacks`).push({ type: type, count: value });
+            successMessage = `${targetUserForSend} kullanıcısına ${value} adet ${typeToName[type] || type} gönderildi ve açması için bildirim iletildi.`;
+            notificationMessage = `Yönetici sana ${value} adet ${typeToName[type] || type} hediye etti!`;
+        } else if (type === 'avatar') {
+            if (!isAdding) throw new Error("Avatarlar sadece gönderilebilir, silinemez.");
+            const newAvatarId = db.ref().push().key;
+            await userRef.child('avatars').child(newAvatarId).set({ id: newAvatarId, name: avatarName, imageUrl: avatarImageUrl });
+            successMessage = `${targetUserForSend} kullanıcısına '${avatarName}' avatarı başarıyla eklendi.`;
+            notificationMessage = `Yönetici sana '${avatarName}' avatarını hediye etti! Envanterinden seçebilirsin.`;
+        } else {
+            // Geri kalan tüm envanter eşyaları için transaction
+            await userRef.transaction(userData => {
+                if (userData) {
+                    const keyMap = {
+                        points: 'balance', kasaPuani: 'kasaPuani', boxRights: 'kutuHakki',
+                        wheelTicket: 'carkBileti', clickCatchTicket: 'clickCatchTickets',
+                        iflasShield: 'iflasShieldUses', wildcard: 'wildcards',
+                        health_potion: 'health_potion', revival_stone: 'revival_stone',
+                        defense_potion: 'defense_potion', damage_potion: 'damage_potion',
+                        crit_potion: 'crit_potion'
+                    };
+                    const dbKey = keyMap[type];
 
-            const dbKey = keyMap[type];
-
-            if (type === 'points') {
-                userData.balance = (userData.balance || 0) + (value * op);
-                // ÖNEMLİ: Puan silinirse kariyer puanı etkilenmez, sadece eklenirse etkilenir.
-                if (isAdding) {
-                    userData.kariyerPuani = (userData.kariyerPuani || 0) + value;
+                    if (type === 'points') {
+                        userData.balance = (userData.balance || 0) + (value * op);
+                        if (isAdding) userData.kariyerPuani = (userData.kariyerPuani || 0) + value;
+                        notificationMessage = `Yönetici hesabına ${value} Puan ${isAdding ? 'ekledi' : 'çıkardı'}.`;
+                    } else if (type.endsWith('_potion') || type === 'revival_stone') {
+                        if (!userData.inventory) userData.inventory = {};
+                        userData.inventory[dbKey] = Math.max(0, (userData.inventory[dbKey] || 0) + (value * op));
+                        notificationMessage = `Yönetici envanterine ${value} adet ${typeToName[type]} ${isAdding ? 'ekledi' : 'çıkardı'}.`;
+                    } else if (dbKey) {
+                        userData[dbKey] = Math.max(0, (userData[dbKey] || 0) + (value * op));
+                        notificationMessage = `Yönetici envanterine ${value} adet ${typeToName[type]} ${isAdding ? 'ekledi' : 'çıkardı'}.`;
+                    }
                 }
-            } else if (type.startsWith('card_pack')) {
-                // Kart paketleri sadece gönderilebilir, silinemez.
-                if (isAdding) {
-                    // Bu kısmı Sorun 3'te düzelteceğiz. Şimdilik böyle kalsın.
-                }
-            } else if (type.endsWith('_potion') || type === 'revival_stone') {
-                if (!userData.inventory) userData.inventory = {};
-                userData.inventory[dbKey] = Math.max(0, (userData.inventory[dbKey] || 0) + (value * op));
-            } else if (dbKey) {
-                userData[dbKey] = Math.max(0, (userData[dbKey] || 0) + (value * op));
-            }
+                return userData;
+            });
+            successMessage = `${targetUserForSend} kullanıcısının envanteri başarıyla güncellendi.`;
         }
-        return userData;
-    });
 
-    // Kart paketi gönderme işlemi transaction dışında yapılır.
-    if (isAdding && type.startsWith('card_pack')) {
-        await db.ref(`users/${targetUserForSend}/pendingActions/cardPacks`).push({ type: type, count: value });
-        successMessage = `${targetUserForSend} kullanıcısına ${value} adet ${typeToName[type] || type} gönderildi ve açması için bildirim iletildi.`;
-    } else {
-        successMessage = `${targetUserForSend} kullanıcısının envanteri güncellendi.`;
+        // Başarılı olursa bildirim gönder
+        if (notificationMessage) {
+            notifyUser(targetUserForSend, notificationMessage);
+        }
+        displayMessage(successMessage);
+        closeAdminSendItemModal();
+
+    } catch (error) {
+        console.error("Eşya gönderme hatası:", error);
+        displayMessage("İşlem sırasında bir hata oluştu: " + error.message);
     }
-    
-    displayMessage(successMessage);
-    closeAdminSendItemModal();
 }
       
 // Toplu Eşya Gönderme formunda tip seçimine göre inputları değiştirir
@@ -5189,7 +5266,8 @@ function handleBulkSendItemTypeChange(selectElement) {
     }
 }
 
-// confirmBulkSendItem fonksiyonunu bul ve bu yeni versiyonla değiştir.
+// MEVCUT confirmBulkSendItem FONKSİYONUNU SİL VE BUNU YAPIŞTIR
+
 async function confirmBulkSendItem(isAdding = true) {
     if (!isAdmin) return;
 
@@ -5198,15 +5276,15 @@ async function confirmBulkSendItem(isAdding = true) {
         displayMessage("Lütfen bir eşya tipi seçin.");
         return;
     }
-
-    let value = parseInt(document.getElementById('bulkSendItemValue').value);
+    
+    const value = parseInt(document.getElementById('bulkSendItemValue').value);
     if (isNaN(value) || value <= 0) {
         displayMessage("Lütfen geçerli bir Miktar/Adet girin.");
         return;
     }
 
     const itemText = `${value} ${typeToName[type]}`;
-    const actionText = isAdding ? "gönderilecek" : "silinecek";
+    const actionText = isAdding ? "gönderecek" : "silecek";
     const confirmed = await customConfirm(`Tüm aktif kullanıcılardan <b>${itemText}</b> ${actionText}. Bu işlem geri alınamaz. Emin misiniz?`);
     if (!confirmed) return;
 
@@ -5222,49 +5300,34 @@ async function confirmBulkSendItem(isAdding = true) {
             const keyMap = {
                 points: 'balance', kasaPuani: 'kasaPuani', boxRights: 'kutuHakki',
                 wheelTicket: 'carkBileti', clickCatchTicket: 'clickCatchTickets',
-                iflasShield: 'iflasShieldUses', wildcard: 'wildcards'
+                iflasShield: 'iflasShieldUses', wildcard: 'wildcards',
+                health_potion: 'health_potion', revival_stone: 'revival_stone',
+                defense_potion: 'defense_potion', damage_potion: 'damage_potion',
+                crit_potion: 'crit_potion'
             };
             const dbKey = keyMap[type];
 
-            if (dbKey) {
+            if (type.endsWith('_potion') || type === 'revival_stone') {
+                if (!user.inventory) user.inventory = {}; // Eğer envanter yoksa oluştur
+                updates[`${userPath}/inventory/${dbKey}`] = Math.max(0, (user.inventory[dbKey] || 0) + (value * op));
+            } else if (dbKey) {
                 updates[`${userPath}/${dbKey}`] = Math.max(0, (user[dbKey] || 0) + (value * op));
                 if (type === 'points' && isAdding) {
                     updates[`${userPath}/kariyerPuani`] = (user.kariyerPuani || 0) + value;
                 }
             }
+            
+            // Her kullanıcıya bildirim gönder
+            const notificationMessage = `Yönetici, tüm kullanıcılara ${value} adet ${typeToName[type]} ${isAdding ? 'hediye etti' : 'sildi'}.`;
+            const notifKey = db.ref().push().key;
+            updates[`${userPath}/notifications/${notifKey}`] = { message: notificationMessage, timestamp: firebase.database.ServerValue.TIMESTAMP };
         }
     }
     
     await db.ref().update(updates);
-    const notificationMessage = `Admin, tüm kullanıcılara ${itemText} ${actionText}.`;
-    db.ref('globalNotifications').push({ message: notificationMessage, timestamp: firebase.database.ServerValue.TIMESTAMP });
+    const globalNotificationMessage = `Admin, tüm kullanıcılara ${itemText} ${actionText}.`;
+    db.ref('globalNotifications').push({ message: globalNotificationMessage, timestamp: firebase.database.ServerValue.TIMESTAMP });
     displayMessage(`İşlem başarılı!`);
-}
-
-      // BU YENİ FONKSİYONU OLDUĞU GİBİ EKLE
-function listenForPendingActions() {
-    if (isAdmin) return;
-
-    const ref = db.ref(`users/${currentUser}/pendingActions/cardPacks`);
-    const callback = (snapshot) => {
-        if (!snapshot.exists()) return;
-
-        snapshot.forEach(childSnapshot => {
-            const action = childSnapshot.val();
-            if (action && action.type && action.count > 0) {
-                // Kart paketi açma fonksiyonunu gelen veriyle tetikle
-                startCardPackOpening(action.count, 'Admin Hediyesi', 1, action.type);
-                // İşlem yapıldıktan sonra bu kaydı kuyruktan sil ki tekrar tetiklenmesin.
-                childSnapshot.ref.remove();
-            }
-        });
-    };
-
-    if (activeListeners.pendingActions) {
-        activeListeners.pendingActions.ref.off('child_added', activeListeners.pendingActions.callback);
-    }
-    activeListeners.pendingActions = { ref, event: 'child_added', callback };
-    ref.on('child_added', callback);
 }
     
   async function resetUser(username) {
@@ -9000,19 +9063,6 @@ async function reorderDailyRewardItem(rewardId, newIndex) {
         activeListeners.dailyRewards = { ref, event: 'value', callback };
         ref.on('value', callback);
     }
-  
-    function listenForAdminNotifications() {
-      const ref = db.ref(`users/${currentUser}/notifications`);
-      const callback = snap => {
-          const notification = snap.val();
-          if (notification && notification.message) {
-              displayMessage(notification.message);
-              snap.ref.remove();
-          }
-      };
-      activeListeners.adminNotifications = { ref: ref.orderByChild('timestamp').startAt(sessionStartTime), event: 'child_added', callback };
-      ref.orderByChild('timestamp').startAt(sessionStartTime).on('child_added', callback);
-  }
   
     function openBoxStatsModal() {
       const listEl = document.getElementById('boxStatsList');
