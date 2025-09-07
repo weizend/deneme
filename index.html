@@ -5315,8 +5315,6 @@ function handleBulkSendItemTypeChange(selectElement) {
     }
 }
 
-// MEVCUT confirmBulkSendItem FONKSİYONUNU SİL VE BUNU YAPIŞTIR
-
 // MEVCUT confirmBulkSendItem FONKSİYONUNU SİL VE BU YENİ VERSİYONU YAPIŞTIR
 
 async function confirmBulkSendItem(isAdding = true) {
@@ -5336,8 +5334,8 @@ async function confirmBulkSendItem(isAdding = true) {
 
     const itemText = `${value} ${typeToName[type]}`;
     
-    // ★★★ DEĞİŞİKLİK 1: Cümle yapısını düzeltmek için yeni değişkenler ★★★
-    const actionText = isAdding ? "gönderecek" : "silecek";
+    // Cümle yapısını düzeltmek için yeni değişkenler
+    const actionText = isAdding ? "eklenecek" : "silinecek";
     const targetText = isAdding ? "Tüm aktif kullanıcılara" : "Tüm aktif kullanıcılardan";
 
     const confirmed = await customConfirm(`${targetText} <b>${itemText}</b> ${actionText}. Bu işlem geri alınamaz. Emin misiniz?`);
@@ -5362,9 +5360,8 @@ async function confirmBulkSendItem(isAdding = true) {
             };
             const dbKey = keyMap[type];
             
-            // ★★★ DEĞİŞİKLİK 2: Kullanıcılara giden bildirimdeki cümle yapısı da düzeltildi ★★★
             const individualTargetText = isAdding ? 'hesabına' : 'hesabından';
-            const individualVerb = isAdding ? 'hediye etti' : 'sildi';
+            const individualVerb = isAdding ? 'ekledi' : 'sildi';
 
             if (type.endsWith('_potion') || type === 'revival_stone') {
                 if (!user.inventory) user.inventory = {};
@@ -5384,55 +5381,12 @@ async function confirmBulkSendItem(isAdding = true) {
     
     await db.ref().update(updates);
     
-    const globalVerb = isAdding ? 'gönderdi' : 'sildi';
-    const globalNotificationMessage = `Admin, ${targetText} ${itemText} ${globalVerb}.`;
-    db.ref('globalNotifications').push({ message: globalNotificationMessage, timestamp: firebase.database.ServerValue.TIMESTAMP });
+    // İsteğine göre güncellenmiş global bildirim mesajları
+    const globalVerb = isAdding ? 'ekledi' : 'sildi';
+    const globalNotificationMessage = `Yönetici, tüm kullanıcılara ${itemText} ${globalVerb}.`;
     
-    // ★★★ DEĞİŞİKLİK 3: Onay penceresi yerine üstte çıkan mavi bildirim kullanıldı ★★★
-    displayGlobalNotification(`İşlem başarılı! ${targetText} ${itemText} ${globalVerb}.`);
-}
-    
-  async function resetUser(username) {
-    const confirmed = await customConfirm(`<b>${username}</b> kullanıcısını sıfırlamak istediğinize emin misiniz? Bu işlem kullanıcının puanlarını, biletlerini ve istatistiklerini sıfırlar!`);
-    if (!confirmed) return;
-
-    const updates = {};
-    const userRefPath = `users/${username}`;
-    
-    // Temel verileri sıfırla
-    updates[`${userRefPath}/balance`] = 0;
-    updates[`${userRefPath}/highestBalanceEver`] = 0;
-    updates[`${userRefPath}/totalSpentPoints`] = 0;
-    updates[`${userRefPath}/kutuHakki`] = 0;
-    updates[`${userRefPath}/carkBileti`] = 0;
-    updates[`${userRefPath}/clickCatchTickets`] = 0; // Tıkla-yakala bileti de sıfırlanıyor
-    updates[`${userRefPath}/clickCatchHighestScore`] = 0;
-    updates[`${userRefPath}/iflasShieldUses`] = 0;
-    
-    // Çarpanı sıfırla
-    updates[`${userRefPath}/activeMultiplier`] = 1;
-    updates[`${userRefPath}/multiplierSource`] = 'none';
-    updates[`${userRefPath}/multiplierRemainingUses`] = 0;
-    updates[`${userRefPath}/activeStoreMultiplierItemId`] = null;
-
-    // İstatistikleri sıfırla
-    updates[`${userRefPath}/boxesOpenedCount`] = 0;
-    updates[`${userRefPath}/surpriseBoxesOpened`] = 0;
-    updates[`${userRefPath}/iflasCount`] = 0;
-    updates[`${userRefPath}/iflasShieldUsedCount`] = 0;
-    updates[`${userRefPath}/multiplierFoundCount`] = 0;
-    updates[`${userRefPath}/storePurchasesCount`] = 0;
-
-    // Diğer durumları sıfırla
-    updates[`${userRefPath}/dailyRewardsClaimed`] = null;
-    
-    await db.ref().update(updates);
-    displayMessage(`${username} kullanıcısı başarıyla sıfırlandı.`);
-    
-    // Eğer o an yönetiliyorsa modalı yenile
-    if (selectedUserForManagement === username) {
-        openUserManagementModal(username);
-    }
+    // Pop-up yerine sadece üstteki mavi bandı kullan
+    displayGlobalNotification(globalNotificationMessage);
 }
 
     // YENİ AVATAR SİLME FONKSİYONU
@@ -5719,7 +5673,8 @@ function handleRowTypeChange(selectElement) {
     }
 }
 
-// YENİ VE GÜNCEL KODU BURADAN KOPYALA
+// MEVCUT openBox FONKSİYONUNU SİL VE BU YENİ VERSİYONU YAPIŞTIR
+
 async function openBox(index) {
     // --- SÜRPRİZ KUTU UYARI SİSTEMİ ---
     const lastSurpriseSnap = await db.ref('gameStats/lastSurpriseInfo').once('value');
@@ -5878,21 +5833,17 @@ async function openBox(index) {
         updates['iflasCount'] = (user.iflasCount || 0) + 1;
 
         if (shieldWasUsed) {
-            // Kalkan kullanıldıysa: Hem envanterden düşür hem de kullanım istatistiğini artır.
             updates['iflasShieldUses'] = user.iflasShieldUses - 1;
             updates['iflasShieldUsedCount'] = (user.iflasShieldUsedCount || 0) + 1;
             message = `İflas! 🛡️ Kalkanın seni korudu!`;
             boxUpdate.shieldUsed = true;
             boxUpdate.lostPoints = 0;
-            // Aktivite kaydını doğru bilgilerle oluştur.
             logActivity('iflas', currentUser, { shieldUsed: true, lostPoints: 0, boxId: box.id, multiplier: finalMultiplier, newBalance: user.balance });
         } else {
-            // Kalkan yoksa: Puanları sıfırla.
             updates['balance'] = 0;
             message = `İflas! Tüm puanların (-${lostPoints} puan) silindi.`;
             boxUpdate.shieldUsed = false;
             boxUpdate.lostPoints = lostPoints;
-            // Aktivite kaydını doğru bilgilerle oluştur.
             logActivity('iflas', currentUser, { shieldUsed: false, lostPoints: lostPoints, boxId: box.id, multiplier: finalMultiplier, newBalance: 0 });
         }
     } else if (box.content === 'surpriz') {
@@ -13995,9 +13946,8 @@ let packsRevealedCount = 0;
 async function startCardPackOpening(packCount, source = 'Bilinmeyen Kaynak', multiplier = 1, packType = 'card_pack') {
     if (packCount <= 0) return;
     
-    // ★★★ DEĞİŞİKLİK BURADA: Koleksiyon tamamlansa bile paket açma ekranını göstermek için
-    // baştaki "if (userData.completedCollection)" kontrolünü tamamen kaldırdık. ★★★
-
+    // Koleksiyonu tamamlayan kullanıcıların da paket açabilmesi için kontrol kaldırıldı.
+    
     const masterCardsSnap = await db.ref('gameConfig/cardCollection').once('value');
     const masterCards = masterCardsSnap.val();
     if (!masterCards) {
