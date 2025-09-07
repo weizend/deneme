@@ -1931,9 +1931,10 @@ body.modal-open .modal-content {
         </div>
         <div id="bulkSendItemFieldsContainer" class="space-y-3">
             </div>
-        <div class="mt-4">
-            <button onclick="confirmBulkSendItem()" class="w-full py-3 bg-green-800 hover:bg-green-700 text-white font-bold rounded-lg shadow-md">TÜM KULLANICILARA GÖNDER</button>
-        </div>
+        <div class="mt-4 flex gap-4">
+    <button onclick="confirmBulkSendItem(false)" class="flex-1 py-3 bg-red-800 hover:bg-red-700 text-white font-bold rounded-lg shadow-md">TÜM KULLANICILARDAN SİL</button>
+    <button onclick="confirmBulkSendItem(true)" class="flex-1 py-3 bg-green-800 hover:bg-green-700 text-white font-bold rounded-lg shadow-md">TÜM KULLANICILARA GÖNDER</button>
+</div>
     </div>
 </div>
       </div>
@@ -2196,9 +2197,10 @@ body.modal-open .modal-content {
         </div>
     </div>
 
-    <div class="mt-6">
-      <button id="confirmSendItemBtn" onclick="confirmSendItem()" class="w-full py-3 bg-green-700 hover:bg-green-600 text-white font-bold rounded-lg shadow-md">GÖNDER</button>
-    </div>
+    <div class="mt-6 flex gap-4">
+  <button onclick="confirmSendItem(false)" class="flex-1 py-3 bg-red-700 hover:bg-red-600 text-white font-bold rounded-lg shadow-md">SİL (-)</button>
+  <button onclick="confirmSendItem(true)" class="flex-1 py-3 bg-green-700 hover:bg-green-600 text-white font-bold rounded-lg shadow-md">GÖNDER (+)</button>
+</div>
   </div>
 </div>
 
@@ -4234,6 +4236,7 @@ async function afterLogin() {
     listenForForceUpdateSignal();
     listenForTradeNotifications();
     checkLoginStreakIndicator();
+    listenForPendingActions();
     listenForMonsterBattleData();
     listenForAvatarBaseStats();
     
@@ -5088,96 +5091,88 @@ function handleSendItemTypeChange(selectElement) {
     }
 }
 
-// Tekli Eşya Gönderme işlemini onaylar ve gerçekleştirir
-async function confirmSendItem() {
+// confirmSendItem fonksiyonunu bul ve bu yeni versiyonla değiştir.
+async function confirmSendItem(isAdding = true) {
     if (!isAdmin || !targetUserForSend) return;
     
     const type = document.getElementById('sendItemType').value;
     if (!type) {
-        displayMessage("Lütfen gönderilecek bir eşya tipi seçin.");
+        displayMessage("Lütfen bir eşya tipi seçin.");
         return;
     }
 
-    const updates = {};
-    let logDetails = { type: type };
-    let successMessage = '';
-    
-    const userRef = db.ref(`users/${targetUserForSend}`);
-    const userSnap = await userRef.once('value');
-    const userData = userSnap.val();
-
-    if (!userData) {
-        displayMessage("Kullanıcı bulunamadı.");
-        return;
-    }
-    
+    let value, uses;
     if (type === 'tempMultiplier') {
-        const value = parseInt(document.getElementById('sendItemValue').value);
-        const uses = parseInt(document.getElementById('sendItemUses').value);
+        value = parseInt(document.getElementById('sendItemValue').value);
+        uses = parseInt(document.getElementById('sendItemUses').value);
         if (isNaN(value) || isNaN(uses) || value <= 1 || uses <= 0) {
             displayMessage("Lütfen geçerli bir Çarpan Değeri (>1) ve Kullanım Hakkı (>0) girin.");
             return;
         }
-        updates.activeMultiplier = value;
-        updates.multiplierRemainingUses = uses;
-        updates.multiplierSource = 'store'; // Admin tarafından verildiğinde mağaza gibi davransın
-        logDetails.value = value;
-        logDetails.uses = uses;
-        successMessage = `${targetUserForSend} kullanıcısına ${uses} kullanımlık ${value}x Çarpan verildi.`;
-    } else if (type === 'avatar') {
-        const avatarName = document.getElementById('sendItemAvatarName').value.trim();
-        const avatarImageUrl = document.getElementById('sendItemAvatarImageUrl').value.trim();
-        if (!avatarName || !avatarImageUrl) {
-            displayMessage("Lütfen geçerli bir Avatar Adı ve Resim URL'si girin.");
-            return;
-        }
-        const newAvatarId = db.ref().push().key;
-        updates[`avatars/${newAvatarId}`] = { id: newAvatarId, name: avatarName, imageUrl: avatarImageUrl };
-        logDetails.name = avatarName;
-        successMessage = `${targetUserForSend} kullanıcısının koleksiyonuna '${avatarName}' avatarı eklendi.`;
-    } else {
-        const value = parseInt(document.getElementById('sendItemValue').value);
+    } else if (type !== 'avatar') {
+        value = parseInt(document.getElementById('sendItemValue').value);
         if (isNaN(value) || value <= 0) {
             displayMessage("Lütfen geçerli bir Miktar/Adet girin.");
             return;
         }
-        
-        const keyMap = {
-            points: 'balance', kasaPuani: 'kasaPuani', boxRights: 'kutuHakki',
-            wheelTicket: 'carkBileti', clickCatchTicket: 'clickCatchTickets',
-            iflasShield: 'iflasShieldUses', wildcard: 'wildcards',
-            card_pack: 'card_pack', card_pack_normal: 'card_pack_normal',
-            card_pack_gumus: 'card_pack_gumus', card_pack_altin: 'card_pack_altin',
-            card_pack_efsanevi: 'card_pack_efsanevi',
-            health_potion: 'health_potion', revival_stone: 'revival_stone',
-            defense_potion: 'defense_potion', damage_potion: 'damage_potion',
-            crit_potion: 'crit_potion'
-        };
-
-        const dbKey = keyMap[type];
-        if (type.startsWith('card_pack')) {
-            startCardPackOpening(value, 'Admin Paneli', 1, type);
-        } else if (type.endsWith('_potion') || type === 'revival_stone') {
-             if (!updates.inventory) updates.inventory = userData.inventory || {};
-             updates[`inventory/${dbKey}`] = (userData.inventory?.[dbKey] || 0) + value;
-        } else {
-            updates[dbKey] = (userData[dbKey] || 0) + value;
-        }
-
-        if (type === 'points') {
-            updates.kariyerPuani = (userData.kariyerPuani || 0) + value;
-        }
-        
-        logDetails.value = value;
-        successMessage = `${targetUserForSend} kullanıcısına ${value} adet ${typeToName[type] || type} gönderildi.`;
     }
 
-    await userRef.update(updates);
-    notifyUser(targetUserForSend, `Admin tarafından hesabınıza bir hediye gönderildi: ${successMessage}`);
+    const actionText = isAdding ? "gönderilecek" : "silinecek";
+    const confirmed = await customConfirm(`${targetUserForSend} kullanıcısına seçilen eşya ${actionText}. Onaylıyor musunuz?`);
+    if(!confirmed) return;
+
+    const userRef = db.ref(`users/${targetUserForSend}`);
+    let successMessage = '';
+    
+    // İşlemi transaction ile güvenli hale getiriyoruz
+    await userRef.transaction(userData => {
+        if (userData) {
+            const op = isAdding ? 1 : -1; // Ekleme için +1, silme için -1
+
+            const keyMap = {
+                points: 'balance', kasaPuani: 'kasaPuani', boxRights: 'kutuHakki',
+                wheelTicket: 'carkBileti', clickCatchTicket: 'clickCatchTickets',
+                iflasShield: 'iflasShieldUses', wildcard: 'wildcards',
+                health_potion: 'health_potion', revival_stone: 'revival_stone',
+                defense_potion: 'defense_potion', damage_potion: 'damage_potion',
+                crit_potion: 'crit_potion'
+            };
+
+            const dbKey = keyMap[type];
+
+            if (type === 'points') {
+                userData.balance = (userData.balance || 0) + (value * op);
+                // ÖNEMLİ: Puan silinirse kariyer puanı etkilenmez, sadece eklenirse etkilenir.
+                if (isAdding) {
+                    userData.kariyerPuani = (userData.kariyerPuani || 0) + value;
+                }
+            } else if (type.startsWith('card_pack')) {
+                // Kart paketleri sadece gönderilebilir, silinemez.
+                if (isAdding) {
+                    // Bu kısmı Sorun 3'te düzelteceğiz. Şimdilik böyle kalsın.
+                }
+            } else if (type.endsWith('_potion') || type === 'revival_stone') {
+                if (!userData.inventory) userData.inventory = {};
+                userData.inventory[dbKey] = Math.max(0, (userData.inventory[dbKey] || 0) + (value * op));
+            } else if (dbKey) {
+                userData[dbKey] = Math.max(0, (userData[dbKey] || 0) + (value * op));
+            }
+        }
+        return userData;
+    });
+
+    // Kart paketi gönderme işlemi transaction dışında yapılır.
+    if (isAdding && type.startsWith('card_pack')) {
+        await db.ref(`users/${targetUserForSend}/pendingActions/cardPacks`).push({ type: type, count: value });
+        successMessage = `${targetUserForSend} kullanıcısına ${value} adet ${typeToName[type] || type} gönderildi ve açması için bildirim iletildi.`;
+    } else {
+        successMessage = `${targetUserForSend} kullanıcısının envanteri güncellendi.`;
+    }
+    
     displayMessage(successMessage);
     closeAdminSendItemModal();
 }
-
+      
 // Toplu Eşya Gönderme formunda tip seçimine göre inputları değiştirir
 function handleBulkSendItemTypeChange(selectElement) {
     const type = selectElement.value;
@@ -5194,57 +5189,46 @@ function handleBulkSendItemTypeChange(selectElement) {
     }
 }
 
-// Toplu Eşya Gönderme işlemini onaylar ve gerçekleştirir
-async function confirmBulkSendItem() {
+// confirmBulkSendItem fonksiyonunu bul ve bu yeni versiyonla değiştir.
+async function confirmBulkSendItem(isAdding = true) {
     if (!isAdmin) return;
 
     const type = document.getElementById('bulkSendItemType').value;
     if (!type) {
-        displayMessage("Lütfen gönderilecek bir eşya tipi seçin.");
+        displayMessage("Lütfen bir eşya tipi seçin.");
         return;
     }
 
-    let value, uses;
-    if (type === 'tempMultiplier') {
-        value = parseInt(document.getElementById('bulkSendItemValue').value);
-        uses = parseInt(document.getElementById('bulkSendItemUses').value);
-        if (isNaN(value) || isNaN(uses) || value <= 1 || uses <= 0) {
-            displayMessage("Lütfen geçerli bir Çarpan Değeri (>1) ve Kullanım Hakkı (>0) girin.");
-            return;
-        }
-    } else {
-        value = parseInt(document.getElementById('bulkSendItemValue').value);
-        if (isNaN(value) || value <= 0) {
-            displayMessage("Lütfen geçerli bir Miktar/Adet girin.");
-            return;
-        }
+    let value = parseInt(document.getElementById('bulkSendItemValue').value);
+    if (isNaN(value) || value <= 0) {
+        displayMessage("Lütfen geçerli bir Miktar/Adet girin.");
+        return;
     }
 
-    const itemText = type === 'tempMultiplier' ? `${uses} kullanımlık ${value}x Çarpan` : `${value} ${typeToName[type]}`;
-    const confirmed = await customConfirm(`Tüm aktif kullanıcılara <b>${itemText}</b> göndermek istediğinizden emin misiniz?`);
+    const itemText = `${value} ${typeToName[type]}`;
+    const actionText = isAdding ? "gönderilecek" : "silinecek";
+    const confirmed = await customConfirm(`Tüm aktif kullanıcılardan <b>${itemText}</b> ${actionText}. Bu işlem geri alınamaz. Emin misiniz?`);
     if (!confirmed) return;
 
     const usersSnap = await db.ref('users').once('value');
     const allUsers = usersSnap.val();
     const updates = {};
+    const op = isAdding ? 1 : -1;
 
     for (const username in allUsers) {
         const user = allUsers[username];
         if (user.approved && !user.blocked && username !== "weizendtv") {
             const userPath = `/users/${username}`;
-            if (type === 'tempMultiplier') {
-                updates[`${userPath}/activeMultiplier`] = value;
-                updates[`${userPath}/multiplierRemainingUses`] = uses;
-                updates[`${userPath}/multiplierSource`] = 'store';
-            } else {
-                const keyMap = {
-                    points: 'balance', kasaPuani: 'kasaPuani', boxRights: 'kutuHakki',
-                    wheelTicket: 'carkBileti', clickCatchTicket: 'clickCatchTickets',
-                    iflasShield: 'iflasShieldUses', wildcard: 'wildcards'
-                };
-                const dbKey = keyMap[type];
-                updates[`${userPath}/${dbKey}`] = (user[dbKey] || 0) + value;
-                if (type === 'points') {
+            const keyMap = {
+                points: 'balance', kasaPuani: 'kasaPuani', boxRights: 'kutuHakki',
+                wheelTicket: 'carkBileti', clickCatchTicket: 'clickCatchTickets',
+                iflasShield: 'iflasShieldUses', wildcard: 'wildcards'
+            };
+            const dbKey = keyMap[type];
+
+            if (dbKey) {
+                updates[`${userPath}/${dbKey}`] = Math.max(0, (user[dbKey] || 0) + (value * op));
+                if (type === 'points' && isAdding) {
                     updates[`${userPath}/kariyerPuani`] = (user.kariyerPuani || 0) + value;
                 }
             }
@@ -5252,9 +5236,35 @@ async function confirmBulkSendItem() {
     }
     
     await db.ref().update(updates);
-    const notificationMessage = `Admin, tüm kullanıcılara ${itemText} gönderdi.`;
+    const notificationMessage = `Admin, tüm kullanıcılara ${itemText} ${actionText}.`;
     db.ref('globalNotifications').push({ message: notificationMessage, timestamp: firebase.database.ServerValue.TIMESTAMP });
-    displayMessage(`Tüm kullanıcılara ${itemText} başarıyla gönderildi.`);
+    displayMessage(`İşlem başarılı!`);
+}
+
+      // BU YENİ FONKSİYONU OLDUĞU GİBİ EKLE
+function listenForPendingActions() {
+    if (isAdmin) return;
+
+    const ref = db.ref(`users/${currentUser}/pendingActions/cardPacks`);
+    const callback = (snapshot) => {
+        if (!snapshot.exists()) return;
+
+        snapshot.forEach(childSnapshot => {
+            const action = childSnapshot.val();
+            if (action && action.type && action.count > 0) {
+                // Kart paketi açma fonksiyonunu gelen veriyle tetikle
+                startCardPackOpening(action.count, 'Admin Hediyesi', 1, action.type);
+                // İşlem yapıldıktan sonra bu kaydı kuyruktan sil ki tekrar tetiklenmesin.
+                childSnapshot.ref.remove();
+            }
+        });
+    };
+
+    if (activeListeners.pendingActions) {
+        activeListeners.pendingActions.ref.off('child_added', activeListeners.pendingActions.callback);
+    }
+    activeListeners.pendingActions = { ref, event: 'child_added', callback };
+    ref.on('child_added', callback);
 }
     
   async function resetUser(username) {
