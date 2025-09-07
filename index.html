@@ -1340,14 +1340,12 @@ body.modal-open .modal-content {
     <div class="bg-gray-800 p-6 rounded-xl shadow-lg border border-red-700 text-center">
         <div class="flex justify-center items-center gap-4 mb-6">
             <h3 class="text-yellow-400 text-3xl font-bold">Canavar Savaşı Arenası</h3>
+            <button onclick="openMonsterBattleInfoModal()" class="info-button" title="Canavar Savaşı Hakkında Bilgi">?</button>
             <div id="monsterBattleAdminToggles" class="hidden">
                 <button onclick="toggleMonsterAdminPanel()" class="py-1 px-3 text-sm bg-purple-600 hover:bg-purple-500 rounded-lg">Canavar Ayarları</button>
                 <button onclick="toggleAvatarAdminPanel()" class="py-1 px-3 text-sm bg-blue-600 hover:bg-blue-500 rounded-lg">Avatar Ayarları</button>
             </div>
         </div>
-        <button onclick="openMonsterBattleInfoModal()" class="info-button" title="Canavar Savaşı Hakkında Bilgi">
-    <i>i</i>
-</button>
 
         <div id="monsterAdminControls" class="hidden bg-gray-900/50 p-4 rounded-lg border border-purple-500 mb-6 text-left space-y-3">
     <h4 class="text-purple-300 text-xl font-bold text-center mb-2">Canavar Yönetim Paneli</h4>
@@ -5048,46 +5046,33 @@ function listenForAdminNotifications() {
       
 // MEVCUT listenForPendingActions FONKSİYONUNU SİL VE BU YENİ VERSİYONU YAPIŞTIR
 
+// MEVCUT listenForPendingActions FONKSİYONUNU SİL VE BU YENİ VERSİYONU YAPIŞTİR
+
 async function listenForPendingActions() {
     if (isAdmin) return;
 
     const ref = db.ref(`users/${currentUser}/pendingActions/cardPacks`);
     
+    // Fonksiyonu 'async' olarak güncelledik çünkü artık içinde 'await' kullanacağız.
     const callback = async (snapshot) => {
-        // Gelen görevin referansını alıyoruz.
-        const actionRef = snapshot.ref;
+        const action = snapshot.val(); 
         
-        // 1. Güvenli işlem (Transaction) başlatılıyor.
-        // Bu, birden fazla sekme olsa bile sadece BİR tanesinin bu işlemi tamamlayabilmesini garanti eder.
-        const { committed, snapshot: finalSnapshot } = await actionRef.transaction(currentAction => {
-            // Eğer başka bir sekme bu veriyi çoktan sildiyse (null ise), işlemi iptal et.
-            if (currentAction === null) {
-                return; // İşlem iptal edilir.
-            }
-            // Bu sekme yarışı kazandı. Veriyi silerek diğer sekmelerin almasını engelle.
-            return null; 
-        });
+        if (action && action.type && action.count > 0) {
+            // ÖNEMLİ: Görevi, tekrar tetiklenmemesi için en başta kuyruktan siliyoruz.
+            await snapshot.ref.remove();
 
-        // 2. Sadece yarışı kazanan sekme bu bloğun içine girebilir.
-        if (committed) {
-            const action = finalSnapshot.val(); // Silinmeden hemen önceki veriyi al
+            // Kullanıcıya gösterilecek mesajı oluşturuyoruz.
+            const packName = typeToName[action.type] || 'Kart Paketi';
+            const message = `Yönetici size <b>${action.count} adet ${packName}</b> hediye etti. Paketi açmak için tamama tıklayın.`;
             
-            // 3. İşte senin istediğin bildirim ekranı!
-            // Gelen verinin geçerli olup olmadığını kontrol et.
-            if (action && action.type && action.count > 0) {
-                const packName = typeToName[action.type] || 'Kart Paketi';
-                const message = `Yönetici size <b>${action.count} adet ${packName}</b> hediye etti. Paketi açmak için tamama tıklayın.`;
-                
-                // Kullanıcıya hediyesini bildiren ve onayını bekleyen o meşhur ekran.
-                await customAlert(message);
+            // Yeni customAlert fonksiyonumuzu çağırıyoruz ve kullanıcının "Tamam" butonuna basmasını BEKLİYORUZ.
+            await customAlert(message);
 
-                // 4. Kullanıcı "Tamam" butonuna bastıktan sonra paket açma ekranı başlar.
-                startCardPackOpening(action.count, 'Admin Hediyesi', 1, action.type);
-            }
+            // Kullanıcı butona bastıktan SONRA paket açma ekranını tetikliyoruz.
+            startCardPackOpening(action.count, 'Admin Hediyesi', 1, action.type);
         }
     };
 
-    // Dinleyiciyi tekrar tekrar eklememek için kontrol et ve kaydet
     if (activeListeners.pendingActions) {
         activeListeners.pendingActions.ref.off('child_added', activeListeners.pendingActions.callback);
     }
