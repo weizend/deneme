@@ -6292,7 +6292,7 @@ function renderActivityFeed(activities) {
                 : '';
 
             switch (activity.type) {
-                case 'monsterAttack': // YENİ EKLENEN CASE
+                case 'monsterAttack':
                     let attackMessage = `${userHtml}, <b class="text-red-300">${details.monsterName}</b>'a saldırdı: `;
                     attackMessage += details.isPlayerCrit ? `💥 <b class="text-green-300">+${details.damageDealt} KRİTİK HASAR</b>` : `<b class="text-green-300">+${details.damageDealt} hasar</b>`;
                     attackMessage += ` verdi, <b class="text-red-400">-${details.damageTaken} hasar</b> aldı.`;
@@ -6340,6 +6340,19 @@ function renderActivityFeed(activities) {
                     break;
                 case 'multiplierStacked':
                      message = `${userHtml}, <b>${details.boxId}</b> numaralı kutudan mevcut <b>${details.value}x</b> çarpanıyla aynı değerde bir çarpan daha buldu. Kullanım hakkı <b class="text-teal-300 font-bold">+1</b> artırıldı.`;
+                    break;
+                case 'multiplierConvertedToBoxRights':
+                case 'multiplierConvertedOnUsedOpen':
+                case 'multiplierConvertedOnUnusedOpen':
+                case 'dailyRewardMultiplierConverted':
+                    let sourceText = details.source ? `${details.source}'dan` : 'bir yerden';
+                    if (activity.type.includes('OnUsedOpen') || activity.type.includes('OnUnusedOpen')) {
+                        sourceText = `kutudan`;
+                    }
+                    
+                    const keptMultiplierText = details.keptMultiplierValue ? ` mevcut <b>${details.keptMultiplierValue}x</b> çarpanını koruyarak` : '';
+                    
+                    message = `${userHtml}, ${sourceText} kazandığı <b>${details.rewardValue || details.foundValue}x</b> çarpanı,${keptMultiplierText} <span class="text-lime-300 font-bold">+${details.boxRights} Kutu Hakkı</span>'na dönüştürdü.`;
                     break;
                 case 'openBox':
                     let openBoxMultiplierText = (details.multiplier && details.multiplier > 1) ? ` <span class="text-xs text-purple-400">(${details.multiplier}x çarpan kullandı)</span>` : ` <span class="text-xs text-gray-400">(çarpan kullanmadı)</span>`;
@@ -6396,9 +6409,6 @@ function renderActivityFeed(activities) {
                     break;
                 case 'multiplierUpgraded':
                     message = `${userHtml}, ${details.source}'dan <b>${details.newValue}x çarpan</b> kazandı ve mevcut ${details.oldValue}x çarpanını yükseltti. Eski çarpanından kalan kullanım hakları <b class="text-cyan-300 font-bold">+${details.boxRights} Kutu Hakkı</b> olarak envanterine eklendi.`;
-                    break;
-                case 'dailyRewardMultiplierConverted':
-                     message = `${userHtml}, Günlük Ödül'den <b>${details.rewardValue}x çarpanı</b> <b class="text-cyan-300 font-bold">+${details.boxRights} Kutu Hakkı</b>'na dönüştürdü. Envanterindeki daha yüksek olan <b class="text-purple-400">+${details.keptMultiplierUses} adet ${details.keptMultiplierValue}x çarpanı</b> envanterinde kaldı.`;
                     break;
                 case 'dailyReward':
                     let rewardText = '';
@@ -12097,7 +12107,7 @@ async function renderMonsterBattleUI() {
                 buffsEl.innerHTML += `<span class="text-sm" title="${buffInfo[buffKey].text}">${buffInfo[buffKey].icon}</span>`;
             }
         }
-        if(!hasActiveBuff) buffsEl.innerHTML = '<span class="text-xs text-gray-500">Avatarına iksirleri kullanmayı unutma! Ne kadar iksir o kadar hasar demek.</span>';
+        if(!hasActiveBuff) buffsEl.innerHTML = '<span class="text-xs text-gray-500">Avatarına iksir kullanmayı unutma! Ne kadar iksir o kadar hasar demek.</span>';
     }
 }
 
