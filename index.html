@@ -15269,14 +15269,12 @@ function addLoginStreakDay(dayData = { rewards: [] }, dayNumber = null) {
     }
 }
 
-// Belirli bir gün bloğuna yeni bir ödül ayar satırı ekler (YENİ FONKSİYON)
-// Belirli bir gün bloğuna yeni bir ödül ayar satırı ekler (YENİ FONKSİYON)
+// Admin paneline belirli bir gün için yeni bir ödül satırı ekler (GÜNCELLENMİŞ)
 function addRewardToDay(element, rewardData = {}) {
     // element bir buton veya direkt container olabilir, o yüzden en yakın container'ı bulalım
     const rewardsListContainer = element.matches('.rewards-list') ? element : element.closest('.p-4').querySelector('.rewards-list');
     
     const rewardRow = document.createElement('div');
-    // ★★★ DEĞİŞİKLİK BURADA: 'reward-entry' class'ını ekledik ★★★
     rewardRow.className = 'reward-entry grid grid-cols-1 sm:grid-cols-3 gap-2 p-2 bg-gray-900/50 rounded-md';
     rewardRow.innerHTML = `
         <select class="box-setting-input reward-type" onchange="handleAdminRewardTypeChange(this)">
@@ -15293,11 +15291,14 @@ function addRewardToDay(element, rewardData = {}) {
             <option value="card_pack_gumus" ${rewardData.type === 'card_pack_gumus' ? 'selected' : ''}>🥈 Gümüş Kart Paketi</option>
             <option value="card_pack_altin" ${rewardData.type === 'card_pack_altin' ? 'selected' : ''}>🥇 Altın Kart Paketi</option>
             <option value="card_pack_efsanevi" ${rewardData.type === 'card_pack_efsanevi' ? 'selected' : ''}>🏆 Efsanevi Kart Paketi</option>
-            <option value="health_potion">🧪 Can İksiri</option>
-<option value="revival_stone">💎 Dirilme Taşı</option>
-<option value="defense_potion">🛡️ Savunma İksiri</option>
-<option value="damage_potion">⚔️ Hasar İksiri</option>
-<option value="crit_potion">💥 Kritik Vuruş İksiri</option>
+            <option value="revival_stone" ${rewardData.type === 'revival_stone' ? 'selected' : ''}>💎 Dirilme Taşı</option>
+            <option value="health_potion" ${rewardData.type === 'health_potion' ? 'selected' : ''}>🧪 Can İksiri</option>
+            <option value="damage_potion" ${rewardData.type === 'damage_potion' ? 'selected' : ''}>⚔️ Hasar İksiri</option>
+            <option value="defense_potion" ${rewardData.type === 'defense_potion' ? 'selected' : ''}>🛡️ Savunma İksiri</option>
+            <option value="crit_potion" ${rewardData.type === 'crit_potion' ? 'selected' : ''}>💥 Kritik Vuruş İksiri</option>
+            <option value="crit_damage_potion" ${rewardData.type === 'crit_damage_potion' ? 'selected' : ''}>🎯 Kritik Hasar İksiri</option>
+            <option value="dodge_potion" ${rewardData.type === 'dodge_potion' ? 'selected' : ''}>💨 Sıyrılma Şansı İksiri</option>
+            <option value="pierce_potion" ${rewardData.type === 'pierce_potion' ? 'selected' : ''}>📌 Delici Şansı İksiri</option>
         </select>
         <div class="reward-fields-container grid grid-cols-2 gap-2 sm:col-span-2">
             </div>
@@ -15306,6 +15307,7 @@ function addRewardToDay(element, rewardData = {}) {
     const selectElement = rewardRow.querySelector('.reward-type');
     handleAdminRewardTypeChange(selectElement, rewardData); // Mevcut veriyi de gönder
 }
+      
 // Admin panelinde ödül tipi değiştikçe ilgili inputları gösterir/gizler (Güncellendi)
 function handleAdminRewardTypeChange(selectElement, rewardData = {}) {
     const type = selectElement.value;
