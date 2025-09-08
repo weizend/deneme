@@ -1943,8 +1943,15 @@ body.modal-open .modal-content {
         <div id="bulkSendItemFieldsContainer" class="space-y-3">
             </div>
         <div class="mt-4 flex gap-4">
+    <div class="mt-4 flex gap-4">
     <button onclick="confirmBulkSendItem(false)" class="flex-1 py-3 bg-red-800 hover:bg-red-700 text-white font-bold rounded-lg shadow-md">TÜM KULLANICILARDAN SİL</button>
     <button onclick="confirmBulkSendItem(true)" class="flex-1 py-3 bg-green-800 hover:bg-green-700 text-white font-bold rounded-lg shadow-md">TÜM KULLANICILARA GÖNDER</button>
+</div>
+
+<div class="mt-4 pt-4 border-t border-gray-600">
+    <button onclick="resetAllPotionBonuses()" class="w-full py-3 bg-pink-800 hover:bg-pink-700 text-white font-bold rounded-lg shadow-md">
+        🧪 Tüm Kullanıcıların İksir Bonuslarını Sıfırla
+    </button>
 </div>
     </div>
 </div>
@@ -16719,6 +16726,53 @@ async function resetUserPotionBonuses(username) {
     } catch (error) {
         console.error("İksir bonusları sıfırlanırken hata oluştu:", error);
         displayMessage("Bonuslar sıfırlanırken bir hata meydana geldi: " + error.message);
+    }
+}
+
+// BU YEPYENİ FONKSİYONU SCRIPT BLOĞUNUZA EKLEYİN
+
+/**
+ * Adminin, tüm kullanıcıların kalıcı iksir bonuslarını tek seferde sıfırlamasını sağlar.
+ */
+async function resetAllPotionBonuses() {
+    if (!isAdmin) return;
+
+    // Bu, çok güçlü bir işlem olduğu için net bir onay mesajı gösteriyoruz.
+    const confirmed = await customConfirm(
+        "TÜM kullanıcıların sahip olduğu KALICI iksir bonuslarını sıfırlamak istediğinize emin misiniz? Bu işlem geri alınamaz!"
+    );
+
+    if (!confirmed) return;
+
+    try {
+        const usersRef = db.ref('users');
+        const usersSnap = await usersRef.once('value');
+        const usersData = usersSnap.val();
+
+        // Tek seferde yapılacak tüm güncellemeleri bu objede toplayacağız.
+        const updates = {};
+        
+        if (usersData) {
+            for (const username in usersData) {
+                // Sadece iksir bonusu olan kullanıcılar için silme işlemi hazırla
+                if (usersData[username] && usersData[username].globalPotionBuffs) {
+                    // globalPotionBuffs anahtarını null olarak ayarlamak, onu veritabanından siler.
+                    updates[`/users/${username}/globalPotionBuffs`] = null;
+                }
+            }
+        }
+
+        // Eğer güncellenecek bir şey varsa (yani en az bir kullanıcının bonusu varsa)
+        if (Object.keys(updates).length > 0) {
+            await db.ref().update(updates);
+            displayMessage("Tüm kullanıcıların kalıcı iksir bonusları başarıyla sıfırlandı.");
+        } else {
+            displayMessage("Sıfırlanacak iksir bonusuna sahip hiçbir kullanıcı bulunamadı.");
+        }
+
+    } catch (error) {
+        console.error("Toplu iksir bonusu sıfırlama hatası:", error);
+        displayMessage("İşlem sırasında bir hata meydana geldi: " + error.message);
     }
 }
       
