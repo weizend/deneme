@@ -7195,15 +7195,51 @@ function closeAdminStoreModal() {
     resetStoreItemForm();
 }
   
-  function loadStoreItems() {
-    const ref = storeItemsRef;
-    const callback = snap => {
-        const items = snap.val();
-        renderStoreItems(items);
+  // ESKİ loadStoreItems FONKSİYONUNU SİLİN VE BUNU EKLEYİN
+
+function loadStoreItems() {
+    // Önceki dinleyicileri temizle
+    if (activeListeners.storeItems) {
+        activeListeners.storeItems.ref.off('value', activeListeners.storeItems.callback);
+    }
+    if (activeListeners.userPotionCounts) {
+        activeListeners.userPotionCounts.ref.off('value', activeListeners.userPotionCounts.callback);
+    }
+
+    const itemsRef = db.ref('storeItems');
+    const userRef = db.ref(`users/${currentUser}`);
+
+    // Tüm verileri tek bir yerde tutmak için bir obje
+    let combinedData = {
+        items: null,
+        userData: null
     };
-    activeListeners.storeItems = { ref, event: 'value', callback };
-    ref.on('value', callback);
-  }
+
+    // Her iki veri de yüklendiğinde mağazayı yeniden çizen fonksiyon
+    const renderIfReady = () => {
+        if (combinedData.items !== null && combinedData.userData !== null) {
+            renderStoreItems(combinedData.items, combinedData.userData);
+        }
+    };
+    
+    // 1. Mağaza ürünlerini dinle
+    const itemsCallback = snap => {
+        combinedData.items = snap.val();
+        renderIfReady();
+    };
+    activeListeners.storeItems = { ref: itemsRef, event: 'value', callback: itemsCallback };
+    itemsRef.on('value', itemsCallback);
+
+    // 2. Kullanıcının iksir satın alma sayılarını dinle
+    const userCallback = snap => {
+        combinedData.userData = snap.val();
+        renderIfReady();
+    };
+    activeListeners.userPotionCounts = { ref: userRef, event: 'value', callback: userCallback };
+    userRef.on('value', userCallback);
+}
+
+
   
   function updateStoreCountdowns() {
       const now = Date.now();
@@ -7243,8 +7279,9 @@ function closeAdminStoreModal() {
       }
   }
 
-  // DEĞİŞTİRİLECEK FONKSİYON
-function renderStoreItems(items) { 
+  // ESKİ renderStoreItems FONKSİYONUNU SİL VE BUNU EKLEYİN
+
+async function renderStoreItems(items, userData = {}) { 
     const gameContainer = document.getElementById('gameStoreItemsContainer');
     const specialContainer = document.getElementById('specialStoreItemsContainer');
     gameContainer.innerHTML = '';
@@ -7260,7 +7297,6 @@ function renderStoreItems(items) {
         return;
     }
     
-    // Ürünleri önce kategoriye ayır, sonra sırala
     let allItemsArray = Object.entries(items);
     let gameItems = allItemsArray
         .filter(([, item]) => item.type !== 'special')
@@ -7286,12 +7322,23 @@ function renderStoreItems(items) {
       }
     }
 
+    const potionPurchaseCounts = userData.potionPurchaseCounts || {};
+
     const renderItem = (itemData, container) => {
-        const [itemId, item] = itemData; // itemID ve item objesini ayır
+        const [itemId, item] = itemData;
         const isSpecial = item.type === 'special';
         const list = isSpecial ? specialItems : gameItems;
-        const index = list.findIndex(([id]) => id === itemId); // Kendi listesindeki index'i bul
+        const index = list.findIndex(([id]) => id === itemId);
         const isBestSeller = isSpecial ? itemId === bestSellerSpecialItemId : itemId === bestSellerGameItemId;
+
+        // ★★★ YENİ KOD BAŞLANGICI: DİNAMİK FİYAT HESAPLAMA ★★★
+        const isPotion = ['health_potion', 'damage_potion', 'defense_potion', 'crit_potion', 'crit_damage_potion', 'dodge_potion', 'pierce_potion'].includes(item.type);
+        let currentCost = item.cost;
+        if (isPotion && !isSpecial) { // İksirlerin fiyatı sadece normal mağazada artar
+            const purchaseCount = potionPurchaseCounts[itemId] || 0;
+            currentCost = item.cost + (purchaseCount * 1000);
+        }
+        // ★★★ YENİ KOD SONU ★★★
 
         const outOfStock = item.stock !== undefined && item.stock <= 0;
         let isExpired = false;
@@ -7335,6 +7382,9 @@ function renderStoreItems(items) {
         const popularityHtml = `<p class="text-blue-300 text-sm mb-2">🔥 ${item.purchaseCount || 0} kez satın alındı</p>`;
         const bestSellerBadge = isBestSeller ? `<span class="best-seller-badge absolute top-2 left-2 bg-yellow-500 text-gray-900 text-xs font-bold px-2 py-1 rounded-full z-10">ÇOK SATAN</span>` : '';
         const cardClass = isBestSeller ? 'glowing-border' : 'border-red-700';
+        
+        // ★★★ FİYAT GÖSTERİMİ GÜNCELLENDİ ★★★
+        const priceText = isSpecial ? `${currentCost} Kasa Puanı` : `${currentCost} Puan`;
 
         const cardDiv = document.createElement('div');
         cardDiv.className = `relative bg-gray-800 p-6 rounded-xl shadow-lg border-2 ${cardClass} text-center flex flex-col justify-between`;
@@ -7350,7 +7400,7 @@ function renderStoreItems(items) {
               ${countdownHtml}
               ${popularityHtml}
               <p class="text-gray-400 text-sm mb-2">Stok: ${item.stock !== undefined && item.stock !== null ? item.stock : 'Sınırsız'}</p>
-              <p class="text-green-400 text-2xl font-bold mb-4">${item.cost} Puan</p>
+              <p class="text-green-400 text-2xl font-bold mb-4" id="price-${itemId}">${priceText}</p>
               <button id="buy-btn-${itemId}" onclick="buyItem('${itemId}')" ${disabled ? 'disabled' : ''} class="w-full py-3 mt-auto ${disabled ? 'bg-gray-600 cursor-not-allowed' : 'bg-red-700 hover:bg-red-600'} text-white font-bold rounded-lg transition duration-300">
                 ${isExpired ? 'Süre Doldu' : (outOfStock ? 'Stok Tükendi' : 'Satın Al')}
               </button>
