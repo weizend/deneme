@@ -1384,6 +1384,14 @@ body.modal-open .modal-content {
             <option value="card_pack_gumus">🥈 Gümüş Kart Paketi</option>
             <option value="card_pack_altin">🥇 Altın Kart Paketi</option>
             <option value="card_pack_efsanevi">🏆 Efsanevi Kart Paketi</option>
+            <option value="revival_stone">💎 Dirilme Taşı</option>
+            <option value="health_potion">🧪 Can İksiri</option>
+            <option value="damage_potion">⚔️ Hasar İksiri</option>
+            <option value="defense_potion">🛡️ Savunma İksiri</option>
+            <option value="crit_potion">💥 Kritik Vuruş İksiri</option>
+            <option value="crit_damage_potion">🎯 Kritik Hasar İksiri</option>
+            <option value="dodge_potion">💨 Sıyrılma Şansı İksiri</option>
+            <option value="pierce_potion">📌 Delici Şansı İksiri</option>
         </select>
         <input type="number" id="adminMonsterKillReward" class="box-setting-input" placeholder="Miktar">
     </div>
@@ -1445,6 +1453,10 @@ body.modal-open .modal-content {
 <button id="reviveBtn" onclick="useRevivalStone()" class="hidden w-full py-3 bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-lg rounded-lg shadow-lg">
     💎 Dirilme Taşı Kullan
 </button>
+
+<div id="playerRankInfo" class="mt-4 text-center bg-gray-900/50 p-3 rounded-lg border border-gray-700">
+    <p class="text-gray-400">Sıralama ve hasar bilgin için önce canavara saldırmalısın.</p>
+</div>
             </div>
         </div>
     </div>
@@ -12144,7 +12156,6 @@ async function renderMonsterBattleUI() {
             const avatarUrl = data.lockedAvatarUrl || userData.selectedAvatar?.url || defaultAvatarUrl;
             const sanitizedId = sanitizeFirebaseKey(avatarUrl);
             
-            // ★★★ DEĞİŞİKLİK BURADA: Liderlik tablosundaki oyuncular için de genel bonuslar kullanılıyor. ★★★
             const globalBuffs = userData.globalPotionBuffs || {};
             const baseStats = avatarBaseStats[sanitizedId] || {};
             const userMaxHP = (baseStats.hp || 1000) + (globalBuffs.hp || 0);
@@ -12180,7 +12191,6 @@ async function renderMonsterBattleUI() {
         const playerAvatarUrl = playerBattleData?.lockedAvatarUrl || playerData.selectedAvatar?.url || defaultAvatarUrl;
         const sanitizedPlayerAvatarId = sanitizeFirebaseKey(playerAvatarUrl);
 
-        // ★★★ DEĞİŞİKLİK BURADA: Mevcut oyuncu için de genel bonuslar kullanılıyor. ★★★
         const globalBuffs = playerData.globalPotionBuffs || {};
         const baseStats = avatarBaseStats[sanitizedPlayerAvatarId] || {};
         const playerMaxHP = (baseStats.hp || 1000) + (globalBuffs.hp || 0);
@@ -12240,6 +12250,32 @@ async function renderMonsterBattleUI() {
         }
         if(!hasActiveBuff) buffsEl.innerHTML = '<span class="text-xs text-gray-500">Hesabına kalıcı iksir bonusları ekleyerek gücünü artırabilirsin!</span>';
     }
+
+    // --- YENİ EKLENEN KOD BAŞLANGICI ---
+    // Bu kod bloğu, oyuncunun kendi sıralama bilgisini günceller.
+    const playerRankInfoEl = document.getElementById('playerRankInfo');
+    if (playerRankInfoEl) {
+        if (playerBattleData) {
+            const playerIndex = sortedLeaderboard.findIndex(([username]) => username === currentUser);
+            const playerRank = playerIndex !== -1 ? playerIndex + 1 : 'N/A';
+            
+            playerRankInfoEl.innerHTML = `
+                <div class="flex justify-around items-center text-white">
+                    <div>
+                        <p class="text-sm text-gray-400">Sıralaman</p>
+                        <p class="font-bold text-lg">${playerRank}.</p>
+                    </div>
+                    <div>
+                        <p class="text-sm text-gray-400">Toplam Hasarın</p>
+                        <p class="font-bold text-lg text-yellow-300">${formatNumber(playerBattleData.totalDamage)}</p>
+                    </div>
+                </div>
+            `;
+        } else {
+            playerRankInfoEl.innerHTML = '<p class="text-gray-400">Sıralama ve hasar bilgin için önce canavara saldırmalısın.</p>';
+        }
+    }
+    // --- YENİ EKLENEN KOD SONU ---
 }
 
 // YENİ KODU YAPIŞTIR
@@ -16077,9 +16113,6 @@ async function loadAvatarStatsForAdmin() {
     }
 }
       
-/**
- * Adminin girdiği avatar istatistiklerini Firebase'e kaydeder.
- */
 async function saveAndSpawnMonster() {
     if (!isAdmin) return;
 
@@ -16097,18 +16130,25 @@ async function saveAndSpawnMonster() {
         minDamage: minDamage,
         maxDamage: maxDamage,
         defense: parseInt(document.getElementById('adminMonsterDefense').value) || 100,
-        critChance: parseInt(document.getElementById('adminMonsterCritChance').value) || 5,
-        critDamage: parseInt(document.getElementById('adminMonsterCritDamage').value) || 10,
-        dodgeChance: parseInt(document.getElementById('adminMonsterDodgeChance').value) || 5,
-        pierceChance: parseInt(document.getElementById('adminMonsterPierceChance').value) || 5,
+        critChance: parseFloat(document.getElementById('adminMonsterCritChance').value) || 5,
+        critDamage: parseFloat(document.getElementById('adminMonsterCritDamage').value) || 10,
+        dodgeChance: parseFloat(document.getElementById('adminMonsterDodgeChance').value) || 5,
+        pierceChance: parseFloat(document.getElementById('adminMonsterPierceChance').value) || 5,
         imageUrl: document.getElementById('adminMonsterImageUrl').value.trim(),
     };
     monsterDetails.currentHP = monsterDetails.maxHP;
 
+    // YÜZDELİ İKSİRLER İÇİN `parseInt` -> `parseFloat` DEĞİŞİKLİĞİ
+    const onKillRewardType = document.getElementById('adminMonsterKillRewardType').value;
+    const isPercentPotionOnKill = ['crit_potion', 'crit_damage_potion', 'dodge_potion', 'pierce_potion'].includes(onKillRewardType);
+    const onKillRewardValue = isPercentPotionOnKill
+        ? parseFloat(document.getElementById('adminMonsterKillReward').value)
+        : parseInt(document.getElementById('adminMonsterKillReward').value);
+
     const rewards = {
         onKillLeader: {
-            type: document.getElementById('adminMonsterKillRewardType').value,
-            value: parseInt(document.getElementById('adminMonsterKillReward').value) || 50000
+            type: onKillRewardType,
+            value: onKillRewardValue || 50000
         }
     };
     
@@ -16120,7 +16160,8 @@ async function saveAndSpawnMonster() {
         const tierRewards = [];
         tierRow.querySelectorAll('.rewards-list > .grid').forEach(rewardRow => {
             const type = rewardRow.querySelector('.reward-type').value;
-            const value = parseInt(rewardRow.querySelector('.reward-value').value);
+            const isPercentPotion = ['crit_potion', 'crit_damage_potion', 'dodge_potion', 'pierce_potion'].includes(type);
+            const value = isPercentPotion ? parseFloat(rewardRow.querySelector('.reward-value').value) : parseInt(rewardRow.querySelector('.reward-value').value);
             const chance = parseInt(rewardRow.querySelector('.reward-chance').value);
 
             if (type && !isNaN(value) && !isNaN(chance) && value > 0 && chance > 0) {
@@ -16145,43 +16186,6 @@ async function saveAndSpawnMonster() {
 
     displayMessage("Canavar başarıyla çağrıldı ve savaş başladı!");
     toggleMonsterAdminPanel();
-}
-
-async function saveAvatarStats() {
-    if (!isAdmin) return;
-    const editorEl = document.getElementById('avatarStatEditor');
-    const updates = {};
-    let hasError = false;
-
-    editorEl.querySelectorAll('[data-avatar-id]').forEach(avatarRow => {
-        const avatarId = avatarRow.dataset.avatarId;
-        const minDamage = parseInt(avatarRow.querySelector('.stat-min-damage').value) || 50;
-        const maxDamage = parseInt(avatarRow.querySelector('.stat-max-damage').value) || 100;
-
-        if (minDamage > maxDamage) {
-            displayMessage("Minimum hasar, maksimum hasardan büyük olamaz.");
-            hasError = true;
-            return;
-        }
-
-        const stats = {
-            hp: parseInt(avatarRow.querySelector('.stat-hp').value) || 1000,
-            minDamage: minDamage,
-            maxDamage: maxDamage,
-            defense: parseInt(avatarRow.querySelector('.stat-defense').value) || 10,
-            critChance: parseInt(avatarRow.querySelector('.stat-crit').value) || 5,
-            critDamage: parseInt(avatarRow.querySelector('.stat-crit-damage').value) || 10,
-            dodgeChance: parseInt(avatarRow.querySelector('.stat-dodge').value) || 5,
-            pierceChance: parseInt(avatarRow.querySelector('.stat-pierce').value) || 5,
-        };
-        updates[avatarId] = stats;
-    });
-
-    if (hasError) return;
-
-    await db.ref('gameConfig/avatarBaseStats').set(updates);
-    displayMessage("Tüm avatarların istatistikleri başarıyla kaydedildi.");
-    toggleAvatarAdminPanel();
 }
 
 function updateHealthBar(currentHP, maxHP) {
@@ -16221,26 +16225,31 @@ function addDamageTierRow(tierData = {}) {
     }
 }
 
-/**
- * YENİ: Belirli bir hasar aralığına yeni bir ödül seçeneği ekler.
- */
 function addRewardToTier(element, rewardData = {}) {
     const rewardsListContainer = element.matches('.rewards-list') ? element : element.closest('.damage-tier-row').querySelector('.rewards-list');
     const rewardRow = document.createElement('div');
     rewardRow.className = 'grid grid-cols-4 gap-2 items-center';
     rewardRow.innerHTML = `
         <select class="box-setting-input reward-type col-span-2">
-             <option value="points">💰 Puan</option>
-             <option value="boxRights">📦 Kutu Hakkı</option>
-             <option value="wheelTicket">🎫 Çark Bileti</option>
-             <option value="clickCatchTicket">🎟️ Tıkla-Yakala Bileti</option>
-             <option value="iflasShield">🛡️ İflas Kalkanı</option>
-             <option value="wildcard">🃏 Joker Kart</option>
-             <option value="card_pack">🎴 Standart Kart Paketi</option>
-             <option value="card_pack_normal">🥉 Bronz Kart Paketi</option>
-             <option value="card_pack_gumus">🥈 Gümüş Kart Paketi</option>
-             <option value="card_pack_altin">🥇 Altın Kart Paketi</option>
-             <option value="card_pack_efsanevi">🏆 Efsanevi Kart Paketi</option>
+            <option value="points">💰 Puan</option>
+            <option value="boxRights">📦 Kutu Hakkı</option>
+            <option value="wheelTicket">🎫 Çark Bileti</option>
+            <option value="clickCatchTicket">🎟️ Tıkla-Yakala Bileti</option>
+            <option value="iflasShield">🛡️ İflas Kalkanı</option>
+            <option value="wildcard">🃏 Joker Kart</option>
+            <option value="card_pack">🎴 Standart Kart Paketi</option>
+            <option value="card_pack_normal">🥉 Bronz Kart Paketi</option>
+            <option value="card_pack_gumus">🥈 Gümüş Kart Paketi</option>
+            <option value="card_pack_altin">🥇 Altın Kart Paketi</option>
+            <option value="card_pack_efsanevi">🏆 Efsanevi Kart Paketi</option>
+            <option value="revival_stone">💎 Dirilme Taşı</option>
+            <option value="health_potion">🧪 Can İksiri</option>
+            <option value="damage_potion">⚔️ Hasar İksiri</option>
+            <option value="defense_potion">🛡️ Savunma İksiri</option>
+            <option value="crit_potion">💥 Kritik Vuruş İksiri</option>
+            <option value="crit_damage_potion">🎯 Kritik Hasar İksiri</option>
+            <option value="dodge_potion">💨 Sıyrılma Şansı İksiri</option>
+            <option value="pierce_potion">📌 Delici Şansı İksiri</option>
         </select>
         <input type="number" class="box-setting-input reward-value" placeholder="Miktar" value="${rewardData.value || ''}">
         <div class="flex items-center gap-1">
@@ -16315,7 +16324,7 @@ async function attackMonster() {
         };
         const monsterStats = battleData.monsterDetails;
 
-        // --- YENİ SAVAŞ HESAPLAMA MANTIĞI ---
+        // --- SAVAŞ HESAPLAMA MANTIĞI ---
 
         // Oyuncunun Saldırısı
         let finalDamageToMonster = 0;
@@ -16325,7 +16334,7 @@ async function attackMonster() {
         const playerAttackRoll = Math.random() * 100;
         if (playerAttackRoll < playerStats.pierceChance) {
             playerAttackType = 'pierce';
-            finalDamageToMonster = randomPlayerDamage; // Savunma ve sıyrılma yok sayılır
+            finalDamageToMonster = randomPlayerDamage; 
         } else if (playerAttackRoll < playerStats.pierceChance + playerStats.critChance) {
             playerAttackType = 'crit';
             const critBonus = Math.floor(playerStats.maxDamage * (playerStats.critDamage / 100));
@@ -16345,9 +16354,8 @@ async function attackMonster() {
         const monsterAttackRoll = Math.random() * 100;
         if (monsterAttackRoll < (monsterStats.pierceChance || 5)) {
             monsterAttackType = 'pierce';
-            finalDamageToPlayer = randomMonsterDamage; // Oyuncunun savunması ve sıyrılması yok sayılır
+            finalDamageToPlayer = randomMonsterDamage; 
         } else {
-            // Sadece delici değilse sıyrılma şansı vardır
             if (Math.random() * 100 < playerStats.dodgeChance) {
                 didPlayerDodge = true;
                 finalDamageToPlayer = 0;
@@ -16364,9 +16372,7 @@ async function attackMonster() {
             }
         }
         
-        // Ödül hesaplama kısmı aynı kalıyor
         let randomReward = null;
-        let rewardMessage = '';
         const damageTiers = (battleData.damageTiers || []).sort((a, b) => b.minDamage - a.minDamage);
         for (const tier of damageTiers) {
             if (finalDamageToMonster >= tier.minDamage) {
@@ -16402,25 +16408,34 @@ async function attackMonster() {
         });
         
         const updates = {};
+        let rewardMessage = '';
         let rewardLogText = '';
         if (randomReward) {
             const { type, value } = randomReward;
             const prizeName = typeToName[type] || 'Ödül';
             rewardMessage = ` Ek olarak <b class="text-green-400">+${value} ${prizeName}</b> kazandın!`;
             rewardLogText = `+${value} ${prizeName}`;
-            const dbKeyMap = { points: 'balance', boxRights: 'kutuHakki', wheelTicket: 'carkBileti', clickCatchTicket: 'clickCatchTickets', iflasShield: 'iflasShieldUses', wildcard: 'wildcards' };
+            const dbKeyMap = { points: 'balance', boxRights: 'kutuHakki', wheelTicket: 'carkBileti', clickCatchTicket: 'clickCatchTickets', iflasShield: 'iflasShieldUses', wildcard: 'wildcards', revival_stone: 'inventory/revival_stone' };
+            const statKeyMap = { health_potion: 'hp', damage_potion: 'damage', defense_potion: 'defense', crit_potion: 'critChance', crit_damage_potion: 'critDamage', dodge_potion: 'dodgeChance', pierce_potion: 'pierceChance' };
             if (type === 'points') {
                 updates[`/users/${currentUser}/balance`] = (userData.balance || 0) + value;
                 updates[`/users/${currentUser}/kariyerPuani`] = (userData.kariyerPuani || 0) + value;
             } else if (type.startsWith('card_pack')) {
                  startCardPackOpening(value, 'Canavar Savaşı', 1, type);
             } else if (dbKeyMap[type]) {
-                updates[`/users/${currentUser}/${dbKeyMap[type]}`] = (userData[dbKeyMap[type]] || 0) + value;
+                const path = `/users/${currentUser}/${dbKeyMap[type]}`;
+                const pathParts = dbKeyMap[type].split('/');
+                const currentValue = pathParts.length > 1 ? (userData.inventory?.[pathParts[1]] || 0) : (userData[pathParts[0]] || 0);
+                updates[path] = currentValue + value;
+            } else if (statKeyMap[type]) {
+                const statKey = statKeyMap[type];
+                const path = `/users/${currentUser}/globalPotionBuffs/${statKey}`;
+                const currentValue = userData.globalPotionBuffs?.[statKey] || 0;
+                updates[path] = currentValue + value;
             }
         }
         if (Object.keys(updates).length > 0) await db.ref().update(updates);
         
-        // GÜNCELLENMİŞ AKTİVİTE KAYDI
         logActivity('monsterAttack', currentUser, {
             monsterName: monsterStats.name,
             damageDealt: finalDamageToMonster,
@@ -16452,7 +16467,9 @@ async function attackMonster() {
                 await winnerRef.transaction(winnerData => {
                     if (winnerData) {
                          const { type, value } = prize;
-                         const dbKeyMap = { points: 'balance', boxRights: 'kutuHakki', wheelTicket: 'carkBileti', clickCatchTicket: 'clickCatchTickets', iflasShield: 'iflasShieldUses', wildcard: 'wildcards' };
+                         const dbKeyMap = { points: 'balance', boxRights: 'kutuHakki', wheelTicket: 'carkBileti', clickCatchTicket: 'clickCatchTickets', iflasShield: 'iflasShieldUses', wildcard: 'wildcards', revival_stone: 'inventory/revival_stone' };
+                         const statKeyMap = { health_potion: 'hp', damage_potion: 'damage', defense_potion: 'defense', crit_potion: 'critChance', crit_damage_potion: 'critDamage', dodge_potion: 'dodgeChance', pierce_potion: 'pierceChance' };
+                         
                          if (type === 'points') {
                             winnerData.balance = (winnerData.balance || 0) + value;
                             winnerData.kariyerPuani = (winnerData.kariyerPuani || 0) + value;
@@ -16462,7 +16479,17 @@ async function attackMonster() {
                              if (!winnerData.pendingActions.cardPacks) winnerData.pendingActions.cardPacks = {};
                              winnerData.pendingActions.cardPacks[packKey] = { type: type, count: value };
                          } else if (dbKeyMap[type]) {
-                             winnerData[dbKeyMap[type]] = (winnerData[dbKeyMap[type]] || 0) + value;
+                             const pathParts = dbKeyMap[type].split('/');
+                             if (pathParts.length > 1) {
+                                 if (!winnerData[pathParts[0]]) winnerData[pathParts[0]] = {};
+                                 winnerData[pathParts[0]][pathParts[1]] = (winnerData[pathParts[0]][pathParts[1]] || 0) + value;
+                             } else {
+                                 winnerData[dbKeyMap[type]] = (winnerData[dbKeyMap[type]] || 0) + value;
+                             }
+                         } else if (statKeyMap[type]) {
+                            const statKey = statKeyMap[type];
+                            if (!winnerData.globalPotionBuffs) winnerData.globalPotionBuffs = {};
+                            winnerData.globalPotionBuffs[statKey] = (winnerData.globalPotionBuffs[statKey] || 0) + value;
                          }
                     }
                     return winnerData;
