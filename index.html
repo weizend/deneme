@@ -6332,23 +6332,36 @@ function renderActivityFeed(activities) {
                 : '';
 
             switch (activity.type) {
-                case 'monsterDefeated': // YENİ EKLENDİ
+                case 'monsterDefeated':
                     message = `Canavar Savaşı bitti! <b class="text-red-300">${details.monsterName}</b> yok edildi. En yüksek hasarı veren <b class="text-yellow-300">${details.winner}</b>, <b class="text-green-300">${details.prize}</b> ile ödüllendirildi.`;
                     break;
-                case 'monsterAttack': // YENİ EKLENDİ
-                    let attackMessage = `${userHtml}, <b class="text-red-300">${details.monsterName}</b>'a saldırdı: `;
-                    attackMessage += details.isPlayerCrit ? `💥 <b class="text-green-300">+${details.damageDealt} KRİTİK HASAR</b>` : `<b class="text-green-300">+${details.damageDealt} hasar</b>`;
-                    attackMessage += ` verdi, <b class="text-red-400">-${details.damageTaken} hasar</b> aldı.`;
+                case 'monsterAttack':
+                    let attackMessage = `${userHtml}, <b class="text-red-300">${details.monsterName}</b>'a saldırdı. `;
+                    
+                    if (details.didMonsterDodge) {
+                        attackMessage += `Fakat canavar saldırıdan <b class="text-cyan-300">sıyrıldı!</b>`;
+                    } else {
+                        attackMessage += details.isPlayerCrit ? `💥 <b class="text-green-300">+${details.damageDealt} KRİTİK HASAR</b>` : `<b class="text-green-300">+${details.damageDealt} hasar</b>`;
+                        attackMessage += details.isPlayerPierce ? ' <span class="text-xs text-purple-400">(Delici Vuruş)</span>' : '';
+                        attackMessage += ` verdi. `;
+                    }
+
+                    if (details.didPlayerDodge) {
+                        attackMessage += `Canavarın saldırısından <b class="text-cyan-300">sıyrıldı!</b>`;
+                    } else {
+                         attackMessage += details.isMonsterCrit ? `💥 <b class="text-red-400">-${details.damageTaken} KRİTİK HASAR</b>` : `<b class="text-red-400">-${details.damageTaken} hasar</b>`;
+                         attackMessage += ` aldı.`;
+                    }
+                    
                     if (details.rewardWon) {
-                        attackMessage += ` <b class="text-cyan-300">${details.rewardWon}</b> kazandı.`;
+                        attackMessage += ` Ek olarak <b class="text-yellow-300">${details.rewardWon}</b> kazandı.`;
                     }
                     if (details.playerDied) {
                         attackMessage += ` <b class="text-black bg-red-500 px-1 rounded">MAĞLUP OLDU!</b>`;
-                    } else {
-                        attackMessage += ` (Kalan Can: ${details.playerRemainingHP})`;
                     }
                     message = attackMessage;
                     break;
+                // ... diğer case'ler aynı kalacak ...
                 case 'weeklyChampion': 
                     message = `Tıkla-Yakala haftası sona erdi! <b class="text-amber-300">${details.winner}</b>, <b class="text-white">${details.score} skorla</b> şampiyon oldu ve <b class="text-green-300">${details.prize}</b> kazandı. Tüm katılımcılara +1 bilet hediye edildi.`;
                     break;
@@ -16300,14 +16313,13 @@ async function attackMonster() {
 
         // --- SAVAŞ HESAPLAMALARI ---
         let finalDamageToMonster = 0;
-        let isPlayerCrit = false; // DEĞİŞİKLİK: Kritik vuruş durumunu saklamak için
-
         const isPlayerPierce = Math.random() * 100 < playerStats.pierceChance;
         const canMonsterDodge = !isPlayerPierce && (Math.random() * 100 < (monsterStats.dodgeChance || 5));
         
+        let isPlayerCrit = false;
         if (!canMonsterDodge) {
             const randomPlayerDamage = Math.floor(Math.random() * (playerStats.maxDamage - playerStats.minDamage + 1)) + playerStats.minDamage;
-            isPlayerCrit = Math.random() * 100 < playerStats.critChance; // DEĞİŞİKLİK: Kritik vuruş burada belirleniyor
+            isPlayerCrit = Math.random() * 100 < playerStats.critChance;
             const critBonus = isPlayerCrit ? Math.floor(playerStats.maxDamage * (playerStats.critDamage / 100)) : 0;
             const playerTotalDamage = randomPlayerDamage + critBonus;
             finalDamageToMonster = Math.max(1, playerTotalDamage - monsterStats.defense);
@@ -16316,10 +16328,11 @@ async function attackMonster() {
         let finalDamageToPlayer = 0;
         const isMonsterPierce = Math.random() * 100 < (monsterStats.pierceChance || 5);
         const canPlayerDodge = !isMonsterPierce && (Math.random() * 100 < playerStats.dodgeChance);
-
+        
+        let isMonsterCrit = false;
         if (!canPlayerDodge) {
             const randomMonsterDamage = Math.floor(Math.random() * (monsterStats.maxDamage - monsterStats.minDamage + 1)) + monsterStats.minDamage;
-            const isMonsterCrit = Math.random() * 100 < (monsterStats.critChance || 5);
+            isMonsterCrit = Math.random() * 100 < (monsterStats.critChance || 5);
             const critBonus = isMonsterCrit ? Math.floor(monsterStats.maxDamage * (monsterStats.critDamage / 100)) : 0;
             const monsterTotalDamage = randomMonsterDamage + critBonus;
             finalDamageToPlayer = Math.max(1, monsterTotalDamage - playerStats.defense);
@@ -16390,18 +16403,23 @@ async function attackMonster() {
         }
         if (Object.keys(updates).length > 0) await db.ref().update(updates);
         
-        // YENİ: Saldırı logunu oluşturuyoruz
+        // GÜNCELLENMİŞ AKTİVİTE KAYDI
         logActivity('monsterAttack', currentUser, {
             monsterName: monsterStats.name,
             damageDealt: finalDamageToMonster,
             damageTaken: finalDamageToPlayer,
             isPlayerCrit: isPlayerCrit,
+            isPlayerPierce: isPlayerPierce,
+            didMonsterDodge: canMonsterDodge,
+            isMonsterCrit: isMonsterCrit,
+            isMonsterPierce: isMonsterPierce,
+            didPlayerDodge: canPlayerDodge,
             playerRemainingHP: finalPlayerHP,
             rewardWon: rewardLogText,
             playerDied: playerDiedInAttack
         });
         
-        let attackInfoMessage = `Canavara <b>${finalDamageToMonster} hasar</b> verdin ${canMonsterDodge ? '(Sıyrıldı!)' : ''} ve canavardan <b>${finalDamageToPlayer} hasar</b> aldın ${canPlayerDodge ? '(Sıyrıldın!)' : ''}.${rewardMessage}`;
+        let attackInfoMessage = `Canavara <b>${finalDamageToMonster} hasar</b> verdin ve canavardan <b>${finalDamageToPlayer} hasar</b> aldın.${rewardMessage}`;
         
         showFloatingText(canMonsterDodge ? 'SIYRILDI!' : `-${finalDamageToMonster}`, document.getElementById('monsterImage').getBoundingClientRect().left + 100, document.getElementById('monsterImage').getBoundingClientRect().top + 100);
         displayMessage(attackInfoMessage);
@@ -16409,7 +16427,6 @@ async function attackMonster() {
         const finalBattleSnap = await battleRef.once('value');
         const finalBattleData = finalBattleSnap.val();
 
-        // YENİ: Canavarın ölme durumunu kontrol edip kazananı ve ödülünü logluyoruz
         if (finalBattleData && finalBattleData.monsterDetails.currentHP <= 0) {
             const sortedLeaderboard = Object.entries(finalBattleData.damageLeaderboard || {}).sort((a,b) => b[1].totalDamage - a[1].totalDamage);
             const winner = sortedLeaderboard.length > 0 ? sortedLeaderboard[0][0] : null;
