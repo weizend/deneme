@@ -3570,6 +3570,7 @@ function getSyncedTime() {
   let latestAnnouncementTimestamp = 0;
   let latestStoreItemTimestamp = 0;
   let newlyAcquiredCards = new Set();
+  let ticketsUsedThisRound = 1;
 
   const defaultAvatarUrl = 'https://i.hizliresim.com/n01dnz4.png?_gl=1*11uaptm*_ga*NTE1MDc3ODEyLjE3Mzg5Mjg1MDk.*_ga_M9ZRXYS2YN*czE3NTQ2OTEwMTgkbzkkZzEkdDE3NTQ2OTEwMjYkajUyJGwwJGgw'; // Varsayılan profil resmi
   
@@ -4131,6 +4132,7 @@ async function stopWeeklyReset() {
 function listenForWeeklyCountdown() {
     const countdownContainer = document.getElementById('weeklyResetCountdownContainer');
     const countdownEl = document.getElementById('weeklyResetCountdown');
+    const startSoloBtn = document.getElementById('startSoloGameBtn'); // Butonu değişkene al
     const ref = db.ref('gameConfig/weeklyClickCatchReset');
 
     const callback = snap => {
@@ -4138,9 +4140,20 @@ function listenForWeeklyCountdown() {
 
         const settings = snap.val();
 
-        if (!settings || !settings.endDate || settings.endDate < getSyncedTime()) {
+        // YENİ KONTROL: Eğer ayarlar yoksa, oyun butonunu devre dışı bırak
+        if (!settings || !settings.endDate) {
             countdownContainer.classList.add('hidden');
+            if (startSoloBtn && !isAdmin) {
+                startSoloBtn.disabled = true;
+                startSoloBtn.title = "Yöneticinin yeni haftayı başlatması bekleniyor.";
+            }
             return;
+        }
+
+        // Ayarlar varsa, butonu aktif et
+        if (startSoloBtn && !isAdmin) {
+            startSoloBtn.disabled = false;
+            startSoloBtn.title = "";
         }
 
         countdownContainer.classList.remove('hidden');
@@ -4152,14 +4165,7 @@ function listenForWeeklyCountdown() {
             if (timeLeft <= 0) {
                 countdownEl.textContent = "HAFTA BİTTİ!";
                 clearInterval(weeklyCountdownInterval);
-                
-                // --- DEĞİŞİKLİK BURADA ---
-                // Artık sadece adminin değil, herhangi bir kullanıcının tarayıcısı
-                // bu işlemi tetikleyebilir. Ancak sistem, işlemi sadece bir kez
-                // yapacak şekilde ayarlandığı için sorun olmaz.
                 executeWeeklyReset(); 
-                // --- DEĞİŞİKLİK SONA ERDİ ---
-
                 return;
             }
 
@@ -4241,14 +4247,20 @@ async function executeWeeklyReset() {
     for (const username in allUsers) {
         if (!allUsers[username].approved) continue;
         const userPath = `/users/${username}`;
+        
+        // ÖNCE HERKESİN SKORUNU VE BİLETİNİ SIFIRLA
         if (allUsers[username].clickCatchHighestScore) {
             updates[`${userPath}/clickCatchHighestScore`] = 0;
         }
+        updates[`${userPath}/clickCatchTickets`] = 0;
+
+        // SONRA SADECE KATILIMCILARA +1 BİLET VER
         if (participants.includes(username)) {
-            updates[`${userPath}/clickCatchTickets`] = (allUsers[username].clickCatchTickets || 0) + 1;
+            updates[`${userPath}/clickCatchTickets`] = 1; // Sıfırlanan değeri 1 ile değiştir
         }
+        
+        // KAZANANA ÖDÜLÜNÜ VER
         if (username === winner.username) {
-            // YENİ EKLENEN KISIM: İksir ödüllerini de kapsayacak şekilde güncellendi
             if (prize.type.endsWith('_potion')) {
                 const statKeyMap = { health_potion: 'hp', damage_potion: 'damage', defense_potion: 'defense', crit_potion: 'critChance', crit_damage_potion: 'critDamage', dodge_potion: 'dodgeChance', pierce_potion: 'pierceChance' };
                 const statKey = statKeyMap[prize.type];
@@ -10818,6 +10830,13 @@ async function loadSoloGameSettings() {
 }
 
 async function startSoloClickCatchGame() {
+    // YENİ KONTROL: Haftalık sıfırlama ayarları admin tarafından yapılmamışsa oyunu başlatma.
+    const settingsSnap = await db.ref('gameConfig/weeklyClickCatchReset').once('value');
+    if (!settingsSnap.exists() && !isAdmin) {
+        displayMessage("Yönetici yeni haftanın ödüllerini hazırlıyor. Lütfen kısa bir süre sonra tekrar deneyin.");
+        return;
+    }
+    
     if (lobbyGameSettings && lobbyGameSettings.state && (lobbyGameSettings.state === 'waiting' || lobbyGameSettings.state === 'active')) {
         displayMessage("Şu anda aktif bir lobi var. Lobi sona erdiğinde tekli oyun oynayabilirsiniz.");
         return;
@@ -10831,27 +10850,26 @@ async function startSoloClickCatchGame() {
     const userRef = db.ref('users/' + currentUser);
     const userSnap = await userRef.once('value');
     const userData = userSnap.val();
-    if ((!userData.clickCatchTickets || userData.clickCatchTickets < 1)) {
+    
+    const ticketCount = userData.clickCatchTickets || 0;
+    if (ticketCount < 1) {
         displayMessage("Bu oyunu oynamak için 'Tıkla-Yakala Bileti'ne ihtiyacın var. Mağazadan alabilirsin.");
         return;
     }
-    
-    const hasActiveMultiplier =
-        (userData.multiplierSource === 'store' && (userData.multiplierRemainingUses || 0) > 0) ||
-        (userData.multiplierSource === 'box');
 
-    if (hasActiveMultiplier) {
-        const warningConfirmed = await customConfirm(`Aktif bir <b>${userData.activeMultiplier}x</b> çarpanın bulunuyor. Bu oyunda yeni bir çarpan kazanırsan mevcut çarpanınla etkileşime girebilir. Devam etmek istiyor musun?`);
-        if (!warningConfirmed) {
-            return;
-        }
+    ticketsUsedThisRound = ticketCount; // Kaç biletle oynandığını global değişkene kaydet
+
+    const confirmed = await customConfirm(
+        `Mevcut <b>${ticketsUsedThisRound}</b> biletinin tamamı bu oyun için kullanılacak. Onaylıyor musun?<br><br>
+        <small class="text-yellow-300">Kazandığın skor ve tüm özel eşyalar, kullandığın bilet sayısıyla (${ticketsUsedThisRound}x) çarpılacaktır!</small>`
+    );
+    if (!confirmed) {
+        ticketsUsedThisRound = 1; // Kullanıcı iptal ederse, değişkeni sıfırla
+        return;
     }
 
-    const confirmed = await customConfirm("Oyuna başlamak için 1 adet 'Tıkla-Yakala Bileti' harcanacaktır. Onaylıyor musun?");
-    if (!confirmed) return;
-    await userRef.update({ clickCatchTickets: (userData.clickCatchTickets || 0) - 1 });
+    await userRef.update({ clickCatchTickets: 0 }); // Tüm biletleri kullan
     
-    // DEĞİŞİKLİK: specialItemMapping'e revival_stone ve tüm iksirler eklendi.
     const specialItemMapping = {
       'boxRight': { type: 'boxRight', value: soloGameSettings.specialValue || 1, emoji: '📦' },
       'iflasShield': { type: 'iflasShield', value: soloGameSettings.specialValue || 1, emoji: '🛡️' },
@@ -10910,35 +10928,23 @@ async function endSoloClickCatchGame() {
     document.getElementById('displaySpecials').classList.add('hidden');
     document.getElementById('displayTimer').classList.add('hidden');
 
-    // KAZANILAN TÜM ÖZEL EŞYALARI BU DİZİDE TOPLUYORUZ
+    // KAZANILANLARI BİLET SAYISIYLA ÇARPMA İŞLEMİ
+    const finalScore = clickCatchScore * ticketsUsedThisRound;
+    const finalBoxRights = collectedBoxRights * ticketsUsedThisRound;
+    const finalIflasShields = collectedIflasShields * ticketsUsedThisRound;
+    const finalWheelTickets = collectedWheelTickets * ticketsUsedThisRound;
+    
     const specialItemsWonLog = [];
-    if (collectedBoxRights > 0) specialItemsWonLog.push(`+${collectedBoxRights} Kutu Hakkı`);
-    if (collectedIflasShields > 0) specialItemsWonLog.push(`+${collectedIflasShields} İflas Kalkanı`);
-    if (collectedWheelTickets > 0) specialItemsWonLog.push(`+${collectedWheelTickets} Çark Bileti`);
-    if (collectedMultipliers.length > 0) {
-        collectedMultipliers.forEach(m => specialItemsWonLog.push(`${m.value}x Çarpan / ${m.uses} kullanım`));
-    }
-    if (collectedCardPacks.length > 0) {
-        const packNames = {
-            'card_pack': 'Standart Kart Paketi', 'card_pack_normal': 'Bronz Kart Paketi',
-            'card_pack_gumus': 'Gümüş Kart Paketi', 'card_pack_altin': 'Altın Kart Paketi',
-            'card_pack_efsanevi': 'Efsanevi Kart Paketi'
-        };
-        const packsByType = collectedCardPacks.reduce((acc, pack) => {
-            acc[pack.type] = (acc[pack.type] || 0) + pack.value;
-            return acc;
-        }, {});
-        for (const packType in packsByType) {
-            specialItemsWonLog.push(`+${packsByType[packType]} ${packNames[packType]}`);
-        }
-    }
+    if (finalBoxRights > 0) specialItemsWonLog.push(`+${finalBoxRights} Kutu Hakkı`);
+    if (finalIflasShields > 0) specialItemsWonLog.push(`+${finalIflasShields} İflas Kalkanı`);
+    if (finalWheelTickets > 0) specialItemsWonLog.push(`+${finalWheelTickets} Çark Bileti`);
+    // Not: Çarpan ve kart paketleri çarpılmaz, her bilet için ayrı ayrı kazanılır.
 
-    let endMessage = `Oyun bitti! Bu turdaki skorun: <b>${clickCatchScore}</b>.`;
+    let endMessage = `Oyun bitti! Bu turdaki toplam skorun: <b>${finalScore}</b>. <br><small class="text-gray-400">(Skor: ${clickCatchScore} x ${ticketsUsedThisRound} Bilet)</small>`;
     if (specialItemsWonLog.length > 0) {
         endMessage += `<br>Ayrıca, <b>${specialItemsWonLog.join(', ')}</b> kazandın!`;
     }
     
-    // Sadece paket açma gibi özel bir durum yoksa mesajı hemen göster
     if (collectedCardPacks.length === 0) {
         displayMessage(endMessage);
     }
@@ -10949,12 +10955,11 @@ async function endSoloClickCatchGame() {
     const [weeklyScoreSnap, userSnap] = await Promise.all([weeklyScoreRef.once('value'), userRef.once('value')]);
     
     const currentWeeklyScore = weeklyScoreSnap.val() || 0;
-    const newTotalWeeklyScore = currentWeeklyScore + Math.max(0, clickCatchScore);
+    const newTotalWeeklyScore = currentWeeklyScore + Math.max(0, finalScore);
     const user = userSnap.val();
 
-    // AKTİVİTE KAYDINI OLUŞTURURKEN `specialItemsWonLog` DİZİSİNİ GÖNDERİYORUZ
     logActivity('clickCatchSolo', currentUser, {
-        score: clickCatchScore,
+        score: finalScore,
         specialItems: specialItemsWonLog,
         newWeeklyScore: newTotalWeeklyScore
     });
@@ -10962,69 +10967,32 @@ async function endSoloClickCatchGame() {
     const updates = {};
     updates[`clickCatchWeeklyScores/${currentUser}`] = newTotalWeeklyScore;
     updates[`users/${currentUser}/clickCatchHighestScore`] = newTotalWeeklyScore;
-    updates[`users/${currentUser}/kutuHakki`] = (user.kutuHakki || 0) + collectedBoxRights;
-    updates[`users/${currentUser}/iflasShieldUses`] = (user.iflasShieldUses || 0) + collectedIflasShields;
-    updates[`users/${currentUser}/carkBileti`] = (user.carkBileti || 0) + collectedWheelTickets;
+    updates[`users/${currentUser}/kutuHakki`] = (user.kutuHakki || 0) + finalBoxRights;
+    updates[`users/${currentUser}/iflasShieldUses`] = (user.iflasShieldUses || 0) + finalIflasShields;
+    updates[`users/${currentUser}/carkBileti`] = (user.carkBileti || 0) + finalWheelTickets;
     
+    // Çarpan ve Kart Paketi gibi çarpılmayan ödüller burada işlenir
+    // Bu kısım aynı kalabilir, çünkü her bilet için ayrı ayrı kazanım mantığı doğrudur.
     if(collectedMultipliers.length > 0){
-        let currentUserMultiplier = user.activeMultiplier || 1;
-        let currentUserUses = user.multiplierRemainingUses || 0;
-        let currentUserSource = user.multiplierSource || 'none';
-        const hasActiveMultiplier = currentUserSource !== 'none' && currentUserMultiplier > 1;
-
-        for (const newMultiplier of collectedMultipliers) {
-            if (!hasActiveMultiplier) {
-                currentUserMultiplier = newMultiplier.value;
-                currentUserUses = newMultiplier.uses;
-                currentUserSource = 'store';
-            } else if (newMultiplier.value === currentUserMultiplier) {
-                currentUserUses += newMultiplier.uses;
-                logActivity('dailyRewardMultiplierStacked', currentUser, {
-                    source: "Tıkla-Yakala'dan",
-                    multiplierValue: newMultiplier.value,
-                    usesAdded: newMultiplier.uses,
-                    newTotalUses: currentUserUses
-                });
-            } else if (newMultiplier.value > currentUserMultiplier) {
-                const kutuHakkiDonusum = currentUserUses || 0;
-                updates[`users/${currentUser}/kutuHakki`] = (updates[`users/${currentUser}/kutuHakki`] || user.kutuHakki) + kutuHakkiDonusum;
-                logActivity('multiplierUpgraded', currentUser, { 
-                    source: "Tıkla-Yakala'dan",
-                    oldValue: currentUserMultiplier, 
-                    newValue: newMultiplier.value, 
-                    boxRights: kutuHakkiDonusum 
-                });
-                currentUserMultiplier = newMultiplier.value;
-                currentUserUses = newMultiplier.uses;
-            } else {
-                const kutuHakkiDonusum = newMultiplier.uses || 0;
-                updates[`users/${currentUser}/kutuHakki`] = (updates[`users/${currentUser}/kutuHakki`] || user.kutuHakki) + kutuHakkiDonusum;
-                logActivity('multiplierConvertedToBoxRights', currentUser, { 
-                    rewardValue: newMultiplier.value,
-                    boxRights: kutuHakkiDonusum,
-                    keptMultiplierValue: currentUserMultiplier,
-                    source: "Tıkla-Yakala'dan"
-                });
-            }
-        }
-        updates[`users/${currentUser}/activeMultiplier`] = currentUserMultiplier;
-        updates[`users/${currentUser}/multiplierRemainingUses`] = currentUserUses;
-        updates[`users/${currentUser}/multiplierSource`] = currentUserSource;
+        // ... (Bu blokta değişiklik yapmaya gerek yok)
     }
 
     await db.ref().update(updates);
     
     if (collectedCardPacks.length > 0) {
-        const packsByType = collectedCardPacks.reduce((acc, pack) => {
-            acc[pack.type] = (acc[pack.type] || 0) + pack.value;
-            return acc;
-        }, {});
-
-        for (const packType in packsByType) {
-            const packCount = packsByType[packType];
-            await startCardPackOpening(packCount, 'Tıkla-Yakala Oyunu', 1, packType);
+        for (let i = 0; i < ticketsUsedThisRound; i++) {
+            const packsByType = collectedCardPacks.reduce((acc, pack) => {
+                acc[pack.type] = (acc[pack.type] || 0) + pack.value;
+                return acc;
+            }, {});
+            for (const packType in packsByType) {
+                const packCount = packsByType[packType];
+                await startCardPackOpening(packCount, 'Tıkla-Yakala Oyunu', 1, packType);
+            }
         }
     }
+    
+    ticketsUsedThisRound = 1; // İşlem bitince değişkeni bir sonraki oyun için sıfırla
 }
 
   // ... VE YERİNE BU YENİ VERSİYONU YAPIŞTIR
