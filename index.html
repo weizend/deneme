@@ -1437,6 +1437,9 @@ body.modal-open .modal-content {
 
             <div class="player-controls bg-gray-800 p-4 rounded-lg mt-4">
                 <h5 class="text-lg font-bold text-green-400" id="playerBattleName">Oyuncu Yükleniyor...</h5>
+                <a onclick="openAvatarStatsModal(currentUser)" class="text-xs text-cyan-400 hover:text-cyan-300 cursor-pointer underline">
+    Avatar Özellikleri
+</a>
                 <div class="w-full bg-gray-700 rounded-full h-5 my-2 border border-black">
                      <div id="playerHealthBar" class="bg-green-500 h-full rounded-full text-center text-black text-xs font-bold transition-all duration-500" style="width: 100%;">100%</div>
                 </div>
@@ -12222,7 +12225,7 @@ async function renderMonsterBattleUI() {
                 reviveBtn.classList.add('bg-cyan-600', 'hover:bg-cyan-500');
                 reviveBtn.classList.remove('bg-gray-600', 'cursor-not-allowed');
             } else {
-                reviveBtn.disabled = true;
+                reviveBtn.disabled = false; // Tıklanabilir ama mesaj gösterecek
                 reviveBtn.classList.add('bg-gray-600', 'cursor-not-allowed');
                 reviveBtn.classList.remove('bg-cyan-600', 'hover:bg-cyan-500');
             }
@@ -12260,19 +12263,17 @@ async function renderMonsterBattleUI() {
             const playerRank = playerIndex !== -1 ? playerIndex + 1 : 'N/A';
             
             playerRankInfoEl.innerHTML = `
-                <div class="flex justify-around items-center text-white">
-                    <div>
-                        <p class="text-sm text-gray-400">Sıralaman</p>
-                        <p class="font-bold text-lg">${playerRank}.</p>
-                    </div>
-                    <div>
-                        <p class="text-sm text-gray-400">Toplam Hasarın</p>
-                        <p class="font-bold text-lg text-yellow-300">${formatNumber(playerBattleData.totalDamage)}</p>
-                    </div>
+                <div class="border-r border-gray-700">
+                    <p class="text-sm text-gray-400">Sıralaman</p>
+                    <p class="font-bold text-lg text-white">${playerRank}.</p>
+                </div>
+                <div>
+                    <p class="text-sm text-gray-400">Toplam Hasarın</p>
+                    <p class="font-bold text-lg text-yellow-300">${formatNumber(playerBattleData.totalDamage)}</p>
                 </div>
             `;
         } else {
-            playerRankInfoEl.innerHTML = '<p class="text-gray-400">Sıralama ve hasar bilgin için önce canavara saldırmalısın.</p>';
+            playerRankInfoEl.innerHTML = '<p class="text-gray-400 col-span-2">Sıralama ve hasar bilgin için önce canavara saldırmalısın.</p>';
         }
     }
     // --- YENİ EKLENEN KOD SONU ---
@@ -16544,13 +16545,14 @@ async function useRevivalStone() {
 
         const revivalStones = userData.inventory?.revival_stone || 0;
         if (revivalStones < 1) {
-            throw new Error("Dirilmek için Dirilme Taşın yok! Mağazadan alabilirsin.");
+            // YENİ EKLENEN KONTROL: Taş yoksa mesaj göster ve işlemi durdur.
+            displayMessage("Dirilmek için Dirilme Taşın yok! Mağazadan alabilirsin.");
+            return; 
         }
 
         const playerAvatarUrl = playerBattleData.lockedAvatarUrl || userData.selectedAvatar?.url || defaultAvatarUrl;
         const sanitizedPlayerAvatarId = sanitizeFirebaseKey(playerAvatarUrl);
         
-        // ★★★ DEĞİŞİKLİK BURADA: Artık avatara özel 'avatarStats' yerine, genel 'globalPotionBuffs' okunuyor. ★★★
         const globalBuffs = userData.globalPotionBuffs || {};
         const baseStats = avatarBaseStats[sanitizedPlayerAvatarId] || {};
         const playerMaxHP = (baseStats.hp || 1000) + (globalBuffs.hp || 0);
