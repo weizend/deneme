@@ -1464,17 +1464,14 @@ body.modal-open .modal-content {
 
                 <div id="playerBuffs" class="flex justify-center items-center gap-4 mb-3 min-h-[30px]"></div>
                 
-                <div id="playerPotions" class="flex justify-center gap-4 mb-4">
-                    <div id="revivalStoneContainer" class="flex-grow text-center">
-    </div>
-<div id="regenPotionContainer" class="flex-grow text-center">
-    </div>
-                </div>
+                <div id="defeatMessageContainer" class="hidden text-center mb-3"></div>
+<div id="regenPotionContainer" class="mb-3"></div>
+<div id="revivalStoneContainer" class="hidden text-center mb-3"></div>
 
-                <button id="attackMonsterBtn" onclick="attackMonster()" class="w-full py-3 bg-red-700 hover:bg-red-600 text-white font-bold text-lg rounded-lg shadow-lg disabled:bg-gray-600 disabled:cursor-not-allowed">
+<button id="attackMonsterBtn" onclick="attackMonster()" class="w-full py-3 bg-red-700 hover:bg-red-600 text-white font-bold text-lg rounded-lg shadow-lg disabled:bg-gray-600 disabled:cursor-not-allowed">
     SALDIR!
 </button>
-<button id="reviveBtn" onclick="useRevivalStone()" class="hidden w-full py-3 bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-lg rounded-lg shadow-lg">
+<button id="reviveBtn" class="hidden w-full py-3 bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-lg rounded-lg shadow-lg">
     💎 Dirilme Taşı Kullan
 </button>
 
@@ -4589,8 +4586,7 @@ async function logout() {
     });
 }
 
-// MEVCUT loadBalanceAndBoxRights FONKSİYONUNU SİL VE BU YENİ VERSİYONU YAPIŞTIR
-
+// --- BU GÜNCEL FONKSİYONU ESKİSİNİN YERİNE YAPIŞTIRIN ---
 function loadBalanceAndBoxRights() {
     if (isAdmin) {
         document.getElementById("balance").textContent = "Admin Paneli Aktif";
@@ -4623,15 +4619,12 @@ function loadBalanceAndBoxRights() {
         document.getElementById('storeCurrentUserKasaBalance').textContent = userData.kasaPuani || 0;
         document.getElementById('wheelTicketBalance').textContent = userData.carkBileti || 0;
 
-        // ★★★ ANLIK GÜNCELLEMEYİ SAĞLAYAN KRİTİK KOD BAŞLANGICI ★★★
-        // Kullanıcının verisi her güncellendiğinde, o an açık olan sekmeyi yeniden çiziyoruz.
         if (currentActiveSection === 'cardCollection') {
-            loadCollectionAlbum(); // Kart koleksiyonu açıksa, albümü anında yenile.
+            loadCollectionAlbum();
         }
         if (currentActiveSection === 'monsterBattle') {
-            renderMonsterBattleUI(); // Canavar Savaşı açıksa, arayüzü anında yenile.
+            renderMonsterBattleUI();
         }
-        // ★★★ ANLIK GÜNCELLEMEYİ SAĞLAYAN KRİTİK KOD SONU ★★★
 
         const allUsersSnap = await allUsersRef.once('value');
         const leaders = await calculateAllLeaders(allUsersSnap.val());
@@ -12163,7 +12156,7 @@ function handleReviveClick(stoneCount) {
     }
 }
 
-// ESKİ renderMonsterBattleUI FONKSİYONUNU SİL VE YERİNE BUNU YAPIŞTIR
+// --- BU GÜNCEL FONKSİYONU ESKİSİNİN YERİNE YAPIŞTIRIN ---
 async function renderMonsterBattleUI() {
     const battleArenaContainer = document.getElementById('battleArenaContainer');
     if (!battleArenaContainer) return;
@@ -12173,12 +12166,13 @@ async function renderMonsterBattleUI() {
     const battleArena = document.getElementById('battleArena');
     const defeatedScreen = document.getElementById('monsterDefeatedScreen');
     const monsterInstanceControls = document.getElementById('monsterInstanceAdminControls');
+    
+    // Oyuncu kontrol paneli elementleri
     const attackBtn = document.getElementById('attackMonsterBtn');
     const reviveBtn = document.getElementById('reviveBtn');
-    
-    // UI elemanlarını en başta seçiyoruz
-    const revivalContainer = document.getElementById('revivalStoneContainer');
-    const regenContainer = document.getElementById('regenPotionContainer');
+    const defeatMessageContainer = document.getElementById('defeatMessageContainer');
+    const regenPotionContainer = document.getElementById('regenPotionContainer');
+    const revivalStoneContainer = document.getElementById('revivalStoneContainer');
 
     if (isAdmin) {
         document.getElementById('monsterBattleAdminToggles')?.classList.toggle('hidden', !isAdmin);
@@ -12187,7 +12181,6 @@ async function renderMonsterBattleUI() {
     if (!monster || monster.currentHP <= 0) {
         battleArena.style.display = 'none';
         defeatedScreen.classList.remove('hidden');
-        // ... (canavar öldüğündeki kod aynı kalabilir, burası doğru çalışıyor) ...
         const sortedLeaderboard = Object.entries(leaderboard).sort((a, b) => b[1].totalDamage - a[1].totalDamage);
         const winner = sortedLeaderboard.length > 0 ? sortedLeaderboard[0][0] : null;
         const prize = monsterBattleData.rewards?.onKillLeader;
@@ -12214,7 +12207,6 @@ async function renderMonsterBattleUI() {
     document.getElementById('monsterHealthBar').textContent = `${Math.ceil(mHealthPercent)}%`;
     document.getElementById('monsterHealthText').textContent = `${formatNumber(monster.currentHP)} / ${formatNumber(monster.maxHP)} Can`;
 
-    // ... (Liderlik tablosu kodu aynı kalabilir, burası doğru çalışıyor) ...
     const leaderboardEl = document.getElementById('monsterLeaderboard');
     leaderboardEl.innerHTML = '';
     const sortedLeaderboard = Object.entries(leaderboard).sort((a, b) => b[1].totalDamage - a[1].totalDamage);
@@ -12253,9 +12245,8 @@ async function renderMonsterBattleUI() {
             leaderboardEl.innerHTML += itemHtml;
         }
     }
-
-
-    // ★★★ OYUNCU KONTROL PANELİ İÇİN YENİ DÜZENLEME BAŞLANGICI ★★★
+    
+    // OYUNCU KONTROL PANELİ MANTIĞI
     const playerSnap = await db.ref(`users/${currentUser}`).once('value');
     const playerData = playerSnap.val();
     const playerBattleData = leaderboard[currentUser];
@@ -12283,51 +12274,50 @@ async function renderMonsterBattleUI() {
         const isPlayerDead = playerCurrentHP <= 0;
         const isPlayerFullHealth = playerCurrentHP >= playerMaxHP;
         
-        // 1. Can Yenileme İksiri Panelini Her Zaman Oluştur (İstediğin gibi buff yazısının üstünde)
+        // Can Yenileme İksiri Panelini her zaman göster
         const hasPotions = Object.values(regenPotions).some(count => count > 0);
+        let optionsHtml = '';
         if (hasPotions) {
-            let optionsHtml = '<option value="">İksir Seç...</option>';
+            optionsHtml = '<option value="">İksir Seç...</option>';
             Object.entries(regenPotions).sort((a, b) => parseInt(a[0]) - parseInt(b[0])).forEach(([percentage, count]) => {
                 if (count > 0) optionsHtml += `<option value="${percentage}">Can İksiri (%${percentage}) x${count}</option>`;
             });
-            
-            const buttonDisabled = isPlayerDead || isPlayerFullHealth;
-            let buttonTitle = '';
-            if (isPlayerDead) buttonTitle = "Mağlup durumdayken kullanamazsın.";
-            if (isPlayerFullHealth) buttonTitle = "Canın zaten dolu.";
-
-            regenContainer.innerHTML = `
-                <div class="flex items-center justify-center gap-2">
-                    <select id="regenPotionSelector" class="box-setting-input flex-grow">
-                        ${optionsHtml}
-                    </select>
-                    <button id="useRegenPotionBtn" onclick="useHealthRegenPotion()" 
-                            class="py-2 px-4 bg-green-600 hover:bg-green-500 rounded-lg text-sm font-bold disabled:bg-gray-600 disabled:cursor-not-allowed" 
-                            ${buttonDisabled ? 'disabled' : ''} title="${buttonTitle}">
-                        Kullan
-                    </button>
-                </div>`;
         } else {
-             regenContainer.innerHTML = `<p class="text-xs text-gray-500">Hiç Can Yenileme İksirin yok.</p>`;
+            optionsHtml = '<option value="" disabled>Hiç iksirin yok</option>';
         }
         
+        const buttonDisabled = isPlayerDead || isPlayerFullHealth || !hasPotions;
+        let buttonTitle = '';
+        if (isPlayerDead) buttonTitle = "Mağlup durumdayken kullanamazsın.";
+        else if (isPlayerFullHealth) buttonTitle = "Canın zaten dolu.";
+        else if (!hasPotions) buttonTitle = "Kullanabileceğin iksirin yok.";
+
+        regenPotionContainer.innerHTML = `
+            <div class="flex items-center justify-center gap-2">
+                <select id="regenPotionSelector" class="box-setting-input flex-grow" ${!hasPotions ? 'disabled' : ''}>
+                    ${optionsHtml}
+                </select>
+                <button id="useRegenPotionBtn" onclick="useHealthRegenPotion()" 
+                        class="py-2 px-4 bg-green-600 hover:bg-green-500 rounded-lg text-sm font-bold disabled:bg-gray-600 disabled:cursor-not-allowed" 
+                        ${buttonDisabled ? 'disabled' : ''} title="${buttonTitle}">
+                    Kullan
+                </button>
+            </div>`;
+        
+        // Duruma göre arayüzü ayarla
         if (isPlayerDead) {
-            revivalContainer.innerHTML = `<p class="text-lg font-bold text-red-500 animate-pulse">MAĞLUP OLDUN!</p>`;
+            defeatMessageContainer.innerHTML = `<p class="text-lg font-bold text-red-500 animate-pulse">MAĞLUP OLDUN!</p>`;
+            defeatMessageContainer.classList.remove('hidden');
+            revivalStoneContainer.classList.add('hidden');
+            
             playerHealthBar.classList.add('bg-gray-500');
             playerHealthBar.classList.remove('bg-green-500');
             attackBtn.classList.add('hidden');
             reviveBtn.classList.remove('hidden');
-
-        const buffsEl = document.getElementById('playerBuffs');
-        buffsEl.innerHTML = '<span class="text-xs text-gray-500">Hesabına kalıcı iksir bonusları ekleyerek gücünü artırabilirsin!</span>';
-        
-        // 3. Duruma Göre Saldırı/Dirilme Bölümünü Oluştur
-        
             
-            // Butonun onclick'i yeni helper fonksiyonu çağırıyor
             reviveBtn.setAttribute('onclick', `handleReviveClick(${playerRevivalStones})`);
             reviveBtn.textContent = `💎 Dirilme Taşı Kullan (${playerRevivalStones})`;
-            reviveBtn.disabled = false; // Buton her zaman tıklanabilir olacak
+            reviveBtn.disabled = false;
             
             if (playerRevivalStones <= 0) {
                  reviveBtn.classList.add('bg-gray-600');
@@ -12336,15 +12326,17 @@ async function renderMonsterBattleUI() {
                  reviveBtn.classList.remove('bg-gray-600');
                  reviveBtn.classList.add('bg-cyan-600', 'hover:bg-cyan-500');
             }
-        } else {
-            revivalContainer.innerHTML = `<p class="text-lg font-bold text-cyan-300">💎 Dirilme Taşı: ${playerRevivalStones}</p>`;
+        } else { // Oyuncu hayatta
+            defeatMessageContainer.classList.add('hidden');
+            revivalStoneContainer.innerHTML = `<p class="text-lg font-bold text-cyan-300">💎 Dirilme Taşı: ${playerRevivalStones}</p>`;
+            revivalStoneContainer.classList.remove('hidden');
+
             playerHealthBar.classList.add('bg-green-500');
             playerHealthBar.classList.remove('bg-gray-500');
             attackBtn.classList.remove('hidden');
             reviveBtn.classList.add('hidden');
         }
     }
-    // ★★★ OYUNCU KONTROL PANELİ DÜZENLEMESİ SONU ★★★
 
     const playerRankInfoEl = document.getElementById('playerRankInfo');
     if (playerRankInfoEl) {
@@ -17093,7 +17085,7 @@ function checkPotionCap(userData, potionType, amountToAdd) {
     }
 }
 
-// ESKİ useHealthRegenPotion FONKSİYONUNU SİL VE YERİNE BUNU YAPIŞTIR
+// --- BU GÜNCEL FONKSİYONU ESKİSİNİN YERİNE YAPIŞTIRIN ---
 async function useHealthRegenPotion() {
     const selector = document.getElementById('regenPotionSelector');
     if (!selector || selector.disabled) return;
@@ -17120,7 +17112,6 @@ async function useHealthRegenPotion() {
         const playerBattleData = battleData?.damageLeaderboard?.[currentUser];
 
         if (!playerBattleData) throw new Error("İksir kullanmak için önce savaşa katılmalısın.");
-        // ★★★ YENİ KONTROL: Oyuncu ölü ise hata ver ★★★
         if (playerBattleData.currentHP <= 0) throw new Error("Mağlup durumdayken can iksiri kullanamazsın!");
         
         const playerAvatarUrl = playerBattleData.lockedAvatarUrl || userData.selectedAvatar?.url || defaultAvatarUrl;
