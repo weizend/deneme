@@ -12130,8 +12130,7 @@ async function renderMonsterBattleUI() {
     const attackBtn = document.getElementById('attackMonsterBtn');
     const reviveBtn = document.getElementById('reviveBtn');
     
-    // Değişkenleri en başta tanımla
-    const potionsContainer = document.getElementById('playerPotions');
+    // ★★★ YENİ DÜZENLEME: UI elemanlarını en başta seçiyoruz ★★★
     const revivalContainer = document.getElementById('revivalStoneContainer');
     const regenContainer = document.getElementById('regenPotionContainer');
 
@@ -12236,11 +12235,39 @@ async function renderMonsterBattleUI() {
         const isPlayerDead = playerCurrentHP <= 0;
         const isPlayerFullHealth = playerCurrentHP >= playerMaxHP;
         
-        // Önce temizle
-        if (revivalContainer) revivalContainer.innerHTML = '';
-        if (regenContainer) regenContainer.innerHTML = '';
-        if (potionsContainer) potionsContainer.innerHTML = ''; // Eski ana kapsayıcıyı temizle
+        // ★★★ YENİ DÜZENLEME: İKSİR PANELİNİ HER ZAMAN OLUŞTUR ★★★
+        const hasPotions = Object.values(regenPotions).some(count => count > 0);
+        if (hasPotions) {
+            let optionsHtml = '<option value="">İksir Seç...</option>';
+            const sortedPotions = Object.entries(regenPotions).sort((a, b) => parseInt(a[0]) - parseInt(b[0]));
+            
+            for (const [percentage, count] of sortedPotions) {
+                if (count > 0) {
+                    optionsHtml += `<option value="${percentage}">Can İksiri (%${percentage}) x${count}</option>`;
+                }
+            }
+            
+            const buttonDisabled = isPlayerDead || isPlayerFullHealth;
+            let buttonTitle = '';
+            if (isPlayerDead) buttonTitle = "Mağlup durumdayken kullanamazsın.";
+            if (isPlayerFullHealth) buttonTitle = "Canın zaten dolu.";
 
+            regenContainer.innerHTML = `
+                <div class="flex items-center justify-center gap-2 mt-2">
+                    <select id="regenPotionSelector" class="box-setting-input flex-grow" ${buttonDisabled ? 'disabled' : ''}>
+                        ${optionsHtml}
+                    </select>
+                    <button id="useRegenPotionBtn" onclick="useHealthRegenPotion()" class="py-2 px-4 bg-green-600 hover:bg-green-500 rounded-lg text-sm font-bold" 
+                            ${buttonDisabled ? 'disabled' : ''} title="${buttonTitle}">
+                        Kullan
+                    </button>
+                </div>
+            `;
+        } else {
+             regenContainer.innerHTML = `<p class="text-xs text-gray-500 mt-2">Hiç Can Yenileme İksirin yok.</p>`;
+        }
+        
+        // ★★★ YENİ DÜZENLEME: DİRİLME TAŞI VE SALDIRI BUTONLARI ★★★
         if (isPlayerDead) {
             revivalContainer.innerHTML = `<p class="text-lg font-bold text-red-500 animate-pulse">MAĞLUP OLDUN!</p>`;
             playerHealthBar.classList.add('bg-gray-500');
@@ -12250,65 +12277,23 @@ async function renderMonsterBattleUI() {
             reviveBtn.classList.remove('hidden');
             reviveBtn.textContent = `💎 Dirilme Taşı Kullan (${playerRevivalStones})`;
             reviveBtn.disabled = playerRevivalStones <= 0;
-            if(reviveBtn.disabled) {
-                 reviveBtn.classList.add('bg-gray-600', 'cursor-not-allowed');
-                 reviveBtn.classList.remove('bg-cyan-600', 'hover:bg-cyan-500');
+            if (reviveBtn.disabled) {
+                reviveBtn.classList.add('bg-gray-600', 'cursor-not-allowed');
+                reviveBtn.classList.remove('bg-cyan-600', 'hover:bg-cyan-500');
             } else {
-                 reviveBtn.classList.remove('bg-gray-600', 'cursor-not-allowed');
-                 reviveBtn.classList.add('bg-cyan-600', 'hover:bg-cyan-500');
+                reviveBtn.classList.remove('bg-gray-600', 'cursor-not-allowed');
+                reviveBtn.classList.add('bg-cyan-600', 'hover:bg-cyan-500');
             }
         } else {
             revivalContainer.innerHTML = `<p class="text-lg font-bold text-cyan-300">💎 Dirilme Taşı: ${playerRevivalStones}</p>`;
-            
-            if (Object.keys(regenPotions).length > 0) {
-                let optionsHtml = '<option value="">İksir Seç...</option>';
-                const sortedPotions = Object.entries(regenPotions).sort((a, b) => parseInt(a[0]) - parseInt(b[0]));
-                
-                for (const [percentage, count] of sortedPotions) {
-                    if (count > 0) {
-                        optionsHtml += `<option value="${percentage}">Can İksiri (%${percentage}) x${count}</option>`;
-                    }
-                }
-
-                regenContainer.innerHTML = `
-                    <div class="flex items-center justify-center gap-2 mt-2">
-                        <select id="regenPotionSelector" class="box-setting-input flex-grow" ${isPlayerFullHealth ? 'disabled' : ''}>
-                            ${optionsHtml}
-                        </select>
-                        <button id="useRegenPotionBtn" onclick="useHealthRegenPotion()" class="py-2 px-4 bg-green-600 hover:bg-green-500 rounded-lg text-sm font-bold" ${isPlayerFullHealth ? 'disabled' : ''}>
-                            Kullan
-                        </button>
-                    </div>
-                `;
-                 if (isPlayerFullHealth) {
-                    const useBtn = document.getElementById('useRegenPotionBtn');
-                    if(useBtn) useBtn.title = "Canın zaten dolu.";
-                }
-            } else {
-                 regenContainer.innerHTML = `<p class="text-xs text-gray-500 mt-2">Can Yenileme İksirin yok.</p>`;
-            }
-
             playerHealthBar.classList.add('bg-green-500');
             playerHealthBar.classList.remove('bg-gray-500');
             attackBtn.classList.remove('hidden');
             reviveBtn.classList.add('hidden');
         }
         
-        const buffs = playerBattleData?.buffs || {};
-        const now = getSyncedTime();
         const buffsEl = document.getElementById('playerBuffs');
-        buffsEl.innerHTML = '';
-        let hasActiveBuff = false;
-        
-        const buffInfo = { damage: { icon: '⚔️', text: 'Hasar Artışı' }, defense: { icon: '🛡️', text: 'Savunma Artışı' }, critChance: { icon: '💥', text: 'Kritik Şans Artışı' } };
-
-        for (const buffKey in buffs) {
-            if (buffs[buffKey] && buffs[buffKey].expiresAt > now) {
-                hasActiveBuff = true;
-                buffsEl.innerHTML += `<span class="text-sm" title="${buffInfo[buffKey].text}">${buffInfo[buffKey].icon}</span>`;
-            }
-        }
-        if(!hasActiveBuff) buffsEl.innerHTML = '<span class="text-xs text-gray-500">Hesabına kalıcı iksir bonusları ekleyerek gücünü artırabilirsin!</span>';
+        buffsEl.innerHTML = '<span class="text-xs text-gray-500">Hesabına kalıcı iksir bonusları ekleyerek gücünü artırabilirsin!</span>';
     }
 
     const playerRankInfoEl = document.getElementById('playerRankInfo');
@@ -17067,11 +17052,7 @@ function checkPotionCap(userData, potionType, amountToAdd) {
     }
 }
 
-// YENİ EKLENECEK KOD BAŞLANGICI
-
-/**
- * Kullanıcının seçtiği Can Yenileme İksiri'ni kullanmasını sağlar.
- */
+// ESKİ useHealthRegenPotion FONKSİYONUNU SİL VE YERİNE BUNU YAPIŞTIR
 async function useHealthRegenPotion() {
     const selector = document.getElementById('regenPotionSelector');
     if (!selector || selector.disabled) return;
@@ -17098,6 +17079,7 @@ async function useHealthRegenPotion() {
         const playerBattleData = battleData?.damageLeaderboard?.[currentUser];
 
         if (!playerBattleData) throw new Error("İksir kullanmak için önce savaşa katılmalısın.");
+        // ★★★ YENİ KONTROL: Oyuncu ölü ise hata ver ★★★
         if (playerBattleData.currentHP <= 0) throw new Error("Mağlup durumdayken can iksiri kullanamazsın!");
         
         const playerAvatarUrl = playerBattleData.lockedAvatarUrl || userData.selectedAvatar?.url || defaultAvatarUrl;
@@ -17117,7 +17099,6 @@ async function useHealthRegenPotion() {
         const newHP = Math.min(playerMaxHP, playerBattleData.currentHP + healingAmount);
         const actualHeal = newHP - playerBattleData.currentHP;
 
-        // Hem envanteri hem de savaş verisini tek seferde güncelle
         const updates = {};
         updates[`/users/${currentUser}/inventory/health_regen_potion/${percentage}`] = potionCount - 1;
         updates[`/gameConfig/monsterBattle/damageLeaderboard/${currentUser}/currentHP`] = newHP;
@@ -17130,12 +17111,10 @@ async function useHealthRegenPotion() {
     } catch (error) {
         displayMessage(error.message);
     } finally {
-        // Butonları tekrar aktif et (veya arayüz yenilendiğinde zaten düzelir)
         if (selector) selector.disabled = false;
         if (useButton) useButton.disabled = false;
     }
 }
-// YENİ EKLENECEK KOD SONU
       
 // ★★★ YENİ EKLENECEK FONKSİYONLAR SONU ★★★
       
