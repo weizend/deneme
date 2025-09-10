@@ -6226,17 +6226,17 @@ function closeMultiplierChoiceModal() {
     pendingMultiplierChoice = null; 
 }
 
-// BU FONKSİYONU BUL VE TAMAMEN DEĞİŞTİR
+// --- BU FONKSİYONU GÜNCEL VERSİYONU İLE DEĞİŞTİRİN ---
 function getActivityIcon(type, details = {}) {
     let icon = '🔔';
     let bgColor = 'bg-gray-500';
 
     switch (type) {
-        case 'monsterDefeated': // YENİ EKLENDİ
+        case 'monsterDefeated': 
             icon = '☠️';
             bgColor = 'bg-red-900';
             break;
-        case 'monsterAttack': // YENİ EKLENDİ
+        case 'monsterAttack': 
             icon = details.playerDied ? '☠️' : '⚔️';
             bgColor = details.playerDied ? 'bg-black' : 'bg-orange-600';
             break;
@@ -6361,7 +6361,7 @@ function getActivityIcon(type, details = {}) {
     `;
 }
       
-// ESKİ renderActivityFeed FONKSİYONUNU SİL VE BUNU YAPIŞTIR
+// --- BU FONKSİYONU GÜNCEL VERSİYONU İLE DEĞİŞTİRİN ---
 function renderActivityFeed(activities) {
     const activityFeedList = document.getElementById('activityFeedList');
     activityFeedList.innerHTML = '';
@@ -6430,7 +6430,6 @@ function renderActivityFeed(activities) {
                     const weeklyScoreText = (newWeeklyScore !== undefined) ? ` <span class="text-gray-400">(Haftalık Skor: ${newWeeklyScore})</span>` : '';
                     message += weeklyScoreText;
                     break;
-                // Diğer tüm case'ler aynı kalabilir...
                 case 'weeklyChampion': 
                     message = `Tıkla-Yakala haftası sona erdi! <b class="text-amber-300">${details.winner}</b>, <b class="text-white">${details.score} skorla</b> şampiyon oldu ve <b class="text-green-300">${details.prize}</b> kazandı. Tüm katılımcılara +1 bilet hediye edildi.`;
                     break;
@@ -9046,7 +9045,6 @@ async function claimDailyReward(rewardId) {
             throw new Error("Bu ödül için bekleme süresi henüz dolmadı.");
         }
         
-        // Çarpan kontrol ve onay mantığı
         if (reward.type === 'tempMultiplier') {
             const hasActiveMultiplier = (user.multiplierSource === 'box') || (user.multiplierSource === 'store' && (user.multiplierRemainingUses || 0) > 0);
             if (hasActiveMultiplier) {
@@ -9062,23 +9060,22 @@ async function claimDailyReward(rewardId) {
                     if (!confirmedUpgrade) throw new Error("Kullanıcı iptal etti.");
                 } else {
                     const kutuHakkiDonusum = reward.uses || 0;
-                    const confirmedConvert = await customConfirm(`Mevcut <b>${user.activeMultiplier}x</b> çarpanın bu <b>${rewardValue}x</b> ödülünden daha güçlü. Bu ödülü alırsan, çarpanın değişmeyecek ancak ödülün <b>${kutuHakkiDonusum} kullanım hakkı</b>, envanterine <b>+${kutuHakkiDonusum} Kutu Hakkı</b> olarak eklenecek. Onaylıyor musun?`);
+                    const confirmedConvert = await customConfirm(`Mevcut <b>${user.activeMultiplier}x</b> çarpanın bu <b>${rewardValue}x</b> ödülünden daha güçlü. Bu ödülü alırsan, çarpanın değişmeyecek ancak ödülün <b>${reward.uses} kullanım hakkı</b>, envanterine <b>+${kutuHakkiDonusum} Kutu Hakkı</b> olarak eklenecek. Onaylıyor musun?`);
                     if (!confirmedConvert) throw new Error("Kullanıcı iptal etti.");
                 }
             }
         }
         
         const cardPacksToOpen = [];
+        let activityLogDetails = {};
 
         const { committed, snapshot } = await userRef.transaction(userData => {
             if (userData) {
-                // Güvenlik için tekrar kontrol
                 const currentLastClaim = (userData.dailyRewardsClaimed && userData.dailyRewardsClaimed[rewardId]) || 0;
                 const currentCooldown = reward.cooldownMs || 0;
                 if (currentCooldown === 0 && currentLastClaim > 0) return;
                 if (currentCooldown > 0 && getSyncedTime() < currentLastClaim + currentCooldown) return;
 
-                // Ödülü ver
                 switch (reward.type) {
                     case 'points':
                         userData.balance = (userData.balance || 0) + reward.value;
@@ -9096,6 +9093,9 @@ async function claimDailyReward(rewardId) {
                             const userMultiplierValue = parseInt(userData.activeMultiplier);
                             if (rewardValue === userMultiplierValue) {
                                 userData.multiplierRemainingUses = (userData.multiplierRemainingUses || 0) + reward.uses;
+                                activityLogDetails.usesAdded = reward.uses;
+                                activityLogDetails.newTotalUses = userData.multiplierRemainingUses;
+                                activityLogDetails.multiplierValue = rewardValue;
                             } else if (rewardValue > userMultiplierValue) {
                                 userData.kutuHakki = (userData.kutuHakki || 0) + (userData.multiplierRemainingUses || 0);
                                 userData.activeMultiplier = reward.value;
@@ -9103,6 +9103,9 @@ async function claimDailyReward(rewardId) {
                                 userData.multiplierSource = 'store';
                             } else {
                                 userData.kutuHakki = (userData.kutuHakki || 0) + (reward.uses || 0);
+                                activityLogDetails.keptMultiplierValue = userMultiplierValue;
+                                activityLogDetails.boxRights = reward.uses;
+                                activityLogDetails.rewardValue = rewardValue;
                             }
                         } else {
                             userData.activeMultiplier = reward.value;
@@ -9141,13 +9144,17 @@ async function claimDailyReward(rewardId) {
 
             displayMessage(`Tebrikler! Günlük ödül olarak <b>${rewardText}</b> kazandın!`);
             
-            logActivity('dailyReward', currentUser, {
+            const logDetails = {
                 rewardName: reward.name,
                 rewardType: reward.type,
                 rewardValue: reward.value,
-                rewardUses: reward.uses,
-                newBalance: newBalance
-            });
+                newBalance: newBalance,
+                ...activityLogDetails
+            };
+            if (reward.type === 'tempMultiplier') {
+                logDetails.rewardUses = reward.uses;
+            }
+            logActivity('dailyReward', currentUser, logDetails);
 
             if (cardPacksToOpen.length > 0) {
                 for (const pack of cardPacksToOpen) {
@@ -12304,17 +12311,18 @@ async function renderMonsterBattleUI() {
              regenContainer.innerHTML = `<p class="text-xs text-gray-500">Hiç Can Yenileme İksirin yok.</p>`;
         }
         
-        // 2. Buff'lar (Kalıcı Bonuslar) Panelini Oluştur
-        const buffsEl = document.getElementById('playerBuffs');
-        buffsEl.innerHTML = '<span class="text-xs text-gray-500">Hesabına kalıcı iksir bonusları ekleyerek gücünü artırabilirsin!</span>';
-        
-        // 3. Duruma Göre Saldırı/Dirilme Bölümünü Oluştur
         if (isPlayerDead) {
             revivalContainer.innerHTML = `<p class="text-lg font-bold text-red-500 animate-pulse">MAĞLUP OLDUN!</p>`;
             playerHealthBar.classList.add('bg-gray-500');
             playerHealthBar.classList.remove('bg-green-500');
             attackBtn.classList.add('hidden');
             reviveBtn.classList.remove('hidden');
+
+        const buffsEl = document.getElementById('playerBuffs');
+        buffsEl.innerHTML = '<span class="text-xs text-gray-500">Hesabına kalıcı iksir bonusları ekleyerek gücünü artırabilirsin!</span>';
+        
+        // 3. Duruma Göre Saldırı/Dirilme Bölümünü Oluştur
+        
             
             // Butonun onclick'i yeni helper fonksiyonu çağırıyor
             reviveBtn.setAttribute('onclick', `handleReviveClick(${playerRevivalStones})`);
@@ -15789,14 +15797,14 @@ function startStreakResetCountdown(element, resetTime) {
     activeStreakTimers['resetTimer'] = timerId;
 }
       
-// --- YENİ KOD (BUNU YAPIŞTIR) ---
+// --- BU GÜNCEL FONKSİYONU ESKİSİNİN YERİNE YAPIŞTIRIN ---
 async function claimLoginStreakReward(day) {
     if (isAdmin) {
         displayMessage("Adminler ödül alamaz.");
         return;
     }
 
-    const claimButton = document.getElementById(`claim-reward-btn-${day}`);
+    const claimButton = document.getElementById(`streak-btn-${day}`);
     if (claimButton && claimButton.disabled) {
         return;
     }
@@ -15813,7 +15821,6 @@ async function claimLoginStreakReward(day) {
             throw new Error("Ödül verisi bulunamadı.");
         }
 
-        // --- DEĞİŞİKLİK BURADA BAŞLIYOR: Çarpan kontrolünü önden yapıyoruz ---
         const multiplierReward = dayData.rewards.find(r => r.type === 'tempMultiplier');
         if (multiplierReward) {
             const userSnap = await userRef.once('value');
@@ -15826,30 +15833,20 @@ async function claimLoginStreakReward(day) {
                 
                 if (rewardValue === userMultiplierValue) {
                     const confirmedStack = await customConfirm(`Zaten ${user.activeMultiplier}x çarpanın var. Bu ödül, mevcut çarpanına <b>+${multiplierReward.uses} kullanım hakkı</b> ekleyecek. Onaylıyor musun?`);
-                    if (!confirmedStack) {
-                        if (claimButton) { claimButton.disabled = false; claimButton.textContent = 'Ödülü Al'; }
-                        return; // Kullanıcı iptal etti
-                    }
+                    if (!confirmedStack) throw new Error("Kullanıcı iptal etti.");
                 } else if (rewardValue > userMultiplierValue) {
                     const kutuHakkiDonusum = user.multiplierRemainingUses || 0;
                     const confirmedUpgrade = await customConfirm(`Mevcut ${user.activeMultiplier}x çarpanını daha yüksek olan <b>${rewardValue}x</b> ile değiştirmek üzeresin. Mevcut çarpanının kalan <b>${user.multiplierRemainingUses} kullanım hakkı</b>, envanterine <b>+${kutuHakkiDonusum} Kutu Hakkı</b> olarak eklenecek. Onaylıyor musun?`);
-                    if (!confirmedUpgrade) {
-                        if (claimButton) { claimButton.disabled = false; claimButton.textContent = 'Ödülü Al'; }
-                        return;
-                    }
-                } else { // Yeni çarpan daha zayıfsa
+                    if (!confirmedUpgrade) throw new Error("Kullanıcı iptal etti.");
+                } else {
                     const kutuHakkiDonusum = multiplierReward.uses || 0;
                     const confirmedConvert = await customConfirm(`Mevcut <b>${user.activeMultiplier}x</b> çarpanın bu <b>${rewardValue}x</b> ödülünden daha güçlü. Bu ödülü alırsan, çarpanın değişmeyecek ancak ödülün <b>${kutuHakkiDonusum} kullanım hakkı</b>, envanterine <b>+${kutuHakkiDonusum} Kutu Hakkı</b> olarak eklenecek. Onaylıyor musun?`);
-                    if (!confirmedConvert) {
-                        if (claimButton) { claimButton.disabled = false; claimButton.textContent = 'Ödülü Al'; }
-                        return;
-                    }
+                    if (!confirmedConvert) throw new Error("Kullanıcı iptal etti.");
                 }
             }
         }
-        // --- Çarpan kontrolü burada bitiyor ---
         
-        const cardPacksToOpen = []; // Transaction içinde kullanamayacağımız için dışarıda tanımlıyoruz.
+        const cardPacksToOpen = [];
 
         const { committed, snapshot } = await userRef.transaction(userData => {
             if (userData) {
@@ -15877,6 +15874,7 @@ async function claimLoginStreakReward(day) {
                                 const userMultiplierValue = parseInt(userData.activeMultiplier);
                                 if (rewardValue === userMultiplierValue) {
                                     userData.multiplierRemainingUses = (userData.multiplierRemainingUses || 0) + reward.uses;
+                                    logActivity('dailyRewardMultiplierStacked', currentUser, { source: `${day}. Gün Ödülü'nden`, usesAdded: reward.uses, newTotalUses: userData.multiplierRemainingUses, multiplierValue: rewardValue });
                                 } else if (rewardValue > userMultiplierValue) {
                                     userData.kutuHakki = (userData.kutuHakki || 0) + (userData.multiplierRemainingUses || 0);
                                     userData.activeMultiplier = reward.value;
@@ -15884,6 +15882,7 @@ async function claimLoginStreakReward(day) {
                                     userData.multiplierSource = 'store';
                                 } else {
                                     userData.kutuHakki = (userData.kutuHakki || 0) + (reward.uses || 0);
+                                    logActivity('dailyRewardMultiplierConverted', currentUser, { keptMultiplierValue: userMultiplierValue, boxRights: reward.uses, rewardValue: rewardValue, source: `${day}. Gün Ödülü'nden` });
                                 }
                             } else {
                                 userData.activeMultiplier = reward.value;
@@ -15892,10 +15891,10 @@ async function claimLoginStreakReward(day) {
                             }
                             break;
                         case 'avatar':
-                            const newAvatarId = firebase.database().ref().push().key;
-                            if (!userData.avatars) userData.avatars = {};
-                            userData.avatars[newAvatarId] = { id: newAvatarId, name: reward.avatarName, imageUrl: reward.avatarImageUrl };
-                            break;
+                             const newAvatarId = firebase.database().ref().push().key;
+                             if (!userData.avatars) userData.avatars = {};
+                             userData.avatars[newAvatarId] = { id: newAvatarId, name: reward.avatarName, imageUrl: reward.avatarImageUrl };
+                             break;
                         case 'card_pack':
                         case 'card_pack_normal':
                         case 'card_pack_gumus':
@@ -15922,7 +15921,8 @@ async function claimLoginStreakReward(day) {
                 day: day,
                 packageName: dayData.name || `${day}. Gün Paketi`
             });
-          const hasPotion = dayData.rewards.some(r => r.type.includes('_potion'));
+
+            const hasPotion = dayData.rewards.some(r => r.type.includes('_potion'));
             if (hasPotion && currentActiveSection === 'monsterBattle') { renderMonsterBattleUI(); }
 
             for (const pack of cardPacksToOpen) {
@@ -15932,16 +15932,15 @@ async function claimLoginStreakReward(day) {
             await openLoginStreakModal();
             await checkLoginStreakIndicator();
         } else {
-            displayMessage("Ödül alınamadı. Koşulları sağlamıyor olabilirsiniz, lütfen sayfayı yenileyip tekrar deneyin.");
-             if (claimButton) {
-                claimButton.disabled = false;
-                claimButton.textContent = 'Ödülü Al';
-            }
+            throw new Error("Ödül alınamadı. Koşullar sağlanmıyor olabilir, lütfen sayfayı yenileyip tekrar deneyin.");
         }
 
     } catch (error) {
-        console.error("Ödül talep edilirken hata:", error);
-        displayMessage("Bir hata oluştu: " + error.message);
+        if (error.message !== "Kullanıcı iptal etti.") {
+            console.error("Ödül talep edilirken hata:", error);
+            displayMessage("Bir hata oluştu: " + error.message);
+        }
+    } finally {
          if (claimButton) {
             claimButton.disabled = false;
             claimButton.textContent = 'Ödülü Al';
