@@ -10900,7 +10900,7 @@ async function startSoloClickCatchGame() {
     showGameCountdown(_actuallyStartSoloGame);
 }
       
-// ESKİ endSoloClickCatchGame FONKSİYONUNU SİL VE BUNU YAPIŞTIR
+// ESKİ endSoloClickCatchGame FONKSİYONUNU KOMPLE SİL VE YERİNE BU YENİ VERSİYONU YAPIŞTIR
 async function endSoloClickCatchGame() {
     clickCatchGameActive = false;
     clearInterval(clickCatchTimerInterval);
@@ -10917,76 +10917,111 @@ async function endSoloClickCatchGame() {
     document.getElementById('displaySpecials').classList.add('hidden');
     document.getElementById('displayTimer').classList.add('hidden');
 
-    // KAZANILANLARI BİLET SAYISIYLA ÇARPMA İŞLEMİ
+    const userRef = db.ref('users/' + currentUser);
+    const userSnap = await userRef.once('value');
+    const user = userSnap.val();
+    if (!user) return;
+
+    // --- 1. ADIM: TÜM NİHAİ ÖDÜLLERİ HESAPLA ---
     const finalScore = clickCatchScore * ticketsUsedThisRound;
     const finalBoxRights = collectedBoxRights * ticketsUsedThisRound;
     const finalIflasShields = collectedIflasShields * ticketsUsedThisRound;
     const finalWheelTickets = collectedWheelTickets * ticketsUsedThisRound;
-    
-    // Aktivite akışı için kazanılan özel eşyaları daha detaylı bir formatta hazırlayalım
-    const specialItemsWonDetails = [];
-    if (finalBoxRights > 0) specialItemsWonDetails.push({ name: 'Kutu Hakkı', amount: finalBoxRights });
-    if (finalIflasShields > 0) specialItemsWonDetails.push({ name: 'İflas Kalkanı', amount: finalIflasShields });
-    if (finalWheelTickets > 0) specialItemsWonDetails.push({ name: 'Çark Bileti', amount: finalWheelTickets });
-    
-    let endMessage = `Oyun bitti! Bu turdaki toplam skorun: <b>${finalScore}</b>. <br><small class="text-gray-400">(Skor: ${clickCatchScore} x ${ticketsUsedThisRound} Bilet)</small>`;
-    if (specialItemsWonDetails.length > 0) {
-        const itemsText = specialItemsWonDetails.map(item => `+${item.amount} ${item.name}`).join(', ');
-        endMessage += `<br>Ayrıca, <b>${itemsText}</b> kazandın!`;
+
+    // --- 2. ADIM: GÜNCELLEME VE LOGLAMA İÇİN VERİLERİ HAZIRLA ---
+    const updates = {};
+    const specialItemsWonDetails = []; // Hem bildirim hem de log için
+    let finalUser = { ...user }; // Kullanıcının verisinin bir kopyasını alıp üzerinde işlem yapalım
+
+    // Basit ödülleri ekle
+    if (finalBoxRights > 0) {
+        updates[`users/${currentUser}/kutuHakki`] = (user.kutuHakki || 0) + finalBoxRights;
+        specialItemsWonDetails.push({ name: 'Kutu Hakkı', amount: finalBoxRights });
     }
-    
-    if (collectedCardPacks.length === 0 && collectedMultipliers.length === 0) {
-        displayMessage(endMessage);
+    if (finalIflasShields > 0) {
+        updates[`users/${currentUser}/iflasShieldUses`] = (user.iflasShieldUses || 0) + finalIflasShields;
+        specialItemsWonDetails.push({ name: 'İflas Kalkanı', amount: finalIflasShields });
+    }
+    if (finalWheelTickets > 0) {
+        updates[`users/${currentUser}/carkBileti`] = (user.carkBileti || 0) + finalWheelTickets;
+        specialItemsWonDetails.push({ name: 'Çark Bileti', amount: finalWheelTickets });
     }
 
+    // Çarpan ödüllerini işle (her bilet için ayrı ayrı)
+    for (let i = 0; i < ticketsUsedThisRound; i++) {
+        for (const multiplier of collectedMultipliers) {
+            const hasActiveMultiplier = (finalUser.multiplierSource === 'box') || (finalUser.multiplierSource === 'store' && (finalUser.multiplierRemainingUses || 0) > 0);
+            if (hasActiveMultiplier) {
+                if (multiplier.value === finalUser.activeMultiplier) {
+                    finalUser.multiplierRemainingUses = (finalUser.multiplierRemainingUses || 0) + multiplier.uses;
+                    specialItemsWonDetails.push({ name: `${multiplier.value}x Çarpan`, amount: `+${multiplier.uses} Kullanım` });
+                } else {
+                    finalUser.kutuHakki = (finalUser.kutuHakki || 0) + (multiplier.uses || 1);
+                    specialItemsWonDetails.push({ name: 'Kutu Hakkı', amount: (multiplier.uses || 1) });
+                }
+            } else {
+                finalUser.activeMultiplier = multiplier.value;
+                finalUser.multiplierRemainingUses = multiplier.uses;
+                finalUser.multiplierSource = 'store';
+                specialItemsWonDetails.push({ name: `${multiplier.value}x Çarpan`, amount: `${multiplier.uses} Kullanım` });
+            }
+        }
+    }
+    // Çarpanlar için nihai güncellemeleri hazırla
+    updates[`users/${currentUser}/activeMultiplier`] = finalUser.activeMultiplier;
+    updates[`users/${currentUser}/multiplierRemainingUses`] = finalUser.multiplierRemainingUses;
+    updates[`users/${currentUser}/multiplierSource`] = finalUser.multiplierSource;
+    updates[`users/${currentUser}/kutuHakki`] = finalUser.kutuHakki;
+
+
+    // Skorları güncelle
     const weeklyScoreRef = db.ref(`clickCatchWeeklyScores/${currentUser}`);
-    const userRef = db.ref('users/' + currentUser);
-
-    const [weeklyScoreSnap, userSnap] = await Promise.all([weeklyScoreRef.once('value'), userRef.once('value')]);
-    
-    const currentWeeklyScore = weeklyScoreSnap.val() || 0;
+    const currentWeeklyScore = (await weeklyScoreRef.once('value')).val() || 0;
     const newTotalWeeklyScore = currentWeeklyScore + Math.max(0, finalScore);
-    const user = userSnap.val();
+    updates[`clickCatchWeeklyScores/${currentUser}`] = newTotalWeeklyScore;
+    updates[`users/${currentUser}/clickCatchHighestScore`] = newTotalWeeklyScore;
 
-    // Loglama fonksiyonuna yeni ve detaylı bilgileri gönderiyoruz
+    // --- 3. ADIM: AKTİVİTE KAYDINI OLUŞTUR ---
     logActivity('clickCatchSolo', currentUser, {
         baseScore: clickCatchScore,
         finalScore: finalScore,
         ticketsUsed: ticketsUsedThisRound,
-        specialItems: specialItemsWonDetails, // Detaylı obje dizisi
+        specialItems: specialItemsWonDetails,
         newWeeklyScore: newTotalWeeklyScore
     });
-    
-    const updates = {};
-    updates[`clickCatchWeeklyScores/${currentUser}`] = newTotalWeeklyScore;
-    updates[`users/${currentUser}/clickCatchHighestScore`] = newTotalWeeklyScore;
-    updates[`users/${currentUser}/kutuHakki`] = (user.kutuHakki || 0) + finalBoxRights;
-    updates[`users/${currentUser}/iflasShieldUses`] = (user.iflasShieldUses || 0) + finalIflasShields;
-    updates[`users/${currentUser}/carkBileti`] = (user.carkBileti || 0) + finalWheelTickets;
-    
-    // Çarpan ve Kart Paketi gibi çarpılmayan ödüller
-    for (let i = 0; i < ticketsUsedThisRound; i++) {
-        for(const multiplier of collectedMultipliers) {
-            // Bu kısım çarpan etkileşimlerini yönetir (aynı kalabilir)
-        }
-    }
 
+    // --- 4. ADIM: KULLANICIYA BİLDİRİM GÖNDER ---
+    let endMessage = `Oyun bitti! Bu turdaki toplam skorun: <b>${finalScore}</b>. <br><small class="text-gray-400">(Skor: ${clickCatchScore} x ${ticketsUsedThisRound} Bilet)</small>`;
+    if (specialItemsWonDetails.length > 0) {
+        // Aynı türden ödülleri birleştirelim
+        const combinedItems = specialItemsWonDetails.reduce((acc, item) => {
+            acc[item.name] = (acc[item.name] || 0) + (typeof item.amount === 'number' ? item.amount : 0);
+            return acc;
+        }, {});
+        const itemsText = Object.entries(combinedItems).map(([name, amount]) => `+${amount} ${name}`).join(', ');
+        endMessage += `<br>Ayrıca, <b>${itemsText}</b> kazandın!`;
+    }
+     // Kart paketi kazanıldıysa mesajı hemen göster, paket açılışı sonra yapılacak
+    if (collectedCardPacks.length > 0) {
+        const totalPacks = collectedCardPacks.length * ticketsUsedThisRound;
+        endMessage += `<br>Ve <b class="text-purple-400">${totalPacks} adet Kart Paketi</b> kazandın! Paketler şimdi açılacak...`;
+    }
+    displayMessage(endMessage);
+
+    // --- 5. ADIM: TÜM GÜNCELLEMELERİ VERİTABANINA YAZ ---
     await db.ref().update(updates);
-    
+
+    // --- 6. ADIM: KART PAKETLERİNİ AÇ ---
     if (collectedCardPacks.length > 0) {
         for (let i = 0; i < ticketsUsedThisRound; i++) {
-            const packsByType = collectedCardPacks.reduce((acc, pack) => {
-                acc[pack.type] = (acc[pack.type] || 0) + pack.value;
-                return acc;
-            }, {});
-            for (const packType in packsByType) {
-                const packCount = packsByType[packType];
-                await startCardPackOpening(packCount, 'Tıkla-Yakala Oyunu', 1, packType);
+            for (const pack of collectedCardPacks) {
+                await startCardPackOpening(pack.value || 1, 'Tıkla-Yakala Oyunu', 1, pack.type);
             }
         }
     }
     
-    ticketsUsedThisRound = 1; // İşlem bitince değişkeni sıfırla
+    // Son olarak, bir sonraki oyun için bilet çarpanını sıfırla
+    ticketsUsedThisRound = 1;
 }
 
 
