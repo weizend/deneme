@@ -9009,7 +9009,7 @@ async function openDailyRewardModal() {
     }
 }
 
-// MEVCUT claimDailyReward FONKSİYONUNU SİLİP BUNU YAPIŞTIR
+// ESKİ claimDailyReward FONKSİYONUNU SİL VE BUNU YAPIŞTIR
 async function claimDailyReward(rewardId) {
     if (isAdmin) return;
 
@@ -9023,7 +9023,7 @@ async function claimDailyReward(rewardId) {
     }
 
     try {
-        const userRef = db.ref('users/' + currentUser);
+        const userRef = db.ref(`users/${currentUser}`);
         const rewardRef = db.ref('dailyRewardOptions/' + rewardId);
 
         const [userSnap, rewardSnap] = await Promise.all([userRef.once('value'), rewardRef.once('value')]);
@@ -9034,109 +9034,117 @@ async function claimDailyReward(rewardId) {
             throw new Error("Ödül bulunamadı.");
         }
 
-        // İksir kontrolünü en başa alalım
-        const isPotion = ['health_potion', 'damage_potion', 'defense_potion', 'crit_potion'].includes(reward.type);
-        if (isPotion) {
-            if (!user.selectedAvatar || !user.selectedAvatar.url) {
-                throw new Error("Bir iksir ödülü almadan önce bir avatar seçmelisiniz.");
-            }
-            const confirmed = await customConfirm(`'${reward.name}' ödülünü alıyorsunuz. Bu, şu an seçili olan avatarınızın istatistiklerini <b class="text-red-400">KALICI OLARAK</b> artıracaktır. Onaylıyor musunuz?`);
-            if (!confirmed) {
-                if (claimButton) { claimButton.disabled = false; claimButton.textContent = 'Ödülü Al'; }
-                return;
-            }
-        }
-
         const lastClaim = (user.dailyRewardsClaimed && user.dailyRewardsClaimed[rewardId]) || 0;
         const cooldown = reward.cooldownMs || 0;
-
         if (cooldown === 0 && lastClaim > 0) {
-            displayMessage("Bu tek seferlik ödülü zaten aldınız.");
-            if (claimButton) { claimButton.textContent = 'Alındı'; }
-            return;
+            throw new Error("Bu tek seferlik ödülü zaten aldınız.");
         }
-
         if (Date.now() < lastClaim + cooldown) {
-            displayMessage("Bu ödül için bekleme süresi henüz dolmadı.");
-            if (claimButton) { claimButton.disabled = false; claimButton.textContent = 'Ödülü Al'; }
-            return;
+            throw new Error("Bu ödül için bekleme süresi henüz dolmadı.");
         }
-
+        
+        // ★★★ YENİ ÇARPAN KONTROL VE ONAY MANTIĞI BAŞLANGICI ★★★
         if (reward.type === 'tempMultiplier') {
             const hasActiveMultiplier = (user.multiplierSource === 'box') || (user.multiplierSource === 'store' && (user.multiplierRemainingUses || 0) > 0);
             if (hasActiveMultiplier) {
-                // Çarpan etkileşim mantığı burada... (önceki versiyondaki gibi kalabilir)
+                const rewardValue = parseInt(reward.value);
+                const userMultiplierValue = parseInt(user.activeMultiplier);
+                
+                if (rewardValue === userMultiplierValue) {
+                    const confirmedStack = await customConfirm(`Zaten ${user.activeMultiplier}x çarpanın var. Bu ödül, mevcut çarpanına <b>+${reward.uses} kullanım hakkı</b> ekleyecek. Onaylıyor musun?`);
+                    if (!confirmedStack) throw new Error("Kullanıcı iptal etti.");
+                } else if (rewardValue > userMultiplierValue) {
+                    const kutuHakkiDonusum = user.multiplierRemainingUses || 0;
+                    const confirmedUpgrade = await customConfirm(`Mevcut ${user.activeMultiplier}x çarpanını daha yüksek olan <b>${rewardValue}x</b> ile değiştirmek üzeresin. Mevcut çarpanının kalan <b>${user.multiplierRemainingUses} kullanım hakkı</b>, envanterine <b>+${kutuHakkiDonusum} Kutu Hakkı</b> olarak eklenecek. Onaylıyor musun?`);
+                    if (!confirmedUpgrade) throw new Error("Kullanıcı iptal etti.");
+                } else {
+                    const kutuHakkiDonusum = reward.uses || 0;
+                    const confirmedConvert = await customConfirm(`Mevcut <b>${user.activeMultiplier}x</b> çarpanın bu <b>${rewardValue}x</b> ödülünden daha güçlü. Bu ödülü alırsan, çarpanın değişmeyecek ancak ödülün <b>${reward.uses} kullanım hakkı</b>, envanterine <b>+${kutuHakkiDonusum} Kutu Hakkı</b> olarak eklenecek. Onaylıyor musun?`);
+                    if (!confirmedConvert) throw new Error("Kullanıcı iptal etti.");
+                }
             }
         }
-        
-        let updates = {};
-        let message = `Tebrikler! Günlük ödül olarak <b>${reward.name}</b> kazandın.`;
+        // ★★★ ÇARPAN KONTROL VE ONAY MANTIĞI SONU ★★★
 
-        if (!updates.inventory) updates.inventory = user.inventory || {};
+        const cardPacksToOpen = [];
+        const { committed, snapshot } = await userRef.transaction(userData => {
+            if (userData) {
+                const userStreak = userData.loginStreak || { currentDay: 1, lastClaimTimestamp: 0 };
+                
+                dayData.rewards.forEach(reward => {
+                    switch (reward.type) {
+                        case 'points':
+                            userData.balance = (userData.balance || 0) + reward.value;
+                            userData.kariyerPuani = (userData.kariyerPuani || 0) + reward.value;
+                            break;
+                        // ... Diğer case'ler aynı kalıyor ...
+                        case 'boxRights': userData.kutuHakki = (userData.kutuHakki || 0) + reward.value; break;
+                        case 'wheelTicket': userData.carkBileti = (userData.carkBileti || 0) + reward.value; break;
+                        case 'clickCatchTicket': userData.clickCatchTickets = (userData.clickCatchTickets || 0) + reward.value; break;
+                        case 'iflasShield': userData.iflasShieldUses = (userData.iflasShieldUses || 0) + reward.value; break;
+                        case 'wildcard': userData.wildcards = (userData.wildcards || 0) + reward.value; break;
 
-        switch (reward.type) {
-            case 'points':
-                updates['balance'] = (user.balance || 0) + reward.value;
-                updates['kariyerPuani'] = (user.kariyerPuani || 0) + reward.value;
-                break;
-            case 'boxRights': updates['kutuHakki'] = (user.kutuHakki || 0) + reward.value; break;
-            case 'wheelTicket': updates['carkBileti'] = (user.carkBileti || 0) + reward.value; break;
-            case 'clickCatchTicket': updates['clickCatchTickets'] = (user.clickCatchTickets || 0) + reward.value; break;
-            case 'iflasShield': updates['iflasShieldUses'] = (user.iflasShieldUses || 0) + reward.value; break;
-            case 'revival_stone': updates.inventory.revival_stone = (user.inventory?.revival_stone || 0) + reward.value; break;
-            case 'health_potion':
-            case 'damage_potion':
-            case 'defense_potion':
-            case 'crit_potion':
-                const avatarId = sanitizeFirebaseKey(user.selectedAvatar.url);
-                const statToUpdate = reward.type.replace('_potion', ''); 
-                const value = parseInt(reward.value) || 0;
-                const statKeyMap = { 'health': 'hp', 'damage': 'damage', 'defense': 'defense', 'crit': 'critChance' };
-                const statKey = statKeyMap[statToUpdate];
-                const statRef = db.ref(`users/${currentUser}/avatarStats/${avatarId}/${statKey}`);
-                await statRef.transaction(currentValue => (currentValue || 0) + value);
-                message = `Başarılı! Avatarının '${statToUpdate}' özelliği kalıcı olarak +${value} arttı.`;
-                break;
-            case 'tempMultiplier':
-                updates['activeMultiplier'] = reward.value;
-                updates['multiplierRemainingUses'] = reward.uses;
-                updates['multiplierSource'] = 'store';
-                break;
-            case 'avatar':
-                const newAvatarId = db.ref().push().key;
-                updates[`avatars/${newAvatarId}`] = { id: newAvatarId, name: reward.avatarName, imageUrl: reward.avatarImageUrl };
-                message = `Tebrikler! <b>${reward.avatarName}</b> avatarı koleksiyonuna eklendi!`;
-                break;
-            case 'wildcard':
-                // Bu kısım aynı kalabilir
-                break;
-            case 'card_pack':
-            case 'card_pack_normal':
-            case 'card_pack_gumus':
-            case 'card_pack_altin':
-            case 'card_pack_efsanevi':
-                startCardPackOpening(reward.value || 1, 'Günlük Ödül', 1, reward.type);
-                message = `Tebrikler! Günlük ödülden ${reward.value} adet ${reward.name} kazandın!`;
-                break;
+                        case 'tempMultiplier':
+                            const hasActiveMultiplier = (userData.multiplierSource === 'box') || (userData.multiplierSource === 'store' && (userData.multiplierRemainingUses || 0) > 0);
+                            if (hasActiveMultiplier) {
+                                const rewardValue = parseInt(reward.value);
+                                const userMultiplierValue = parseInt(userData.activeMultiplier);
+                                if (rewardValue === userMultiplierValue) {
+                                    userData.multiplierRemainingUses = (userData.multiplierRemainingUses || 0) + reward.uses;
+                                } else if (rewardValue > userMultiplierValue) {
+                                    userData.kutuHakki = (userData.kutuHakki || 0) + (userData.multiplierRemainingUses || 0);
+                                    userData.activeMultiplier = reward.value;
+                                    userData.multiplierRemainingUses = reward.uses;
+                                    userData.multiplierSource = 'store';
+                                } else {
+                                    userData.kutuHakki = (userData.kutuHakki || 0) + (reward.uses || 0);
+                                }
+                            } else {
+                                userData.activeMultiplier = reward.value;
+                                userData.multiplierRemainingUses = reward.uses;
+                                userData.multiplierSource = 'store';
+                            }
+                            break;
+                        case 'avatar':
+                             const newAvatarId = firebase.database().ref().push().key;
+                             if (!userData.avatars) userData.avatars = {};
+                             userData.avatars[newAvatarId] = { id: newAvatarId, name: reward.avatarName, imageUrl: reward.avatarImageUrl };
+                             break;
+                        case 'card_pack':
+                        case 'card_pack_normal':
+                        case 'card_pack_gumus':
+                        case 'card_pack_altin':
+                        case 'card_pack_efsanevi':
+                            cardPacksToOpen.push(reward);
+                            break;
+                    }
+                });
+            }
+            return userData;
+        });
+
+        if (committed) {
+            const rewardNames = dayData.rewards.map(r => r.type === 'avatar' ? `'${r.avatarName}' Avatarı` : `+${r.value} ${typeToName[r.type] || 'Ödül'}`).join(', ');
+            displayMessage(`Tebrikler! ${day}. gün ödüllerin (${rewardNames}) envanterine eklendi!`);
+            
+            logActivity('loginStreakClaim', currentUser, { day: day, packageName: dayData.name || `${day}. Gün Paketi` });
+
+            for (const pack of cardPacksToOpen) {
+                await startCardPackOpening(pack.value || 1, `${day}. Gün Ödülü`, 1, pack.type);
+            }
+
+            await openLoginStreakModal();
+            await checkLoginStreakIndicator();
+        } else {
+            throw new Error("Ödül alınamadı. Koşullar sağlanmıyor olabilir, lütfen sayfayı yenileyip tekrar deneyin.");
         }
 
-        const logDetails = { rewardName: reward.name, rewardType: reward.type, rewardValue: reward.type !== 'avatar' ? reward.value : reward.avatarName };
-        if (reward.type === 'tempMultiplier') logDetails.rewardUses = reward.uses;
-        if (reward.type === 'points') logDetails.newBalance = updates.balance;
-        
-        logActivity('dailyReward', currentUser, logDetails);
-        if (isPotion && currentActiveSection === 'monsterBattle') { renderMonsterBattleUI(); }
-        
-        await userRef.update(updates);
-        await db.ref(`users/${currentUser}/dailyRewardsClaimed/${rewardId}`).set(firebase.database.ServerValue.TIMESTAMP);
-
-        displayMessage(message);
-        closeDailyRewardModal();
-        checkAvailableDailyRewards();
-
     } catch (error) {
-        console.error("Günlük ödül alınırken hata:", error);
-        displayMessage("Ödül alınırken bir hata oluştu: " + error.message);
+        if (error.message !== "Kullanıcı iptal etti.") {
+            console.error("Ödül talep edilirken hata:", error);
+            displayMessage("Bir hata oluştu: " + error.message);
+        }
+    } finally {
         if (claimButton) {
             claimButton.disabled = false;
             claimButton.textContent = 'Ödülü Al';
@@ -12117,6 +12125,15 @@ async function buyItem(itemId) {
     }
 }
 
+// YENİ YARDIMCI FONKSİYON
+function handleReviveClick(stoneCount) {
+    if (stoneCount > 0) {
+        useRevivalStone();
+    } else {
+        displayMessage("Dirilmek için Dirilme Taşın yok! Mağazadan veya diğer etkinliklerden kazanabilirsin.");
+    }
+}
+
 // ESKİ renderMonsterBattleUI FONKSİYONUNU SİL VE YERİNE BUNU YAPIŞTIR
 async function renderMonsterBattleUI() {
     const battleArenaContainer = document.getElementById('battleArenaContainer');
@@ -12130,7 +12147,7 @@ async function renderMonsterBattleUI() {
     const attackBtn = document.getElementById('attackMonsterBtn');
     const reviveBtn = document.getElementById('reviveBtn');
     
-    // ★★★ YENİ DÜZENLEME: UI elemanlarını en başta seçiyoruz ★★★
+    // UI elemanlarını en başta seçiyoruz
     const revivalContainer = document.getElementById('revivalStoneContainer');
     const regenContainer = document.getElementById('regenPotionContainer');
 
@@ -12141,6 +12158,7 @@ async function renderMonsterBattleUI() {
     if (!monster || monster.currentHP <= 0) {
         battleArena.style.display = 'none';
         defeatedScreen.classList.remove('hidden');
+        // ... (canavar öldüğündeki kod aynı kalabilir, burası doğru çalışıyor) ...
         const sortedLeaderboard = Object.entries(leaderboard).sort((a, b) => b[1].totalDamage - a[1].totalDamage);
         const winner = sortedLeaderboard.length > 0 ? sortedLeaderboard[0][0] : null;
         const prize = monsterBattleData.rewards?.onKillLeader;
@@ -12167,6 +12185,7 @@ async function renderMonsterBattleUI() {
     document.getElementById('monsterHealthBar').textContent = `${Math.ceil(mHealthPercent)}%`;
     document.getElementById('monsterHealthText').textContent = `${formatNumber(monster.currentHP)} / ${formatNumber(monster.maxHP)} Can`;
 
+    // ... (Liderlik tablosu kodu aynı kalabilir, burası doğru çalışıyor) ...
     const leaderboardEl = document.getElementById('monsterLeaderboard');
     leaderboardEl.innerHTML = '';
     const sortedLeaderboard = Object.entries(leaderboard).sort((a, b) => b[1].totalDamage - a[1].totalDamage);
@@ -12181,11 +12200,9 @@ async function renderMonsterBattleUI() {
 
             const avatarUrl = data.lockedAvatarUrl || userData.selectedAvatar?.url || defaultAvatarUrl;
             const sanitizedId = sanitizeFirebaseKey(avatarUrl);
-            
             const globalBuffs = userData.globalPotionBuffs || {};
             const baseStats = avatarBaseStats[sanitizedId] || {};
             const userMaxHP = (baseStats.hp || 1000) + (globalBuffs.hp || 0);
-
             const userCurrentHP = data.currentHP < 0 ? 0 : data.currentHP;
             const userHealthPercent = (userCurrentHP / userMaxHP) * 100;
 
@@ -12208,6 +12225,8 @@ async function renderMonsterBattleUI() {
         }
     }
 
+
+    // ★★★ OYUNCU KONTROL PANELİ İÇİN YENİ DÜZENLEME BAŞLANGICI ★★★
     const playerSnap = await db.ref(`users/${currentUser}`).once('value');
     const playerData = playerSnap.val();
     const playerBattleData = leaderboard[currentUser];
@@ -12235,17 +12254,13 @@ async function renderMonsterBattleUI() {
         const isPlayerDead = playerCurrentHP <= 0;
         const isPlayerFullHealth = playerCurrentHP >= playerMaxHP;
         
-        // ★★★ YENİ DÜZENLEME: İKSİR PANELİNİ HER ZAMAN OLUŞTUR ★★★
+        // 1. Can Yenileme İksiri Panelini Her Zaman Oluştur (İstediğin gibi buff yazısının üstünde)
         const hasPotions = Object.values(regenPotions).some(count => count > 0);
         if (hasPotions) {
             let optionsHtml = '<option value="">İksir Seç...</option>';
-            const sortedPotions = Object.entries(regenPotions).sort((a, b) => parseInt(a[0]) - parseInt(b[0]));
-            
-            for (const [percentage, count] of sortedPotions) {
-                if (count > 0) {
-                    optionsHtml += `<option value="${percentage}">Can İksiri (%${percentage}) x${count}</option>`;
-                }
-            }
+            Object.entries(regenPotions).sort((a, b) => parseInt(a[0]) - parseInt(b[0])).forEach(([percentage, count]) => {
+                if (count > 0) optionsHtml += `<option value="${percentage}">Can İksiri (%${percentage}) x${count}</option>`;
+            });
             
             const buttonDisabled = isPlayerDead || isPlayerFullHealth;
             let buttonTitle = '';
@@ -12253,36 +12268,43 @@ async function renderMonsterBattleUI() {
             if (isPlayerFullHealth) buttonTitle = "Canın zaten dolu.";
 
             regenContainer.innerHTML = `
-                <div class="flex items-center justify-center gap-2 mt-2">
-                    <select id="regenPotionSelector" class="box-setting-input flex-grow" ${buttonDisabled ? 'disabled' : ''}>
+                <div class="flex items-center justify-center gap-2">
+                    <select id="regenPotionSelector" class="box-setting-input flex-grow">
                         ${optionsHtml}
                     </select>
-                    <button id="useRegenPotionBtn" onclick="useHealthRegenPotion()" class="py-2 px-4 bg-green-600 hover:bg-green-500 rounded-lg text-sm font-bold" 
+                    <button id="useRegenPotionBtn" onclick="useHealthRegenPotion()" 
+                            class="py-2 px-4 bg-green-600 hover:bg-green-500 rounded-lg text-sm font-bold disabled:bg-gray-600 disabled:cursor-not-allowed" 
                             ${buttonDisabled ? 'disabled' : ''} title="${buttonTitle}">
                         Kullan
                     </button>
-                </div>
-            `;
+                </div>`;
         } else {
-             regenContainer.innerHTML = `<p class="text-xs text-gray-500 mt-2">Hiç Can Yenileme İksirin yok.</p>`;
+             regenContainer.innerHTML = `<p class="text-xs text-gray-500">Hiç Can Yenileme İksirin yok.</p>`;
         }
         
-        // ★★★ YENİ DÜZENLEME: DİRİLME TAŞI VE SALDIRI BUTONLARI ★★★
+        // 2. Buff'lar (Kalıcı Bonuslar) Panelini Oluştur
+        const buffsEl = document.getElementById('playerBuffs');
+        buffsEl.innerHTML = '<span class="text-xs text-gray-500">Hesabına kalıcı iksir bonusları ekleyerek gücünü artırabilirsin!</span>';
+        
+        // 3. Duruma Göre Saldırı/Dirilme Bölümünü Oluştur
         if (isPlayerDead) {
             revivalContainer.innerHTML = `<p class="text-lg font-bold text-red-500 animate-pulse">MAĞLUP OLDUN!</p>`;
             playerHealthBar.classList.add('bg-gray-500');
             playerHealthBar.classList.remove('bg-green-500');
             attackBtn.classList.add('hidden');
-            
             reviveBtn.classList.remove('hidden');
+            
+            // Butonun onclick'i yeni helper fonksiyonu çağırıyor
+            reviveBtn.setAttribute('onclick', `handleReviveClick(${playerRevivalStones})`);
             reviveBtn.textContent = `💎 Dirilme Taşı Kullan (${playerRevivalStones})`;
-            reviveBtn.disabled = playerRevivalStones <= 0;
-            if (reviveBtn.disabled) {
-                reviveBtn.classList.add('bg-gray-600', 'cursor-not-allowed');
-                reviveBtn.classList.remove('bg-cyan-600', 'hover:bg-cyan-500');
+            reviveBtn.disabled = false; // Buton her zaman tıklanabilir olacak
+            
+            if (playerRevivalStones <= 0) {
+                 reviveBtn.classList.add('bg-gray-600');
+                 reviveBtn.classList.remove('bg-cyan-600', 'hover:bg-cyan-500');
             } else {
-                reviveBtn.classList.remove('bg-gray-600', 'cursor-not-allowed');
-                reviveBtn.classList.add('bg-cyan-600', 'hover:bg-cyan-500');
+                 reviveBtn.classList.remove('bg-gray-600');
+                 reviveBtn.classList.add('bg-cyan-600', 'hover:bg-cyan-500');
             }
         } else {
             revivalContainer.innerHTML = `<p class="text-lg font-bold text-cyan-300">💎 Dirilme Taşı: ${playerRevivalStones}</p>`;
@@ -12291,10 +12313,8 @@ async function renderMonsterBattleUI() {
             attackBtn.classList.remove('hidden');
             reviveBtn.classList.add('hidden');
         }
-        
-        const buffsEl = document.getElementById('playerBuffs');
-        buffsEl.innerHTML = '<span class="text-xs text-gray-500">Hesabına kalıcı iksir bonusları ekleyerek gücünü artırabilirsin!</span>';
     }
+    // ★★★ OYUNCU KONTROL PANELİ DÜZENLEMESİ SONU ★★★
 
     const playerRankInfoEl = document.getElementById('playerRankInfo');
     if (playerRankInfoEl) {
