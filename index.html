@@ -11802,8 +11802,8 @@ function loadWheelHistory() {
     defense_potion: 'Savunma İksiri',
     damage_potion: 'Hasar İksiri',
     crit_potion: 'Kritik Vuruş İksiri',
-    // YENİ EKLENEN İKSİRLER
-    dodge_potion: 'Sıyrılma İksiri',
+    // YENİ EKLENEN VE GÜNCELLENEN İSİMLER
+    dodge_potion: 'Sıyrılma Şansı İksiri',
     crit_damage_potion: 'Kritik Hasar İksiri',
     pierce_potion: 'Delici Vuruş İksiri'
 };
@@ -11967,7 +11967,6 @@ async function selectAvatar(itemId, imageUrl) {
     closeAvatarSelectionModal();
 }
 
-// ESKİ buyItem FONKSİYONUNU SİL VE BUNU YAPIŞTIR
 async function buyItem(itemId) {
     if (isAdmin) {
         displayMessage("Adminler alışveriş yapamaz.");
@@ -11984,7 +11983,6 @@ async function buyItem(itemId) {
     const isPotion = ['health_potion', 'damage_potion', 'defense_potion', 'crit_potion', 'crit_damage_potion', 'dodge_potion', 'pierce_potion'].includes(item.type);
 
     if (isPotion) {
-        // ★★★ DEĞİŞİKLİK BURADA BAŞLIYOR ★★★
         const capCheck = checkPotionCap(user, item.type, item.value);
 
         if (!capCheck.canAdd) {
@@ -12042,11 +12040,14 @@ async function buyItem(itemId) {
         });
 
         logActivity('buyItem', currentUser, { itemName: item.name, itemCost: currentCost, itemType: item.type, itemValue: valueToAdd, itemDuration: null, newBalance: newBalance });
-        displayMessage(`Başarılı! Hesabınıza kalıcı olarak +${valueToAdd} ${statKey} bonusu eklendi.`);
+        
+        // GÜNCELLENEN KISIM: Artık doğru ismi gösteriyor
+        const friendlyPotionName = typeToName[item.type] || 'bonus';
+        displayMessage(`Başarılı! Hesabınıza kalıcı olarak +${valueToAdd} ${friendlyPotionName} eklendi.`);
+        
         if (currentActiveSection === 'monsterBattle') { renderMonsterBattleUI(); }
 
         return;
-        // ★★★ DEĞİŞİKLİK BURADA BİTİYOR ★★★
     }
 
     // (İksir olmayan diğer ürünler için kodun geri kalanı aynı)
@@ -12132,15 +12133,12 @@ async function buyItem(itemId) {
         else if (item.type === 'clickCatchTicket') updates.clickCatchTickets = (user.clickCatchTickets || 0) + itemValue;
         else if (item.type === 'iflasShield') updates.iflasShieldUses = (user.iflasShieldUses || 0) + itemValue;
         
-        // YENİ EKLENEN BLOK BAŞLANGICI
         else if (item.type === 'health_regen_potion') {
             if (!updates.inventory.health_regen_potion) updates.inventory.health_regen_potion = {};
             const currentPotions = user.inventory?.health_regen_potion?.[itemValue] || 0;
-            updates.inventory.health_regen_potion[itemValue] = currentPotions + 1; // Her alımda 1 adet eklenir, itemValue yüzdeyi belirtir
+            updates.inventory.health_regen_potion[itemValue] = currentPotions + 1;
             message = `Başarılı! Envanterine 1 adet %${itemValue} Can Yenileme İksiri eklendi.`;
         }
-        // YENİ EKLENEN BLOK SONU
-
         else if (item.type === 'revival_stone') updates.inventory.revival_stone = (user.inventory?.revival_stone || 0) + itemValue;
         else if (item.type === 'tempMultiplier') {
             updates.activeMultiplier = itemValue;
@@ -12178,8 +12176,6 @@ function handleReviveClick(stoneCount) {
     }
 }
 
-// MEVCUT renderMonsterBattleUI FONKSİYONUNU SİL VE BU YENİ KOD BLOĞUNU YAPIŞTIR
-// MEVCUT renderMonsterBattleUI FONKSİYONUNU SİL VE BU YENİ KOD BLOĞUNU YAPIŞTIR
 // MEVCUT renderMonsterBattleUI FONKSİYONUNU SİL VE BU YENİ KOD BLOĞUNU YAPIŞTIR
 async function renderMonsterBattleUI() {
     const battleArenaContainer = document.getElementById('battleArenaContainer');
@@ -15449,13 +15445,14 @@ const typeToName = {
     card_pack_gumus: 'Gümüş Kart Paketi',
     card_pack_altin: 'Altın Kart Paketi',
     card_pack_efsanevi: 'Efsanevi Kart Paketi',
+    health_regen_potion: 'Can Yenileme İksiri',
     health_potion: 'Can İksiri',
     revival_stone: 'Dirilme Taşı',
     defense_potion: 'Savunma İksiri',
     damage_potion: 'Hasar İksiri',
     crit_potion: 'Kritik Vuruş İksiri',
-    // YENİ EKLENEN İKSİRLER
-    dodge_potion: 'Sıyrılma İksiri',
+    // YENİ EKLENEN VE GÜNCELLENEN İSİMLER
+    dodge_potion: 'Sıyrılma Şansı İksiri',
     crit_damage_potion: 'Kritik Hasar İksiri',
     pierce_potion: 'Delici Vuruş İksiri'
 };
@@ -15844,7 +15841,6 @@ function startStreakResetCountdown(element, resetTime) {
     activeStreakTimers['resetTimer'] = timerId;
 }
       
-// --- BU GÜNCEL FONKSİYONU ESKİSİNİN YERİNE YAPIŞTIRIN ---
 async function claimLoginStreakReward(day) {
     if (isAdmin) {
         displayMessage("Adminler ödül alamaz.");
@@ -15949,8 +15945,6 @@ async function claimLoginStreakReward(day) {
                         case 'card_pack_efsanevi':
                             cardPacksToOpen.push(reward);
                             break;
-
-                        // ★★★ EKSİK OLAN VE EKLENEN KISIM BAŞLANGICI ★★★
                         case 'revival_stone':
                             if (!userData.inventory) userData.inventory = {};
                             userData.inventory.revival_stone = (userData.inventory.revival_stone || 0) + reward.value;
@@ -15973,7 +15967,6 @@ async function claimLoginStreakReward(day) {
                                 userData.globalPotionBuffs[statKey] = (userData.globalPotionBuffs[statKey] || 0) + reward.value;
                             }
                             break;
-                        // ★★★ EKSİK OLAN VE EKLENEN KISIM SONU ★★★
                     }
                 });
 
@@ -15986,7 +15979,13 @@ async function claimLoginStreakReward(day) {
         });
 
         if (committed) {
-            const rewardNames = dayData.rewards.map(r => r.type === 'avatar' ? `'${r.avatarName}' Avatarı` : `+${r.value} ${typeToName[r.type] || 'Ödül'}`).join(', ');
+            const rewardNames = dayData.rewards.map(r => {
+                if (r.type === 'avatar') return `'${r.avatarName}' Avatarı`;
+                const isPercent = ['defense_potion', 'crit_potion', 'crit_damage_potion', 'dodge_potion', 'pierce_potion'].includes(r.type);
+                const valuePrefix = isPercent ? `+%${r.value}` : `+${r.value}`;
+                return `${valuePrefix} ${typeToName[r.type] || 'Ödül'}`;
+            }).join(', ');
+
             displayMessage(`Tebrikler! ${day}. gün ödüllerin (${rewardNames}) envanterine eklendi!`);
             
             logActivity('loginStreakClaim', currentUser, {
@@ -16971,8 +16970,7 @@ async function convertWildcard() {
     }
 }
 
-      // YENİ FONKSİYON: Kullanıcı Sıfırlama
-async function resetUser(username) {
+      async function resetUser(username) {
     if (!isAdmin || !username) return;
 
     const confirmed = await customConfirm(
@@ -16994,7 +16992,6 @@ async function resetUser(username) {
             kasaPuani: userData.kasaPuani || 0,
             avatars: userData.avatars || null,
             globalPotionBuffs: userData.globalPotionBuffs || null,
-            // Kullanıcının temel kimlik bilgilerini de koruyalım
             password: userData.password,
             pin: userData.pin,
             approved: userData.approved,
@@ -17003,7 +17000,8 @@ async function resetUser(username) {
 
         // KULLANICIYI SİLİP KORUNAN VERİLERLE YENİDEN OLUŞTUR
         const updates = {};
-        updates[`/users/${username}`] = preservedData; // Önce tamamen sil
+        updates[`/users/${username}`] = preservedData;
+        // GÜNCELLENEN KISIM: İlgili tüm liderlik tablolarından kullanıcıyı temizle
         updates[`/clickCatchWeeklyScores/${username}`] = null;
         updates[`/gameConfig/monsterBattle/damageLeaderboard/${username}`] = null;
         
