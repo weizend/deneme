@@ -5839,6 +5839,7 @@ function handleRowTypeChange(selectElement) {
     }
 }
 
+// --- BU GÜNCEL FONKSİYONU ESKİSİNİN YERİNE YAPIŞTIRIN ---
 async function openBox(index) {
     const lastSurpriseSnap = await db.ref('gameStats/lastSurpriseInfo').once('value');
     const lastSurpriseData = lastSurpriseSnap.val();
@@ -5969,9 +5970,16 @@ async function openBox(index) {
             message = `Harika! <b>${foundMultiplierValue}x Çarpan</b> buldun. Bir sonraki kutu açılışında otomatik olarak kullanılacak!`;
             logActivity('multiplierFound', currentUser, { boxId: box.id, value: foundMultiplierValue, multiplier: finalMultiplier });
         } else if (foundMultiplierValue === existingMultiplierValue) {
-             updates.multiplierRemainingUses = existingMultiplierUses + 1;
-             message = `Süper! Mevcut <b>${existingMultiplierValue}x</b> çarpanınla aynı değerde bir tane daha buldun. Kullanım hakkın <b class="text-teal-300">+1</b> artarak <b>${updates.multiplierRemainingUses}</b> oldu!`;
-             logActivity('multiplierStacked', currentUser, { boxId: box.id, value: foundMultiplierValue, uses: 1, multiplier: finalMultiplier });
+            // --- HATA DÜZELTMESİ BAŞLANGICI ---
+            // 1. Kullanım hakkını doğru şekilde artır. (Önceki 1 eksiltmeyi telafi edip +1 ekle)
+            updates.multiplierRemainingUses = existingMultiplierUses + 1;
+            // 2. Başlangıçta yapılan silme işlemini geri al.
+            updates.activeMultiplier = existingMultiplierValue;
+            updates.multiplierSource = existingMultiplierSource;
+            // --- HATA DÜZELTMESİ SONU ---
+
+            message = `Süper! Mevcut <b>${existingMultiplierValue}x</b> çarpanınla aynı değerde bir tane daha buldun. Kullanım hakkın <b class="text-teal-300">+1</b> artarak <b>${updates.multiplierRemainingUses}</b> oldu!`;
+            logActivity('multiplierStacked', currentUser, { boxId: box.id, value: foundMultiplierValue, uses: 1, multiplier: finalMultiplier });
         } else if (foundMultiplierValue > existingMultiplierValue) {
             const combinedValue = existingMultiplierValue + foundMultiplierValue;
             updates.activeMultiplier = combinedValue;
@@ -6037,7 +6045,7 @@ async function openBox(index) {
     else if (box.content === 'revival_stone') {
         const itemsGained = (box.value || 1) * finalMultiplier;
         if (!user.inventory) user.inventory = {};
-        updates['inventory/revival_stone'] = (user.inventory.revival_stone || 0) + itemsGained;
+        updates['inventory/revival_stone'] = (user.inventory?.revival_stone || 0) + itemsGained;
         
         message = `Kutudan <b>+${itemsGained} ${typeToName[box.content]}</b> kazandın!`;
         boxUpdate.baseValue = box.value || 1;
