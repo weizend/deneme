@@ -9014,7 +9014,7 @@ async function openDailyRewardModal() {
         container.innerHTML = '<p class="text-center col-span-full text-red-500">Ödüller yüklenirken bir hata oluştu. Lütfen daha sonra tekrar deneyin.</p>';
     }
 }
-
+      
 // --- YENİ VE TÜM EŞYALARI TANIYAN FONKSİYON ---
 async function claimDailyReward(rewardId) {
     if (isAdmin) {
@@ -9078,123 +9078,100 @@ async function claimDailyReward(rewardId) {
 
         const { committed, snapshot } = await userRef.transaction(userData => {
             if (userData) {
-                const userStreak = userData.loginStreak || { currentDay: 1, lastClaimTimestamp: 0 };
-                
-                if (day !== userStreak.currentDay) return;
-                const cooldownMs = 20 * 60 * 60 * 1000;
-                if (getSyncedTime() < (userStreak.lastClaimTimestamp + cooldownMs)) return;
+                if (!userData.dailyRewardsClaimed) {
+                    userData.dailyRewardsClaimed = {};
+                }
+                userData.dailyRewardsClaimed[rewardId] = getSyncedTime();
 
-                dayData.rewards.forEach(reward => {
-                    switch (reward.type) {
-                        case 'points':
-                            userData.balance = (userData.balance || 0) + reward.value;
-                            userData.kariyerPuani = (userData.kariyerPuani || 0) + reward.value;
-                            break;
-                        case 'boxRights': userData.kutuHakki = (userData.kutuHakki || 0) + reward.value; break;
-                        case 'wheelTicket': userData.carkBileti = (userData.carkBileti || 0) + reward.value; break;
-                        case 'clickCatchTicket': userData.clickCatchTickets = (userData.clickCatchTickets || 0) + reward.value; break;
-                        case 'iflasShield': userData.iflasShieldUses = (userData.iflasShieldUses || 0) + reward.value; break;
-                        case 'wildcard': userData.wildcards = (userData.wildcards || 0) + reward.value; break;
-                        case 'tempMultiplier':
-                            const hasActiveMultiplier = (userData.multiplierSource === 'box') || (userData.multiplierSource === 'store' && (userData.multiplierRemainingUses || 0) > 0);
-                            if (hasActiveMultiplier) {
-                                const rewardValue = parseInt(reward.value);
-                                const userMultiplierValue = parseInt(userData.activeMultiplier);
-                                if (rewardValue === userMultiplierValue) {
-                                    userData.multiplierRemainingUses = (userData.multiplierRemainingUses || 0) + reward.uses;
-                                    logActivity('dailyRewardMultiplierStacked', currentUser, { source: `${day}. Gün Ödülü'nden`, usesAdded: reward.uses, newTotalUses: userData.multiplierRemainingUses, multiplierValue: rewardValue });
-                                } else if (rewardValue > userMultiplierValue) {
-                                    userData.kutuHakki = (userData.kutuHakki || 0) + (userData.multiplierRemainingUses || 0);
-                                    userData.activeMultiplier = reward.value;
-                                    userData.multiplierRemainingUses = reward.uses;
-                                    userData.multiplierSource = 'store';
-                                } else {
-                                    userData.kutuHakki = (userData.kutuHakki || 0) + (reward.uses || 0);
-                                    logActivity('dailyRewardMultiplierConverted', currentUser, { keptMultiplierValue: userMultiplierValue, boxRights: reward.uses, rewardValue: rewardValue, source: `${day}. Gün Ödülü'nden` });
-                                }
-                            } else {
+                switch (reward.type) {
+                    case 'points':
+                        userData.balance = (userData.balance || 0) + reward.value;
+                        userData.kariyerPuani = (userData.kariyerPuani || 0) + reward.value;
+                        activityLogDetails = { newBalance: userData.balance };
+                        break;
+                    case 'boxRights': userData.kutuHakki = (userData.kutuHakki || 0) + reward.value; break;
+                    case 'wheelTicket': userData.carkBileti = (userData.carkBileti || 0) + reward.value; break;
+                    case 'clickCatchTicket': userData.clickCatchTickets = (userData.clickCatchTickets || 0) + reward.value; break;
+                    case 'iflasShield': userData.iflasShieldUses = (userData.iflasShieldUses || 0) + reward.value; break;
+                    case 'wildcard': userData.wildcards = (userData.wildcards || 0) + reward.value; break;
+                    case 'tempMultiplier':
+                        const hasActiveMultiplier = (userData.multiplierSource === 'box') || (userData.multiplierSource === 'store' && (userData.multiplierRemainingUses || 0) > 0);
+                        if (hasActiveMultiplier) {
+                            const rewardValue = parseInt(reward.value);
+                            const userMultiplierValue = parseInt(userData.activeMultiplier);
+                            if (rewardValue === userMultiplierValue) {
+                                userData.multiplierRemainingUses = (userData.multiplierRemainingUses || 0) + reward.uses;
+                                logActivity('dailyRewardMultiplierStacked', currentUser, { source: "Günlük Ödül'den", usesAdded: reward.uses, newTotalUses: userData.multiplierRemainingUses, multiplierValue: rewardValue });
+                            } else if (rewardValue > userMultiplierValue) {
+                                userData.kutuHakki = (userData.kutuHakki || 0) + (userData.multiplierRemainingUses || 0);
                                 userData.activeMultiplier = reward.value;
                                 userData.multiplierRemainingUses = reward.uses;
                                 userData.multiplierSource = 'store';
+                            } else {
+                                userData.kutuHakki = (userData.kutuHakki || 0) + (reward.uses || 0);
+                                logActivity('dailyRewardMultiplierConverted', currentUser, { keptMultiplierValue: userMultiplierValue, boxRights: reward.uses, rewardValue: rewardValue, source: "Günlük Ödül'den" });
                             }
-                            break;
-                        case 'avatar':
-                             const newAvatarId = firebase.database().ref().push().key;
-                             if (!userData.avatars) userData.avatars = {};
-                             userData.avatars[newAvatarId] = { id: newAvatarId, name: reward.avatarName, imageUrl: reward.avatarImageUrl };
-                             break;
-                        case 'card_pack':
-                        case 'card_pack_normal':
-                        case 'card_pack_gumus':
-                        case 'card_pack_altin':
-                        case 'card_pack_efsanevi':
-                            cardPacksToOpen.push(reward);
-                            break;
-
-                        // ★★★ EKSİK OLAN VE EKLENEN KISIM BAŞLANGICI ★★★
-                        case 'revival_stone':
-                            if (!userData.inventory) userData.inventory = {};
-                            userData.inventory.revival_stone = (userData.inventory.revival_stone || 0) + reward.value;
-                            break;
-                        case 'health_potion':
-                        case 'damage_potion':
-                        case 'defense_potion':
-                        case 'crit_potion':
-                        case 'crit_damage_potion':
-                        case 'dodge_potion':
-                        case 'pierce_potion':
-                            const statKeyMap = { 
-                                'health_potion': 'hp', 'damage_potion': 'damage', 'defense_potion': 'defense', 
-                                'crit_potion': 'critChance', 'crit_damage_potion': 'critDamage', 
-                                'dodge_potion': 'dodgeChance', 'pierce_potion': 'pierceChance' 
-                            };
-                            const statKey = statKeyMap[reward.type];
-                            if (statKey) {
-                                if (!userData.globalPotionBuffs) userData.globalPotionBuffs = {};
-                                userData.globalPotionBuffs[statKey] = (userData.globalPotionBuffs[statKey] || 0) + reward.value;
-                            }
-                            break;
-                        // ★★★ EKSİK OLAN VE EKLENEN KISIM SONU ★★★
-                    }
-                });
-
-                userData.loginStreak = {
-                    currentDay: userStreak.currentDay + 1,
-                    lastClaimTimestamp: getSyncedTime()
-                };
+                        } else {
+                            userData.activeMultiplier = reward.value;
+                            userData.multiplierRemainingUses = reward.uses;
+                            userData.multiplierSource = 'store';
+                        }
+                        activityLogDetails = { rewardUses: reward.uses };
+                        break;
+                    case 'avatar':
+                        const newAvatarId = db.ref().push().key;
+                        if (!userData.avatars) userData.avatars = {};
+                        userData.avatars[newAvatarId] = { id: newAvatarId, name: reward.avatarName, imageUrl: reward.avatarImageUrl };
+                        break;
+                    case 'card_pack':
+                    case 'card_pack_normal':
+                    case 'card_pack_gumus':
+                    case 'card_pack_altin':
+                    case 'card_pack_efsanevi':
+                        cardPacksToOpen.push({ type: reward.type, value: reward.value });
+                        break;
+                    case 'revival_stone':
+                        if (!userData.inventory) userData.inventory = {};
+                        userData.inventory.revival_stone = (userData.inventory.revival_stone || 0) + reward.value;
+                        break;
+                    case 'health_potion': case 'damage_potion': case 'defense_potion':
+                    case 'crit_potion': case 'crit_damage_potion': case 'dodge_potion': case 'pierce_potion':
+                        const statKeyMap = { 'health_potion': 'hp', 'damage_potion': 'damage', 'defense_potion': 'defense', 'crit_potion': 'critChance', 'crit_damage_potion': 'critDamage', 'dodge_potion': 'dodgeChance', 'pierce_potion': 'pierceChance' };
+                        const statKey = statKeyMap[reward.type];
+                        if (statKey) {
+                            if (!userData.globalPotionBuffs) userData.globalPotionBuffs = {};
+                            userData.globalPotionBuffs[statKey] = (userData.globalPotionBuffs[statKey] || 0) + reward.value;
+                        }
+                        break;
+                }
             }
             return userData;
         });
 
         if (committed) {
-            const rewardNames = dayData.rewards.map(r => r.type === 'avatar' ? `'${r.avatarName}' Avatarı` : `+${r.value} ${typeToName[r.type] || 'Ödül'}`).join(', ');
-            displayMessage(`Tebrikler! ${day}. gün ödüllerin (${rewardNames}) envanterine eklendi!`);
+            displayMessage(`Tebrikler! '${reward.name}' ödülünü başarıyla aldın.`);
+            logActivity('dailyReward', currentUser, { ...activityLogDetails, rewardName: reward.name, rewardType: reward.type, rewardValue: reward.value });
             
-            logActivity('loginStreakClaim', currentUser, {
-                day: day,
-                packageName: dayData.name || `${day}. Gün Paketi`
-            });
-
-            const hasPotion = dayData.rewards.some(r => r.type.includes('_potion'));
+            const hasPotion = reward.type.includes('_potion');
             if (hasPotion && currentActiveSection === 'monsterBattle') { renderMonsterBattleUI(); }
 
             for (const pack of cardPacksToOpen) {
-                await startCardPackOpening(pack.value || 1, `${day}. Gün Ödülü`, 1, pack.type);
+                await startCardPackOpening(pack.value || 1, 'Günlük Ödül', 1, pack.type);
             }
-
-            await openLoginStreakModal();
-            await checkLoginStreakIndicator();
+            
+            await openDailyRewardModal();
+            await checkAvailableDailyRewards();
         } else {
-            throw new Error("Ödül alınamadı. Koşullar sağlanmıyor olabilir, lütfen sayfayı yenileyip tekrar deneyin.");
+            throw new Error("Ödül alınamadı. Lütfen sayfayı yenileyip tekrar deneyin.");
         }
 
     } catch (error) {
         if (error.message !== "Kullanıcı iptal etti.") {
-            console.error("Ödül talep edilirken hata:", error);
+            console.error("Günlük ödül alınırken hata:", error);
             displayMessage("Bir hata oluştu: " + error.message);
         }
     } finally {
-         if (claimButton) {
+        if (claimButton) {
             claimButton.disabled = false;
             claimButton.textContent = 'Ödülü Al';
         }
@@ -15954,6 +15931,31 @@ async function claimLoginStreakReward(day) {
                         case 'card_pack_efsanevi':
                             cardPacksToOpen.push(reward);
                             break;
+
+                        // ★★★ EKSİK OLAN VE EKLENEN KISIM BAŞLANGICI ★★★
+                        case 'revival_stone':
+                            if (!userData.inventory) userData.inventory = {};
+                            userData.inventory.revival_stone = (userData.inventory.revival_stone || 0) + reward.value;
+                            break;
+                        case 'health_potion':
+                        case 'damage_potion':
+                        case 'defense_potion':
+                        case 'crit_potion':
+                        case 'crit_damage_potion':
+                        case 'dodge_potion':
+                        case 'pierce_potion':
+                            const statKeyMap = { 
+                                'health_potion': 'hp', 'damage_potion': 'damage', 'defense_potion': 'defense', 
+                                'crit_potion': 'critChance', 'crit_damage_potion': 'critDamage', 
+                                'dodge_potion': 'dodgeChance', 'pierce_potion': 'pierceChance' 
+                            };
+                            const statKey = statKeyMap[reward.type];
+                            if (statKey) {
+                                if (!userData.globalPotionBuffs) userData.globalPotionBuffs = {};
+                                userData.globalPotionBuffs[statKey] = (userData.globalPotionBuffs[statKey] || 0) + reward.value;
+                            }
+                            break;
+                        // ★★★ EKSİK OLAN VE EKLENEN KISIM SONU ★★★
                     }
                 });
 
