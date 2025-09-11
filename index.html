@@ -11882,13 +11882,12 @@ function loadWheelHistory() {
     card_pack_gumus: 'Gümüş Kart Paketi',
     card_pack_altin: 'Altın Kart Paketi',
     card_pack_efsanevi: 'Efsanevi Kart Paketi',
-    health_regen_potion: 'Can Yenileme İksiri',
+    health_regen_potion: 'Can Yenileme İksiri', // ★★★ BU SATIRIN EKLİ OLDUĞUNDAN EMİN OL ★★★
     health_potion: 'Can İksiri',
     revival_stone: 'Dirilme Taşı',
     defense_potion: 'Savunma İksiri',
     damage_potion: 'Hasar İksiri',
     crit_potion: 'Kritik Vuruş İksiri',
-    // YENİ EKLENEN İKSİRLER
     dodge_potion: 'Sıyrılma İksiri',
     crit_damage_potion: 'Kritik Hasar İksiri',
     pierce_potion: 'Delici Vuruş İksiri'
@@ -15645,12 +15644,12 @@ const typeToName = {
     card_pack_gumus: 'Gümüş Kart Paketi',
     card_pack_altin: 'Altın Kart Paketi',
     card_pack_efsanevi: 'Efsanevi Kart Paketi',
+    health_regen_potion: 'Can Yenileme İksiri', // ★★★ BU SATIRIN EKLİ OLDUĞUNDAN EMİN OL ★★★
     health_potion: 'Can İksiri',
     revival_stone: 'Dirilme Taşı',
     defense_potion: 'Savunma İksiri',
     damage_potion: 'Hasar İksiri',
     crit_potion: 'Kritik Vuruş İksiri',
-    // YENİ EKLENEN İKSİRLER
     dodge_potion: 'Sıyrılma İksiri',
     crit_damage_potion: 'Kritik Hasar İksiri',
     pierce_potion: 'Delici Vuruş İksiri'
@@ -17027,6 +17026,8 @@ async function deleteCurrentMonster() {
     }
 }
 
+// MEVCUT openMonsterInfoModal FONKSİYONUNU SİLİP BUNU YAPIŞTIR
+
 function openMonsterInfoModal() {
     const monster = monsterBattleData.monsterDetails;
     if (!monster) return;
@@ -17034,7 +17035,6 @@ function openMonsterInfoModal() {
     document.getElementById('modalMonsterName').textContent = monster.name;
     
     const statsEl = document.getElementById('modalMonsterStats');
-    // DEĞİŞİKLİK BURADA: İsimlendirme ve sıralama güncellendi.
     statsEl.innerHTML = `
         <p>❤️ Can: <b class="text-white">${formatNumber(monster.maxHP)}</b></p>
         <p>⚔️ Hasar: <b class="text-white">${formatNumber(monster.minDamage)} - ${formatNumber(monster.maxDamage)}</b></p>
@@ -17059,7 +17059,27 @@ function openMonsterInfoModal() {
     if (tiers.length > 0) {
         tiersEl.innerHTML = '';
         tiers.sort((a,b) => a.minDamage - b.minDamage).forEach(tier => {
-            const rewardTexts = tier.rewards.map(r => `${typeToName[r.type]} (%${r.chance})`).join(', ');
+            
+            // ★★★ DEĞİŞEN KISIM BAŞLANGICI: Ödül metinlerini daha detaylı oluşturuyoruz ★★★
+            const rewardTexts = tier.rewards.map(r => {
+                const isPercent = ['defense_potion', 'crit_potion', 'crit_damage_potion', 'dodge_potion', 'pierce_potion', 'health_regen_potion'].includes(r.type);
+                const name = typeToName[r.type] || r.type; // typeToName'den ismi al
+                let valueText = '';
+
+                // Eğer yüzde ile gösterilecek bir iksirse, başına +% koy
+                if (isPercent) {
+                    valueText = `+%${r.value} ${name}`;
+                } 
+                // Diğer tüm ödüller için başına + koy
+                else {
+                    valueText = `+${r.value} ${name}`;
+                }
+                
+                // Son olarak, şans yüzdesini de ekle
+                return `${valueText} (%${r.chance})`;
+            }).join(', ');
+            // ★★★ DEĞİŞEN KISIM SONU ★★★
+            
             tiersEl.innerHTML += `<div><b class="text-white">${formatNumber(tier.minDamage)}+ Hasar</b> vuranlar şu ödüllerden birini kazanma şansı yakalar: <span class="text-cyan-300">${rewardTexts}</span></div>`;
         });
     } else {
@@ -17068,6 +17088,7 @@ function openMonsterInfoModal() {
 
     document.getElementById('monsterInfoModal').style.display = 'flex';
 }
+
 /**
  * Canavar bilgi penceresini kapatır.
  */
