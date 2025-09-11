@@ -11,6 +11,20 @@
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
 
 <style>
+/* --- YENİ EKLENECEK KOD: ÖNCEKİ ŞAMPİYON PANELİ STİLİ --- */
+#lastChampionPanel .champion-avatar {
+    width: 64px; /* w-16 */
+    height: 64px; /* h-16 */
+    border-radius: 50%; /* rounded-full */
+    border: 3px solid #fde047; /* border-4 border-yellow-300 */
+    object-fit: cover;
+    cursor: pointer;
+    transition: transform 0.2s ease-in-out;
+}
+#lastChampionPanel .champion-avatar:hover {
+    transform: scale(1.1);
+}
+/* --- YENİ EKLENECEK KOD SONU --- */
 /* --- CANAVAR SAVAŞI STİLLERİ --- */
 .health-bar-container {
     width: 100%;
@@ -1426,6 +1440,8 @@ body.modal-open .modal-content {
 </div>
             <button onclick="saveAvatarStats()" class="w-full py-2 bg-green-700 hover:bg-green-600 rounded-lg font-bold mt-2">Tüm Avatar İstatistiklerini Kaydet</button>
         </div>
+        <div id="lastChampionPanel" class="hidden w-full max-w-2xl mx-auto mb-6 bg-gray-800 p-4 rounded-xl shadow-lg border-2 border-amber-500 text-center relative">
+    </div>
 
         <div id="battleArenaContainer">
     <div id="battleArena" class="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -2479,6 +2495,7 @@ body.modal-open .modal-content {
             <li><b class="text-green-400">Liderlik Tablolarında Yükselmek:</b> "Aylık Sezon Sıralaması" ve "Haftalık Tıkla-Yakala Sıralaması" gibi tablolarda en tepeye tırmanarak sezonun en iyisi olduğunu kanıtla ve özel ödüller kazan.</li>
             <li><b class="text-purple-400">Kart Koleksiyonu Albümünü Tamamlamak:</b> Oyunun en büyük ve en prestijli hedefi! Sezon bitmeden tüm kartları toplayan herkes, admin tarafından belirlenen büyük ödülleri kazanır.</li>
              <li><b class="text-yellow-200">Gerçek Ödüller Kazanmak:</b> Oyun içinde kazandığın puanları biriktirerek "Özel Ürün Mağazası"ndan gerçek dünyada geçerli ödüller (oyun, hediye kartı vb.) alabilirsin.</li>
+            <li><b class="text-red-400">Kalıcı Başarımlar Kazanmak:</b> Canavar Savaşları ve Tıkla-Yakala'da şampiyon olarak profiline kalıcı, artan seviyeli başarımlar ekleyerek adını efsaneler arasına yazdır.</li>
         </ul>
     </div>
 
@@ -2961,12 +2978,18 @@ body.modal-open .modal-content {
             <p class="mb-2">Bu mod, haftalık liderlik tablosunda en yüksek skoru elde etme yarışmasıdır.</p>
             <ul class="list-disc list-inside space-y-1 pl-2">
                 <li>Oyuna girmek <strong>1 Tıkla-Yakala Bileti</strong> gerektirir.</li>
-                <li>Oyun sırasında topladığınız skorlar, ana Puanınıza değil, o haftaki toplam skorunuza eklenir.</li>
+                <li>Oyun sırasında topladığınız skorlar, o haftaki toplam skorunuza eklenir.</li>
                 <li>Hafta sonunda, en yüksek skoru yapan oyuncu "Haftanın Şampiyonu" seçilir ve <strong>özel bir ödül</strong> kazanır.</li>
+                <li><b class="text-amber-300">Haftalık Şampiyon Başarımı:</b> Haftanın birincisi olan oyuncu, profiline kalıcı olarak işlenen "T-Y Yakalayıcı Şampiyonu" başarımını kazanır. Bu başarım, her yeni şampiyonlukta seviye atlar.</li>
                 <li>Kazanan seçildikten sonra, o hafta yarışmaya katılmış olan <strong>tüm oyunculara +1 Bilet</strong> hediye edilir.</li>
-                <li>Sıralama, tüm kişisel skorlar ve mevcut biletleriniz sıfırlanarak yeni bir haftaya başlanır.</li>
             </ul>
         </div>
+        
+        ```
+
+***
+
+İşte hepsi bu kadar kanka. Bu değişikliklerle birlikte tüm isteklerin tamamlanmış olacak. Kodları dikkatlice değiştirirsen herhangi bir sorun yaşamazsın. Bol şans!
         <div>
             <h5 class="text-xl font-bold text-green-400 mb-2">Lobi Oyunu (Rekabetçi Mod)</h5>
             <p class="mb-2">Admin tarafından kurulan bu mod, diğer oyuncularla gerçek zamanlı bir skor yarışıdır.</p>
@@ -3416,42 +3439,26 @@ body.modal-open .modal-content {
         </div>
         
         <div>
-    <div>
-    <h4 class="font-bold text-lg text-yellow-300">🛡️ Savaş Mekanikleri</h4>
-    <p>Her oyuncunun gücü, seçili olan avatarının istatistiklerine bağlıdır. Avatarların Can, Hasar, Savunma ve diğer özellikleri vardır.</p>
-    <ul class="list-disc list-inside ml-4 mt-2 space-y-2">
-        <li><b class="text-white">Can:</b> Savaşta hayatta kalmanı sağlayan can puanındır. Sıfıra düştüğünde mağlup olursun.</li>
-        <li><b class="text-white">Hasar:</b> Rakibe verdiğin temel vuruş gücüdür. Genellikle minimum ve maksimum olarak bir aralıkta belirlenir.</li>
-        <li><b class="text-white">Savunma:</b> Rakibin saldırısından aldığın hasarı azaltır. Savunman ne kadar yüksekse o kadar az hasar alırsın.</li>
-        <li><b class="text-white">Kritik Hasar:</b> Kritik vuruşun ne kadar EKSTRA hasar vereceğini belirler. Örneğin, %50 Kritik Hasarın varsa, kritik vuruşların normalden %50 daha fazla vurur.</li>
-        <li><b class="text-white">Sıyrılma Şansı:</b> Rakibin saldırısından hiç hasar almadan kurtulma ihtimalin.</li>
-        <li><b class="text-white">Delici Vuruş Şansı:</b> Saldırırken rakibin "Sıyrılma Şansı"nı yok sayma ihtimalin. Eğer Delici Vuruşun başarılı olursa, rakip sıyrılamaz!</li>
-        <li><b class="text-white">Kritik Vuruş Şansı:</b> Normal hasar yerine çok daha güçlü bir kritik vuruş yapma ihtimalin.</li>
-        <li><b>Avatar Kilidi:</b> Canavara ilk saldırını yaptığın anda, o an seçili olan avatarın bu canavar ölene kadar kilitlenir. Canavar ölene veya etkinlik bitene kadar başka bir avatarla savaşa devam edemezsin. Stratejini iyi belirle!</li>
-        <li><b>Ölüm ve Dirilme:</b> Canın sıfıra düştüğünde ölürsün ve artık saldıramazsın. Ancak envanterinde "Dirilme Taşı" varsa, bunu kullanarak canını tamamen doldurabilir ve savaşa geri dönebilirsin.</li>
-    </ul>
-</div>
+            <h4 class="font-bold text-lg text-yellow-300">🛡️ Savaş Mekanikleri</h4>
+            <p>Her oyuncunun gücü, seçili olan avatarının istatistiklerine bağlıdır. Avatarların Can, Hasar, Savunma ve diğer özellikleri vardır.</p>
+            <ul class="list-disc list-inside ml-4 mt-2 space-y-2">
+                <li><b class="text-white">Can Yenileme İksiri:</b> Savaş sırasında canını anında yenilemek için kullanılır. Bu iksirler, maksimum canının belirli bir yüzdesi (%) kadar iyileştirir.</li>
+                <li><b class="text-white">Avatar Kilidi:</b> Canavara ilk saldırını yaptığın anda, o an seçili olan avatarın bu canavar ölene kadar kilitlenir. Stratejini iyi belirle!</li>
+                <li><b class="text-white">Dirilme Taşı:</b> Canın sıfıra düştüğünde ölürsün. "Dirilme Taşı" kullanarak canını tamamen doldurabilir ve savaşa geri dönebilirsin.</li>
+            </ul>
+        </div>
         
         <div>
             <h4 class="font-bold text-lg text-yellow-300">🧪 İksirler ve Kalıcı Güçlendirmeler</h4>
             <p>Mağazadan veya diğer etkinliklerden kazandığın iksirler, hesabına <b class="text-red-400">KALICI OLARAK</b> bonuslar ekler. Bu güçlendirmeler tüm avatarlarının temel istatistiklerini artırır.</p>
-             <ul class="list-disc list-inside ml-4 mt-2">
-                <li><b>Can İksiri:</b> Maksimum canını kalıcı olarak artırır.</li>
-                <li><b>Hasar İksiri:</b> Minimum ve maksimum hasarını kalıcı olarak artırır.</li>
-                <li><b>Savunma İksiri:</b> Savunmanı kalıcı olarak artırır.</li>
-                <li><b>Kritik Hasar İksiri:</b> Kritik hasar yüzdeni kalıcı olarak artırır.</li>
-                <li><b>Sıyrılma Şansı İksiri:</b> Sıyrılma şansını kalıcı olarak artırır.</li>
-                <li><b>Delici Şansı İksiri:</b> Delici vuruş şansını kalıcı olarak artırır.</li>
-               <li><b>Kritik Şansı İksiri:</b> Kritik vuruş şansını kalıcı olarak artırır.</li>
-            </ul>
         </div>
 
         <div>
-            <h4 class="font-bold text-lg text-yellow-300">🏆 Ödüller</h4>
-            <p>Canavarla savaşırken iki tür ödül kazanabilirsin:</p>
-             <ul class="list-disc list-inside ml-4 mt-2">
-                <li><b>Hasar Eşiği Ödülleri:</b> Canavara belirli bir hasar miktarını tek seferde geçtiğinde, rastgele ödüller (Puan, Kutu Hakkı, Kart Paketi vb.) kazanma şansı yakalarsın.</li>
-                <li><b>Liderlik Ödülü:</b> Canavar öldüğünde, ona en çok toplam hasarı vermiş olan oyuncu, admin tarafından belirlenen büyük liderlik ödülünü kazanır!</li>
+            <h4 class="font-bold text-lg text-yellow-300">🏆 Ödüller ve Başarımlar</h4>
+            <ul class="list-disc list-inside ml-4 mt-2 space-y-2">
+                <li><b>Hasar Eşiği Ödülleri:</b> Canavara belirli bir hasar miktarını tek seferde geçtiğinde, rastgele ödüller kazanma şansı yakalarsın.</li>
+                <li><b>Liderlik Ödülü:</b> Canavar öldüğünde, ona en çok toplam hasarı vermiş olan oyuncu, büyük liderlik ödülünü kazanır!</li>
+                <li><b class="text-amber-300">Canavar Şampiyonu Başarımı:</b> Canavara en çok hasarı veren oyuncu, profiline kalıcı olarak işlenen "Canavar Şampiyonu" başarımını kazanır. Bu başarım, her yeni şampiyonlukta seviye atlar (1. Kez, 2. Kez vb.).</li>
             </ul>
         </div>
     </div>
@@ -12266,6 +12273,12 @@ async function renderMonsterBattleUI() {
     const battleArenaContainer = document.getElementById('battleArenaContainer');
     if (!battleArenaContainer) return;
 
+    // ★★★ YENİ KOD BAŞLANGICI: Önceki şampiyon panelini yönet ★★★
+    const lastChampionPanel = document.getElementById('lastChampionPanel');
+    const lastChampionSnap = await db.ref('gameStats/lastMonsterChampion').once('value');
+    const lastChampionData = lastChampionSnap.val();
+    // ★★★ YENİ KOD SONU ★★★
+
     const monster = monsterBattleData.monsterDetails;
     const leaderboard = monsterBattleData.damageLeaderboard || {};
     const battleArena = document.getElementById('battleArena');
@@ -12281,18 +12294,35 @@ async function renderMonsterBattleUI() {
     if (isAdmin) {
         document.getElementById('monsterBattleAdminToggles')?.classList.toggle('hidden', !isAdmin);
     }
+    
+    // ★★★ YENİ KOD BAŞLANGICI: Şampiyon panelini göster/gizle ★★★
+    if (lastChampionData && monster && monster.currentHP > 0) {
+        lastChampionPanel.innerHTML = `
+            <h4 class="text-amber-300 text-lg font-bold mb-3">Önceki Canavarın Şampiyonu</h4>
+            <div class="flex items-center justify-center gap-4">
+                <img src="${lastChampionData.lockedAvatarUrl}" class="champion-avatar" onclick="openAvatarStatsModal('${lastChampionData.username}')">
+                <div>
+                    <p class="text-xl font-bold text-white cursor-pointer hover:underline" onclick="openPublicUserDetailModal('${lastChampionData.username}')">${lastChampionData.username}</p>
+                    <p class="text-gray-300">Toplam Hasar: <b class="text-yellow-400">${formatNumber(lastChampionData.totalDamage)}</b></p>
+                </div>
+            </div>
+        `;
+        lastChampionPanel.classList.remove('hidden');
+    } else {
+        lastChampionPanel.classList.add('hidden');
+    }
+    // ★★★ YENİ KOD SONU ★★★
 
     if (!monster || monster.currentHP <= 0) {
         battleArena.style.display = 'none';
         defeatedScreen.classList.remove('hidden');
         const sortedLeaderboard = Object.entries(leaderboard).sort((a, b) => b[1].totalDamage - a[1].totalDamage);
         const winner = sortedLeaderboard.length > 0 ? sortedLeaderboard[0][0] : null;
-        const winnerData = winner ? leaderboard[winner] : null; // ★★★ YENİ: Kazananın verilerini al
+        const winnerData = winner ? leaderboard[winner] : null;
         const prize = monsterBattleData.rewards?.onKillLeader;
         
         document.getElementById('monsterDefeatedTitle').textContent = `${monster?.name || 'Canavar'} Mağlup Edildi!`;
-
-        // ★★★ DEĞİŞEN KISIM BAŞLANGICI ★★★
+        
         if (winner && prize && winnerData) {
             const prizeName = typeToName[prize.type] || prize.type;
             const winnerAvatarUrl = winnerData.lockedAvatarUrl || defaultAvatarUrl;
@@ -12307,7 +12337,6 @@ async function renderMonsterBattleUI() {
         } else {
             document.getElementById('monsterDefeatedMessage').textContent = 'Adminin yeni bir canavar çağırması bekleniyor.';
         }
-        // ★★★ DEĞİŞEN KISIM SONU ★★★
         
         if(monsterInstanceControls) monsterInstanceControls.classList.add('hidden');
         return;
@@ -16455,9 +16484,13 @@ async function loadAvatarStatsForAdmin() {
     }
 }
       
-// ESKİ saveAndSpawnMonster FONKSİYONUNU SİL VE BUNU YAPIŞTIR
+// MEVCUT saveAndSpawnMonster FONKSİYONUNU SİL VE BUNU YAPIŞTIR
 async function saveAndSpawnMonster() {
     if (!isAdmin) return;
+
+    // ★★★ YENİ KOD BAŞLANGICI: Yeni canavar gelmeden önce eski şampiyonu temizle ★★★
+    await db.ref('gameStats/lastMonsterChampion').remove();
+    // ★★★ YENİ KOD SONU ★★★
 
     const minDamage = parseInt(document.getElementById('adminMonsterMinDamage').value) || 500;
     const maxDamage = parseInt(document.getElementById('adminMonsterMaxDamage').value) || 1000;
@@ -16603,8 +16636,7 @@ function addRewardToTier(element, rewardData = {}) {
     rewardsListContainer.appendChild(rewardRow);
 }
 
-// ESKİ attackMonster FONKSİYONUNU SİL VE YERİNE BUNU YAPIŞTIR
-// --- YEPYENİ SAVAŞ SİSTEMİ FONKSİYONU ---
+// MEVCUT attackMonster FONKSİYONUNU SİL VE BUNU YAPIŞTIR
 async function attackMonster() {
     if (isAdmin) {
         displayMessage("Adminler saldıramaz.");
@@ -16664,31 +16696,20 @@ async function attackMonster() {
             pierceChance: (playerBaseStats.pierceChance || 5) + (globalBuffs.pierceChance || 0),
         };
         const monsterStats = battleData.monsterDetails;
-
+        
         const monsterDefenseReduction = Math.min((monsterStats.defense || 0) / 100, 0.8);
         const playerDefenseReduction = Math.min((playerStats.defense || 0) / 100, 0.8);
 
-        // --- Oyuncunun Saldırısı ---
         let finalDamageToMonster = 0;
         let playerAttackType = 'normal';
         let didMonsterDodge = false;
         const randomPlayerDamage = Math.floor(Math.random() * (playerStats.maxDamage - playerStats.minDamage + 1)) + playerStats.minDamage;
-        
         const playerPierced = (Math.random() * 100) < playerStats.pierceChance;
-        
-        if (!playerPierced) {
-            didMonsterDodge = (Math.random() * 100) < (monsterStats.dodgeChance || 0);
-        }
-
-        if (didMonsterDodge) {
-            finalDamageToMonster = 0;
-        } else {
+        if (!playerPierced) { didMonsterDodge = (Math.random() * 100) < (monsterStats.dodgeChance || 0); }
+        if (!didMonsterDodge) {
             const playerCritted = (Math.random() * 100) < playerStats.critChance;
             let totalDamage = randomPlayerDamage;
-            if (playerCritted) {
-                totalDamage += Math.floor(totalDamage * (playerStats.critDamage / 100));
-            }
-            
+            if (playerCritted) { totalDamage += Math.floor(totalDamage * (playerStats.critDamage / 100)); }
             if (playerPierced) {
                 finalDamageToMonster = Math.max(1, Math.floor(totalDamage));
                 playerAttackType = 'pierce';
@@ -16698,27 +16719,16 @@ async function attackMonster() {
             }
         }
         
-        // --- Canavarın Saldırısı ---
         let finalDamageToPlayer = 0;
         let monsterAttackType = 'normal';
         let didPlayerDodge = false;
         const randomMonsterDamage = Math.floor(Math.random() * (monsterStats.maxDamage - monsterStats.minDamage + 1)) + monsterStats.minDamage;
-        
         const monsterPierced = (Math.random() * 100) < (monsterStats.pierceChance || 5);
-
-        if (!monsterPierced) {
-            didPlayerDodge = (Math.random() * 100) < playerStats.dodgeChance;
-        }
-        
-        if (didPlayerDodge) {
-            finalDamageToPlayer = 0;
-        } else {
+        if (!monsterPierced) { didPlayerDodge = (Math.random() * 100) < playerStats.dodgeChance; }
+        if (!didPlayerDodge) {
             const monsterCritted = (Math.random() * 100) < (monsterStats.critChance || 5);
             let totalDamage = randomMonsterDamage;
-            if (monsterCritted) {
-                totalDamage += Math.floor(totalDamage * ((monsterStats.critDamage || 10) / 100));
-            }
-
+            if (monsterCritted) { totalDamage += Math.floor(totalDamage * ((monsterStats.critDamage || 10) / 100)); }
             if (monsterPierced) {
                 finalDamageToPlayer = Math.max(1, Math.floor(totalDamage));
                 monsterAttackType = 'pierce';
@@ -16736,10 +16746,7 @@ async function attackMonster() {
                 let randomRoll = Math.random() * totalChance;
                 for (const reward of tier.rewards) {
                     randomRoll -= reward.chance;
-                    if (randomRoll <= 0) {
-                        randomReward = reward;
-                        break;
-                    }
+                    if (randomRoll <= 0) { randomReward = reward; break; }
                 }
                 break; 
             }
@@ -16829,10 +16836,18 @@ async function attackMonster() {
         if (finalBattleData && finalBattleData.monsterDetails.currentHP <= 0) {
             const sortedLeaderboard = Object.entries(finalBattleData.damageLeaderboard || {}).sort((a,b) => b[1].totalDamage - a[1].totalDamage);
             const winner = sortedLeaderboard.length > 0 ? sortedLeaderboard[0][0] : null;
-            const winnerData = winner ? finalBattleData.damageLeaderboard[winner] : null; // ★★★ YENİ: Kazananın hasar verisini al
+            const winnerData = winner ? finalBattleData.damageLeaderboard[winner] : null;
             const prize = finalBattleData.rewards?.onKillLeader;
 
             if (winner && prize && winnerData) {
+                // ★★★ YENİ KOD BAŞLANGICI: Önceki şampiyon bilgisini kaydet ★★★
+                await db.ref('gameStats/lastMonsterChampion').set({
+                    username: winner,
+                    totalDamage: winnerData.totalDamage,
+                    lockedAvatarUrl: winnerData.lockedAvatarUrl
+                });
+                // ★★★ YENİ KOD SONU ★★★
+
                 const prizeName = typeToName[prize.type] || prize.type;
                 const prizeText = `${prize.value} ${prizeName}`;
                 logActivity('monsterDefeated', 'WeizendTv', { monsterName: finalBattleData.monsterDetails.name, winner: winner, prize: prizeText });
@@ -16876,16 +16891,14 @@ async function attackMonster() {
                              }
                          }
 
-                         // ★★★ YENİ BAŞARIM EKLEME KODU ★★★
                          if (!winnerDataFromDB.monsterChampionships) {
                              winnerDataFromDB.monsterChampionships = [];
                          }
                          winnerDataFromDB.monsterChampionships.push({
                              timestamp: firebase.database.ServerValue.TIMESTAMP,
                              monsterName: finalBattleData.monsterDetails.name,
-                             damage: winnerData.totalDamage // Kazananın toplam hasarı
+                             damage: winnerData.totalDamage
                          });
-                         // ★★★ BAŞARIM KODU SONU ★★★
                     }
                     return winnerDataFromDB;
                 });
