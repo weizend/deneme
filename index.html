@@ -6388,8 +6388,6 @@ function getActivityIcon(type, details = {}) {
     `;
 }
       
-// MEVCUT renderActivityFeed FONKSİYONUNU SİLİP BUNU YAPIŞTIRIN
-// MEVCUT renderActivityFeed FONKSİYONUNU SİLİP BUNU YAPIŞTIRIN
 function renderActivityFeed(activities) {
     const activityFeedList = document.getElementById('activityFeedList');
     activityFeedList.innerHTML = '';
@@ -6410,6 +6408,10 @@ function renderActivityFeed(activities) {
         return;
     }
 
+    // --- 2. DÜZELTME İÇİN DEĞİŞEN SATIR ---
+    // 'health_regen_potion' buraya eklendi, böylece %'li gösterilecek.
+    const percentPotions = ['defense_potion', 'crit_potion', 'crit_damage_potion', 'dodge_potion', 'pierce_potion', 'health_regen_potion'];
+
     activities.forEach(activity => {
         try {
             if (!activity || !activity.username || !activity.type) { 
@@ -6423,9 +6425,13 @@ function renderActivityFeed(activities) {
             const deleteButtonHtml = isAdmin ? `<button onclick="deleteActivity('${activity.id}')" class="ml-2 p-1 rounded-full text-gray-500 hover:text-red-500 hover:bg-white/10 transition-colors" title="Bu Eylemi Sil"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1-1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" /></svg></button>` : '';
             const userHtml = `<b class="text-yellow-300 cursor-pointer hover:underline" onclick="openPublicUserDetailModal('${activity.username}')">${activity.username}</b>`;
 
-            const percentPotions = ['defense_potion', 'crit_potion', 'crit_damage_potion', 'dodge_potion', 'pierce_potion'];
-
             switch (activity.type) {
+                // --- 1. DÜZELTME İÇİN YENİ EKLENEN KOD ---
+                case 'wildcardConvertedToBoxRights':
+                    message = `${userHtml}, 1 Joker Kart'ı <b class="text-cyan-300 font-bold">+${details.boxRights} Kutu Hakkı</b>'na dönüştürdü.`;
+                    break;
+                // --- YENİ EKLENEN KOD SONU ---
+
                 case 'useRegenPotion':
                      message = `${userHtml}, <b class="text-cyan-300">%${details.percentage} Can Yenileme İksiri</b> kullanarak <b class="text-green-300">${details.healed} can</b> yeniledi.`;
                      break;
@@ -6465,12 +6471,10 @@ function renderActivityFeed(activities) {
                     if (details.playerDied) attackMessage += ` <b class="text-black bg-red-500 px-1 rounded">MAĞLUP OLDU!</b>`;
                     message = attackMessage;
                     break;
-                // ★★★ DEĞİŞİKLİK BURADA BAŞLIYOR ★★★
                 case 'multiplierUpgraded':
                 case 'multiplierUpgradedFromStore':
                     message = `${userHtml}, ${details.source}'dan <b>${details.newValue}x çarpan (${details.newUses} kullanım)</b> kazandı. Mevcut ${details.oldValue}x çarpanının kalan ${details.oldUses} hakkı <b class="text-cyan-300 font-bold">+${details.boxRights} Kutu Hakkı</b>'na dönüştürüldü.`;
                     break;
-                // ★★★ DEĞİŞİKLİK BURADA BİTİYOR ★★★
                 case 'monsterDefeated':
                     message = `<b class="text-red-400">${details.monsterName}</b> mağlup edildi! En çok hasarı veren ${userHtml.replace(activity.username, details.winner)}, <b class="text-green-300">${details.prize}</b> ödülünü kazandı.`;
                     break;
@@ -6489,9 +6493,6 @@ function renderActivityFeed(activities) {
                     break;
                 case 'weeklyChampion': 
                     message = `Tıkla-Yakala haftası sona erdi! <b class="text-amber-300">${details.winner}</b>, <b class="text-white">${details.score} skorla</b> şampiyon oldu ve <b class="text-green-300">${details.prize}</b> kazandı. Tüm katılımcılara +1 bilet hediye edildi.`;
-                    break;
-                case 'wildcardConvertedToPoints':
-                    message = `${userHtml}, 1 Joker Kart'ı <b class="text-green-300 font-bold">${details.points} Puana</b> dönüştürdü. <span class="text-gray-400">(Mevcut Puan: ${formatNumber(details.newBalance)})</span>`;
                     break;
                 case 'loginStreakClaim':
                     message = `${userHtml}, giriş serisinde <b class="text-teal-300 font-bold">${details.day}. gün</b> <b class="text-white">'${details.packageName}'</b> ödülünü aldı.`;
@@ -6571,21 +6572,11 @@ function renderActivityFeed(activities) {
                     message = `${userHtml}, <b>${details.boxId}</b> numaralı kutudan <span class="text-purple-300 font-bold">${details.value}x Çarpan</span> buldu.`;
                     break;
                 case 'buyItem':
-                    const isPercentBuy = percentPotions.includes(details.itemType);
-                    const valuePrefixBuy = isPercentBuy ? '%' : '';
-                    let balanceText = details.itemType === 'special' ? `<span class="text-gray-400">(Kalan Kasa Puanı: ${details.newKasaBalance})</span>` : `<span class="text-gray-400">(Kalan Puan: ${details.newBalance})</span>`;
-                    let costText = details.itemType === 'special' ? `-${details.itemCost} KP` : `-${details.itemCost} Puan`;
-                    let purchasedItemText = '';
-
-                    if (details.itemType === 'tempMultiplier') {
-                        purchasedItemText = `<span class="text-indigo-300 font-bold">+${details.itemDuration} adet ${details.itemValue}x Çarpan</span>`;
-                    } else if (details.itemValue) {
-                        const itemName = typeToName[details.itemType] || details.itemName;
-                        purchasedItemText = `<span class="text-indigo-300 font-bold">+${valuePrefixBuy}${details.itemValue} ${itemName}</span>`;
-                    } else {
-                        purchasedItemText = `<span class="text-indigo-300 font-bold">${details.itemName}</span>`;
-                    }
-                    message = `${userHtml}, mağazadan <span class="text-red-400 font-bold">${costText}</span> harcayarak ${purchasedItemText} aldı. ${balanceText}`;
+                    const isKP = details.itemCost.toString().includes('KP');
+                    const costText = isKP ? details.itemCost : `${formatNumber(details.itemCost)} Puan`;
+                    const balance = isKP ? details.newKasaBalance : details.newBalance;
+                    const balanceUnit = isKP ? 'KP' : 'Puanı';
+                    message = `<b class="text-yellow-300">${activity.username}</b>, mağazadan <b class="text-red-500">-${costText}</b> harcayarak <b class="text-green-400">${details.itemName}</b> aldı. (Mevcut ${balanceUnit}: ${formatNumber(balance)})`;
                     break;
                 case 'lobbyJoined':
                     message = `${userHtml}, Tıkla-Yakala lobisine <span class="text-red-400 font-bold">-${details.cost} Puan</span> karşılığında katıldı. <span class="text-gray-400">(Kalan Puan: ${details.newBalance})</span>`;
@@ -12104,7 +12095,6 @@ async function selectAvatar(itemId, imageUrl) {
     closeAvatarSelectionModal();
 }
 
-// MEVCUT buyItem FONKSİYONUNU SİL VE BUNU YAPIŞTIR
 async function buyItem(itemId) {
     if (isAdmin) {
         displayMessage("Adminler alışveriş yapamaz.");
@@ -12118,7 +12108,9 @@ async function buyItem(itemId) {
 
     if (!user || !item) return;
 
-    const isPotion = ['health_potion', 'damage_potion', 'defense_potion', 'crit_potion', 'crit_damage_potion', 'dodge_potion', 'pierce_potion'].includes(item.type);
+    // --- 2. DÜZELTME İÇİN DEĞİŞEN SATIR ---
+    // 'health_regen_potion' buraya da eklendi.
+    const isPotion = ['health_potion', 'damage_potion', 'defense_potion', 'crit_potion', 'crit_damage_potion', 'dodge_potion', 'pierce_potion', 'health_regen_potion'].includes(item.type);
 
     if (isPotion) {
         const capCheck = checkPotionCap(user, item.type, item.value);
@@ -12179,22 +12171,16 @@ async function buyItem(itemId) {
 
         logActivity('buyItem', currentUser, { itemName: item.name, itemCost: currentCost, itemType: item.type, itemValue: valueToAdd, itemDuration: null, newBalance: newBalance });
         
-        // ★★★ DEĞİŞİKLİK BURADA BAŞLIYOR ★★★
-        // Ödülün yüzde olup olmadığını kontrol et
         const isPercent = ['defense_potion', 'crit_potion', 'crit_damage_potion', 'dodge_potion', 'pierce_potion'].includes(item.type);
-        // Değeri, yüzde ise ondalıklı ve % işaretiyle, değilse normal şekilde formatla
         const formattedValue = isPercent ? `+%${valueToAdd.toFixed(1)}` : `+${valueToAdd}`;
-        // Kullanıcıya gösterilecek yeni mesajı oluştur
         const successMessage = `Başarılı! '${item.name}' satın alındı ve hesabınıza kalıcı olarak ${formattedValue} bonus eklendi.`;
         displayMessage(successMessage);
-        // ★★★ DEĞİŞİKLİK BURADA BİTİYOR ★★★
 
         if (currentActiveSection === 'monsterBattle') { renderMonsterBattleUI(); }
 
         return;
     }
 
-    // (İksir olmayan diğer ürünler için kodun geri kalanı aynı)
     if ((user.balance || 0) < item.cost) { displayMessage("Yetersiz Puan!"); return; }
     if (item.type === 'special') {
         const kasaPuani = user.kasaPuani || 0;
