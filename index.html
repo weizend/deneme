@@ -6366,8 +6366,7 @@ function getActivityIcon(type, details = {}) {
     `;
 }
       
-// --- BU FONKSİYONU GÜNCEL VERSİYONU İLE DEĞİŞTİRİN ---
-// --- İSTEDİĞİN EKSİKSİZ FONKSİYON ---
+// MEVCUT renderActivityFeed FONKSİYONUNU SİLİP BUNU YAPIŞTIR
 function renderActivityFeed(activities) {
     const activityFeedList = document.getElementById('activityFeedList');
     activityFeedList.innerHTML = '';
@@ -6549,11 +6548,19 @@ function renderActivityFeed(activities) {
                     const rewardType = details.rewardType;
                     const rewardValue = details.rewardValue;
                     let dailyBalanceText = rewardType === 'points' ? ` <span class="text-gray-400">(Mevcut Puan: ${details.newBalance})</span>` : '';
-                    if (rewardType === 'avatar') { rewardText = `<span class="text-sky-300 font-bold">'${details.rewardName}' avatarını</span>`; message = `${userHtml}, günlük ödül olarak ${rewardText} kazandı.`; } 
-                    else {
-                        if (rewardType === 'points') { rewardText = `+${rewardValue} Puan`; } 
-                        else if (rewardType === 'tempMultiplier') { rewardText = `${details.rewardUses} adet ${rewardValue}x Çarpan`; } 
-                        else { rewardText = `+${rewardValue} ${typeToName[rewardType] || details.rewardName}`; }
+                    if (rewardType === 'avatar') { 
+                        rewardText = `<span class="text-sky-300 font-bold">'${rewardValue}' avatarını</span>`;
+                        message = `${userHtml}, günlük ödül olarak ${rewardText} kazandı.`;
+                    } else {
+                        // ★★★ YÜZDE GÖSTERİMİ İÇİN GÜNCELLENEN KISIM BAŞLANGICI ★★★
+                        const isPercent = ['defense_potion', 'crit_potion', 'crit_damage_potion', 'dodge_potion', 'pierce_potion', 'health_regen_potion'].includes(rewardType);
+                        const valuePrefix = isPercent ? `+%` : `+`;
+                        if (rewardType === 'tempMultiplier') { 
+                            rewardText = `${rewardValue}x Çarpan (${details.rewardUses} kullanım)`;
+                        } else { 
+                            rewardText = `${valuePrefix}${rewardValue} ${typeToName[rewardType] || details.rewardName}`;
+                        }
+                        // ★★★ GÜNCELLENEN KISIM SONU ★★★
                         message = `${userHtml}, günlük ödül olarak <span class="text-teal-300 font-bold">${rewardText}</span> aldı.${dailyBalanceText}`;
                     }
                     break;
@@ -6582,6 +6589,7 @@ function renderActivityFeed(activities) {
     });
 }
 
+// MEVCUT parseStatValue FONKSİYONUNU SİLİP BUNU YAPIŞTIR
 /**
  * Verilen değere göre bir değeri tamsayı veya ondalıklı sayıya çevirir.
  * Yüzdelik iksirler için ondalıklı, diğerleri için tamsayı kullanılır.
@@ -6590,7 +6598,8 @@ function renderActivityFeed(activities) {
  * @returns {number} İşlenmiş sayısal değer.
  */
 function parseStatValue(type, valueString) {
-    const isPercentPotion = ['crit_potion', 'crit_damage_potion', 'dodge_potion', 'pierce_potion', 'defense_potion'].includes(type);
+    // ★★★ YÜZDE İLE VERİLEN TÜM İKSİR TÜRLERİ BURAYA EKLENDİ ★★★
+    const isPercentPotion = ['crit_potion', 'crit_damage_potion', 'dodge_potion', 'pierce_potion', 'defense_potion', 'health_regen_potion'].includes(type);
     if (isPercentPotion) {
         // Virgülü noktaya çevirerek uluslararası uyumluluk sağlar ve ondalıklı sayıya çevirir.
         return parseFloat(String(valueString).replace(',', '.'));
@@ -9019,13 +9028,14 @@ async function openDailyRewardModal() {
     }
 }
       
+// MEVCUT claimDailyReward FONKSİYONUNU SİLİP BUNU YAPIŞTIR
 async function claimDailyReward(rewardId) {
     if (isAdmin) {
         displayMessage("Adminler ödül alamaz.");
         return;
     }
 
-    const claimButton = document.getElementById(`claim-reward-btn-${rewardId}`);
+    const claimButton = document.getElementById(`streak-btn-${day}`);
     if (claimButton && claimButton.disabled) {
         return;
     }
@@ -9162,12 +9172,23 @@ async function claimDailyReward(rewardId) {
         });
 
         if (committed) {
-             const isPercent = ['defense_potion', 'crit_potion', 'crit_damage_potion', 'dodge_potion', 'pierce_potion'].includes(reward.type);
+             // ★★★ YÜZDE GÖSTERİMİ İÇİN DEĞİŞEN KISIM BAŞLANGICI ★★★
+             const isPercent = ['defense_potion', 'crit_potion', 'crit_damage_potion', 'dodge_potion', 'pierce_potion', 'health_regen_potion'].includes(reward.type);
              const valuePrefix = isPercent ? `+%${reward.value}` : `+${reward.value}`;
              const rewardNameForMessage = reward.type === 'avatar' ? `'${reward.avatarName}' Avatarı` : `${valuePrefix} ${typeToName[reward.type] || 'Ödül'}`;
+             // ★★★ DEĞİŞEN KISIM SONU ★★★
 
             displayMessage(`Tebrikler! '${reward.name}' ödülünü başarıyla aldın: ${rewardNameForMessage}`);
-            logActivity('dailyReward', currentUser, { ...activityLogDetails, rewardName: reward.name, rewardType: reward.type, rewardValue: reward.value });
+            
+            // ★★★ AVATAR HATASINI GİDEREN DEĞİŞİKLİK BAŞLANGICI ★★★
+            logActivity('dailyReward', currentUser, { 
+                ...activityLogDetails, 
+                rewardName: reward.name, 
+                rewardType: reward.type, 
+                // Eğer tip avatar ise, değer olarak avatarın adını, değilse sayısal değeri gönderiyoruz.
+                rewardValue: reward.type === 'avatar' ? reward.avatarName : reward.value 
+            });
+            // ★★★ HATA GİDERME DEĞİŞİKLİĞİ SONU ★★★
             
             const hasPotion = reward.type.includes('_potion');
             if (hasPotion && currentActiveSection === 'monsterBattle') { renderMonsterBattleUI(); }
@@ -9239,7 +9260,7 @@ document.getElementById('dailyRewardType').addEventListener('change', handleDail
     handleDailyRewardTypeChange();
 }
 
-    // ESKİ saveDailyReward FONKSİYONUNU SİL VE BUNU YAPIŞTIR
+    // MEVCUT saveDailyReward FONKSİYONUNU SİL VE BUNU YAPIŞTIR
 async function saveDailyReward() {
     if (!isAdmin) return;
     
@@ -9298,12 +9319,15 @@ async function saveDailyReward() {
         rewardData.avatarName = avatarName;
         rewardData.avatarImageUrl = avatarImageUrl;
     } else {
+        // ★★★ YÜZDE DEĞERLERİ İÇİN DEĞİŞEN KISIM BAŞLANGICI ★★★
+        // Artık ondalıklı sayıları da doğru işleyen parseStatValue fonksiyonunu kullanıyoruz.
         const value = parseStatValue(type, document.getElementById('dailyRewardValue').value);
         if (isNaN(value) || value <= 0) {
             displayMessage("Bu ödül tipi için geçerli bir 'Değer' girmelisiniz.");
             return;
         }
         rewardData.value = value;
+        // ★★★ DEĞİŞEN KISIM SONU ★★★
     }
     
     if (editingDailyRewardId) {
