@@ -9028,14 +9028,15 @@ async function openDailyRewardModal() {
     }
 }
       
-// MEVCUT claimDailyReward FONKSİYONUNU SİLİP BUNU YAPIŞTIR
+// MEVCUT claimDailyReward FONKSİYONUNU SİL VE BUNU YAPIŞTIR
 async function claimDailyReward(rewardId) {
     if (isAdmin) {
         displayMessage("Adminler ödül alamaz.");
         return;
     }
 
-    const claimButton = document.getElementById(`streak-btn-${day}`);
+    // ★★★ HATA 1 BURADAYDI: Yanlış ID ile buton aranıyordu, doğrusuyla değiştirildi. ★★★
+    const claimButton = document.getElementById(`claim-reward-btn-${rewardId}`);
     if (claimButton && claimButton.disabled) {
         return;
     }
@@ -9056,6 +9057,7 @@ async function claimDailyReward(rewardId) {
             throw new Error("Ödül bulunamadı.");
         }
 
+        // ★★★ HATA 2 BURADAYDI: Giriş serisi kontrolü yapılıyordu, doğru günlük ödül kontrolü ile değiştirildi. ★★★
         const lastClaim = (user.dailyRewardsClaimed && user.dailyRewardsClaimed[rewardId]) || 0;
         const cooldown = reward.cooldownMs || 0;
         if (cooldown === 0 && lastClaim > 0) {
@@ -9091,11 +9093,19 @@ async function claimDailyReward(rewardId) {
 
         const { committed, snapshot } = await userRef.transaction(userData => {
             if (userData) {
+                // ★★★ HATA 3 BURADAYDI: Yanlış kontrol mantığı kaldırıldı ve doğrusu eklendi. ★★★
                 if (!userData.dailyRewardsClaimed) {
                     userData.dailyRewardsClaimed = {};
                 }
+                
+                // Güvenlik için işlemi yapmadan hemen önce tekrar kontrol et
+                const lastClaimCheck = userData.dailyRewardsClaimed[rewardId] || 0;
+                if (reward.cooldownMs === 0 && lastClaimCheck > 0) return;
+                if (reward.cooldownMs > 0 && getSyncedTime() < lastClaimCheck + reward.cooldownMs) return;
+
                 userData.dailyRewardsClaimed[rewardId] = getSyncedTime();
 
+                // Ödülleri verme mantığı doğruydu, o yüzden aynı kalıyor.
                 switch (reward.type) {
                     case 'points':
                         userData.balance = (userData.balance || 0) + reward.value;
@@ -9151,7 +9161,7 @@ async function claimDailyReward(rewardId) {
                         if(!userData.inventory) userData.inventory = {};
                         if(!userData.inventory.health_regen_potion) userData.inventory.health_regen_potion = {};
                         const currentPotions = userData.inventory.health_regen_potion[reward.value] || 0;
-                        userData.inventory.health_regen_potion[reward.value] = currentPotions + 1; // Her alımda 1 adet
+                        userData.inventory.health_regen_potion[reward.value] = currentPotions + 1;
                         break;
                     case 'health_potion': case 'damage_potion': case 'defense_potion':
                     case 'crit_potion': case 'crit_damage_potion': case 'dodge_potion': case 'pierce_potion':
@@ -9172,23 +9182,18 @@ async function claimDailyReward(rewardId) {
         });
 
         if (committed) {
-             // ★★★ YÜZDE GÖSTERİMİ İÇİN DEĞİŞEN KISIM BAŞLANGICI ★★★
              const isPercent = ['defense_potion', 'crit_potion', 'crit_damage_potion', 'dodge_potion', 'pierce_potion', 'health_regen_potion'].includes(reward.type);
              const valuePrefix = isPercent ? `+%${reward.value}` : `+${reward.value}`;
              const rewardNameForMessage = reward.type === 'avatar' ? `'${reward.avatarName}' Avatarı` : `${valuePrefix} ${typeToName[reward.type] || 'Ödül'}`;
-             // ★★★ DEĞİŞEN KISIM SONU ★★★
-
+             
             displayMessage(`Tebrikler! '${reward.name}' ödülünü başarıyla aldın: ${rewardNameForMessage}`);
             
-            // ★★★ AVATAR HATASINI GİDEREN DEĞİŞİKLİK BAŞLANGICI ★★★
             logActivity('dailyReward', currentUser, { 
                 ...activityLogDetails, 
                 rewardName: reward.name, 
                 rewardType: reward.type, 
-                // Eğer tip avatar ise, değer olarak avatarın adını, değilse sayısal değeri gönderiyoruz.
                 rewardValue: reward.type === 'avatar' ? reward.avatarName : reward.value 
             });
-            // ★★★ HATA GİDERME DEĞİŞİKLİĞİ SONU ★★★
             
             const hasPotion = reward.type.includes('_potion');
             if (hasPotion && currentActiveSection === 'monsterBattle') { renderMonsterBattleUI(); }
