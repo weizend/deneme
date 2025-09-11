@@ -12007,7 +12007,7 @@ async function selectAvatar(itemId, imageUrl) {
     closeAvatarSelectionModal();
 }
 
-// ESKİ buyItem FONKSİYONUNU SİL VE BUNU YAPIŞTIR
+// MEVCUT buyItem FONKSİYONUNU SİL VE BUNU YAPIŞTIR
 async function buyItem(itemId) {
     if (isAdmin) {
         displayMessage("Adminler alışveriş yapamaz.");
@@ -12024,7 +12024,6 @@ async function buyItem(itemId) {
     const isPotion = ['health_potion', 'damage_potion', 'defense_potion', 'crit_potion', 'crit_damage_potion', 'dodge_potion', 'pierce_potion'].includes(item.type);
 
     if (isPotion) {
-        // ★★★ DEĞİŞİKLİK BURADA BAŞLIYOR ★★★
         const capCheck = checkPotionCap(user, item.type, item.value);
 
         if (!capCheck.canAdd) {
@@ -12082,11 +12081,20 @@ async function buyItem(itemId) {
         });
 
         logActivity('buyItem', currentUser, { itemName: item.name, itemCost: currentCost, itemType: item.type, itemValue: valueToAdd, itemDuration: null, newBalance: newBalance });
-        displayMessage(`Başarılı! Hesabınıza kalıcı olarak +${valueToAdd} ${statKey} bonusu eklendi.`);
+        
+        // ★★★ DEĞİŞİKLİK BURADA BAŞLIYOR ★★★
+        // Ödülün yüzde olup olmadığını kontrol et
+        const isPercent = ['defense_potion', 'crit_potion', 'crit_damage_potion', 'dodge_potion', 'pierce_potion'].includes(item.type);
+        // Değeri, yüzde ise ondalıklı ve % işaretiyle, değilse normal şekilde formatla
+        const formattedValue = isPercent ? `+%${valueToAdd.toFixed(1)}` : `+${valueToAdd}`;
+        // Kullanıcıya gösterilecek yeni mesajı oluştur
+        const successMessage = `Başarılı! '${item.name}' satın alındı ve hesabınıza kalıcı olarak ${formattedValue} bonus eklendi.`;
+        displayMessage(successMessage);
+        // ★★★ DEĞİŞİKLİK BURADA BİTİYOR ★★★
+
         if (currentActiveSection === 'monsterBattle') { renderMonsterBattleUI(); }
 
         return;
-        // ★★★ DEĞİŞİKLİK BURADA BİTİYOR ★★★
     }
 
     // (İksir olmayan diğer ürünler için kodun geri kalanı aynı)
@@ -12171,16 +12179,12 @@ async function buyItem(itemId) {
         else if (item.type === 'wheelTicket') updates.carkBileti = (user.carkBileti || 0) + itemValue;
         else if (item.type === 'clickCatchTicket') updates.clickCatchTickets = (user.clickCatchTickets || 0) + itemValue;
         else if (item.type === 'iflasShield') updates.iflasShieldUses = (user.iflasShieldUses || 0) + itemValue;
-        
-        // YENİ EKLENEN BLOK BAŞLANGICI
         else if (item.type === 'health_regen_potion') {
             if (!updates.inventory.health_regen_potion) updates.inventory.health_regen_potion = {};
             const currentPotions = user.inventory?.health_regen_potion?.[itemValue] || 0;
-            updates.inventory.health_regen_potion[itemValue] = currentPotions + 1; // Her alımda 1 adet eklenir, itemValue yüzdeyi belirtir
+            updates.inventory.health_regen_potion[itemValue] = currentPotions + 1;
             message = `Başarılı! Envanterine 1 adet %${itemValue} Can Yenileme İksiri eklendi.`;
         }
-        // YENİ EKLENEN BLOK SONU
-
         else if (item.type === 'revival_stone') updates.inventory.revival_stone = (user.inventory?.revival_stone || 0) + itemValue;
         else if (item.type === 'tempMultiplier') {
             updates.activeMultiplier = itemValue;
@@ -12218,8 +12222,6 @@ function handleReviveClick(stoneCount) {
     }
 }
 
-// MEVCUT renderMonsterBattleUI FONKSİYONUNU SİL VE BU YENİ KOD BLOĞUNU YAPIŞTIR
-// MEVCUT renderMonsterBattleUI FONKSİYONUNU SİL VE BU YENİ KOD BLOĞUNU YAPIŞTIR
 // MEVCUT renderMonsterBattleUI FONKSİYONUNU SİL VE BU YENİ KOD BLOĞUNU YAPIŞTIR
 async function renderMonsterBattleUI() {
     const battleArenaContainer = document.getElementById('battleArenaContainer');
