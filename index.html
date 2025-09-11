@@ -6582,7 +6582,6 @@ function renderActivityFeed(activities) {
     });
 }
 
-// BU YENİ FONKSİYONU SCRIPT BLOĞUNUZUN UYGUN BİR YERİNE (ÖRNEĞİN DİĞER YARDIMCI FONKSİYONLARIN YANINA) EKLEYİN
 /**
  * Verilen değere göre bir değeri tamsayı veya ondalıklı sayıya çevirir.
  * Yüzdelik iksirler için ondalıklı, diğerleri için tamsayı kullanılır.
@@ -6591,7 +6590,7 @@ function renderActivityFeed(activities) {
  * @returns {number} İşlenmiş sayısal değer.
  */
 function parseStatValue(type, valueString) {
-    const isPercentPotion = ['crit_potion', 'crit_damage_potion', 'dodge_potion', 'pierce_potion'].includes(type);
+    const isPercentPotion = ['crit_potion', 'crit_damage_potion', 'dodge_potion', 'pierce_potion', 'defense_potion'].includes(type);
     if (isPercentPotion) {
         // Virgülü noktaya çevirerek uluslararası uyumluluk sağlar ve ondalıklı sayıya çevirir.
         return parseFloat(String(valueString).replace(',', '.'));
@@ -9020,8 +9019,6 @@ async function openDailyRewardModal() {
     }
 }
       
-// --- YENİ VE TÜM EŞYALARI TANIYAN FONKSİYON ---
-// --- YENİ VE TÜM EŞYALARI TANIYAN FONKSİYON ---
 async function claimDailyReward(rewardId) {
     if (isAdmin) {
         displayMessage("Adminler ödül alamaz.");
@@ -9134,15 +9131,25 @@ async function claimDailyReward(rewardId) {
                     case 'card_pack_gumus':
                     case 'card_pack_altin':
                     case 'card_pack_efsanevi':
-                        cardPacksToOpen.push({ type: reward.type, value: reward.value });
+                        cardPacksToOpen.push(reward);
                         break;
                     case 'revival_stone':
                         if (!userData.inventory) userData.inventory = {};
                         userData.inventory.revival_stone = (userData.inventory.revival_stone || 0) + reward.value;
                         break;
+                    case 'health_regen_potion':
+                        if(!userData.inventory) userData.inventory = {};
+                        if(!userData.inventory.health_regen_potion) userData.inventory.health_regen_potion = {};
+                        const currentPotions = userData.inventory.health_regen_potion[reward.value] || 0;
+                        userData.inventory.health_regen_potion[reward.value] = currentPotions + 1; // Her alımda 1 adet
+                        break;
                     case 'health_potion': case 'damage_potion': case 'defense_potion':
                     case 'crit_potion': case 'crit_damage_potion': case 'dodge_potion': case 'pierce_potion':
-                        const statKeyMap = { 'health_potion': 'hp', 'damage_potion': 'damage', 'defense_potion': 'defense', 'crit_potion': 'critChance', 'crit_damage_potion': 'critDamage', 'dodge_potion': 'dodgeChance', 'pierce_potion': 'pierceChance' };
+                        const statKeyMap = { 
+                            'health_potion': 'hp', 'damage_potion': 'damage', 'defense_potion': 'defense', 
+                            'crit_potion': 'critChance', 'crit_damage_potion': 'critDamage', 
+                            'dodge_potion': 'dodgeChance', 'pierce_potion': 'pierceChance' 
+                        };
                         const statKey = statKeyMap[reward.type];
                         if (statKey) {
                             if (!userData.globalPotionBuffs) userData.globalPotionBuffs = {};
@@ -9155,7 +9162,11 @@ async function claimDailyReward(rewardId) {
         });
 
         if (committed) {
-            displayMessage(`Tebrikler! '${reward.name}' ödülünü başarıyla aldın.`);
+             const isPercent = ['defense_potion', 'crit_potion', 'crit_damage_potion', 'dodge_potion', 'pierce_potion'].includes(reward.type);
+             const valuePrefix = isPercent ? `+%${reward.value}` : `+${reward.value}`;
+             const rewardNameForMessage = reward.type === 'avatar' ? `'${reward.avatarName}' Avatarı` : `${valuePrefix} ${typeToName[reward.type] || 'Ödül'}`;
+
+            displayMessage(`Tebrikler! '${reward.name}' ödülünü başarıyla aldın: ${rewardNameForMessage}`);
             logActivity('dailyReward', currentUser, { ...activityLogDetails, rewardName: reward.name, rewardType: reward.type, rewardValue: reward.value });
             
             const hasPotion = reward.type.includes('_potion');
@@ -9168,7 +9179,7 @@ async function claimDailyReward(rewardId) {
             await openDailyRewardModal();
             await checkAvailableDailyRewards();
         } else {
-            throw new Error("Ödül alınamadı. Lütfen sayfayı yenileyip tekrar deneyin.");
+            throw new Error("Ödül alınamadı. Koşullar sağlanmıyor olabilir, lütfen sayfayı yenileyip tekrar deneyin.");
         }
 
     } catch (error) {
@@ -11802,8 +11813,8 @@ function loadWheelHistory() {
     defense_potion: 'Savunma İksiri',
     damage_potion: 'Hasar İksiri',
     crit_potion: 'Kritik Vuruş İksiri',
-    // YENİ EKLENEN VE GÜNCELLENEN İSİMLER
-    dodge_potion: 'Sıyrılma Şansı İksiri',
+    // YENİ EKLENEN İKSİRLER
+    dodge_potion: 'Sıyrılma İksiri',
     crit_damage_potion: 'Kritik Hasar İksiri',
     pierce_potion: 'Delici Vuruş İksiri'
 };
@@ -11967,6 +11978,7 @@ async function selectAvatar(itemId, imageUrl) {
     closeAvatarSelectionModal();
 }
 
+// ESKİ buyItem FONKSİYONUNU SİL VE BUNU YAPIŞTIR
 async function buyItem(itemId) {
     if (isAdmin) {
         displayMessage("Adminler alışveriş yapamaz.");
@@ -11983,6 +11995,7 @@ async function buyItem(itemId) {
     const isPotion = ['health_potion', 'damage_potion', 'defense_potion', 'crit_potion', 'crit_damage_potion', 'dodge_potion', 'pierce_potion'].includes(item.type);
 
     if (isPotion) {
+        // ★★★ DEĞİŞİKLİK BURADA BAŞLIYOR ★★★
         const capCheck = checkPotionCap(user, item.type, item.value);
 
         if (!capCheck.canAdd) {
@@ -12040,14 +12053,11 @@ async function buyItem(itemId) {
         });
 
         logActivity('buyItem', currentUser, { itemName: item.name, itemCost: currentCost, itemType: item.type, itemValue: valueToAdd, itemDuration: null, newBalance: newBalance });
-        
-        // GÜNCELLENEN KISIM: Artık doğru ismi gösteriyor
-        const friendlyPotionName = typeToName[item.type] || 'bonus';
-        displayMessage(`Başarılı! Hesabınıza kalıcı olarak +${valueToAdd} ${friendlyPotionName} eklendi.`);
-        
+        displayMessage(`Başarılı! Hesabınıza kalıcı olarak +${valueToAdd} ${statKey} bonusu eklendi.`);
         if (currentActiveSection === 'monsterBattle') { renderMonsterBattleUI(); }
 
         return;
+        // ★★★ DEĞİŞİKLİK BURADA BİTİYOR ★★★
     }
 
     // (İksir olmayan diğer ürünler için kodun geri kalanı aynı)
@@ -12133,12 +12143,15 @@ async function buyItem(itemId) {
         else if (item.type === 'clickCatchTicket') updates.clickCatchTickets = (user.clickCatchTickets || 0) + itemValue;
         else if (item.type === 'iflasShield') updates.iflasShieldUses = (user.iflasShieldUses || 0) + itemValue;
         
+        // YENİ EKLENEN BLOK BAŞLANGICI
         else if (item.type === 'health_regen_potion') {
             if (!updates.inventory.health_regen_potion) updates.inventory.health_regen_potion = {};
             const currentPotions = user.inventory?.health_regen_potion?.[itemValue] || 0;
-            updates.inventory.health_regen_potion[itemValue] = currentPotions + 1;
+            updates.inventory.health_regen_potion[itemValue] = currentPotions + 1; // Her alımda 1 adet eklenir, itemValue yüzdeyi belirtir
             message = `Başarılı! Envanterine 1 adet %${itemValue} Can Yenileme İksiri eklendi.`;
         }
+        // YENİ EKLENEN BLOK SONU
+
         else if (item.type === 'revival_stone') updates.inventory.revival_stone = (user.inventory?.revival_stone || 0) + itemValue;
         else if (item.type === 'tempMultiplier') {
             updates.activeMultiplier = itemValue;
@@ -12176,6 +12189,8 @@ function handleReviveClick(stoneCount) {
     }
 }
 
+// MEVCUT renderMonsterBattleUI FONKSİYONUNU SİL VE BU YENİ KOD BLOĞUNU YAPIŞTIR
+// MEVCUT renderMonsterBattleUI FONKSİYONUNU SİL VE BU YENİ KOD BLOĞUNU YAPIŞTIR
 // MEVCUT renderMonsterBattleUI FONKSİYONUNU SİL VE BU YENİ KOD BLOĞUNU YAPIŞTIR
 async function renderMonsterBattleUI() {
     const battleArenaContainer = document.getElementById('battleArenaContainer');
@@ -12427,17 +12442,53 @@ function hideAllAdminControls() {
     document.getElementById('avatarAdminControls')?.classList.add('hidden');
 }
 
-// YENİ: Kart dönüştürme penceresini açar
+// Kart dönüştürme onay penceresini açar
 function openCardConversionModal(cardId, cardName, cardRarity, boxRightsToGain) {
     const modal = document.getElementById('cardConversionModal');
     const infoText = document.getElementById('conversionInfoText');
     const confirmBtn = document.getElementById('confirmConversionBtn');
     
-    infoText.innerHTML = `Fazla olan 1 adet <b class="text-white">'${cardName}'</b> (${cardRarity}) kartını <b class="text-yellow-300">+${boxRightsToGain} Kutu Hakkı</b>'na dönüştürmek istediğine emin misin?`;
+    const rarityNames = { normal: 'Bronz', gumus: 'Gümüş', altin: 'Altın', efsanevi: 'Efsanevi' };
+    const displayRarity = rarityNames[cardRarity] || cardRarity;
+
+    infoText.innerHTML = `Fazla olan 1 adet <b class="text-white">'${cardName}'</b> (${displayRarity}) kartını <b class="text-yellow-300">+${boxRightsToGain} Kutu Hakkı</b>'na dönüştürmek istediğine emin misin?`;
     
     confirmBtn.onclick = () => convertDuplicateCard(cardId, boxRightsToGain);
     
     modal.style.display = 'flex';
+}
+
+// Kartı Kutu Hakkına dönüştürme işlemini yapar
+async function convertDuplicateCard(cardId, boxRightsToGain) {
+    if(isTradeInProgress) return;
+    isTradeInProgress = true;
+    
+    const userRef = db.ref(`users/${currentUser}`);
+
+    try {
+        const { committed, snapshot } = await userRef.transaction(userData => {
+            if (userData && userData.completedCollection === true && userData.cardCollection?.[cardId]?.count > 1) {
+                userData.cardCollection[cardId].count--;
+                userData.kutuHakki = (userData.kutuHakki || 0) + boxRightsToGain;
+                return userData;
+            }
+            return; // Koşullar sağlanmazsa işlemi iptal et
+        });
+
+        if (committed) {
+            displayMessage(`Başarılı! Kartın +${boxRightsToGain} Kutu Hakkı'na dönüştürüldü.`);
+            closeCardConversionModal();
+            loadCollectionAlbum(); // Arayüzü anında güncelle
+        } else {
+            throw new Error("Dönüştürme işlemi başarısız oldu. Kart durumu değişmiş veya koleksiyon tamamlanmamış olabilir.");
+        }
+
+    } catch (error) {
+        displayMessage(error.message);
+        closeCardConversionModal();
+    } finally {
+        isTradeInProgress = false;
+    }
 }
 
 // YENİ: Kart dönüştürme penceresini kapatır
@@ -13303,15 +13354,11 @@ async function loadCollectionAlbum() {
     const currentStatus = statusSnap.val() || 'inactive';
 
     if(isAdmin) {
+        // ... (Admin kontrolleri aynı kalacak, buraya dokunmuyoruz) ...
         const statusTextEl = document.getElementById('collectionStatusText');
         const pauseBtn = document.getElementById('pauseResumeButton');
         if (statusTextEl && pauseBtn) {
-            statusTextEl.textContent = {
-                'active': 'Aktif',
-                'paused': 'Duraklatıldı (Bakımda)',
-                'inactive': 'Bitti / Başlamadı'
-            }[currentStatus];
-            
+            statusTextEl.textContent = {'active': 'Aktif', 'paused': 'Duraklatıldı (Bakımda)', 'inactive': 'Bitti / Başlamadı'}[currentStatus];
             if(currentStatus === 'paused') {
                 pauseBtn.textContent = 'Sezonu Devam Ettir';
                 pauseBtn.classList.replace('bg-orange-600', 'bg-green-600');
@@ -13322,33 +13369,24 @@ async function loadCollectionAlbum() {
                 pauseBtn.classList.replace('hover:bg-green-500', 'hover:bg-orange-500');
             }
         }
-        
         const toggleBtn = document.getElementById('toggleSeasonBtn');
         if (toggleBtn) {
             if (currentStatus === 'active') {
                 toggleBtn.textContent = '⛔ Sezonu Bitir';
-                toggleBtn.classList.remove('bg-green-700', 'hover:bg-green-600', 'animate-pulse');
                 toggleBtn.classList.add('bg-red-700', 'hover:bg-red-600');
+                toggleBtn.classList.remove('bg-green-700', 'hover:bg-green-600', 'animate-pulse');
             } else {
                 toggleBtn.textContent = '💥 YENİ SEZONU BAŞLAT 💥';
-                toggleBtn.classList.remove('bg-red-700', 'hover:bg-red-600');
                 toggleBtn.classList.add('bg-green-700', 'hover:bg-green-600', 'animate-pulse');
+                toggleBtn.classList.remove('bg-red-700', 'hover:bg-red-600');
             }
         }
     }
 
     if (!isAdmin) {
-        if (currentStatus === 'paused') {
-            statusTitle.textContent = '🔧 Bakımdayız 🔧';
-            statusMessage.textContent = 'Kart Koleksiyonu sezonu şu anda kısa bir bakımda. Lütfen daha sonra tekrar kontrol et.';
-            statusOverlay.classList.remove('hidden');
-            albumContainer.classList.add('hidden');
-            grandPrizeDisplay.classList.add('hidden');
-            return;
-        }
-        if (currentStatus === 'inactive') {
-            statusTitle.textContent = '🚀 Yeni Sezon Çok Yakında! 🚀';
-            statusMessage.textContent = 'Adminin yeni kartları hazırlayıp yeni sezonu başlatmasını bekle. Takipte kal!';
+        if (currentStatus === 'paused' || currentStatus === 'inactive') {
+            statusTitle.textContent = currentStatus === 'paused' ? '🔧 Bakımdayız 🔧' : '🚀 Yeni Sezon Çok Yakında! 🚀';
+            statusMessage.textContent = currentStatus === 'paused' ? 'Kart Koleksiyonu sezonu şu anda kısa bir bakımda.' : 'Adminin yeni sezonu başlatmasını bekle.';
             statusOverlay.classList.remove('hidden');
             albumContainer.classList.add('hidden');
             grandPrizeDisplay.classList.add('hidden');
@@ -13366,7 +13404,7 @@ async function loadCollectionAlbum() {
     const masterListSnap = await masterListRef.orderByChild('order').once('value');
     
     if (!masterListSnap.exists()) {
-        albumContainer.innerHTML = '<p class="text-center col-span-full text-gray-400">Yönetici henüz bir koleksiyon oluşturmadı.</p>';
+        albumContainer.innerHTML = '<p class="text-center col-span-full">Yönetici henüz bir koleksiyon oluşturmadı.</p>';
         if(progressSpan) progressSpan.textContent = '0/0';
         return;
     }
@@ -13387,19 +13425,10 @@ async function loadCollectionAlbum() {
         if (userWildcards > 0 || isAdmin) {
             wildcardCountSpan.textContent = userWildcards;
             wildcardIndicator.classList.remove('hidden');
-            
-            // ★★★ SORUNU ÇÖZEN DEĞİŞİKLİK BURADA ★★★
             const convertBtn = document.getElementById('convertWildcardBtn');
             if (convertBtn) {
-                // Eğer kullanıcı koleksiyonu tamamladıysa VE en az 1 joker kartı varsa butonu göster
-                if (hasCompletedCollection && userWildcards > 0) {
-                    convertBtn.classList.remove('hidden');
-                } else {
-                    convertBtn.classList.add('hidden');
-                }
+                convertBtn.classList.toggle('hidden', !(hasCompletedCollection && userWildcards > 0));
             }
-            // ★★★ DEĞİŞİKLİK SONU ★★★
-
         } else {
             wildcardIndicator.classList.add('hidden');
         }
@@ -13421,48 +13450,42 @@ async function loadCollectionAlbum() {
             const cardItem = document.createElement('div');
             cardItem.className = `card-item rarity-${cardInfo.rarity || 'normal'}`;
             
-            let newBadge = '';
-            if (newlyAcquiredCards.has(cardId)) {
-                newBadge = `<div class="new-card-badge">YENİ</div>`;
-            }
-            
             let duplicateBadge = userHasCard && userHasCard.count > 1 ? `<div class="duplicate-badge">+${userHasCard.count - 1}</div>` : '';
-            let adminCardControls = isAdmin ? `<div class="card-admin-buttons"><button onclick="openCardCreatorModal('${cardId}')" title="Düzenle">✏️</button><button onclick="deleteCard('${cardId}')" title="Sil">🗑️</button></div>` : '';
+            let adminCardControls = isAdmin ? `<div class="card-admin-buttons"><button onclick="openCardCreatorModal('${cardId}')">✏️</button><button onclick="deleteCard('${cardId}')">🗑️</button></div>` : '';
             
             cardItem.innerHTML = `
-                ${newBadge}
+                ${newlyAcquiredCards.has(cardId) ? `<div class="new-card-badge">YENİ</div>` : ''}
                 ${duplicateBadge}
                 ${adminCardControls}
                 <img class="card-image" src="${cardInfo.imageUrl}">
                 <h4 class="card-name">${cardInfo.cardName}</h4>
             `;
 
-            if (hasCompletedCollection && userHasCard && userHasCard.count > 1) {
-                const rates = { normal: 1, gumus: 2, altin: 3, efsanevi: 5 };
-                const boxRightsToGain = rates[cardInfo.rarity] || 1;
-                cardItem.onclick = () => openCardConversionModal(cardId, cardInfo.cardName, cardInfo.rarity, boxRightsToGain);
-            }
-            else if (!hasCompletedCollection && userHasCard && userHasCard.count > 1) {
-                cardItem.onclick = () => openTradeMenu(cardId, cardInfo.cardName);
+            // ### EN ÖNEMLİ DEĞİŞİKLİK BURADA ###
+            // Artık tek bir tıklama olayı var ve bu olay yeni ve akıllı bir fonksiyonu çağırıyor.
+            if (userHasCard && userHasCard.count > 1) {
+                if (hasCompletedCollection) {
+                    // Koleksiyonu tamamladıysa, dönüştürme fonksiyonunu çağır
+                    cardItem.onclick = () => handleDuplicateCardClick(cardId);
+                } else {
+                    // Tamamlamadıysa, takas menüsünü aç
+                    cardItem.onclick = () => openTradeMenu(cardId, cardInfo.cardName);
+                }
             }
             
             slot.appendChild(cardItem);
 
         } else {
             let wildcardButton = '';
-            if (userWildcards > 0) {
+            if (userWildcards > 0 && !hasCompletedCollection) {
                 wildcardButton = `<button class="absolute bottom-2 left-1/2 -translate-x-1/2 w-11/12 py-2 bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs rounded-lg animate-pulse" onclick="useWildcard('${cardId}', '${cardInfo.cardName}')">Joker Kullan</button>`;
             }
-
             slot.innerHTML = `
                 <div class="card-item missing relative rarity-${cardInfo.rarity || 'normal'}">
-                    <div class="card-image flex items-center justify-center">
-                         <span class="missing-text">?</span>
-                    </div>
+                    <div class="card-image flex items-center justify-center"><span class="missing-text">?</span></div>
                     <h4 class="card-name text-gray-500">${cardInfo.cardName}</h4>
                     ${wildcardButton}
-                </div>
-            `;
+                </div>`;
         }
         albumContainer.appendChild(slot);
     }
@@ -13473,6 +13496,65 @@ function openTradeMenu(cardId, cardName) {
     if (!cardId) return;
     // Teklif penceresini, bu kart önceden seçili olacak şekilde aç
     openCreateOfferModal(cardId);
+}
+
+// YENİ VE TÜM MANTIĞI İÇEREN FONKSİYON
+async function handleDuplicateCardClick(cardId) {
+    if (isTradeInProgress) return; // Başka bir işlem devam ediyorsa bekle
+    isTradeInProgress = true;
+
+    try {
+        // Gerekli tüm verileri tek seferde çekelim
+        const [userSnap, cardInfoSnap] = await Promise.all([
+            db.ref(`users/${currentUser}`).once('value'),
+            db.ref(`gameConfig/cardCollection/${cardId}`).once('value')
+        ]);
+
+        const userData = userSnap.val();
+        const cardInfo = cardInfoSnap.val();
+
+        // Sunucu tarafı gibi davranıp tüm kontrolleri yapalım
+        if (!userData || !cardInfo || userData.completedCollection !== true || !userData.cardCollection?.[cardId] || userData.cardCollection[cardId].count <= 1) {
+            throw new Error("Bu kart dönüştürülemez. Sayfayı yenileyip tekrar deneyin.");
+        }
+
+        // İsteğine göre oranları belirleyelim
+        const rates = { normal: 1, gumus: 2, altin: 3, efsanevi: 5 };
+        const boxRightsToGain = rates[cardInfo.rarity] || 1; // Bilinmeyen bir nadirlik varsa 1 ver
+        
+        const rarityNames = { normal: 'Bronz', gumus: 'Gümüş', altin: 'Altın', efsanevi: 'Efsanevi' };
+        const displayRarity = rarityNames[cardInfo.rarity] || cardInfo.rarity;
+
+        // Kullanıcıya onay soralım
+        const confirmed = await customConfirm(`Fazla olan 1 adet <b class="text-white">'${cardInfo.cardName}'</b> (${displayRarity}) kartını <b class="text-yellow-300">+${boxRightsToGain} Kutu Hakkı</b>'na dönüştürmek istediğine emin misin?`);
+        if (!confirmed) {
+            isTradeInProgress = false;
+            return;
+        }
+
+        // Veritabanı işlemini Transaction ile güvenli bir şekilde yapalım
+        const userRef = db.ref(`users/${currentUser}`);
+        const { committed } = await userRef.transaction(currentData => {
+            if (currentData && currentData.completedCollection === true && currentData.cardCollection?.[cardId]?.count > 1) {
+                currentData.cardCollection[cardId].count--;
+                currentData.kutuHakki = (currentData.kutuHakki || 0) + boxRightsToGain;
+                return currentData;
+            }
+            return; // Koşul sağlanmazsa işlemi iptal et
+        });
+
+        if (committed) {
+            displayMessage(`Başarılı! Kartın +${boxRightsToGain} Kutu Hakkı'na dönüştürüldü.`);
+            loadCollectionAlbum(); // Arayüzü anında yenile
+        } else {
+            throw new Error("Dönüştürme işlemi başarısız oldu. Kart durumu değişmiş olabilir.");
+        }
+
+    } catch (error) {
+        displayMessage(error.message);
+    } finally {
+        isTradeInProgress = false; // İşlem bitince kilidi kaldır
+    }
 }
 
 // JOKER KART KULLANMA FONKSİYONU
@@ -15445,14 +15527,13 @@ const typeToName = {
     card_pack_gumus: 'Gümüş Kart Paketi',
     card_pack_altin: 'Altın Kart Paketi',
     card_pack_efsanevi: 'Efsanevi Kart Paketi',
-    health_regen_potion: 'Can Yenileme İksiri',
     health_potion: 'Can İksiri',
     revival_stone: 'Dirilme Taşı',
     defense_potion: 'Savunma İksiri',
     damage_potion: 'Hasar İksiri',
     crit_potion: 'Kritik Vuruş İksiri',
-    // YENİ EKLENEN VE GÜNCELLENEN İSİMLER
-    dodge_potion: 'Sıyrılma Şansı İksiri',
+    // YENİ EKLENEN İKSİRLER
+    dodge_potion: 'Sıyrılma İksiri',
     crit_damage_potion: 'Kritik Hasar İksiri',
     pierce_potion: 'Delici Vuruş İksiri'
 };
@@ -15582,11 +15663,12 @@ function addRewardToDay(element, rewardData = {}) {
     handleAdminRewardTypeChange(selectElement, rewardData); // Mevcut veriyi de gönder
 }
       
-// Admin panelinde ödül tipi değiştikçe ilgili inputları gösterir/gizler (Güncellendi)
 function handleAdminRewardTypeChange(selectElement, rewardData = {}) {
     const type = selectElement.value;
     const container = selectElement.closest('.grid').querySelector('.reward-fields-container');
     let fieldsHtml = '';
+    const isPercent = ['defense_potion', 'crit_potion', 'crit_damage_potion', 'dodge_potion', 'pierce_potion'].includes(type);
+    const valuePlaceholder = isPercent ? 'Değer (örn: 2.5)' : 'Miktar / Adet';
 
     if (type === 'tempMultiplier') {
         fieldsHtml = `
@@ -15602,7 +15684,7 @@ function handleAdminRewardTypeChange(selectElement, rewardData = {}) {
         `;
     } else {
         fieldsHtml = `
-            <input type="number" class="box-setting-input reward-value col-span-2 sm:col-span-1" placeholder="Miktar / Adet" value="${rewardData.value || ''}">
+            <input type="text" class="box-setting-input reward-value col-span-2 sm:col-span-1" placeholder="${valuePlaceholder}" value="${rewardData.value || ''}">
             <button onclick="this.parentElement.parentElement.remove()" class="py-1 px-2 bg-red-600 hover:bg-red-500 rounded-md text-xs sm:col-span-1">Sil</button>
         `;
     }
@@ -15841,6 +15923,7 @@ function startStreakResetCountdown(element, resetTime) {
     activeStreakTimers['resetTimer'] = timerId;
 }
       
+// --- BU GÜNCEL FONKSİYONU ESKİSİNİN YERİNE YAPIŞTIRIN ---
 async function claimLoginStreakReward(day) {
     if (isAdmin) {
         displayMessage("Adminler ödül alamaz.");
@@ -15945,6 +16028,8 @@ async function claimLoginStreakReward(day) {
                         case 'card_pack_efsanevi':
                             cardPacksToOpen.push(reward);
                             break;
+
+                        // ★★★ EKSİK OLAN VE EKLENEN KISIM BAŞLANGICI ★★★
                         case 'revival_stone':
                             if (!userData.inventory) userData.inventory = {};
                             userData.inventory.revival_stone = (userData.inventory.revival_stone || 0) + reward.value;
@@ -15967,6 +16052,7 @@ async function claimLoginStreakReward(day) {
                                 userData.globalPotionBuffs[statKey] = (userData.globalPotionBuffs[statKey] || 0) + reward.value;
                             }
                             break;
+                        // ★★★ EKSİK OLAN VE EKLENEN KISIM SONU ★★★
                     }
                 });
 
@@ -15979,13 +16065,7 @@ async function claimLoginStreakReward(day) {
         });
 
         if (committed) {
-            const rewardNames = dayData.rewards.map(r => {
-                if (r.type === 'avatar') return `'${r.avatarName}' Avatarı`;
-                const isPercent = ['defense_potion', 'crit_potion', 'crit_damage_potion', 'dodge_potion', 'pierce_potion'].includes(r.type);
-                const valuePrefix = isPercent ? `+%${r.value}` : `+${r.value}`;
-                return `${valuePrefix} ${typeToName[r.type] || 'Ödül'}`;
-            }).join(', ');
-
+            const rewardNames = dayData.rewards.map(r => r.type === 'avatar' ? `'${r.avatarName}' Avatarı` : `+${r.value} ${typeToName[r.type] || 'Ödül'}`).join(', ');
             displayMessage(`Tebrikler! ${day}. gün ödüllerin (${rewardNames}) envanterine eklendi!`);
             
             logActivity('loginStreakClaim', currentUser, {
@@ -16932,11 +17012,10 @@ function customAlert(message) {
     });
 }
 
-// ★★★ YENİ EKLENECEK FONKSİYON ★★★
 async function convertWildcard() {
     if (isAdmin) return;
 
-    const confirmed = await customConfirm("1 adet Joker Kart'ı 2.500 Puana dönüştürmek istediğinize emin misiniz? Bu işlem geri alınamaz!");
+    const confirmed = await customConfirm("1 adet Joker Kart'ı 10 Kutu Hakkı'na dönüştürmek istediğinize emin misiniz? Bu işlem geri alınamaz!");
     if (!confirmed) return;
 
     const userRef = db.ref(`users/${currentUser}`);
@@ -16945,20 +17024,18 @@ async function convertWildcard() {
         const { committed, snapshot } = await userRef.transaction(userData => {
             if (userData && (userData.wildcards || 0) > 0) {
                 userData.wildcards--;
-                userData.balance = (userData.balance || 0) + 2500;
-                userData.kariyerPuani = (userData.kariyerPuani || 0) + 2500;
+                userData.kutuHakki = (userData.kutuHakki || 0) + 10;
                 return userData;
             }
-            return; // Koşul sağlanmıyorsa işlemi iptal et
+            return; 
         });
 
         if (committed) {
-            displayMessage("Başarılı! 1 Joker Kart, 2.500 Puana dönüştürüldü.");
-            logActivity('wildcardConvertedToPoints', currentUser, {
-                points: 2500,
-                newBalance: snapshot.val().balance
+            displayMessage("Başarılı! 1 Joker Kart, 10 Kutu Hakkı'na dönüştürüldü.");
+            logActivity('wildcardConvertedToBoxRights', currentUser, {
+                boxRights: 10,
+                newBoxRights: snapshot.val().kutuHakki
             });
-            // Arayüzü anında güncelle
             if (currentActiveSection === 'cardCollection') {
                 loadCollectionAlbum();
             }
