@@ -1485,6 +1485,11 @@ body.modal-open .modal-content {
                 <div id="playerBuffs" class="flex justify-center items-center gap-4 mb-3 min-h-[30px]"></div>
                 
                 <div id="defeatMessageContainer" class="hidden text-center mb-3"></div>
+                <div id="potionStoreBtnContainer" class="my-3">
+    <button onclick="goToMonsterStore()" class="w-full py-2 bg-teal-600 hover:bg-teal-500 text-white font-bold rounded-lg shadow-md">
+        👹 Canavar Mağazasına Git
+    </button>
+</div>
 <div id="regenPotionContainer" class="mb-3"></div>
 <div id="revivalStoneContainer" class="hidden text-center mb-3"></div>
 
@@ -4432,7 +4437,14 @@ async function afterLogin() {
     }
   }
 
+// MEVCUT showSection FONKSİYONUNU SİL VE BUNU YAPIŞTIR
 function showSection(sectionId) {
+    // YENİ EKLENEN KISIM: Eğer kullanıcı mağaza dışı bir sekmeye tıklarsa, filtreyi temizle.
+    if (sectionId !== 'store') {
+        storeFilter = null;
+    }
+    // YENİ EKLENEN KISIM SONU
+
     if (currentActiveSection === 'cardCollection' && sectionId !== 'cardCollection') {
         newlyAcquiredCards.clear();
     }
@@ -4451,7 +4463,6 @@ function showSection(sectionId) {
 
     hideAllAdminControls();
 
-    // ★★★ HATA DÜZELTİLDİ: Sadece 'Content' ID'li div'ler gösterilecek ★★★
     const contentToShow = document.getElementById(`${sectionId}Content`) || document.getElementById(`${sectionId}Section`);
     if(contentToShow) contentToShow.classList.remove('hidden');
 
@@ -4461,11 +4472,9 @@ function showSection(sectionId) {
         activeBtn.classList.remove('bg-gray-700', 'hover:bg-gray-600');
     }
 
-    // ★★★ SORUNU ÇÖZEN DEĞİŞİKLİK BURADA ★★★
     if (sectionId === 'game' && isAdmin) {
         document.getElementById('boxSettingsButton').classList.remove('hidden');
     }
-    // ★★★ DEĞİŞİKLİK SONU ★★★
 
     if (sectionId === 'store') {
         loadStoreItems();
@@ -4476,7 +4485,10 @@ function showSection(sectionId) {
             document.getElementById('storeIndicator').classList.add('hidden');
             db.ref(`users/${currentUser}/lastSeenStoreTimestamp`).set(latestStoreItemTimestamp);
         }
-        switchStoreTab('game');
+        // Eğer filtre aktif değilse, varsayılan olarak oyun mağazasını aç.
+        if (!storeFilter) {
+            switchStoreTab('game');
+        }
     } else if (sectionId === 'announcements') {
         loadAnnouncements();
         if (isAdmin) {
@@ -6594,7 +6606,7 @@ function renderActivityFeed(activities) {
                     const costText = isKP ? details.itemCost : `${formatNumber(details.itemCost)} Puan`;
                     const balance = isKP ? details.newKasaBalance : details.newBalance;
                     const balanceUnit = isKP ? 'KP' : 'Puanı';
-                    message = `${userHtml}, mağazadan <b class="text-red-500">-${costText}</b> harcayarak <b class="text-green-400">${details.itemName}</b> aldı. (Mevcut ${balanceUnit}: ${formatNumber(balance)})`;
+                    message = `${userHtml}, özel ürün mağazasından <b class="text-red-500">-${costText}</b> harcayarak <b class="text-green-400">${details.itemName}</b> aldı. (Mevcut ${balanceUnit}: ${formatNumber(balance)})`;
                     break;
                 case 'lobbyJoined':
                     message = `${userHtml}, Tıkla-Yakala lobisine <span class="text-red-400 font-bold">-${details.cost} Puan</span> karşılığında katıldı. <span class="text-gray-400">(Kalan Puan: ${details.newBalance})</span>`;
@@ -7140,6 +7152,7 @@ function revealMyCardChoice(sessionData) {
     });
 }
 
+// MEVCUT selectCard FONKSİYONUNU SİL VE BUNU YAPIŞTIR
 async function selectCard(selectedCardDiv, userId) {
     // Anında koruma: Bir kart seçildiği anda diğer tüm kartların tıklanmasını engelle.
     const cardContainer = document.getElementById('playerCardContainer');
@@ -7171,33 +7184,34 @@ async function selectCard(selectedCardDiv, userId) {
 
     const updatedSessionData = transactionResult.snapshot.val();
     
-    // ================== İSTEDİĞİN ÇÖZÜM BURADA ==================
-    // Artık puanı hesaplarken Sürpriz Kutu oturumuna kaydettiğimiz çarpanı da hesaba katıyoruz.
-    // Eğer çarpan yoksa, varsayılan olarak 1 ile çarpıyoruz.
-    let points = parseInt(selectedCardDiv.dataset.value) * (updatedSessionData.multiplier || 1);
-    // ==========================================================
+    // ★★★ HATAYI GİDEREN GÜNCELLEME BURADA BAŞLIYOR ★★★
     
+    // 1. Kartın temel (çarpansız) puanını alıyoruz.
+    const basePoints = parseInt(selectedCardDiv.dataset.value);
+    // 2. Aktif olan çarpanı alıyoruz (yoksa 1).
+    const multiplier = updatedSessionData.multiplier || 1;
+    // 3. Kullanıcının gerçekten kazanacağı, çarpılmış nihai puanı hesaplıyoruz.
+    const finalMultipliedPoints = basePoints * multiplier;
+
     const userRef = db.ref('users/' + userId);
 
-    // Puanları ekle
+    // 4. Puanları eklerken, çarpılmış olan 'finalMultipliedPoints' değerini kullanıyoruz.
     await userRef.transaction(user => {
         if (user) {
-            user.balance = (user.balance || 0) + points;
-            // Bu satır artık gerekli değil çünkü kariyer puanı her zaman güncelleniyor.
-            // if (user.balance > (user.highestBalanceEver || 0)) {
-            //     user.highestBalanceEver = user.balance;
-            // }
-            user.kariyerPuani = (user.kariyerPuani || 0) + points;
+            user.balance = (user.balance || 0) + finalMultipliedPoints;
+            user.kariyerPuani = (user.kariyerPuani || 0) + finalMultipliedPoints;
         }
         return user;
     });
 
     const finalUserSnap = await userRef.once('value');
-    const finalUserData = finalUserSnap.val();
-    let newBalance = finalUserData.balance || 0;
+    const newBalance = finalUserSnap.val().balance || 0;
  
-    // Sonucu (artık doğru olan çarpılmış puanı) Firebase'e yaz
-    await sessionRef.child('result').set({ points: points, newBalance: newBalance });
+    // 5. Sonucu Firebase'e yazarken, logların doğru görünmesi için 'points' alanına TEMEL (çarpansız) puanı kaydediyoruz.
+    // Puan zaten hesaba doğru eklendiği için bu sadece görsel bir düzeltmedir.
+    await sessionRef.child('result').set({ points: basePoints, newBalance: newBalance });
+
+    // ★★★ GÜNCELLEME BURADA BİTİYOR ★★★
 }
 
 // --- YENİ VE GÜNCEL SÜRPRİZ KUTU DİNLEME FONKSİYONU ---
@@ -7205,6 +7219,7 @@ async function selectCard(selectedCardDiv, userId) {
 let isProcessingSurpriseResult = false;
 let spectatorViewingResult = false;
 
+// MEVCUT listenForSurpriseBox FONKSİYONUNU SİL VE BUNU YAPIŞTIR
 function listenForSurpriseBox() {
     const sessionRef = db.ref('surprise_box_session');
     
@@ -7257,10 +7272,15 @@ function listenForSurpriseBox() {
                     } else if (committed) {
                         const finalSessionData = snapshot.val();
 
+                        // ★★★ LOGLAMA İÇİN GÜNCELLENEN KISIM BAŞLANGICI ★★★
+                        // Gerçekten kazanılan, çarpılmış puanı hesaplıyoruz.
+                        const finalPointsForLog = finalSessionData.result.points * (finalSessionData.multiplier || 1);
+                        // ★★★ GÜNCELLENEN KISIM SONU ★★★
+
                         const surpriseInfo = {
                             finder: finalSessionData.user,
                             boxId: finalSessionData.boxId,
-                            points: finalSessionData.result.points,
+                            points: finalSessionData.result.points, // Ana panele temel puanı gönderiyoruz
                             newBalance: finalSessionData.result.newBalance,
                             timestamp: firebase.database.ServerValue.TIMESTAMP,
                             multiplier: finalSessionData.multiplier || 1
@@ -7277,7 +7297,7 @@ function listenForSurpriseBox() {
                         
                         logActivity('surpriseBox', finalSessionData.user, { 
                             boxId: finalSessionData.boxId,
-                            points: finalSessionData.result.points, 
+                            points: finalPointsForLog, // "Son Eylemler" paneline ÇARPILMIŞ puanı gönderiyoruz
                             multiplier: finalSessionData.multiplier,
                             newBalance: finalSessionData.result.newBalance
                         });
@@ -7457,11 +7477,12 @@ function loadStoreItems() {
       }
   }
 
-  // ESKİ renderStoreItems FONKSİYONUNU SİL VE BUNU EKLEYİN
-
-async function renderStoreItems(items, userData = {}) { 
+  async function renderStoreItems(items, userData = {}) {
     const gameContainer = document.getElementById('gameStoreItemsContainer');
     const specialContainer = document.getElementById('specialStoreItemsContainer');
+    const gameTabBtn = document.getElementById('gameStoreTabBtn');
+    const specialTabBtn = document.getElementById('specialStoreTabBtn');
+
     gameContainer.innerHTML = '';
     specialContainer.innerHTML = '';
 
@@ -7474,59 +7495,38 @@ async function renderStoreItems(items, userData = {}) {
         specialContainer.innerHTML = placeholder;
         return;
     }
-    
-    let allItemsArray = Object.entries(items);
-    let gameItems = allItemsArray
-        .filter(([, item]) => item.type !== 'special')
-        .sort(([, a], [, b]) => (a.order || 0) - (b.order || 0));
 
-    let specialItems = allItemsArray
-        .filter(([, item]) => item.type === 'special')
-        .sort(([, a], [, b]) => (a.order || 0) - (b.order || 0));
-
-    let bestSellerGameItemId = null;
-    if (gameItems.length > 0) {
-      const sortedByPurchase = [...gameItems].sort(([,a], [,b]) => (b.purchaseCount || 0) - (a.purchaseCount || 0));
-      if((sortedByPurchase[0][1].purchaseCount || 0) > 0) {
-        bestSellerGameItemId = sortedByPurchase[0][0];
-      }
-    }
-
-    let bestSellerSpecialItemId = null;
-    if (specialItems.length > 0) {
-      const sortedByPurchase = [...specialItems].sort(([,a], [,b]) => (b.purchaseCount || 0) - (a.purchaseCount || 0));
-      if((sortedByPurchase[0][1].purchaseCount || 0) > 0) {
-        bestSellerSpecialItemId = sortedByPurchase[0][0];
-      }
-    }
-
-    const potionPurchaseCounts = userData.potionPurchaseCounts || {};
-
+    // *** DEĞİŞİKLİK BURADA BAŞLIYOR: renderItem fonksiyonunu en başa taşıdık ***
+    // Bu iç fonksiyon, tek bir mağaza ürününü HTML'e çevirir.
     const renderItem = (itemData, container) => {
         const [itemId, item] = itemData;
         const isSpecial = item.type === 'special';
-        const list = isSpecial ? specialItems : gameItems;
-        const index = list.findIndex(([id]) => id === itemId);
-        const isBestSeller = isSpecial ? itemId === bestSellerSpecialItemId : itemId === bestSellerGameItemId;
+        const potionPurchaseCounts = (userData && userData.potionPurchaseCounts) ? userData.potionPurchaseCounts : {};
 
-        // ★★★ YENİ KOD BAŞLANGICI: DİNAMİK FİYAT HESAPLAMA ★★★
-        const isPotion = ['health_potion', 'damage_potion', 'defense_potion', 'crit_potion', 'crit_damage_potion', 'dodge_potion', 'pierce_potion'].includes(item.type);
+        const monsterStoreItemTypes = [
+            'revival_stone', 'health_potion', 'damage_potion', 'defense_potion',
+            'crit_potion', 'crit_damage_potion', 'dodge_potion', 'pierce_potion',
+            'health_regen_potion'
+        ];
+        const isPotion = monsterStoreItemTypes.includes(item.type);
         let currentCost = item.cost;
-        if (isPotion && !isSpecial) { // İksirlerin fiyatı sadece normal mağazada artar
+        if (isPotion && !isSpecial) {
             const purchaseCount = potionPurchaseCounts[itemId] || 0;
             currentCost = item.cost + (purchaseCount * 1000);
         }
-        // ★★★ YENİ KOD SONU ★★★
 
         const outOfStock = item.stock !== undefined && item.stock <= 0;
         let isExpired = false;
         let countdownHtml = '';
-        
+
         let adminControlsHtml = '';
-        if(isAdmin){
-          const leftArrowDisabled = index === 0 ? 'disabled' : '';
-          const rightArrowDisabled = index === list.length - 1 ? 'disabled' : '';
-          adminControlsHtml = `
+        if (isAdmin) {
+            const allItemsArray = Object.entries(items);
+            const listForReorder = isSpecial ? allItemsArray.filter(i => i[1].type === 'special') : allItemsArray.filter(i => i[1].type !== 'special' && !monsterStoreItemTypes.includes(i[1].type));
+            const index = listForReorder.findIndex(([id]) => id === itemId);
+            const leftArrowDisabled = index === 0 ? 'disabled' : '';
+            const rightArrowDisabled = index === listForReorder.length - 1 ? 'disabled' : '';
+            adminControlsHtml = `
             <div class="admin-controls absolute top-0 right-0 p-1 bg-gray-900 bg-opacity-70 rounded-bl-lg flex gap-1 z-10">
                 <button onclick="reorderStoreItem('${itemId}', ${index - 1})" ${leftArrowDisabled} title="Sola Taşı" class="p-1 rounded-full hover:bg-gray-700 disabled:cursor-not-allowed">
                     <svg class="w-5 h-5 fill-current text-white" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M12.707 5.293a1 1 0 010 1.414L9.414 10l3.293 3.293a1 1 0 01-1.414 1.414l-4-4a1 1 0 010-1.414l4-4a1 1 0 011.414 0z"/></svg>
@@ -7557,18 +7557,12 @@ async function renderStoreItems(items, userData = {}) {
 
         const disabled = outOfStock || isExpired;
         
-        const popularityHtml = `<p class="text-blue-300 text-sm mb-2">🔥 ${item.purchaseCount || 0} kez satın alındı</p>`;
-        const bestSellerBadge = isBestSeller ? `<span class="best-seller-badge absolute top-2 left-2 bg-yellow-500 text-gray-900 text-xs font-bold px-2 py-1 rounded-full z-10">ÇOK SATAN</span>` : '';
-        const cardClass = isBestSeller ? 'glowing-border' : 'border-red-700';
-        
-        // ★★★ FİYAT GÖSTERİMİ GÜNCELLENDİ ★★★
-        const priceText = isSpecial ? `${currentCost} Kasa Puanı` : `${currentCost} Puan`;
+        const priceText = isSpecial ? `${formatNumber(currentCost)} KP` : `${formatNumber(currentCost)} Puan`;
 
         const cardDiv = document.createElement('div');
-        cardDiv.className = `relative bg-gray-800 p-6 rounded-xl shadow-lg border-2 ${cardClass} text-center flex flex-col justify-between`;
+        cardDiv.className = `relative bg-gray-800 p-6 rounded-xl shadow-lg border-2 border-red-700 text-center flex flex-col justify-between`;
         cardDiv.innerHTML = `
             ${adminControlsHtml}
-            ${bestSellerBadge}
             <div class="flex-grow">
               <img src="${item.imageUrl || 'https://via.placeholder.com/150'}" alt="${item.name}" class="w-24 h-24 mx-auto mb-4 rounded-lg object-cover">
               <h4 class="text-yellow-400 text-xl font-bold">${item.name}</h4>
@@ -7576,7 +7570,6 @@ async function renderStoreItems(items, userData = {}) {
             </div>
             <div>
               ${countdownHtml}
-              ${popularityHtml}
               <p class="text-gray-400 text-sm mb-2">Stok: ${item.stock !== undefined && item.stock !== null ? item.stock : 'Sınırsız'}</p>
               <p class="text-green-400 text-2xl font-bold mb-4" id="price-${itemId}">${priceText}</p>
               <button id="buy-btn-${itemId}" onclick="buyItem('${itemId}')" ${disabled ? 'disabled' : ''} class="w-full py-3 mt-auto ${disabled ? 'bg-gray-600 cursor-not-allowed' : 'bg-red-700 hover:bg-red-600'} text-white font-bold rounded-lg transition duration-300">
@@ -7586,19 +7579,63 @@ async function renderStoreItems(items, userData = {}) {
           `;
         container.appendChild(cardDiv);
     };
+    // *** DEĞİŞİKLİK BURADA BİTİYOR ***
 
-    if (gameItems.length > 0) {
-      gameItems.forEach(itemData => renderItem(itemData, gameContainer));
+    let allItemsArray = Object.entries(items);
+
+    const monsterStoreItemTypes = [
+        'revival_stone', 'health_potion', 'damage_potion', 'defense_potion',
+        'crit_potion', 'crit_damage_potion', 'dodge_potion', 'pierce_potion',
+        'health_regen_potion'
+    ];
+
+    if (storeFilter === 'monster_battle') {
+        const monsterItems = allItemsArray
+            .filter(([, item]) => monsterStoreItemTypes.includes(item.type))
+            .sort(([, a], [, b]) => (a.order || 0) - (b.order || 0));
+
+        if (monsterItems.length > 0) {
+            // *** EKSİK KISIM BURAYA EKLENDİ ***
+            monsterItems.forEach(itemData => renderItem(itemData, gameContainer));
+        } else {
+            gameContainer.innerHTML = '<p class="text-center col-span-full text-gray-400">Canavar Mağazası\'nda ürün bulunmamaktadır.</p>';
+        }
+
+        if (specialTabBtn) specialTabBtn.style.display = 'none';
+        if (specialContainer) specialContainer.style.display = 'none';
+
+        if (gameTabBtn) {
+            gameTabBtn.classList.add('border-red-500', 'text-white');
+            gameTabBtn.classList.remove('border-transparent', 'text-gray-400');
+        }
+        document.getElementById('gameStoreItemsContainer').classList.remove('hidden');
+
     } else {
-      gameContainer.innerHTML = '<p class="text-center col-span-full text-gray-400">Oyun mağazasında ürün bulunmamaktadır.</p>';
+        const gameItems = allItemsArray
+            .filter(([, item]) => item.type !== 'special' && !monsterStoreItemTypes.includes(item.type))
+            .sort(([, a], [, b]) => (a.order || 0) - (b.order || 0));
+
+        const specialItems = allItemsArray
+            .filter(([, item]) => item.type === 'special')
+            .sort(([, a], [, b]) => (a.order || 0) - (b.order || 0));
+
+        if (specialTabBtn) specialTabBtn.style.display = 'flex';
+
+        // *** EKSİK KISIM BURAYA EKLENDİ ***
+        if (gameItems.length > 0) {
+            gameItems.forEach(itemData => renderItem(itemData, gameContainer));
+        } else {
+            gameContainer.innerHTML = '<p class="text-center col-span-full text-gray-400">Oyun Mağazası\'nda ürün bulunmamaktadır.</p>';
+        }
+
+        // *** EKSİK KISIM BURAYA EKLENDİ ***
+        if (specialItems.length > 0) {
+            specialItems.forEach(itemData => renderItem(itemData, specialContainer));
+        } else {
+            specialContainer.innerHTML = '<p class="text-center col-span-full text-gray-400">Özel Ürün Mağazası\'nda ürün bulunmamaktadır.</p>';
+        }
     }
     
-    if (specialItems.length > 0) {
-      specialItems.forEach(itemData => renderItem(itemData, specialContainer));
-    } else {
-      specialContainer.innerHTML = '<p class="text-center col-span-full text-gray-400">Özel ürün mağazasında ürün bulunmamaktadır.</p>';
-    }
-
     if (Object.keys(activeStoreCountdowns).length > 0) {
         updateStoreCountdowns();
         storeCountdownInterval = setInterval(updateStoreCountdowns, 1000);
@@ -8566,7 +8603,7 @@ async function manualResetAfterSurprise() {
         displayMessage("Açılmış sürpriz kutu tespit edildi ve oyun senin tarafından başarıyla sıfırlandı!");
 
     } else {
-        displayMessage("Bu özellik sadece bir sürpriz kutu bulunduktan sonra ve oyun sıfırlanmadığında kullanılabilir.");
+        displayMessage("Bu özellik sadece sürpriz kutu bulunduktan sonra kullanılabilir.");
     }
     
     closeSolveProblemsModal();
@@ -12332,8 +12369,6 @@ async function buyItem(itemId) {
 
     if (!user || !item) return;
 
-    // --- 2. DÜZELTME İÇİN DEĞİŞEN SATIR ---
-    // 'health_regen_potion' buraya da eklendi.
     const isPotion = ['health_potion', 'damage_potion', 'defense_potion', 'crit_potion', 'crit_damage_potion', 'dodge_potion', 'pierce_potion', 'health_regen_potion'].includes(item.type);
 
     if (isPotion) {
@@ -12393,10 +12428,21 @@ async function buyItem(itemId) {
             } return currentItem; 
         });
 
-        logActivity('buyItem', currentUser, { itemName: item.name, itemCost: currentCost, itemType: item.type, itemValue: valueToAdd, itemDuration: null, newBalance: newBalance });
+        const isPercent = ['defense_potion', 'crit_potion', 'crit_damage_potion', 'dodge_potion', 'pierce_potion', 'health_regen_potion'].includes(item.type);
+        const valuePrefix = isPercent ? '%' : '+';
+        const detailedItemName = `${valuePrefix}${valueToAdd} ${item.name}`;
+
+        logActivity('buyItem', currentUser, { 
+            itemName: detailedItemName,
+            itemCost: currentCost, 
+            itemType: item.type, 
+            itemValue: valueToAdd, 
+            itemDuration: null, 
+            newBalance: newBalance 
+        });
         
-        const isPercent = ['defense_potion', 'crit_potion', 'crit_damage_potion', 'dodge_potion', 'pierce_potion'].includes(item.type);
-        const formattedValue = isPercent ? `+%${valueToAdd.toFixed(1)}` : `+${valueToAdd}`;
+        const isPercentMsg = ['defense_potion', 'crit_potion', 'crit_damage_potion', 'dodge_potion', 'pierce_potion'].includes(item.type);
+        const formattedValue = isPercentMsg ? `+%${valueToAdd.toFixed(1)}` : `+${valueToAdd}`;
         const successMessage = `Başarılı! '${item.name}' satın alındı ve hesabınıza kalıcı olarak ${formattedValue} bonus eklendi.`;
         displayMessage(successMessage);
 
@@ -12405,10 +12451,13 @@ async function buyItem(itemId) {
         return;
     }
 
-    if ((user.balance || 0) < item.cost) { displayMessage("Yetersiz Puan!"); return; }
     if (item.type === 'special') {
         const kasaPuani = user.kasaPuani || 0;
-        if (kasaPuani < item.cost) { displayMessage(`Bu özel ürünü almak için yeterli Kasa Puanınız yok! (Gereken: ${item.cost} KP, Mevcut: ${kasaPuani} KP)`); return; }
+        if (kasaPuani < item.cost) {
+            // *** DEĞİŞİKLİK BURADA ***
+            displayMessage("Yetersiz Kasa Puanı!");
+            return;
+        }
         if (item.stock !== undefined && item.stock <= 0) { displayMessage("Bu ürünün stoğu tükenmiştir."); return; }
         const confirmed = await customConfirm(`'${item.name}' ürününü ${item.cost} Kasa Puanı'na almak istiyor musunuz? Bu puanlar Kasa'nızdan düşülecektir.`);
         if (!confirmed) return;
@@ -12420,10 +12469,12 @@ async function buyItem(itemId) {
         if (item.stock !== undefined && item.stock !== null) { itemUpdates.stock = item.stock - 1; }
         itemUpdates.purchaseCount = (item.purchaseCount || 0) + 1;
         await itemRef.update(itemUpdates);
-        logActivity('buyItem', currentUser, { itemName: item.name, itemCost: item.cost, itemType: item.type, newKasaBalance: kasaPuani - item.cost });
+        logActivity('buyItem', currentUser, { itemName: item.name, itemCost: `${item.cost} KP`, itemType: item.type, newKasaBalance: kasaPuani - item.cost });
         displayMessage(`'${item.name}' talebiniz admine iletildi. Onaylandığında hesabınıza eklenecek. Kasa'nızdan ${item.cost} KP düşüldü.`);
         return;
     }
+    
+    if ((user.balance || 0) < item.cost) { displayMessage("Yetersiz Puan!"); return; }
 
     if (item.type === 'tempMultiplier') {
         if (typeof item.value !== 'number' || typeof item.duration !== 'number') {
@@ -16975,7 +17026,7 @@ function addRewardToTier(element, rewardData = {}) {
     rewardsListContainer.appendChild(rewardRow);
 }
 
-// MEVCUT attackMonster FONKSİYONUNU SİL VE BUNU YAPIŞTIR
+// MEVCUT attackMonster FONKSİYONUNU SİL VE BUNUNLA DEĞİŞTİR
 async function attackMonster() {
     if (isAdmin) {
         displayMessage("Adminler saldıramaz.");
@@ -17039,7 +17090,7 @@ async function attackMonster() {
         const monsterDefenseReduction = Math.min((monsterStats.defense || 0) / 100, 0.8);
         const playerDefenseReduction = Math.min((playerStats.defense || 0) / 100, 0.8);
 
-        // --- Oyuncunun Saldırı Hesaplaması ---
+        // --- Oyuncunun Saldırı Hesaplaması (GÜNCELLENDİ) ---
         let finalDamageToMonster = 0;
         let playerAttackType = 'normal';
         const playerPierced = (Math.random() * 100) < playerStats.pierceChance;
@@ -17050,17 +17101,21 @@ async function attackMonster() {
             playerAttackDetails = `Canavar saldırından <b class="text-cyan-400">sıyrıldı!</b>`;
         } else {
             const playerCritted = (Math.random() * 100) < playerStats.critChance;
-            let totalDamage = Math.floor(Math.random() * (playerStats.maxDamage - playerStats.minDamage + 1)) + playerStats.minDamage;
+            let totalDamage;
 
+            // ★★★ İSTEĞİNE GÖRE DEĞİŞEN KRİTİK VURUŞ HESAPLAMASI BAŞLANGICI ★★★
             if (playerCritted) {
-                totalDamage += Math.floor(playerStats.maxDamage * (playerStats.critDamage / 100));
+                // Kritik vuruş, MAKSİMUM hasarın üzerine kritik hasar bonusunu ekler.
+                totalDamage = playerStats.maxDamage + Math.floor(playerStats.maxDamage * (playerStats.critDamage / 100));
+            } else {
+                // Normal vuruş, minimum ve maksimum hasar arasında rastgele bir değer alır.
+                totalDamage = Math.floor(Math.random() * (playerStats.maxDamage - playerStats.minDamage + 1)) + playerStats.minDamage;
             }
+            // ★★★ KRİTİK VURUŞ HESAPLAMASI SONU ★★★
             
             if (playerPierced) {
-                // ★★★ DEĞİŞİKLİK 1: DELİCİ VURUŞ ARTIK MAKSİMUM HASAR VURUYOR ★★★
-                finalDamageToMonster = playerStats.maxDamage;
+                finalDamageToMonster = playerStats.maxDamage; // Delici vuruş her zaman maksimum hasar verir.
                 playerAttackType = 'pierce';
-                // ★★★ DEĞİŞİKLİK 2: SALDIRI BİLDİRİMİNDEKİ İKON GÜNCELLENDİ ★★★
                 playerAttackDetails = `📌 <b class="text-purple-400">Delici Vuruş</b> ile canavara <b class="text-white">${finalDamageToMonster} hasar</b> verdin.`;
             } else {
                 finalDamageToMonster = Math.max(1, Math.floor(totalDamage * (1 - monsterDefenseReduction)));
@@ -17073,7 +17128,7 @@ async function attackMonster() {
             }
         }
 
-        // --- Canavarın Saldırı Hesaplaması ---
+        // --- Canavarın Saldırı Hesaplaması (GÜNCELLENDİ) ---
         let finalDamageToPlayer = 0;
         let monsterAttackType = 'normal';
         const monsterPierced = (Math.random() * 100) < (monsterStats.pierceChance || 5);
@@ -17084,17 +17139,21 @@ async function attackMonster() {
             monsterAttackDetails = `Canavarın saldırısından <b class="text-cyan-400">sıyrıldın!</b>`;
         } else {
             const monsterCritted = (Math.random() * 100) < (monsterStats.critChance || 5);
-            let totalDamage = Math.floor(Math.random() * (monsterStats.maxDamage - monsterStats.minDamage + 1)) + monsterStats.minDamage;
+            let totalDamage;
 
+            // ★★★ CANAVAR İÇİN DEĞİŞEN KRİTİK VURUŞ HESAPLAMASI BAŞLANGICI ★★★
             if (monsterCritted) {
-                totalDamage += Math.floor(monsterStats.maxDamage * ((monsterStats.critDamage || 10) / 100));
+                // Kritik vuruş, MAKSİMUM hasarın üzerine kritik hasar bonusunu ekler.
+                totalDamage = monsterStats.maxDamage + Math.floor(monsterStats.maxDamage * ((monsterStats.critDamage || 10) / 100));
+            } else {
+                // Normal vuruş, minimum ve maksimum hasar arasında rastgele bir değer alır.
+                totalDamage = Math.floor(Math.random() * (monsterStats.maxDamage - monsterStats.minDamage + 1)) + monsterStats.minDamage;
             }
+            // ★★★ KRİTİK VURUŞ HESAPLAMASI SONU ★★★
 
             if (monsterPierced) {
-                // ★★★ DEĞİŞİKLİK 3: CANAVARIN DELİCİ VURUŞU DA MAKSİMUM HASAR VURUYOR ★★★
-                finalDamageToPlayer = monsterStats.maxDamage;
+                finalDamageToPlayer = monsterStats.maxDamage; // Delici vuruş her zaman maksimum hasar verir.
                 monsterAttackType = 'pierce';
-                // ★★★ DEĞİŞİKLİK 4: CANAVARIN SALDIRI BİLDİRİMİNDEKİ İKON GÜNCELLENDİ ★★★
                 monsterAttackDetails = `📌 Canavar <b class="text-purple-400">delici vuruşla</b> sana <b class="text-red-400">${finalDamageToPlayer} hasar</b> verdi.`;
             } else {
                 finalDamageToPlayer = Math.max(1, Math.floor(totalDamage * (1 - playerDefenseReduction)));
@@ -17911,6 +17970,16 @@ async function saveAvatarStats() {
 
     await db.ref().update(updates);
     displayMessage("Tüm avatarların temel istatistikleri başarıyla kaydedildi!");
+}
+
+// BU KOD BLOĞUNU let currentActiveSection = 'game'; SATIRININ ALTINA EKLE
+
+let storeFilter = null; // Mağazayı filtrelemek için kullanılacak global değişken
+
+// Canavar sayfasından mağazaya yönlendirir ve iksir filtresini aktif eder
+function goToMonsterStore() {
+    storeFilter = 'monster_battle'; // Filtreyi 'canavar savaşı' olarak ayarla
+    showSection('store'); // Mağaza bölümünü göster
 }
       
 // ★★★ YENİ EKLENECEK FONKSİYONLAR SONU ★★★
