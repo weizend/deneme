@@ -4422,8 +4422,9 @@ function showSection(sectionId) {
 
     hideAllAdminControls();
 
-    document.getElementById(`${sectionId}Content`)?.classList.remove('hidden');
-    document.getElementById(`${sectionId}Section`)?.classList.remove('hidden');
+    // ★★★ HATA DÜZELTİLDİ: Sadece 'Content' ID'li div'ler gösterilecek ★★★
+    const contentToShow = document.getElementById(`${sectionId}Content`) || document.getElementById(`${sectionId}Section`);
+    if(contentToShow) contentToShow.classList.remove('hidden');
 
     const activeBtn = document.getElementById(`${sectionId}TabBtn`);
     if (activeBtn) {
@@ -10324,12 +10325,97 @@ async function clearLastWinner() {
     }
 }
   
-  async function handleSoloItemClick(event) {
+  // startSoloClickCatchGame fonksiyonunu bununla değiştir
+async function startSoloClickCatchGame() {
+    // YENİ KONTROL: Haftalık sıfırlama ayarları admin tarafından yapılmamışsa oyunu başlatma.
+    const settingsSnap = await db.ref('gameConfig/weeklyClickCatchReset').once('value');
+    if (!settingsSnap.exists() && !isAdmin) {
+        displayMessage("Yönetici yeni haftanın ödüllerini hazırlıyor. Lütfen kısa bir süre sonra tekrar deneyin.");
+        return;
+    }
+    
+    if (lobbyGameSettings && lobbyGameSettings.state && (lobbyGameSettings.state === 'waiting' || lobbyGameSettings.state === 'active')) {
+        displayMessage("Şu anda aktif bir lobi var. Lobi sona erdiğinde tekli oyun oynayabilirsiniz.");
+        return;
+    }
+    if (clickCatchGameActive) return;
+    if (isAdmin) {
+        displayMessage("Adminler bu oyunu oynayamaz.");
+        return;
+    }
+    await loadSoloGameSettings();
+    const userRef = db.ref('users/' + currentUser);
+    const userSnap = await userRef.once('value');
+    const userData = userSnap.val();
+    
+    const ticketCount = userData.clickCatchTickets || 0;
+    if (ticketCount < 1) {
+        displayMessage("Bu oyunu oynamak için 'Tıkla-Yakala Bileti'ne ihtiyacın var. Mağazadan alabilirsin.");
+        return;
+    }
+
+    ticketsUsedThisRound = ticketCount; // Kaç biletle oynandığını global değişkene kaydet
+
+    const confirmed = await customConfirm(
+        `Mevcut <b>${ticketsUsedThisRound}</b> biletinin tamamı bu oyun için kullanılacak. Onaylıyor musun?<br><br>
+        <small class="text-yellow-300">Kazandığın skor ve tüm özel eşyalar, kullandığın bilet sayısıyla (${ticketsUsedThisRound}x) çarpılacaktır!</small>`
+    );
+    if (!confirmed) {
+        ticketsUsedThisRound = 1; // Kullanıcı iptal ederse, değişkeni sıfırla
+        return;
+    }
+
+    await userRef.update({ clickCatchTickets: 0 }); // Tüm biletleri kullan
+    
+    const specialItemMapping = {
+      'boxRight': { type: 'boxRight', value: soloGameSettings.specialValue || 1, emoji: '📦' },
+      'iflasShield': { type: 'iflasShield', value: soloGameSettings.specialValue || 1, emoji: '🛡️' },
+      'wheelTicket': { type: 'wheelTicket', value: soloGameSettings.specialValue || 1, emoji: '🎫️' },
+      'tempMultiplier': { type: 'tempMultiplier', value: soloGameSettings.specialValue || 2, uses: soloGameSettings.specialMultiplierUses || 1, emoji: '✖️' },
+      'wildcard': { type: 'wildcard', value: soloGameSettings.specialValue || 1, emoji: '🃏' },
+      'card_pack': { type: 'card_pack', value: soloGameSettings.specialValue || 1, emoji: '🎴' },
+      'card_pack_normal': { type: 'card_pack_normal', value: soloGameSettings.specialValue || 1, emoji: '🥉' },
+      'card_pack_gumus': { type: 'card_pack_gumus', value: soloGameSettings.specialValue || 1, emoji: '🥈' },
+      'card_pack_altin': { type: 'card_pack_altin', value: soloGameSettings.specialValue || 1, emoji: '🥇' },
+      'card_pack_efsanevi': { type: 'card_pack_efsanevi', value: soloGameSettings.specialValue || 1, emoji: '🏆' },
+      'revival_stone': { type: 'revival_stone', value: soloGameSettings.specialValue || 1, emoji: '💎' },
+      'health_potion': { type: 'health_potion', value: soloGameSettings.specialValue || 1, emoji: '🧪' },
+      'defense_potion': { type: 'defense_potion', value: soloGameSettings.specialValue || 1, emoji: '🛡️' },
+      'damage_potion': { type: 'damage_potion', value: soloGameSettings.specialValue || 1, emoji: '⚔️' },
+      'crit_potion': { type: 'crit_potion', value: soloGameSettings.specialValue || 1, emoji: '💥' },
+      'crit_damage_potion': { type: 'crit_damage_potion', value: soloGameSettings.specialValue || 1, emoji: '🎯' },
+      'dodge_potion': { type: 'dodge_potion', value: soloGameSettings.specialValue || 1, emoji: '💨' },
+      'pierce_potion': { type: 'pierce_potion', value: soloGameSettings.specialValue || 1, emoji: '📌' },
+    };
+
+    specialItemForThisRound = specialItemMapping[soloGameSettings.specialItemType] || specialItemMapping['boxRight'];
+    
+    clickCatchGameActive = true;
+    clickCatchScore = 0;
+    clickCatchTimer = soloGameSettings.duration;
+    collectedBoxRights = 0;
+    collectedIflasShields = 0;
+    collectedWheelTickets = 0;
+    collectedMultipliers = [];
+    collectedCardPacks = [];
+    collectedPotions = []; // ★★★ DÜZELTME BURADA: Eksik değişken tanımlandı ★★★
+
+    document.getElementById('clickCatchScore').textContent = clickCatchScore;
+    document.getElementById('clickCatchTimer').textContent = clickCatchTimer;
+    document.getElementById('displayScore').classList.remove('hidden');
+    document.getElementById('displaySpecials').classList.remove('hidden');
+    document.getElementById('displayTimer').classList.remove('hidden');
+    document.getElementById('displayTarget').classList.add('hidden');
+    document.getElementById('collectedSpecials').innerHTML = '';
+    showGameCountdown(_actuallyStartSoloGame);
+}
+
+// handleSoloItemClick fonksiyonunu bununla değiştir
+async function handleSoloItemClick(event) {
     if (!clickCatchGameActive) return;
     
-    // Düzeltilen kısım: Tıklanan element ne olursa olsun, en yakın ebeveyn catch-item'ı bulur
     const item = event.target.closest('.catch-item');
-    if (!item) return; // Eğer doğru element bulunamazsa işlemi durdur
+    if (!item) return;
 
     const type = item.dataset.type;
     const value = parseInt(item.dataset.value);
@@ -10338,7 +10424,6 @@ async function clearLastWinner() {
     
     let floatingText = '';
 
-    // Bu switch-case yapısı, hangi türde eşyanın tıklandığını belirler ve ilgili işlemi yapar.
     switch(type) {
         case 'points':
             clickCatchScore = Number(clickCatchScore) + value;
@@ -10371,11 +10456,10 @@ async function clearLastWinner() {
             document.getElementById('collectedSpecials').innerHTML += `<span class="text-xl">${emoji}</span>`;
             break;
         case 'wildcard':
-            collectedWildcards += value; // collectedWildcards değişkenini globalde tanımlamayı unutma
+            collectedWildcards += value;
             floatingText = `+${value} 🃏 Joker Kart Yakalandı!`;
             document.getElementById('collectedSpecials').innerHTML += `<span class="text-xl">${emoji}</span>`;
             break;
-        // Tüm kart paketi türleri için tek bir case
         case 'card_pack':
         case 'card_pack_normal':
         case 'card_pack_gumus':
@@ -10384,10 +10468,9 @@ async function clearLastWinner() {
             const packName = typeToName[type] || 'Kart Paketi';
             collectedCardPacks.push({ type: type, value: value });
             floatingText = `+${value} ${packName} Yakalandı!`;
-            // ★★★ DÜZELTME BURADA: Artık doğru emojiyi kullanıyor ★★★
             document.getElementById('collectedSpecials').innerHTML += `<span class="text-xl">${emoji}</span>`;
             break;
-        // Tüm iksir türleri için tek bir case
+        // ★★★ DÜZELTME BURADA: Artık 'collectedPotions' tanımlı olduğu için bu kod sorunsuz çalışacak ★★★
         case 'revival_stone':
         case 'health_potion':
         case 'damage_potion':
@@ -10397,7 +10480,7 @@ async function clearLastWinner() {
         case 'dodge_potion':
         case 'pierce_potion':
              const potionName = typeToName[type] || 'İksir';
-             collectedPotions.push({ type: type, value: value }); // collectedPotions globalde tanımlanmalı
+             collectedPotions.push({ type: type, value: value });
              floatingText = `+${value} ${potionName} Yakalandı!`;
              document.getElementById('collectedSpecials').innerHTML += `<span class="text-xl">${emoji}</span>`;
              break;
@@ -11140,89 +11223,6 @@ async function loadSoloGameSettings() {
     
     // Ayarlar yüklendikten sonra input'ların görünürlüğünü kontrol eden fonksiyonu çağırır.
     handleSoloSpecialTypeChange();
-}
-
-async function startSoloClickCatchGame() {
-    // YENİ KONTROL: Haftalık sıfırlama ayarları admin tarafından yapılmamışsa oyunu başlatma.
-    const settingsSnap = await db.ref('gameConfig/weeklyClickCatchReset').once('value');
-    if (!settingsSnap.exists() && !isAdmin) {
-        displayMessage("Yönetici yeni haftanın ödüllerini hazırlıyor. Lütfen kısa bir süre sonra tekrar deneyin.");
-        return;
-    }
-    
-    if (lobbyGameSettings && lobbyGameSettings.state && (lobbyGameSettings.state === 'waiting' || lobbyGameSettings.state === 'active')) {
-        displayMessage("Şu anda aktif bir lobi var. Lobi sona erdiğinde tekli oyun oynayabilirsiniz.");
-        return;
-    }
-    if (clickCatchGameActive) return;
-    if (isAdmin) {
-        displayMessage("Adminler bu oyunu oynayamaz.");
-        return;
-    }
-    await loadSoloGameSettings();
-    const userRef = db.ref('users/' + currentUser);
-    const userSnap = await userRef.once('value');
-    const userData = userSnap.val();
-    
-    const ticketCount = userData.clickCatchTickets || 0;
-    if (ticketCount < 1) {
-        displayMessage("Bu oyunu oynamak için 'Tıkla-Yakala Bileti'ne ihtiyacın var. Mağazadan alabilirsin.");
-        return;
-    }
-
-    ticketsUsedThisRound = ticketCount; // Kaç biletle oynandığını global değişkene kaydet
-
-    const confirmed = await customConfirm(
-        `Mevcut <b>${ticketsUsedThisRound}</b> biletinin tamamı bu oyun için kullanılacak. Onaylıyor musun?<br><br>
-        <small class="text-yellow-300">Kazandığın skor ve tüm özel eşyalar, kullandığın bilet sayısıyla (${ticketsUsedThisRound}x) çarpılacaktır!</small>`
-    );
-    if (!confirmed) {
-        ticketsUsedThisRound = 1; // Kullanıcı iptal ederse, değişkeni sıfırla
-        return;
-    }
-
-    await userRef.update({ clickCatchTickets: 0 }); // Tüm biletleri kullan
-    
-    const specialItemMapping = {
-      'boxRight': { type: 'boxRight', value: soloGameSettings.specialValue || 1, emoji: '📦' },
-      'iflasShield': { type: 'iflasShield', value: soloGameSettings.specialValue || 1, emoji: '🛡️' },
-      'wheelTicket': { type: 'wheelTicket', value: soloGameSettings.specialValue || 1, emoji: '🎫️' },
-      'tempMultiplier': { type: 'tempMultiplier', value: soloGameSettings.specialValue || 2, uses: soloGameSettings.specialMultiplierUses || 1, emoji: '✖️' },
-      'wildcard': { type: 'wildcard', value: soloGameSettings.specialValue || 1, emoji: '🃏' },
-      'card_pack': { type: 'card_pack', value: soloGameSettings.specialValue || 1, emoji: '🎴' },
-      'card_pack_normal': { type: 'card_pack_normal', value: soloGameSettings.specialValue || 1, emoji: '🥉' },
-      'card_pack_gumus': { type: 'card_pack_gumus', value: soloGameSettings.specialValue || 1, emoji: '🥈' },
-      'card_pack_altin': { type: 'card_pack_altin', value: soloGameSettings.specialValue || 1, emoji: '🥇' },
-      'card_pack_efsanevi': { type: 'card_pack_efsanevi', value: soloGameSettings.specialValue || 1, emoji: '🏆' },
-      'revival_stone': { type: 'revival_stone', value: soloGameSettings.specialValue || 1, emoji: '💎' },
-      'health_potion': { type: 'health_potion', value: soloGameSettings.specialValue || 1, emoji: '🧪' },
-      'defense_potion': { type: 'defense_potion', value: soloGameSettings.specialValue || 1, emoji: '🛡️' },
-      'damage_potion': { type: 'damage_potion', value: soloGameSettings.specialValue || 1, emoji: '⚔️' },
-      'crit_potion': { type: 'crit_potion', value: soloGameSettings.specialValue || 1, emoji: '💥' },
-      'crit_damage_potion': { type: 'crit_damage_potion', value: soloGameSettings.specialValue || 1, emoji: '🎯' },
-      'dodge_potion': { type: 'dodge_potion', value: soloGameSettings.specialValue || 1, emoji: '💨' },
-      'pierce_potion': { type: 'pierce_potion', value: soloGameSettings.specialValue || 1, emoji: '📌' },
-    };
-
-    specialItemForThisRound = specialItemMapping[soloGameSettings.specialItemType] || specialItemMapping['boxRight'];
-    
-    clickCatchGameActive = true;
-    clickCatchScore = 0;
-    clickCatchTimer = soloGameSettings.duration;
-    collectedBoxRights = 0;
-    collectedIflasShields = 0;
-    collectedWheelTickets = 0;
-    collectedMultipliers = [];
-    collectedCardPacks = [];
-
-    document.getElementById('clickCatchScore').textContent = clickCatchScore;
-    document.getElementById('clickCatchTimer').textContent = clickCatchTimer;
-    document.getElementById('displayScore').classList.remove('hidden');
-    document.getElementById('displaySpecials').classList.remove('hidden');
-    document.getElementById('displayTimer').classList.remove('hidden');
-    document.getElementById('displayTarget').classList.add('hidden');
-    document.getElementById('collectedSpecials').innerHTML = '';
-    showGameCountdown(_actuallyStartSoloGame);
 }
       
 async function endSoloClickCatchGame() {
