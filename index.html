@@ -7957,7 +7957,7 @@ async function deletePurchase(purchaseId) {
   function openBadgeInfoModal() { badgeInfoModal.style.display = 'flex'; }
   function closeBadgeInfoModal() { badgeInfoModal.style.display = 'none'; }
 
-// KULLANICI PROFİLİ PENCERESİNİ AÇAN GÜNCELLENMİŞ FONKSİYON
+// MEVCUT openPublicUserDetailModal FONKSİYONUNU SİL VE BUNU YAPIŞTIR
 async function openPublicUserDetailModal(username) {
     if (!username) return;
 
@@ -7999,17 +7999,6 @@ async function openPublicUserDetailModal(username) {
             isWheelSpinLeader: username === leaders.wheelSpinUser
         };
 
-        document.getElementById('publicBadgeBalance').innerHTML = userLeaderStatus.isCurrentLeader ? '🥇' : '';
-        document.getElementById('publicBadgeHighest').innerHTML = userLeaderStatus.isHighLeader ? '🏆' : '';
-        document.getElementById('badge-stat-box').innerHTML = userLeaderStatus.isBoxLeader ? '📦' : '';
-        document.getElementById('badge-stat-wheel').innerHTML = userLeaderStatus.isWheelSpinLeader ? '🎡' : '';
-        document.getElementById('badge-stat-clickcatch').innerHTML = userLeaderStatus.isClickCatchLeader ? '🎯' : '';
-        document.getElementById('badge-stat-surprise').innerHTML = userLeaderStatus.isSurpriseLeader ? '🎉' : '';
-        document.getElementById('badge-stat-bomb').innerHTML = userLeaderStatus.isBombLeader ? '💣' : '';
-        document.getElementById('badge-stat-multiplier').innerHTML = userLeaderStatus.isMultiplierLeader ? '✖️' : '';
-        document.getElementById('badge-stat-shield').innerHTML = userLeaderStatus.isShieldLeader ? '🛡️' : '';
-        document.getElementById('badge-stat-store').innerHTML = userLeaderStatus.isStoreLeader ? '🛒' : '';
-
         const badges = getUserBadgesHtml(userData, userLeaderStatus, true);
         document.getElementById('publicUserProfileBadges').innerHTML = badges.crown + badges.others;
         
@@ -8019,24 +8008,31 @@ async function openPublicUserDetailModal(username) {
 
         document.getElementById('publicUserName').textContent = username;
         
-        // --- İSTEĞİN ÜZERİNE DEĞİŞEN KISIM BAŞLANGICI ---
-        // Puan & Envanter bölümüne "Joker Kart" satırını ekledik.
         const puanVeEnvanterDiv = document.querySelector('#publicUserDetailModal .grid .bg-gray-800\\/70:first-child .space-y-3');
         if (puanVeEnvanterDiv) {
+            // --- DEĞİŞİKLİK BURADA: Rozetler artık doğrudan HTML'in içine ekleniyor ---
             puanVeEnvanterDiv.innerHTML = `
                 <p class="flex justify-between items-center"><span>🃏 Joker Kart:</span> <span class="font-bold text-purple-400 text-lg">${formatNumber(userData.wildcards || 0)}</span></p>
-                <p class="flex justify-between items-center"><span>🏦 Kasa Puanı:</span> <span id="publicUserKasaBalance" class="font-bold text-purple-400 text-lg">${formatNumber(userData.kasaPuani || 0)}</span></p>
-                <p class="flex justify-between items-center"><span><span id="publicBadgeBalance" class="inline-block w-6 text-center"></span>Mevcut Puanı:</span> <span id="publicUserBalance" class="font-bold text-yellow-300 text-lg">${formatNumber(userData.balance || 0)}</span></p>
-                <p class="flex justify-between items-center"><span><span id="publicBadgeHighest" class="inline-block w-6 text-center"></span>Kariyer Puanı:</span> <span id="publicUserHighestBalance" class="font-bold text-green-400 text-lg">${formatNumber(userData.kariyerPuani || 0)}</span></p>
+                <p class="flex justify-between items-center"><span>🏦 Kasa Puanı:</span> <span class="font-bold text-purple-400 text-lg">${formatNumber(userData.kasaPuani || 0)}</span></p>
+                <p class="flex justify-between items-center"><span><span class="inline-block w-6 text-center">${userLeaderStatus.isCurrentLeader ? '🥇' : ''}</span>Mevcut Puanı:</span> <span class="font-bold text-yellow-300 text-lg">${formatNumber(userData.balance || 0)}</span></p>
+                <p class="flex justify-between items-center"><span><span class="inline-block w-6 text-center">${userLeaderStatus.isHighLeader ? '🏆' : ''}</span>Kariyer Puanı:</span> <span class="font-bold text-green-400 text-lg">${formatNumber(userData.kariyerPuani || 0)}</span></p>
                 <hr class="border-gray-600 !my-2">
-                <p class="flex justify-between items-center"><span>📦 Kutu Hakkı:</span> <span id="publicUserBoxRight" class="font-bold text-green-400 text-lg">${formatNumber(userData.kutuHakki || 0)}</span></p>
-                <p class="flex justify-between items-center"><span>🎡 Şans Çarkı Bileti:</span> <span id="publicUserWheelTickets" class="font-bold text-yellow-400 text-lg">${formatNumber(userData.carkBileti || 0)}</span></p>
-                <p class="flex justify-between items-center"><span>🎯 Tıkla-Yakala Bileti:</span> <span id="publicUserClickCatchTickets" class="font-bold text-fuchsia-400 text-lg">${formatNumber(userData.clickCatchTickets || 0)}</span></p>
-                <p class="flex justify-between items-center"><span>🛡️ İflas Kalkanı:</span> <span id="publicUserIflasShield" class="font-bold text-blue-400 text-lg">${formatNumber(userData.iflasShieldUses || 0)}</span></p>
+                <p class="flex justify-between items-center"><span>📦 Kutu Hakkı:</span> <span class="font-bold text-green-400 text-lg">${formatNumber(userData.kutuHakki || 0)}</span></p>
+                <p class="flex justify-between items-center"><span>🎡 Şans Çarkı Bileti:</span> <span class="font-bold text-yellow-400 text-lg">${formatNumber(userData.carkBileti || 0)}</span></p>
+                <p class="flex justify-between items-center"><span>🎯 Tıkla-Yakala Bileti:</span> <span class="font-bold text-fuchsia-400 text-lg">${formatNumber(userData.clickCatchTickets || 0)}</span></p>
+                <p class="flex justify-between items-center"><span>🛡️ İflas Kalkanı:</span> <span class="font-bold text-blue-400 text-lg">${formatNumber(userData.iflasShieldUses || 0)}</span></p>
                 <p class="flex justify-between items-center"><span>✖️ Aktif Çarpan:</span> <span id="publicUserMultiplier" class="font-bold text-purple-400 text-lg text-right"></span></p>
             `;
         }
-        // --- İSTEĞİN ÜZERİNE DEĞİŞEN KISIM SONU ---
+        
+        document.getElementById('badge-stat-box').innerHTML = userLeaderStatus.isBoxLeader ? '📦' : '';
+        document.getElementById('badge-stat-wheel').innerHTML = userLeaderStatus.isWheelSpinLeader ? '🎡' : '';
+        document.getElementById('badge-stat-clickcatch').innerHTML = userLeaderStatus.isClickCatchLeader ? '🎯' : '';
+        document.getElementById('badge-stat-surprise').innerHTML = userLeaderStatus.isSurpriseLeader ? '🎉' : '';
+        document.getElementById('badge-stat-bomb').innerHTML = userLeaderStatus.isBombLeader ? '💣' : '';
+        document.getElementById('badge-stat-multiplier').innerHTML = userLeaderStatus.isMultiplierLeader ? '✖️' : '';
+        document.getElementById('badge-stat-shield').innerHTML = userLeaderStatus.isShieldLeader ? '🛡️' : '';
+        document.getElementById('badge-stat-store').innerHTML = userLeaderStatus.isStoreLeader ? '🛒' : '';
 
         document.getElementById('publicUserBoxesOpened').textContent = formatNumber(userData.boxesOpenedCount || 0);
         document.getElementById('publicUserWheelSpins').textContent = formatNumber(userData.wheelSpinsCount || 0);
@@ -8130,20 +8126,20 @@ async function openUserManagementModal(event, username) {
         isClickCatchLeader: username === leaders.clickCatchLeaderUser,
         isWheelSpinLeader: username === leaders.wheelSpinUser
     };
+    
+    // --- DEĞİŞİKLİK BURADA BAŞLIYOR ---
+    // Rozetleri ilgili satırların yanına ekleyen kodlar
     document.getElementById('managedBadgeBalance').innerHTML = userLeaderStatus.isCurrentLeader ? '🥇' : '';
     document.getElementById('managedBadgeHighest').innerHTML = userLeaderStatus.isHighLeader ? '🏆' : '';
+    // --- DEĞİŞİKLİK BURADA BİTİYOR ---
 
     const avatarUrl = userData.selectedAvatar ? userData.selectedAvatar.url : defaultAvatarUrl;
     document.getElementById('managedUserAvatar').src = avatarUrl;
     document.getElementById('managedUserName').textContent = username;
     document.getElementById('managedUserBalance').textContent = formatNumber(userData.balance || 0);
     document.getElementById('managedUserHighestBalance').textContent = formatNumber(userData.kariyerPuani || 0);
-    
-    // --- YENİ EKLENEN SATIRLAR BAŞLANGICI ---
     document.getElementById('managedUserKasaBalance').textContent = formatNumber(userData.kasaPuani || 0);
     document.getElementById('managedUserWildcards').textContent = formatNumber(userData.wildcards || 0);
-    // --- YENİ EKLENEN SATIRLAR SONU ---
-
     document.getElementById('managedUserBoxRight').textContent = formatNumber(userData.kutuHakki || 0);
     document.getElementById('managedUserWheelTickets').textContent = formatNumber(userData.carkBileti || 0);
     document.getElementById('managedUserClickCatchTickets').textContent = formatNumber(userData.clickCatchTickets || 0);
