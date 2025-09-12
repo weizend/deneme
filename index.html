@@ -4065,6 +4065,7 @@ async function toggleMaintenanceMode() {
     }
 }
 
+// GÜNCELLENECEK FONKSİYON: Haftalık otomatik sıfırlama ayarlarını kaydeder
 async function saveWeeklyResetSettings() {
     if (!isAdmin) return;
 
@@ -4074,7 +4075,7 @@ async function saveWeeklyResetSettings() {
         return;
     }
     
-    // ★★★ DEĞİŞİKLİK BURADA BAŞLIYOR ★★★
+    // Ödül listesindeki tüm ödülleri bir diziye topluyoruz
     const prizeData = [];
     document.querySelectorAll('#weeklyPrizeList .reward-entry').forEach(row => {
         const type = row.querySelector('.reward-type').value;
@@ -4083,6 +4084,7 @@ async function saveWeeklyResetSettings() {
         
         const reward = { type: type };
         
+        // Eğer ödül "Çarpan" ise, hem değerini hem kullanım hakkını al
         if (type === 'tempMultiplier') {
             const value = parseInt(valueInput.value);
             const uses = parseInt(usesInput.value);
@@ -4091,9 +4093,8 @@ async function saveWeeklyResetSettings() {
                 reward.uses = uses;
                 prizeData.push(reward);
             }
-        } else if (type === 'avatar') {
-            // Haftalık ödül için avatar ekleme mantığı burada yok, istersen eklenebilir.
-        }
+        } 
+        // Diğer tüm ödüller için sadece değerini al
         else {
             const value = parseStatValue(type, valueInput.value);
             if (!isNaN(value) && value > 0) {
@@ -4107,8 +4108,8 @@ async function saveWeeklyResetSettings() {
         displayMessage("Lütfen şampiyon için en az bir geçerli ödül ekleyin.");
         return;
     }
-    // ★★★ DEĞİŞİKLİK BURADA BİTİYOR ★★★
     
+    // Ayarları, ödül dizisiyle birlikte veritabanına kaydediyoruz
     const settings = {
         endDate: new Date(dateInput).getTime(),
         prize: prizeData
@@ -11022,14 +11023,14 @@ function _actuallyStartSoloGame() {
 
 let weeklyCountdownInterval = null
 
-  async function openSoloGameSettingsModal() {
+  // GÜNCELLENECEK FONKSİYON: Tekli oyun ayarları ve haftalık sıfırlama panelini açar
+async function openSoloGameSettingsModal() {
     await loadSoloGameSettings();
 
     const settingsSnap = await db.ref('gameConfig/weeklyClickCatchReset').once('value');
     
-    // ★★★ DEĞİŞİKLİK BURADA BAŞLIYOR ★★★
     const weeklyPrizeList = document.getElementById('weeklyPrizeList');
-    weeklyPrizeList.innerHTML = ''; // Önceki ödülleri temizle
+    weeklyPrizeList.innerHTML = ''; 
     document.getElementById('weeklyResetEndDateInput').value = '';
 
     if (settingsSnap.exists()) {
@@ -11039,14 +11040,15 @@ let weeklyCountdownInterval = null
             date.setMinutes(date.getMinutes() - date.getTimezoneOffset());
             document.getElementById('weeklyResetEndDateInput').value = date.toISOString().slice(0, 16);
         }
+        // Artık ödül bir dizi olduğu için, diziyi döngüye alarak satırları ekliyoruz
         if (settings.prize && Array.isArray(settings.prize)) {
             settings.prize.forEach(reward => {
                 addRewardRowToContainer('weeklyPrizeList', reward);
             });
         }
     }
-    // ★★★ DEĞİŞİKLİK BURADA BİTİYOR ★★★
     
+    // Eksik olan ve hataya neden olan fonksiyon çağrısını buraya ekledik
     handleWeeklyPrizeTypeChange();
     soloGameSettingsModal.style.display = 'flex';
 }
@@ -17349,19 +17351,23 @@ function sanitizeFirebaseKey(key) {
     return key.replace(/[.#$[\]/]/g, '').replace(/:/g, '_');
 }
 
-// BU YENİ FONKSİYONU EKLE
+// YENİ EKLENECEK FONKSİYON: Haftalık Şampiyon ödül türü değişimini yönetir
 function handleWeeklyPrizeTypeChange() {
-    const prizeType = document.getElementById('weeklyPrizeType').value;
-    const amountInput = document.getElementById('weeklyPrizeAmount');
-    const usesInput = document.getElementById('weeklyPrizeMultiplierUses');
+    // Ödül listesindeki her bir satırı döngüye al
+    document.querySelectorAll('#weeklyPrizeList .reward-entry').forEach(row => {
+        const prizeType = row.querySelector('.reward-type').value;
+        const usesInput = row.querySelector('.reward-uses');
+        const valueInput = row.querySelector('.reward-value');
 
-    if (prizeType === 'tempMultiplier') {
-        amountInput.placeholder = 'Çarpan Değeri (örn: 2)';
-        usesInput.classList.remove('hidden');
-    } else {
-        amountInput.placeholder = 'Miktar';
-        usesInput.classList.add('hidden');
-    }
+        // Eğer ödül türü 'Çarpan' ise 'Kullanım Hakkı' alanını göster, değilse gizle
+        if (prizeType === 'tempMultiplier') {
+            if(valueInput) valueInput.placeholder = 'Çarpan Değeri (örn: 2)';
+            if(usesInput) usesInput.classList.remove('hidden');
+        } else {
+            if(valueInput) valueInput.placeholder = 'Miktar';
+            if(usesInput) usesInput.classList.add('hidden');
+        }
+    });
 }
 
       // BU YEPYENİ FONKSİYONU SCRIPT BLOĞUNUZUN UYGUN BİR YERİNE EKLEYİN
@@ -17744,46 +17750,37 @@ async function saveAvatarStats() {
     displayMessage("Tüm avatarların temel istatistikleri başarıyla kaydedildi!");
 }
 
-// ★★★ YENİ EKLENECEK YARDIMCI FONKSİYON ★★★
+// GÜNCELLENECEK FONKSİYON: Admin panellerine dinamik ödül satırı ekler
 function addRewardRowToContainer(containerId, rewardData = {}) {
     const container = document.getElementById(containerId);
     if (!container) return;
 
     const rewardRow = document.createElement('div');
-    rewardRow.className = 'grid grid-cols-1 sm:grid-cols-3 gap-2 p-2 bg-gray-900/50 rounded-md';
+    // Bu satır, tüm ödül satırları için ortak bir class adı tanımlar
+    rewardRow.className = 'reward-entry grid grid-cols-1 sm:grid-cols-3 gap-2 p-2 bg-gray-900/50 rounded-md';
     rewardRow.innerHTML = `
-        <select class="box-setting-input reward-type" onchange="handleAdminRewardTypeChange(this)">
-            <option value="points">💰 Puan</option>
-            <option value="boxRights">📦 Kutu Hakkı</option>
-            <option value="wheelTicket">🎫 Çark Bileti</option>
-            <option value="clickCatchTicket">🎟️ Tıkla-Yakala Bileti</option>
-            <option value="iflasShield">🛡️ İflas Kalkanı</option>
-            <option value="tempMultiplier">✖️ Çarpan</option>
-            <option value="avatar">👤 Avatar</option>
-            <option value="wildcard">🃏 Joker Kart</option>
-            <option value="card_pack">🎴 Standart Kart Paketi</option>
-            <option value="card_pack_normal">🥉 Bronz Kart Paketi</option>
-            <option value="card_pack_gumus">🥈 Gümüş Kart Paketi</option>
-            <option value="card_pack_altin">🥇 Altın Kart Paketi</option>
-            <option value="card_pack_efsanevi">🏆 Efsanevi Kart Paketi</option>
-            <option value="revival_stone">💎 Dirilme Taşı</option>
-            <option value="health_potion">🧪 Can İksiri</option>
-            <option value="damage_potion">⚔️ Hasar İksiri</option>
-            <option value="defense_potion">🛡️ Savunma İksiri</option>
-            <option value="crit_potion">💥 Kritik Vuruş İksiri</option>
-            <option value="crit_damage_potion">🎯 Kritik Hasar İksiri</option>
-            <option value="dodge_potion">💨 Sıyrılma Şansı İksiri</option>
-            <option value="pierce_potion">📌 Delici Şansı İksiri</option>
+        <select class="box-setting-input reward-type" onchange="handleWeeklyPrizeTypeChange()">
+            <option value="points" ${rewardData.type === 'points' ? 'selected' : ''}>💰 Puan</option>
+            <option value="boxRights" ${rewardData.type === 'boxRights' ? 'selected' : ''}>📦 Kutu Hakkı</option>
+            <option value="wheelTicket" ${rewardData.type === 'wheelTicket' ? 'selected' : ''}>🎫 Çark Bileti</option>
+            <option value="clickCatchTicket" ${rewardData.type === 'clickCatchTicket' ? 'selected' : ''}>🎟️ T-Y Bileti</option>
+            <option value="iflasShield" ${rewardData.type === 'iflasShield' ? 'selected' : ''}>🛡️ İflas Kalkanı</option>
+            <option value="tempMultiplier" ${rewardData.type === 'tempMultiplier' ? 'selected' : ''}>✖️ Çarpan</option>
+            <option value="wildcard" ${rewardData.type === 'wildcard' ? 'selected' : ''}>🃏 Joker Kart</option>
+            <option value="card_pack" ${rewardData.type === 'card_pack' ? 'selected' : ''}>🎴 Standart Kart Paketi</option>
+            <option value="revival_stone" ${rewardData.type === 'revival_stone' ? 'selected' : ''}>💎 Dirilme Taşı</option>
+            <option value="health_potion" ${rewardData.type === 'health_potion' ? 'selected' : ''}>🧪 Can İksiri</option>
+            <option value="damage_potion" ${rewardData.type === 'damage_potion' ? 'selected' : ''}>⚔️ Hasar İksiri</option>
         </select>
         <div class="reward-fields-container grid grid-cols-2 gap-2 sm:col-span-2">
-            </div>
+            <input type="number" class="box-setting-input reward-value" placeholder="Miktar" value="${rewardData.value || ''}">
+            <input type="number" class="box-setting-input reward-uses hidden" placeholder="Kullanım Hakkı" value="${rewardData.uses || ''}">
+            <button onclick="this.parentElement.parentElement.remove()" class="py-1 px-2 bg-red-600 hover:bg-red-500 rounded-md text-xs col-span-2">Ödülü Sil</button>
+        </div>
     `;
     container.appendChild(rewardRow);
-    const selectElement = rewardRow.querySelector('.reward-type');
-    if (rewardData.type) {
-        selectElement.value = rewardData.type;
-    }
-    handleAdminRewardTypeChange(selectElement, rewardData);
+    // Yeni satır eklendiğinde de input'ların durumunu kontrol et
+    handleWeeklyPrizeTypeChange();
 }
       
 // ★★★ YENİ EKLENECEK FONKSİYONLAR SONU ★★★
