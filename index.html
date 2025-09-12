@@ -3446,22 +3446,25 @@ body.modal-open .modal-content {
             <p>Canavar Savaşı, tüm sunucunun ortak bir düşmana karşı savaştığı bir etkinliktir. Amaç, canavar ölmeden önce ona en çok hasarı vererek liderlik tablosunda yükselmek ve harika ödüller kazanmaktır.</p>
         </div>
         
-        <div>
-            <h4 class="font-bold text-lg text-yellow-300">🛡️ Savaş Mekanikleri</h4>
-            <p>Her oyuncunun gücü, seçili olan avatarının istatistiklerine bağlıdır. Avatarların Can, Hasar, Savunma ve diğer özellikleri vardır.</p>
-            <ul class="list-disc list-inside ml-4 mt-2 space-y-2">
-                <li><b class="text-white">Can Yenileme İksiri:</b> Savaş sırasında canını anında yenilemek için kullanılır. Bu iksirler, maksimum canının belirli bir yüzdesi (%) kadar iyileştirir.</li>
-                <li><b class="text-white">Avatar Kilidi:</b> Canavara ilk saldırını yaptığın anda, o an seçili olan avatarın bu canavar ölene kadar kilitlenir. Stratejini iyi belirle!</li>
-                <li><b class="text-white">Dirilme Taşı:</b> Canın sıfıra düştüğünde ölürsün. "Dirilme Taşı" kullanarak canını tamamen doldurabilir ve savaşa geri dönebilirsin.</li>
-            </ul>
+        <div class="border-t border-gray-700 pt-4">
+            <h4 class="font-bold text-lg text-yellow-300 mb-2">🛡️ Savaş Mekanikleri ve İstatistikler</h4>
+            <div class="space-y-3">
+                <p><strong>❤️ Can (HP):</strong> Avatarının hayatta kalma gücüdür. Sıfıra düşerse mağlup olursun.</p>
+                <p><strong>⚔️ Hasar:</strong> Her saldırıda vereceğin hasar, Minimum ve Maksimum hasar değerlerin arasında rastgele belirlenir.</p>
+                <p><strong>🛡️ Savunma:</strong> Gelen normal ve kritik saldırılardan alınan hasarı <b class="text-white">yüzdelik olarak</b> azaltır. <b class="text-red-400">Delici Vuruşlara karşı etkisizdir.</b></p>
+                <p><strong>💨 Sıyrılma Şansı (%):</strong> Gelen normal ve kritik saldırılardan <b class="text-white">tamamen kaçınma</b> ihtimalindir. <b class="text-red-400">Delici Vuruşlardan sıyrılamazsın.</b></p>
+                <p><strong>📌 Delici Vuruş Şansı (%):</strong> Saldırının, rakibin <b class="text-white">Savunma ve Sıyrılma</b> özelliklerini <b class="text-white">yok sayma</b> ihtimalidir. Bu sayede engellenemez hasar verirsin.</p>
+                <p><strong>💥 Kritik Vuruş Şansı (%):</strong> Saldırının "Kritik Vuruş" olarak gerçekleşme ihtimalidir. Kritik vuruşlar çok daha fazla hasar verir.</p>
+                <p><strong>🎯 Kritik Hasar Bonusu (+%):</strong> Bir kritik vuruşun ne kadar <b class="text-white">ekstra hasar</b> vereceğini belirler. Bu bonus, saldırganın <b class="text-yellow-300">Maksimum Hasarı</b> üzerinden hesaplanır. Örneğin: Maksimum hasarın 500 ve Kritik Hasar Bonusun +%150 ise, kritik vuruşun normal hasarına ek olarak <b class="text-white">750 ekstra hasar</b> verir.</p>
+            </div>
         </div>
-        
-        <div>
+
+        <div class="border-t border-gray-700 pt-4">
             <h4 class="font-bold text-lg text-yellow-300">🧪 İksirler ve Kalıcı Güçlendirmeler</h4>
             <p>Mağazadan veya diğer etkinliklerden kazandığın iksirler, hesabına <b class="text-red-400">KALICI OLARAK</b> bonuslar ekler. Bu güçlendirmeler tüm avatarlarının temel istatistiklerini artırır.</p>
         </div>
 
-        <div>
+        <div class="border-t border-gray-700 pt-4">
             <h4 class="font-bold text-lg text-yellow-300">🏆 Ödüller ve Başarımlar</h4>
             <ul class="list-disc list-inside ml-4 mt-2 space-y-2">
                 <li><b>Hasar Eşiği Ödülleri:</b> Canavara belirli bir hasar miktarını tek seferde geçtiğinde, rastgele ödüller kazanma şansı yakalarsın.</li>
@@ -6481,7 +6484,6 @@ function renderActivityFeed(activities) {
                     }
                     break;
 
-                // *** DEĞİŞİKLİK BURADA: Can bilgisi eklendi ***
                 case 'useRegenPotion':
                      message = `${userHtml}, <b class="text-cyan-300">%${details.percentage} Can Yenileme İksiri</b> kullanarak <b class="text-green-300">${details.healed} can</b> yeniledi. <span class="text-gray-400">(Can: ${formatNumber(details.newHP)}/${formatNumber(details.playerMaxHP)})</span>`;
                      break;
@@ -6560,7 +6562,7 @@ function renderActivityFeed(activities) {
                         conversionSourceText = `kutudan`;
                     }
                     const keptMultiplierText = details.keptMultiplierValue ? ` mevcut <b>${details.keptMultiplierValue}x</b> çarpanını koruyarak` : '';
-                    message = `${userHtml}, ${conversionSourceText} kazandığı <b>${details.rewardValue || details.foundValue}x</b> çarpanı,${keptMultiplierText} <span class="text-lime-300 font-bold">+${details.boxRights} Kutu Hakkı</span>'na dönüştürdü.`;
+                    message = `${userHtml}, ${conversionSourceText} kazandığı <b>${details.rewardValue || details.foundValue}x</b> çarpanı,${keptMultiplierText} <span class="text-lime-300 font-bold">+${details.boxRights} Kutu Hakkı</span>'na dönüştürüldü.`;
                     break;
                 case 'openBox':
                     let openBoxMultiplierText = (details.multiplier && details.multiplier > 1) ? ` <span class="text-xs text-purple-400">(${details.multiplier}x çarpan kullandı)</span>` : ` <span class="text-xs text-gray-400">(çarpan kullanmadı)</span>`;
@@ -17030,41 +17032,67 @@ async function attackMonster() {
         const monsterDefenseReduction = Math.min((monsterStats.defense || 0) / 100, 0.8);
         const playerDefenseReduction = Math.min((playerStats.defense || 0) / 100, 0.8);
 
+        // --- Oyuncunun Saldırı Hesaplaması ---
         let finalDamageToMonster = 0;
         let playerAttackType = 'normal';
-        let didMonsterDodge = false;
-        const randomPlayerDamage = Math.floor(Math.random() * (playerStats.maxDamage - playerStats.minDamage + 1)) + playerStats.minDamage;
         const playerPierced = (Math.random() * 100) < playerStats.pierceChance;
-        if (!playerPierced) { didMonsterDodge = (Math.random() * 100) < (monsterStats.dodgeChance || 0); }
-        if (!didMonsterDodge) {
+        const didMonsterDodge = !playerPierced && (Math.random() * 100) < (monsterStats.dodgeChance || 0);
+        let playerAttackDetails = '';
+
+        if (didMonsterDodge) {
+            playerAttackDetails = `Canavar saldırından <b class="text-cyan-400">sıyrıldı!</b>`;
+        } else {
             const playerCritted = (Math.random() * 100) < playerStats.critChance;
-            let totalDamage = randomPlayerDamage;
-            if (playerCritted) { totalDamage += Math.floor(totalDamage * (playerStats.critDamage / 100)); }
+            let totalDamage = Math.floor(Math.random() * (playerStats.maxDamage - playerStats.minDamage + 1)) + playerStats.minDamage;
+
+            if (playerCritted) {
+                totalDamage += Math.floor(playerStats.maxDamage * (playerStats.critDamage / 100));
+            }
+            
             if (playerPierced) {
                 finalDamageToMonster = Math.max(1, Math.floor(totalDamage));
                 playerAttackType = 'pierce';
+                playerAttackDetails = `🛡️ <b class="text-purple-400">Delici Vuruş</b> ile canavara <b class="text-white">${finalDamageToMonster} hasar</b> verdin.`;
             } else {
                 finalDamageToMonster = Math.max(1, Math.floor(totalDamage * (1 - monsterDefenseReduction)));
-                playerAttackType = playerCritted ? 'crit' : 'normal';
+                if(playerCritted) {
+                    playerAttackType = 'crit';
+                    playerAttackDetails = `💥 <b class="text-amber-400">Kritik Vuruş</b> ile canavara <b class="text-white">${finalDamageToMonster} hasar</b> verdin.`;
+                } else {
+                    playerAttackDetails = `Canavara <b class="text-white">${finalDamageToMonster} hasar</b> verdin.`;
+                }
             }
         }
-        
+
+        // --- Canavarın Saldırı Hesaplaması ---
         let finalDamageToPlayer = 0;
         let monsterAttackType = 'normal';
-        let didPlayerDodge = false;
-        const randomMonsterDamage = Math.floor(Math.random() * (monsterStats.maxDamage - monsterStats.minDamage + 1)) + monsterStats.minDamage;
         const monsterPierced = (Math.random() * 100) < (monsterStats.pierceChance || 5);
-        if (!monsterPierced) { didPlayerDodge = (Math.random() * 100) < playerStats.dodgeChance; }
-        if (!didPlayerDodge) {
+        const didPlayerDodge = !monsterPierced && (Math.random() * 100) < playerStats.dodgeChance;
+        let monsterAttackDetails = '';
+
+        if (didPlayerDodge) {
+            monsterAttackDetails = `Canavarın saldırısından <b class="text-cyan-400">sıyrıldın!</b>`;
+        } else {
             const monsterCritted = (Math.random() * 100) < (monsterStats.critChance || 5);
-            let totalDamage = randomMonsterDamage;
-            if (monsterCritted) { totalDamage += Math.floor(totalDamage * ((monsterStats.critDamage || 10) / 100)); }
+            let totalDamage = Math.floor(Math.random() * (monsterStats.maxDamage - monsterStats.minDamage + 1)) + monsterStats.minDamage;
+
+            if (monsterCritted) {
+                totalDamage += Math.floor(monsterStats.maxDamage * ((monsterStats.critDamage || 10) / 100));
+            }
+
             if (monsterPierced) {
                 finalDamageToPlayer = Math.max(1, Math.floor(totalDamage));
                 monsterAttackType = 'pierce';
+                monsterAttackDetails = `🛡️ Canavar <b class="text-purple-400">delici vuruşla</b> sana <b class="text-red-400">${finalDamageToPlayer} hasar</b> verdi.`;
             } else {
                 finalDamageToPlayer = Math.max(1, Math.floor(totalDamage * (1 - playerDefenseReduction)));
-                monsterAttackType = monsterCritted ? 'crit' : 'normal';
+                if(monsterCritted) {
+                    monsterAttackType = 'crit';
+                    monsterAttackDetails = `💥 Canavar <b class="text-amber-400">kritik vuruşla</b> sana <b class="text-red-400">${finalDamageToPlayer} hasar</b> verdi.`;
+                } else {
+                    monsterAttackDetails = `Canavar sana <b class="text-red-400">${finalDamageToPlayer} hasar</b> verdi.`;
+                }
             }
         }
         
@@ -17083,19 +17111,28 @@ async function attackMonster() {
         }
         
         let finalPlayerHP = 0;
+        let finalMonsterHP = 0;
+        let finalTotalPlayerDamage = 0;
         let playerDiedInAttack = false;
 
         await battleRef.transaction(currentBattleData => {
             if (!currentBattleData || !currentBattleData.monsterDetails || currentBattleData.monsterDetails.currentHP <= 0) return;
-            currentBattleData.monsterDetails.currentHP = Math.max(0, currentBattleData.monsterDetails.currentHP - finalDamageToMonster);
+            
+            finalMonsterHP = Math.max(0, currentBattleData.monsterDetails.currentHP - finalDamageToMonster);
+            currentBattleData.monsterDetails.currentHP = finalMonsterHP;
+
             if (!currentBattleData.damageLeaderboard) currentBattleData.damageLeaderboard = {};
             if (!currentBattleData.damageLeaderboard[currentUser]) {
                 currentBattleData.damageLeaderboard[currentUser] = { totalDamage: 0, currentHP: playerStats.hp, lockedAvatarUrl: playerAvatarUrl };
             }
+
             const currentPlayerBattleData = currentBattleData.damageLeaderboard[currentUser];
             currentPlayerBattleData.totalDamage += finalDamageToMonster;
+            finalTotalPlayerDamage = currentPlayerBattleData.totalDamage;
+            
             currentPlayerBattleData.currentHP = Math.max(0, currentPlayerBattleData.currentHP - finalDamageToPlayer);
             finalPlayerHP = currentPlayerBattleData.currentHP;
+            
             if (finalPlayerHP <= 0) playerDiedInAttack = true;
             return currentBattleData;
         });
@@ -17106,9 +17143,11 @@ async function attackMonster() {
         if (randomReward) {
             const { type, value } = randomReward;
             const prizeName = typeToName[type] || 'Ödül';
-            // *** DEĞİŞİKLİK BURADA: Ödül mesajı artık bir boşlukla başlıyor ***
-            rewardMessage = ` Ek olarak <b class="text-green-400">+${value} ${prizeName}</b> kazandın!`;
-            rewardLogText = `+${value} ${prizeName}`;
+            const isPercent = ['defense_potion', 'crit_potion', 'crit_damage_potion', 'dodge_potion', 'pierce_potion'].includes(type);
+            const valuePrefix = isPercent ? `+%` : `+`;
+            
+            rewardMessage = `<hr class="border-gray-600 my-2">🎉 <b>Ödül:</b> <b class="text-green-400">${valuePrefix}${value} ${prizeName}</b> kazandın!`;
+            rewardLogText = `${valuePrefix}${value} ${prizeName}`;
             
             if (type === 'health_regen_potion') {
                 const currentPotions = userData.inventory?.health_regen_potion?.[value] || 0;
@@ -17151,12 +17190,22 @@ async function attackMonster() {
             didPlayerDodge: didPlayerDodge,
             didMonsterDodge: didMonsterDodge,
             playerRemainingHP: finalPlayerHP,
+            playerMaxHP: playerStats.hp,
+            monsterRemainingHP: finalMonsterHP,
+            monsterMaxHP: monsterStats.maxHP,
+            playerTotalDamage: finalTotalPlayerDamage,
             rewardWon: rewardLogText,
             playerDied: playerDiedInAttack
         });
         
-        // *** DEĞİŞİKLİK BURADA: Ekran mesajına ödül bilgisi eklendi ***
-        let attackInfoMessage = `Canavara <b>${finalDamageToMonster} hasar</b> verdin ve canavardan <b>${finalDamageToPlayer} hasar</b> aldın.${rewardMessage}`;
+        let attackInfoMessage = `
+            <div class="text-left space-y-2">
+                <p><b>Senin Saldırın:</b> ${playerAttackDetails}</p>
+                <p><b>Canavarın Saldırısı:</b> ${monsterAttackDetails}</p>
+                ${rewardMessage}
+            </div>
+        `;
+
         showFloatingText(`-${finalDamageToMonster}`, document.getElementById('monsterImage').getBoundingClientRect().left + 100, document.getElementById('monsterImage').getBoundingClientRect().top + 100);
         displayMessage(attackInfoMessage);
         
