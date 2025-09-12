@@ -2211,6 +2211,8 @@ body.modal-open .modal-content {
 
     <div class="overflow-y-auto px-8 pb-8">
         <div id="managedUserDetails" class="text-left text-gray-300 mb-6 space-y-1">
+            <p>Kasa Puanı: <span id="managedUserKasaBalance" class="font-bold text-purple-400"></span></p>
+          <p>Joker Kart: <span id="managedUserWildcards" class="font-bold text-purple-400"></span></p>
             <p><span id="managedBadgeBalance" class="inline-block w-6 text-center"></span>Mevcut Puanı: <span id="managedUserBalance" class="font-bold text-yellow-300"></span></p>
             <p><span id="managedBadgeHighest" class="inline-block w-6 text-center"></span>Kariyer Puanı: <span id="managedUserHighestBalance" class="font-bold text-green-400"></span></p>
             <p>Kutu Hakkı: <span id="managedUserBoxRight" class="font-bold text-green-400"></span></p>
@@ -8092,10 +8094,10 @@ async function openPublicUserDetailModal(username) {
     activeUserProfileListener = { ref: userRef, callback: userProfileCallback };
 }
 
+// MEVCUT openUserManagementModal FONKSİYONUNU SİL VE BUNU YAPIŞTIR
 async function openUserManagementModal(event, username) {
-    // --- YENİ EKLENEN SATIR: Tıklamanın "sızmasını" engeller ---
+    // Tıklamanın "sızmasını" engeller
     if (event) event.stopPropagation();
-    // ---------------------------------------------------------
 
     if (activeBlockedUserTimers[username]) {
         clearInterval(activeBlockedUserTimers[username]);
@@ -8136,6 +8138,12 @@ async function openUserManagementModal(event, username) {
     document.getElementById('managedUserName').textContent = username;
     document.getElementById('managedUserBalance').textContent = formatNumber(userData.balance || 0);
     document.getElementById('managedUserHighestBalance').textContent = formatNumber(userData.kariyerPuani || 0);
+    
+    // --- YENİ EKLENEN SATIRLAR BAŞLANGICI ---
+    document.getElementById('managedUserKasaBalance').textContent = formatNumber(userData.kasaPuani || 0);
+    document.getElementById('managedUserWildcards').textContent = formatNumber(userData.wildcards || 0);
+    // --- YENİ EKLENEN SATIRLAR SONU ---
+
     document.getElementById('managedUserBoxRight').textContent = formatNumber(userData.kutuHakki || 0);
     document.getElementById('managedUserWheelTickets').textContent = formatNumber(userData.carkBileti || 0);
     document.getElementById('managedUserClickCatchTickets').textContent = formatNumber(userData.clickCatchTickets || 0);
