@@ -1388,32 +1388,12 @@ body.modal-open .modal-content {
     </div>
     <hr class="border-gray-600">
     <h5 class="text-yellow-300 font-bold">Ödüller</h5>
-    <label class="block text-sm font-medium text-gray-300 mb-1">Canavar Ölünce Lidere Verilecek Ödül:</label>
-    <div class="grid grid-cols-2 gap-2">
-        <select id="adminMonsterKillRewardType" class="box-setting-input">
-            <option value="points">💰 Puan</option>
-            <option value="boxRights">📦 Kutu Hakkı</option>
-            <option value="wheelTicket">🎫 Çark Bileti</option>
-            <option value="clickCatchTicket">🎟️ Tıkla-Yakala Bileti</option>
-            <option value="iflasShield">🛡️ İflas Kalkanı</option>
-            <option value="wildcard">🃏 Joker Kart</option>
-            <option value="card_pack">🎴 Standart Kart Paketi</option>
-            <option value="card_pack_normal">🥉 Bronz Kart Paketi</option>
-            <option value="card_pack_gumus">🥈 Gümüş Kart Paketi</option>
-            <option value="card_pack_altin">🥇 Altın Kart Paketi</option>
-            <option value="card_pack_efsanevi">🏆 Efsanevi Kart Paketi</option>
-            <option value="health_regen_potion">🧪 Can Yenileme İksiri</option>
-            <option value="revival_stone">💎 Dirilme Taşı</option>
-            <option value="health_potion">🧪 Can İksiri</option>
-            <option value="damage_potion">⚔️ Hasar İksiri</option>
-            <option value="defense_potion">🛡️ Savunma İksiri</option>
-            <option value="crit_potion">💥 Kritik Vuruş İksiri</option>
-            <option value="crit_damage_potion">🎯 Kritik Hasar İksiri</option>
-            <option value="dodge_potion">💨 Sıyrılma Şansı İksiri</option>
-            <option value="pierce_potion">📌 Delici Şansı İksiri</option>
-        </select>
-        <input type="number" id="adminMonsterKillReward" class="box-setting-input" placeholder="Miktar">
-    </div>
+    <label class="block text-sm font-medium text-gray-300 mb-1">Canavar Ölünce Lidere Verilecek Ödül Paketi:</label>
+    <div id="monsterKillRewardList" class="space-y-2 border border-gray-600 p-2 rounded-lg">
+        </div>
+    <button onclick="addRewardRowToContainer('monsterKillRewardList')" class="w-full py-2 mt-2 bg-blue-700 hover:bg-blue-600 rounded-lg text-sm font-bold">
+        + Lider Ödülü Ekle
+    </button>
     <button onclick="saveAndSpawnMonster()" class="w-full py-2 bg-green-700 hover:bg-green-600 rounded-lg font-bold">Kaydet ve Canavarı Çağır</button>
     <hr class="border-gray-600 mt-4">
     <h5 class="text-yellow-300 font-bold mt-2">Hasar Başına Rastgele Ödüller</h5>
@@ -2736,38 +2716,13 @@ body.modal-open .modal-content {
         <input type="datetime-local" id="weeklyResetEndDateInput" class="box-setting-input">
     </div>
     <div>
-        <label class="block text-sm font-medium text-gray-300 mb-1">Şampiyon Ödülü:</label>
-        <div class="grid grid-cols-2 gap-4">
-            <select id="weeklyPrizeType" class="box-setting-input col-span-2 sm:col-span-1" onchange="handleWeeklyPrizeTypeChange()">
-    <option value="points">💰 Puan</option>
-    <option value="boxRights">📦 Kutu Hakkı</option>
-    <option value="wheelTicket">🎫 Çark Bileti</option>
-    <option value="clickCatchTicket">🎟️ Tıkla-Yakala Bileti</option>
-    <option value="iflasShield">🛡️ İflas Kalkanı</option>
-    <option value="tempMultiplier">✖️ Çarpan</option>
-    <option value="avatar">👤 Avatar</option>
-    <option value="wildcard">🃏 Joker Kart</option>
-    <option value="card_pack">🎴 Standart Kart Paketi</option>
-    <option value="card_pack_normal">🥉 Bronz Kart Paketi</option>
-    <option value="card_pack_gumus">🥈 Gümüş Kart Paketi</option>
-    <option value="card_pack_altin">🥇 Altın Kart Paketi</option>
-    <option value="card_pack_efsanevi">🏆 Efsanevi Kart Paketi</option>
-    <option value="health_regen_potion">🧪 Can Yenileme İksiri</option>
-    <option value="revival_stone">💎 Dirilme Taşı</option>
-    <option value="health_potion">🧪 Can İksiri</option>
-    <option value="defense_potion">🛡️ Savunma İksiri</option>
-    <option value="damage_potion">⚔️ Hasar İksiri</option>
-    <option value="crit_potion">💥 Kritik Vuruş İksiri</option>
-    <option value="crit_damage_potion">🎯 Kritik Hasar İksiri</option>
-    <option value="dodge_potion">💨 Sıyrılma Şansı İksiri</option>
-    <option value="pierce_potion">📌 Delici Şansı İksiri</option>
-</select>
-            <div id="weeklyPrizeValueContainer" class="grid grid-cols-2 gap-4 col-span-2 sm:col-span-1">
-                <input type="number" id="weeklyPrizeAmount" class="box-setting-input" placeholder="Miktar">
-                <input type="number" id="weeklyPrizeMultiplierUses" class="box-setting-input hidden" placeholder="Kullanım Hakkı">
+        <label class="block text-sm font-medium text-gray-300 mb-1">Şampiyon Ödül Paketi:</label>
+        <div id="weeklyPrizeList" class="space-y-2 border border-gray-600 p-2 rounded-lg">
             </div>
+        <button onclick="addRewardRowToContainer('weeklyPrizeList')" class="w-full py-2 mt-2 bg-purple-600 hover:bg-purple-500 rounded-lg text-sm font-bold">
+            + Şampiyon Ödülü Ekle
+        </button>
         </div>
-    </div>
     <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
          <button onclick="saveWeeklyResetSettings()" class="w-full py-2 bg-purple-700 hover:bg-purple-600 text-white font-bold rounded-lg shadow-md">Haftalık Geri Sayımı Başlat/Kaydet</button>
          <button onclick="stopWeeklyReset()" class="w-full py-2 bg-orange-700 hover:bg-orange-600 text-white font-bold rounded-lg shadow-md">Geri Sayımı İptal Et</button>
@@ -4109,7 +4064,6 @@ async function toggleMaintenanceMode() {
     }
 }
 
-// YENİ KODU YAPIŞTIR
 async function saveWeeklyResetSettings() {
     if (!isAdmin) return;
 
@@ -4118,29 +4072,41 @@ async function saveWeeklyResetSettings() {
         displayMessage("Lütfen geçerli bir bitiş tarihi girin.");
         return;
     }
-
-    const prizeType = document.getElementById('weeklyPrizeType').value;
-    const prizeAmount = parseInt(document.getElementById('weeklyPrizeAmount').value);
-    const prizeUses = parseInt(document.getElementById('weeklyPrizeMultiplierUses').value);
-
-    const prizeData = {};
-
-    if (prizeType === 'tempMultiplier') {
-        if (isNaN(prizeAmount) || isNaN(prizeUses) || prizeAmount <= 1 || prizeUses <= 0) {
-            displayMessage("Lütfen geçerli bir Çarpan Değeri (1'den büyük) ve Kullanım Hakkı girin.");
-            return;
+    
+    // ★★★ DEĞİŞİKLİK BURADA BAŞLIYOR ★★★
+    const prizeData = [];
+    document.querySelectorAll('#weeklyPrizeList .reward-entry').forEach(row => {
+        const type = row.querySelector('.reward-type').value;
+        const valueInput = row.querySelector('.reward-value');
+        const usesInput = row.querySelector('.reward-uses');
+        
+        const reward = { type: type };
+        
+        if (type === 'tempMultiplier') {
+            const value = parseInt(valueInput.value);
+            const uses = parseInt(usesInput.value);
+            if (!isNaN(value) && value > 0 && !isNaN(uses) && uses > 0) {
+                reward.value = value;
+                reward.uses = uses;
+                prizeData.push(reward);
+            }
+        } else if (type === 'avatar') {
+            // Haftalık ödül için avatar ekleme mantığı burada yok, istersen eklenebilir.
         }
-        prizeData.type = prizeType;
-        prizeData.amount = prizeAmount;
-        prizeData.uses = prizeUses;
-    } else {
-        if (isNaN(prizeAmount) || prizeAmount <= 0) {
-            displayMessage("Lütfen geçerli bir ödül miktarı girin.");
-            return;
+        else {
+            const value = parseStatValue(type, valueInput.value);
+            if (!isNaN(value) && value > 0) {
+                reward.value = value;
+                prizeData.push(reward);
+            }
         }
-        prizeData.type = prizeType;
-        prizeData.amount = prizeAmount;
+    });
+
+    if (prizeData.length === 0) {
+        displayMessage("Lütfen şampiyon için en az bir geçerli ödül ekleyin.");
+        return;
     }
+    // ★★★ DEĞİŞİKLİK BURADA BİTİYOR ★★★
     
     const settings = {
         endDate: new Date(dateInput).getTime(),
@@ -4223,7 +4189,6 @@ function listenForWeeklyCountdown() {
     ref.on('value', callback);
 }
 
-// MEVCUT executeWeeklyReset FONKSİYONUNU SİLİP BUNU YAPIŞTIR
 async function executeWeeklyReset() {
     console.log("Haftalık sıfırlama işlemi tetiklendi...");
     const seasonEndDateSnap = await db.ref('gameConfig/seasonEndDate').once('value');
@@ -4250,19 +4215,24 @@ async function executeWeeklyReset() {
     const participants = scores.map(s => s.username);
     const settingsSnap = await db.ref('gameConfig/weeklyClickCatchReset').once('value');
     const settings = settingsSnap.val();
-    if (!settings || !settings.prize) {
-        console.error("Ödül ayarları bulunamadı, sıfırlama iptal edildi.");
+    
+    // ★★★ DEĞİŞİKLİK BURADA BAŞLIYOR ★★★
+    if (!settings || !settings.prize || !Array.isArray(settings.prize)) {
+        console.error("Ödül ayarları bulunamadı veya geçersiz formatta, sıfırlama iptal edildi.");
         return;
     }
-    const prize = settings.prize;
+    const prizes = settings.prize;
     
-    let prizeAwardedText = '';
-    if (prize.type === 'tempMultiplier') {
-        prizeAwardedText = `${prize.amount}x Çarpan (${prize.uses} kullanım)`;
-    } else {
-        const prizeName = typeToName[prize.type] || prize.type;
-        prizeAwardedText = `${prize.amount} ${prizeName}`;
-    }
+    const prizeTexts = prizes.map(p => {
+        if (p.type === 'tempMultiplier') {
+            return `${p.value}x Çarpan (${p.uses} kullanım)`;
+        } else {
+            const prizeName = typeToName[p.type] || p.type;
+            return `${p.value} ${prizeName}`;
+        }
+    });
+    const prizeAwardedText = prizeTexts.join(', ');
+    // ★★★ DEĞİŞİKLİK BURADA BİTİYOR ★★★
 
     logActivity('weeklyChampion', 'WeizendTv', {
         winner: winner.username,
@@ -4294,33 +4264,36 @@ async function executeWeeklyReset() {
         }
         
         if (username === winner.username) {
-            if (prize.type.endsWith('_potion')) {
-                const statKeyMap = { health_potion: 'hp', damage_potion: 'damage', defense_potion: 'defense', crit_potion: 'critChance', crit_damage_potion: 'critDamage', dodge_potion: 'dodgeChance', pierce_potion: 'pierceChance' };
-                const statKey = statKeyMap[prize.type];
-                if (statKey) {
-                    const currentBuff = allUsers[username]?.globalPotionBuffs?.[statKey] || 0;
-                    updates[`${userPath}/globalPotionBuffs/${statKey}`] = currentBuff + prize.amount;
+            // ★★★ DEĞİŞİKLİK BURADA BAŞLIYOR: Artık ödül dizisini işliyoruz ★★★
+            prizes.forEach(prize => {
+                const { type, value, uses } = prize;
+                if (type.endsWith('_potion')) {
+                    const statKeyMap = { health_potion: 'hp', damage_potion: 'damage', defense_potion: 'defense', crit_potion: 'critChance', crit_damage_potion: 'critDamage', dodge_potion: 'dodgeChance', pierce_potion: 'pierceChance' };
+                    const statKey = statKeyMap[type];
+                    if (statKey) {
+                        const currentBuff = allUsers[username]?.globalPotionBuffs?.[statKey] || 0;
+                        updates[`${userPath}/globalPotionBuffs/${statKey}`] = currentBuff + value;
+                    }
+                } else if (type === 'points') {
+                    updates[`${userPath}/balance`] = (allUsers[username].balance || 0) + value;
+                    updates[`${userPath}/kariyerPuani`] = (allUsers[username].kariyerPuani || 0) + value;
+                } else if (type === 'tempMultiplier') {
+                    updates[`${userPath}/activeMultiplier`] = value;
+                    updates[`${userPath}/multiplierRemainingUses`] = uses;
+                    updates[`${userPath}/multiplierSource`] = 'store'; 
+                } else {
+                    const prizeKey = type === 'iflasShield' ? 'iflasShieldUses' : type;
+                    updates[`${userPath}/${prizeKey}`] = (allUsers[username][prizeKey] || 0) + value;
                 }
-            } else if (prize.type === 'points') {
-                updates[`${userPath}/balance`] = (allUsers[username].balance || 0) + prize.amount;
-                updates[`${userPath}/kariyerPuani`] = (allUsers[username].kariyerPuani || 0) + prize.amount;
-            } else if (prize.type === 'tempMultiplier') {
-                updates[`${userPath}/activeMultiplier`] = prize.amount;
-                updates[`${userPath}/multiplierRemainingUses`] = prize.uses;
-                updates[`${userPath}/multiplierSource`] = 'store'; 
-            } else {
-                const prizeKey = prize.type === 'iflasShield' ? 'iflasShieldUses' : prize.type;
-                updates[`${userPath}/${prizeKey}`] = (allUsers[username][prizeKey] || 0) + prize.amount;
-            }
+            });
+            // ★★★ DEĞİŞİKLİK BURADA BİTİYOR ★★★
 
-            // ★★★ YENİ BAŞARIM EKLEME KODU ★★★
             const tyChampionships = allUsers[username].tyChampionships || [];
             tyChampionships.push({
                 timestamp: firebase.database.ServerValue.TIMESTAMP,
                 score: winner.score
             });
             updates[`${userPath}/tyChampionships`] = tyChampionships;
-            // ★★★ BAŞARIM KODU SONU ★★★
         }
     }
     updates['/clickCatchWeeklyScores'] = null;
@@ -11048,13 +11021,16 @@ function _actuallyStartSoloGame() {
 
 let weeklyCountdownInterval = null
 
-  // YENİ KODU YAPIŞTIR
-async function openSoloGameSettingsModal() {
-    // Mevcut tekli oyun ayarlarını yükle
+  async function openSoloGameSettingsModal() {
     await loadSoloGameSettings();
 
-    // Haftalık otomatik sıfırlama ayarlarını yükle
     const settingsSnap = await db.ref('gameConfig/weeklyClickCatchReset').once('value');
+    
+    // ★★★ DEĞİŞİKLİK BURADA BAŞLIYOR ★★★
+    const weeklyPrizeList = document.getElementById('weeklyPrizeList');
+    weeklyPrizeList.innerHTML = ''; // Önceki ödülleri temizle
+    document.getElementById('weeklyResetEndDateInput').value = '';
+
     if (settingsSnap.exists()) {
         const settings = settingsSnap.val();
         if (settings.endDate) {
@@ -11062,26 +11038,14 @@ async function openSoloGameSettingsModal() {
             date.setMinutes(date.getMinutes() - date.getTimezoneOffset());
             document.getElementById('weeklyResetEndDateInput').value = date.toISOString().slice(0, 16);
         }
-        if (settings.prize) {
-            document.getElementById('weeklyPrizeType').value = settings.prize.type || 'points';
-            // Çarpan ise her iki alanı da doldur, değilse sadece miktar alanını doldur
-            if (settings.prize.type === 'tempMultiplier') {
-                document.getElementById('weeklyPrizeAmount').value = settings.prize.amount || '';
-                document.getElementById('weeklyPrizeMultiplierUses').value = settings.prize.uses || '';
-            } else {
-                document.getElementById('weeklyPrizeAmount').value = settings.prize.amount || 1000;
-                document.getElementById('weeklyPrizeMultiplierUses').value = '';
-            }
+        if (settings.prize && Array.isArray(settings.prize)) {
+            settings.prize.forEach(reward => {
+                addRewardRowToContainer('weeklyPrizeList', reward);
+            });
         }
-    } else {
-        // Eğer ayar yoksa alanları temizle/varsayılana ayarla
-        document.getElementById('weeklyResetEndDateInput').value = '';
-        document.getElementById('weeklyPrizeType').value = 'points';
-        document.getElementById('weeklyPrizeAmount').value = 1000;
-        document.getElementById('weeklyPrizeMultiplierUses').value = '';
     }
+    // ★★★ DEĞİŞİKLİK BURADA BİTİYOR ★★★
     
-    // Arayüzü doğru duruma getir
     handleWeeklyPrizeTypeChange();
     soloGameSettingsModal.style.display = 'flex';
 }
@@ -16741,13 +16705,10 @@ async function loadAvatarStatsForAdmin() {
     }
 }
       
-// MEVCUT saveAndSpawnMonster FONKSİYONUNU SİL VE BUNU YAPIŞTIR
 async function saveAndSpawnMonster() {
     if (!isAdmin) return;
 
-    // ★★★ YENİ KOD BAŞLANGICI: Yeni canavar gelmeden önce eski şampiyonu temizle ★★★
     await db.ref('gameStats/lastMonsterChampion').remove();
-    // ★★★ YENİ KOD SONU ★★★
 
     const minDamage = parseInt(document.getElementById('adminMonsterMinDamage').value) || 500;
     const maxDamage = parseInt(document.getElementById('adminMonsterMaxDamage').value) || 1000;
@@ -16771,15 +16732,23 @@ async function saveAndSpawnMonster() {
     };
     monsterDetails.currentHP = monsterDetails.maxHP;
     
-    const onKillRewardType = document.getElementById('adminMonsterKillRewardType').value;
-    const onKillRewardValue = parseStatValue(onKillRewardType, document.getElementById('adminMonsterKillReward').value);
+    // ★★★ DEĞİŞİKLİK BURADA BAŞLIYOR ★★★
+    const onKillLeaderRewards = [];
+    document.querySelectorAll('#monsterKillRewardList .reward-entry').forEach(row => {
+        const type = row.querySelector('.reward-type').value;
+        const valueInput = row.querySelector('.reward-value');
+        if (!valueInput) return;
+        const value = parseStatValue(type, valueInput.value);
+
+        if (type && !isNaN(value) && value > 0) {
+            onKillLeaderRewards.push({ type, value });
+        }
+    });
 
     const rewards = {
-        onKillLeader: {
-            type: onKillRewardType,
-            value: onKillRewardValue || 50000
-        }
+        onKillLeader: onKillLeaderRewards
     };
+    // ★★★ DEĞİŞİKLİK BURADA BİTİYOR ★★★
     
     const damageTiers = [];
     document.querySelectorAll('.damage-tier-row').forEach(tierRow => {
@@ -16893,7 +16862,6 @@ function addRewardToTier(element, rewardData = {}) {
     rewardsListContainer.appendChild(rewardRow);
 }
 
-// MEVCUT attackMonster FONKSİYONUNU SİL VE BUNU YAPIŞTIR
 async function attackMonster() {
     if (isAdmin) {
         displayMessage("Adminler saldıramaz.");
@@ -17036,7 +17004,6 @@ async function attackMonster() {
             rewardMessage = ` Ek olarak <b class="text-green-400">+${value} ${prizeName}</b> kazandın!`;
             rewardLogText = `+${value} ${prizeName}`;
             
-            // ★★★ DEĞİŞİKLİK BURADA: Ancestor path hatasını önlemek için `inventory` objesini direkt set etmekten kaçınıyoruz. ★★★
             if (type === 'health_regen_potion') {
                 const currentPotions = userData.inventory?.health_regen_potion?.[value] || 0;
                 updates[`/users/${currentUser}/inventory/health_regen_potion/${value}`] = currentPotions + 1;
@@ -17069,13 +17036,12 @@ async function attackMonster() {
         }
         if (Object.keys(updates).length > 0) await db.ref().update(updates);
         
-        // ★★★ DEĞİŞİKLİK BURADA: Canavarın saldırı türü aktivite kaydına ekleniyor. ★★★
         logActivity('monsterAttack', currentUser, {
             monsterName: monsterStats.name,
             damageDealt: finalDamageToMonster,
             damageTaken: finalDamageToPlayer,
             playerAttackType: playerAttackType,
-            monsterAttackType: monsterAttackType, // Bu yeni satır eklendi
+            monsterAttackType: monsterAttackType,
             didPlayerDodge: didPlayerDodge,
             didMonsterDodge: didMonsterDodge,
             playerRemainingHP: finalPlayerHP,
@@ -17091,67 +17057,74 @@ async function attackMonster() {
         const finalBattleData = finalBattleSnap.val();
 
         if (finalBattleData && finalBattleData.monsterDetails.currentHP <= 0) {
-    const sortedLeaderboard = Object.entries(finalBattleData.damageLeaderboard || {}).sort((a,b) => b[1].totalDamage - a[1].totalDamage);
-    const winner = sortedLeaderboard.length > 0 ? sortedLeaderboard[0][0] : null;
-    const winnerData = winner ? finalBattleData.damageLeaderboard[winner] : null;
-    const prize = finalBattleData.rewards?.onKillLeader;
+            const sortedLeaderboard = Object.entries(finalBattleData.damageLeaderboard || {}).sort((a,b) => b[1].totalDamage - a[1].totalDamage);
+            const winner = sortedLeaderboard.length > 0 ? sortedLeaderboard[0][0] : null;
+            const winnerData = winner ? finalBattleData.damageLeaderboard[winner] : null;
+            
+            // ★★★ DEĞİŞİKLİK BURADA BAŞLIYOR: Artık 'prize' bir dizi ★★★
+            const prizes = finalBattleData.rewards?.onKillLeader;
 
-    if (winner && prize && winnerData) {
-        await db.ref('gameStats/lastMonsterChampion').set({
-            username: winner,
-            totalDamage: winnerData.totalDamage,
-            lockedAvatarUrl: winnerData.lockedAvatarUrl
-        });
+            if (winner && prizes && Array.isArray(prizes) && winnerData) {
+                await db.ref('gameStats/lastMonsterChampion').set({
+                    username: winner,
+                    totalDamage: winnerData.totalDamage,
+                    lockedAvatarUrl: winnerData.lockedAvatarUrl
+                });
 
-        const prizeName = typeToName[prize.type] || prize.type;
-        const prizeText = `${prize.value} ${prizeName}`;
-        
-        // ★★★ DEĞİŞİKLİK BURADA: logActivity çağrısına totalDamage'ı ekliyoruz ★★★
-        logActivity('monsterDefeated', 'WeizendTv', { 
-            monsterName: finalBattleData.monsterDetails.name, 
-            winner: winner, 
-            prize: prizeText,
-            totalDamage: winnerData.totalDamage // Bu satırı ekle
-        });
-        
-        const winnerRef = db.ref(`users/${winner}`);
-        await winnerRef.transaction(winnerDataFromDB => {
+                const prizeTexts = prizes.map(p => {
+                    const prizeName = typeToName[p.type] || p.type;
+                    return `${p.value} ${prizeName}`;
+                });
+                const prizeText = prizeTexts.join(', ');
+
+                logActivity('monsterDefeated', 'WeizendTv', { 
+                    monsterName: finalBattleData.monsterDetails.name, 
+                    winner: winner, 
+                    prize: prizeText,
+                    totalDamage: winnerData.totalDamage
+                });
+                
+                const winnerRef = db.ref(`users/${winner}`);
+                await winnerRef.transaction(winnerDataFromDB => {
                     if (winnerDataFromDB) {
-                         const { type, value } = prize;
-                         if(type === 'health_regen_potion'){
-                            if(!winnerDataFromDB.inventory) winnerDataFromDB.inventory = {};
-                            if(!winnerDataFromDB.inventory.health_regen_potion) winnerDataFromDB.inventory.health_regen_potion = {};
-                            const currentPotions = winnerDataFromDB.inventory.health_regen_potion[value] || 0;
-                            winnerDataFromDB.inventory.health_regen_potion[value] = currentPotions + 1;
-                         } else {
-                             const dbKeyMap = { points: 'balance', boxRights: 'kutuHakki', wheelTicket: 'carkBileti', clickCatchTicket: 'clickCatchTickets', iflasShield: 'iflasShieldUses', wildcard: 'wildcards', revival_stone: 'inventory/revival_stone' };
-                             const statKeyMap = { health_potion: 'hp', damage_potion: 'damage', defense_potion: 'defense', crit_potion: 'critChance', crit_damage_potion: 'critDamage', dodge_potion: 'dodgeChance', pierce_potion: 'pierceChance' };
-                             
-                             if (type === 'points') {
-                                winnerDataFromDB.balance = (winnerDataFromDB.balance || 0) + value;
-                                winnerDataFromDB.kariyerPuani = (winnerDataFromDB.kariyerPuani || 0) + value;
-                             } else if (type.startsWith('card_pack')) {
-                                 const packKey = db.ref().push().key;
-                                 if (!winnerDataFromDB.pendingActions) winnerDataFromDB.pendingActions = {};
-                                 if (!winnerDataFromDB.pendingActions.cardPacks) winnerDataFromDB.pendingActions.cardPacks = {};
-                                 winnerDataFromDB.pendingActions.cardPacks[packKey] = { type: type, count: value };
-                             } else if (dbKeyMap[type]) {
-                                 const pathParts = dbKeyMap[type].split('/');
-                                 if (pathParts.length > 1) {
-                                     if (!winnerDataFromDB[pathParts[0]]) winnerDataFromDB[pathParts[0]] = {};
-                                     winnerDataFromDB[pathParts[0]][pathParts[1]] = (winnerDataFromDB[pathParts[0]][pathParts[1]] || 0) + value;
-                                 } else {
-                                     winnerDataFromDB[dbKeyMap[type]] = (winnerDataFromDB[dbKeyMap[type]] || 0) + value;
+                        // Ödül dizisindeki her bir ödülü tek tek işle
+                        prizes.forEach(prize => {
+                             const { type, value } = prize;
+                             if(type === 'health_regen_potion'){
+                                if(!winnerDataFromDB.inventory) winnerDataFromDB.inventory = {};
+                                if(!winnerDataFromDB.inventory.health_regen_potion) winnerDataFromDB.inventory.health_regen_potion = {};
+                                const currentPotions = winnerDataFromDB.inventory.health_regen_potion[value] || 0;
+                                winnerDataFromDB.inventory.health_regen_potion[value] = currentPotions + 1;
+                             } else {
+                                 const dbKeyMap = { points: 'balance', boxRights: 'kutuHakki', wheelTicket: 'carkBileti', clickCatchTicket: 'clickCatchTickets', iflasShield: 'iflasShieldUses', wildcard: 'wildcards', revival_stone: 'inventory/revival_stone' };
+                                 const statKeyMap = { health_potion: 'hp', damage_potion: 'damage', defense_potion: 'defense', crit_potion: 'critChance', crit_damage_potion: 'critDamage', dodge_potion: 'dodgeChance', pierce_potion: 'pierceChance' };
+                                 
+                                 if (type === 'points') {
+                                    winnerDataFromDB.balance = (winnerDataFromDB.balance || 0) + value;
+                                    winnerDataFromDB.kariyerPuani = (winnerDataFromDB.kariyerPuani || 0) + value;
+                                 } else if (type.startsWith('card_pack')) {
+                                     const packKey = db.ref().push().key;
+                                     if (!winnerDataFromDB.pendingActions) winnerDataFromDB.pendingActions = {};
+                                     if (!winnerDataFromDB.pendingActions.cardPacks) winnerDataFromDB.pendingActions.cardPacks = {};
+                                     winnerDataFromDB.pendingActions.cardPacks[packKey] = { type: type, count: value };
+                                 } else if (dbKeyMap[type]) {
+                                     const pathParts = dbKeyMap[type].split('/');
+                                     if (pathParts.length > 1) {
+                                         if (!winnerDataFromDB[pathParts[0]]) winnerDataFromDB[pathParts[0]] = {};
+                                         winnerDataFromDB[pathParts[0]][pathParts[1]] = (winnerDataFromDB[pathParts[0]][pathParts[1]] || 0) + value;
+                                     } else {
+                                         winnerDataFromDB[dbKeyMap[type]] = (winnerDataFromDB[dbKeyMap[type]] || 0) + value;
+                                     }
+                                 } else if (statKeyMap[type]) {
+                                    const statKey = statKeyMap[type];
+                                    const capCheck = checkPotionCap(winnerDataFromDB, type, value);
+                                    if (capCheck.canAdd && capCheck.amount > 0) {
+                                        if (!winnerDataFromDB.globalPotionBuffs) winnerDataFromDB.globalPotionBuffs = {};
+                                        winnerDataFromDB.globalPotionBuffs[statKey] = (winnerDataFromDB.globalPotionBuffs[statKey] || 0) + capCheck.amount;
+                                    }
                                  }
-                             } else if (statKeyMap[type]) {
-                                const statKey = statKeyMap[type];
-                                const capCheck = checkPotionCap(winnerDataFromDB, type, value);
-                                if (capCheck.canAdd && capCheck.amount > 0) {
-                                    if (!winnerDataFromDB.globalPotionBuffs) winnerDataFromDB.globalPotionBuffs = {};
-                                    winnerDataFromDB.globalPotionBuffs[statKey] = (winnerDataFromDB.globalPotionBuffs[statKey] || 0) + capCheck.amount;
-                                }
                              }
-                         }
+                        }); // forEach döngüsü sonu
 
                          if (!winnerDataFromDB.monsterChampionships) {
                              winnerDataFromDB.monsterChampionships = [];
@@ -17165,6 +17138,7 @@ async function attackMonster() {
                     return winnerDataFromDB;
                 });
             }
+            // ★★★ DEĞİŞİKLİK BURADA BİTİYOR ★★★
         }
 
     } catch (error) {
@@ -17244,11 +17218,6 @@ async function useRevivalStone() {
     }
 }
 
-// MEVCUT editCurrentMonster FONKSİYONUNU SİL VE BUNU YAPIŞTIR
-
-/**
- * Adminin mevcut canavarı düzenlemek için yönetim panelini açmasını sağlar.
- */
 async function editCurrentMonster() {
     if (!isAdmin || !monsterBattleData.monsterDetails) return;
     
@@ -17256,7 +17225,6 @@ async function editCurrentMonster() {
     const rewards = monsterBattleData.rewards || {};
     const tiers = monsterBattleData.damageTiers || [];
 
-    // Formu mevcut canavarın bilgileriyle doldur
     document.getElementById('adminMonsterName').value = monster.name || '';
     document.getElementById('adminMonsterImageUrl').value = monster.imageUrl || '';
     document.getElementById('adminMonsterMaxHP').value = monster.maxHP || '';
@@ -17264,24 +17232,25 @@ async function editCurrentMonster() {
     document.getElementById('adminMonsterMaxDamage').value = monster.maxDamage || '';
     document.getElementById('adminMonsterDefense').value = monster.defense || '';
     document.getElementById('adminMonsterCritChance').value = monster.critChance || '';
-    
-    // ★★★ EKSİK OLAN VE YENİ EKLENEN SATIRLAR ★★★
     document.getElementById('adminMonsterCritDamage').value = monster.critDamage || '';
     document.getElementById('adminMonsterDodgeChance').value = monster.dodgeChance || '';
     document.getElementById('adminMonsterPierceChance').value = monster.pierceChance || '';
-    // ★★★ EKLENEN SATIRLARIN SONU ★★★
+    
+    // ★★★ DEĞİŞİKLİK BURADA BAŞLIYOR ★★★
+    const killRewardList = document.getElementById('monsterKillRewardList');
+    killRewardList.innerHTML = ''; // Önceki ödülleri temizle
 
-    if (rewards.onKillLeader) {
-        document.getElementById('adminMonsterKillRewardType').value = rewards.onKillLeader.type || 'points';
-        document.getElementById('adminMonsterKillReward').value = rewards.onKillLeader.value || '';
+    if (rewards.onKillLeader && Array.isArray(rewards.onKillLeader)) {
+        rewards.onKillLeader.forEach(reward => {
+            addRewardRowToContainer('monsterKillRewardList', reward);
+        });
     }
+    // ★★★ DEĞİŞİKLİK BURADA BİTİYOR ★★★
 
-    // Hasar aralıklarını temizle ve yeniden doldur
     const tiersContainer = document.getElementById('damageTiersContainer');
     tiersContainer.innerHTML = '';
     tiers.forEach(tier => addDamageTierRow(tier));
 
-    // Paneli aç
     document.getElementById('monsterAdminControls').classList.remove('hidden');
 }
 
@@ -17772,6 +17741,48 @@ async function saveAvatarStats() {
 
     await db.ref().update(updates);
     displayMessage("Tüm avatarların temel istatistikleri başarıyla kaydedildi!");
+}
+
+// ★★★ YENİ EKLENECEK YARDIMCI FONKSİYON ★★★
+function addRewardRowToContainer(containerId, rewardData = {}) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+
+    const rewardRow = document.createElement('div');
+    rewardRow.className = 'grid grid-cols-1 sm:grid-cols-3 gap-2 p-2 bg-gray-900/50 rounded-md';
+    rewardRow.innerHTML = `
+        <select class="box-setting-input reward-type" onchange="handleAdminRewardTypeChange(this)">
+            <option value="points">💰 Puan</option>
+            <option value="boxRights">📦 Kutu Hakkı</option>
+            <option value="wheelTicket">🎫 Çark Bileti</option>
+            <option value="clickCatchTicket">🎟️ Tıkla-Yakala Bileti</option>
+            <option value="iflasShield">🛡️ İflas Kalkanı</option>
+            <option value="tempMultiplier">✖️ Çarpan</option>
+            <option value="avatar">👤 Avatar</option>
+            <option value="wildcard">🃏 Joker Kart</option>
+            <option value="card_pack">🎴 Standart Kart Paketi</option>
+            <option value="card_pack_normal">🥉 Bronz Kart Paketi</option>
+            <option value="card_pack_gumus">🥈 Gümüş Kart Paketi</option>
+            <option value="card_pack_altin">🥇 Altın Kart Paketi</option>
+            <option value="card_pack_efsanevi">🏆 Efsanevi Kart Paketi</option>
+            <option value="revival_stone">💎 Dirilme Taşı</option>
+            <option value="health_potion">🧪 Can İksiri</option>
+            <option value="damage_potion">⚔️ Hasar İksiri</option>
+            <option value="defense_potion">🛡️ Savunma İksiri</option>
+            <option value="crit_potion">💥 Kritik Vuruş İksiri</option>
+            <option value="crit_damage_potion">🎯 Kritik Hasar İksiri</option>
+            <option value="dodge_potion">💨 Sıyrılma Şansı İksiri</option>
+            <option value="pierce_potion">📌 Delici Şansı İksiri</option>
+        </select>
+        <div class="reward-fields-container grid grid-cols-2 gap-2 sm:col-span-2">
+            </div>
+    `;
+    container.appendChild(rewardRow);
+    const selectElement = rewardRow.querySelector('.reward-type');
+    if (rewardData.type) {
+        selectElement.value = rewardData.type;
+    }
+    handleAdminRewardTypeChange(selectElement, rewardData);
 }
       
 // ★★★ YENİ EKLENECEK FONKSİYONLAR SONU ★★★
