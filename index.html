@@ -6642,21 +6642,35 @@ function renderActivityFeed(activities) {
  * @param {number} [uses=0] - Sadece çarpanlar için geçerli olan kullanım hakkı.
  * @returns {string} Formatlanmış ödül metni (örn: "+%2.5 Savunma Şansı", "%10 Can Yenileme İksiri").
  */
+// MEVCUT formatRewardText FONKSİYONUNU SİLİP BUNU YAPIŞTIRIN
+
+/**
+ * Verilen bir ödül türü ve değerine göre kullanıcıya gösterilecek metni formatlar.
+ * Yüzdelik iksirler için doğru (+% veya %) ön ekini otomatik olarak ekler.
+ * @param {string} type - Ödülün türü (örn: 'defense_potion', 'points').
+ * @param {number|string} value - Ödülün miktarı.
+ * @param {number} [uses=0] - Sadece çarpanlar için geçerli olan kullanım hakkı.
+ * @returns {string} Formatlanmış ödül metni (örn: "+%2.5 Savunma Şansı", "%10 Can Yenileme İksiri").
+ */
 function formatRewardText(type, value, uses = 0) {
     const name = typeToName[type] || type;
     
-    // Yüzdelik olarak GÖSTERİLECEK ama '+' ALMAYACAK iksirler
+    // ★★★ YENİ VE DÜZELTİLMİŞ KISIM BAŞLANGICI ★★★
+
+    // Yüzdelik olarak GÖSTERİLECEK ama '+' ALMAYACAK iksirler (Sadece Can Yenileme)
     if (type === 'health_regen_potion') {
         return `%${value} ${name}`;
     }
     
-    // Yüzdelik olarak GÖSTERİLECEK ve '+' ALACAK iksirler
+    // Yüzdelik olarak GÖSTERİLECEK ve '+' ALACAK kalıcı bonus iksirleri
     const percentPotions = ['defense_potion', 'crit_potion', 'crit_damage_potion', 'dodge_potion', 'pierce_potion'];
     if (percentPotions.includes(type)) {
         // Değeri ondalık olarak formatla (örn: 5 -> 5.0)
         const formattedValue = parseFloat(value).toFixed(1);
         return `+%${formattedValue} ${name}`;
     }
+
+    // ★★★ YENİ VE DÜZELTİLMİŞ KISIM SONU ★★★
 
     // Çarpan için özel format
     if (type === 'tempMultiplier') {
@@ -12419,7 +12433,8 @@ async function editStoreItem(itemId) {
     openAdminStoreModal();
 }
 
-// MEVCUT buyItem FONKSİYONUNU SİLİP BU YENİ VERSİYONU YAPIŞTIRIN
+// MEVCUT buyItem FONKSİYONUNU SİLİP BUNU YAPIŞTIRIN
+
 async function buyItem(itemId) {
     if (isAdmin) {
         displayMessage("Adminler alışveriş yapamaz.");
@@ -12466,7 +12481,6 @@ async function buyItem(itemId) {
 
             await userRef.update(updates);
             
-            // ★★★ DÜZELTME 2: Log'a artık base 'item.cost' yerine, hesaplanan 'currentCost' gönderiliyor. ★★★
             logActivity('buyItem', currentUser, { 
                 itemName: `1 adet %${item.value} Can Yenileme İksiri`,
                 itemCost: currentCost, 
@@ -12484,7 +12498,7 @@ async function buyItem(itemId) {
 
             const purchaseCount = user.potionPurchaseCounts?.[itemId] || 0;
             const priceIncrease = item.hasOwnProperty('priceIncrease') ? item.priceIncrease : 1000;
-            const currentCost = item.cost + (purchaseCount * priceIncrease); // Kullanıcının ödeyeceği gerçek fiyat
+            const currentCost = item.cost + (purchaseCount * priceIncrease);
             
             if ((user.balance || 0) < currentCost) {
                 displayMessage(`Yetersiz Puan! Bu iksirin şu anki fiyatı ${currentCost} Puandır.`);
@@ -12497,7 +12511,12 @@ async function buyItem(itemId) {
                  return;
             }
             
-            let confirmationMessage = `'${item.name}' iksirini <b class="text-yellow-400">${currentCost} Puana</b> satın alarak bu bonusa <b class="text-green-400">+${valueToAdd.toFixed(1)}</b> ekleyeceksiniz.`;
+            // ★★★ DÜZELTİLEN KISIM BAŞLANGICI ★★★
+            const isPercentPotion = ['defense_potion', 'crit_potion', 'crit_damage_potion', 'dodge_potion', 'pierce_potion'].includes(item.type);
+            const valuePrefix = isPercentPotion ? '+%' : '+';
+            // ★★★ DÜZELTİLEN KISIM SONU ★★★
+
+            let confirmationMessage = `'${item.name}' iksirini <b class="text-yellow-400">${currentCost} Puana</b> satın alarak bu bonusa <b class="text-green-400">${valuePrefix}${valueToAdd.toFixed(1)}</b> ekleyeceksiniz.`;
             if (capCheck.isCapped) {
                 confirmationMessage += `<br><br><b class="text-yellow-400">UYARI:</b> Bu alım ile bu bonus türünde maksimum limite ulaşacaksınız.`;
             }
@@ -12528,17 +12547,18 @@ async function buyItem(itemId) {
             };
             await userRef.update(updates);
             
-            // ★★★ DÜZELTME 2: Log'a artık base 'item.cost' yerine, hesaplanan 'currentCost' gönderiliyor. ★★★
+            // ★★★ DÜZELTİLEN KISIM BAŞLANGICI ★★★
+            const logItemName = isPercentPotion ? `+%${valueToAdd.toFixed(1)} ${item.name}` : `+${valueToAdd} ${item.name}`;
             logActivity('buyItem', currentUser, { 
-                itemName: `+${valueToAdd.toFixed(1)} ${item.name}`,
+                itemName: logItemName,
                 itemCost: currentCost,
                 itemType: item.type, 
                 itemValue: valueToAdd, 
                 newBalance: newBalance
             });
+            // ★★★ DÜZELTİLEN KISIM SONU ★★★
         }
         
-        // Ortak İksir İşlemleri
         await itemRef.transaction(currentItem => { 
             if (currentItem) { 
                 if (currentItem.stock !== undefined && currentItem.stock !== null) { currentItem.stock--; } 
@@ -12550,8 +12570,8 @@ async function buyItem(itemId) {
         if (currentActiveSection === 'monsterBattle') { renderMonsterBattleUI(); }
         return;
     }
-
-    // Fonksiyonun geri kalanı (iksir olmayan ürünler için) aynı kalabilir.
+    
+    // Fonksiyonun geri kalanı aynı şekilde devam ediyor...
     if (item.type === 'special') {
         const kasaPuani = user.kasaPuani || 0;
         if (kasaPuani < item.cost) {
@@ -12664,7 +12684,7 @@ async function buyItem(itemId) {
         displayMessage(message);
     }
 }
-
+      
 // YENİ YARDIMCI FONKSİYON
 function handleReviveClick(stoneCount) {
     if (stoneCount > 0) {
@@ -16596,12 +16616,10 @@ async function claimLoginStreakReward(day) {
                         case 'card_pack_efsanevi':
                             cardPacksToOpen.push(reward);
                             break;
-                        // --- DEĞİŞİKLİK BURADA BAŞLIYOR: Artık inventory anahtarı kontrol ediliyor ---
                         case 'revival_stone':
                             if (!userData.inventory) userData.inventory = {};
                             userData.inventory.revival_stone = (userData.inventory.revival_stone || 0) + reward.value;
                             break;
-                        // --- DEĞİŞİKLİK SONU ---
                         case 'health_potion':
                         case 'damage_potion':
                         case 'defense_potion':
@@ -16648,7 +16666,9 @@ async function claimLoginStreakReward(day) {
                 day: day,
                 packageName: dayData.name || `${day}. Gün Paketi`
             });
-
+            
+            // ★★★ HATA BURADAYDI ★★★
+            // 'dayData' yerine doğru değişken olan 'dayData' kullanılıyor.
             const hasPotion = dayData.rewards.some(r => r.type.includes('_potion'));
             if (hasPotion && currentActiveSection === 'monsterBattle') { renderMonsterBattleUI(); }
 
@@ -16674,6 +16694,7 @@ async function claimLoginStreakReward(day) {
         }
     }
 }
+      
       // --- YENİ YARDIMCI FONKSİYON (BUNU EKLE) ---
 function displayTemporaryNotification(message, color = 'bg-blue-600') {
     const notification = document.createElement('div');
