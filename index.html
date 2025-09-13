@@ -1309,6 +1309,16 @@ body.modal-open .modal-content {
         </div>
 </div>
 
+<div id="collectionCompleteModal" class="modal-overlay fixed inset-0 bg-black bg-opacity-80 flex justify-center items-center z-[100002] hidden">
+  <div class="modal-content bg-gray-900/95 backdrop-blur-sm p-8 rounded-xl shadow-2xl border-4 border-amber-500 w-11/12 max-w-lg text-center relative">
+    <h4 id="collectionCompleteTitle" class="text-amber-400 text-3xl font-bold mb-4"></h4>
+    <div id="collectionCompleteMessage" class="text-lg text-gray-200 space-y-3 bg-gray-800 p-4 rounded-lg"></div>
+    <button onclick="closeCollectionCompleteModal()" class="mt-8 w-full py-3 bg-green-700 hover:bg-green-600 text-white font-bold rounded-lg shadow-md">
+      Harika!
+    </button>
+  </div>
+</div>
+
         <div id="collectionAdminModal" class="modal-overlay fixed inset-0 bg-black bg-opacity-70 flex justify-center items-center z-[50000] hidden">
   <div class="modal-content bg-gray-800 p-8 rounded-xl shadow-2xl border border-purple-500 w-11/12 max-w-4xl text-left relative max-h-[90vh] overflow-y-auto scrollable-list">
     <button class="modal-close-button" onclick="closeCollectionAdminModal()">&times;</button>
@@ -4340,8 +4350,7 @@ async function executeWeeklyReset() {
     console.log("Haftalık sıfırlama başarıyla tamamlandı.");
 }
       
-  // MEVCUT afterLogin FONKSİYONUNU SİL VE BUNUNLA DEĞİŞTİR
-async function afterLogin() {
+  async function afterLogin() {
     document.getElementById("loginContainer").style.display = "none";
     document.getElementById("gameDiv").style.display = "block";
     
@@ -4392,6 +4401,7 @@ async function afterLogin() {
     listenForPendingActions();
     listenForMonsterBattleData();
     listenForAvatarBaseStats();
+    listenForPersistentNotifications(); // ★★★ BU SATIRI EKLE ★★★
     db.ref('gameConfig/potionCaps').on('value', snap => { potionCapsCache = snap.val() || {}; });
     
     if (!isAdmin) {
@@ -6273,6 +6283,12 @@ function getActivityIcon(type, details = {}) {
             icon = '🃏';
             bgColor = 'bg-purple-600';
             break;
+        // ★★★ YENİ EKLENEN KOD BAŞLANGICI ★★★
+        case 'wildcardConvertedToBoxRights':
+            icon = '🃏'; // Joker kart ikonu
+            bgColor = 'bg-purple-600'; // Mor arkaplan
+            break;
+        // ★★★ YENİ EKLENEN KOD SONU ★★★
         case 'useRegenPotion':
             icon = '🧪';
             bgColor = 'bg-cyan-600';
@@ -6293,7 +6309,6 @@ function getActivityIcon(type, details = {}) {
             icon = '🃏';
             bgColor = 'bg-purple-600';
             break;
-        // *** DEĞİŞİKLİK BURADA: İkon '⏰' olarak güncellendi ***
         case 'loginStreakClaim':
             icon = '⏰';
             bgColor = 'bg-teal-600';
@@ -17990,6 +18005,52 @@ function goToMonsterStore() {
     storeFilter = 'monster_battle'; // Filtreyi 'canavar savaşı' olarak ayarla
     showSection('store'); // Mağaza bölümünü göster
 }
+
+// YENİ EKLENECEK YARDIMCI FONKSİYONLAR
+// Kalıcı bildirimleri dinler ve gösterir
+function listenForPersistentNotifications() {
+    if (isAdmin) return;
+    const ref = db.ref(`users/${currentUser}/persistentNotifications`);
+    
+    const callback = (snap) => {
+        const notifId = snap.key;
+        const notification = snap.val();
+        
+        if (notification && notification.type) {
+            switch(notification.type) {
+                case 'collectionCompleted':
+                    showCollectionCompleteModal(notification);
+                    break;
+                case 'tradesCancelled':
+                    // Bu bildirim için ayrı bir modal yerine genel mesajı kullanabiliriz
+                    displayMessage(notification.message);
+                    break;
+                // Gelecekte başka türde kalıcı bildirimler de eklenebilir
+            }
+            // Bildirimi gösterdikten sonra veritabanından sil
+            snap.ref.remove();
+        }
+    };
+    
+    if (activeListeners.persistentNotifs) {
+        activeListeners.persistentNotifs.ref.off('child_added', activeListeners.persistentNotifs.callback);
+    }
+    activeListeners.persistentNotifs = { ref, event: 'child_added', callback };
+    ref.on('child_added', callback);
+}
+
+// Koleksiyon tamamlama penceresini gösterir
+function showCollectionCompleteModal(notificationData) {
+    document.getElementById('collectionCompleteTitle').innerHTML = notificationData.title;
+    document.getElementById('collectionCompleteMessage').innerHTML = notificationData.message;
+    document.getElementById('collectionCompleteModal').style.display = 'flex';
+}
+
+// Koleksiyon tamamlama penceresini kapatır
+function closeCollectionCompleteModal() {
+    document.getElementById('collectionCompleteModal').style.display = 'none';
+}
+// YENİ EKLENECEK YARDIMCI FONKSİYONLAR SONU
       
 // ★★★ YENİ EKLENECEK FONKSİYONLAR SONU ★★★
       
