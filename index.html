@@ -7502,7 +7502,8 @@ function loadStoreItems() {
       }
   }
 
-  async function renderStoreItems(items, userData = {}) {
+  // MEVCUT renderStoreItems FONKSİYONUNU SİLİP BU YENİ VERSİYONU YAPIŞTIRIN
+async function renderStoreItems(items, userData = {}) {
     const gameContainer = document.getElementById('gameStoreItemsContainer');
     const specialContainer = document.getElementById('specialStoreItemsContainer');
     const gameTabBtn = document.getElementById('gameStoreTabBtn');
@@ -7521,8 +7522,6 @@ function loadStoreItems() {
         return;
     }
 
-    // *** DEĞİŞİKLİK BURADA BAŞLIYOR: renderItem fonksiyonunu en başa taşıdık ***
-    // Bu iç fonksiyon, tek bir mağaza ürününü HTML'e çevirir.
     const renderItem = (itemData, container) => {
         const [itemId, item] = itemData;
         const isSpecial = item.type === 'special';
@@ -7535,9 +7534,15 @@ function loadStoreItems() {
         ];
         const isPotion = monsterStoreItemTypes.includes(item.type);
         let currentCost = item.cost;
+
+        // ★★★ HATA BURADAYDI VE DÜZELTİLDİ ★★★
+        // Artık fiyat hesaplanırken, ürünün kendi 'priceIncrease' değeri okunuyor.
+        // Bu sayede, admin panelinde 0 olarak ayarlanan artışlar doğru bir şekilde fiyata yansıtılıyor.
         if (isPotion && !isSpecial) {
             const purchaseCount = potionPurchaseCounts[itemId] || 0;
-            currentCost = item.cost + (purchaseCount * 1000);
+            // 'hasOwnProperty' ile fiyat artışının 0 olup olmadığını doğru kontrol ediyoruz.
+            const priceIncrease = item.hasOwnProperty('priceIncrease') ? item.priceIncrease : 1000;
+            currentCost = item.cost + (purchaseCount * priceIncrease);
         }
 
         const outOfStock = item.stock !== undefined && item.stock <= 0;
@@ -7604,7 +7609,6 @@ function loadStoreItems() {
           `;
         container.appendChild(cardDiv);
     };
-    // *** DEĞİŞİKLİK BURADA BİTİYOR ***
 
     let allItemsArray = Object.entries(items);
 
@@ -7620,7 +7624,6 @@ function loadStoreItems() {
             .sort(([, a], [, b]) => (a.order || 0) - (b.order || 0));
 
         if (monsterItems.length > 0) {
-            // *** EKSİK KISIM BURAYA EKLENDİ ***
             monsterItems.forEach(itemData => renderItem(itemData, gameContainer));
         } else {
             gameContainer.innerHTML = '<p class="text-center col-span-full text-gray-400">Canavar Mağazası\'nda ürün bulunmamaktadır.</p>';
@@ -7646,14 +7649,12 @@ function loadStoreItems() {
 
         if (specialTabBtn) specialTabBtn.style.display = 'flex';
 
-        // *** EKSİK KISIM BURAYA EKLENDİ ***
         if (gameItems.length > 0) {
             gameItems.forEach(itemData => renderItem(itemData, gameContainer));
         } else {
             gameContainer.innerHTML = '<p class="text-center col-span-full text-gray-400">Oyun Mağazası\'nda ürün bulunmamaktadır.</p>';
         }
 
-        // *** EKSİK KISIM BURAYA EKLENDİ ***
         if (specialItems.length > 0) {
             specialItems.forEach(itemData => renderItem(itemData, specialContainer));
         } else {
@@ -7779,9 +7780,11 @@ async function saveStoreItem() {
         const stock = (stockInput === '' || stockInput === null) ? null : parseInt(stockInput);
         const itemData = { name, description, cost, stock, type, imageUrl: imageUrl || 'https://via.placeholder.com/150' };
 
+        // ★★★ DEĞİŞİKLİK BURADA: Fiyat artışı 0 olduğunda bile çalışacak şekilde düzeltildi ★★★
         if (type.endsWith('_potion')) {
-            // YENİ: Fiyat artış miktarını oku
-            const priceIncrease = parseInt(document.getElementById('newItemPriceIncrease').value);
+            const priceIncreaseInput = document.getElementById('newItemPriceIncrease').value;
+            // Input boşsa 0, doluysa sayısal değerini al.
+            const priceIncrease = priceIncreaseInput === '' ? 0 : parseInt(priceIncreaseInput);
             if (isNaN(priceIncrease) || priceIncrease < 0) {
                 throw new Error("İksirler için geçerli bir 'Fiyat Artışı' (0 veya daha büyük) girmelisiniz.");
             }
@@ -7804,7 +7807,7 @@ async function saveStoreItem() {
             ];
 
             if (typesThatNeedValue.includes(type)) {
-                // YENİ: Artık ondalıklı sayıları doğru işleyen 'parseStatValue' fonksiyonunu kullanıyoruz.
+                // ★★★ DEĞİŞİKLİK BURADA: Artık ondalıklı sayıları doğru işleyen 'parseStatValue' fonksiyonunu kullanıyoruz. ★★★
                 const value = parseStatValue(type, document.getElementById('newItemValue').value);
                 if (isNaN(value) || value <= 0) {
                     const friendlyName = typeToName[type] || type;
@@ -7864,7 +7867,9 @@ async function editStoreItem(itemId) {
     document.getElementById('newItemValue').value = item.value;
     document.getElementById('newItemImageUrl').value = item.imageUrl || '';
     
-    // YENİ: Fiyat artışını da yükle
+    // ★★★ EKSİK OLAN VE YENİ EKLENEN SATIR BURADA ★★★
+    // Artık kaydedilen fiyat artış değerini de forma yazıyor.
+    // '|| '' ' kısmı, eğer değer kaydedilmemişse kutunun boş görünmesini sağlar.
     document.getElementById('newItemPriceIncrease').value = item.priceIncrease || '';
 
     const totalMins = item.countdownDurationMinutes || 0;
@@ -12422,6 +12427,7 @@ async function selectAvatar(itemId, imageUrl) {
     closeAvatarSelectionModal();
 }
 
+// MEVCUT buyItem FONKSİYONUNU SİL VE BUNUNLA DEĞİŞTİR
 async function buyItem(itemId) {
     if (isAdmin) {
         displayMessage("Adminler alışveriş yapamaz.");
@@ -12435,65 +12441,105 @@ async function buyItem(itemId) {
 
     if (!user || !item) return;
 
-    // --- DEĞİŞİKLİK 1: HATA DÜZELTİLDİ ---
-    // 'health_regen_potion' da artık iksir listesinde olduğu için "geçersiz tür" hatası vermeyecek.
+    // ★★★ DEĞİŞİKLİK 1: Can Yenileme İksiri de artık bu listeye dahil. ★★★
     const isPotion = ['health_potion', 'damage_potion', 'defense_potion', 'crit_potion', 'crit_damage_potion', 'dodge_potion', 'pierce_potion', 'health_regen_potion'].includes(item.type);
 
     if (isPotion) {
-        const capCheck = checkPotionCap(user, item.type, item.value);
+        // --- Can Yenileme İksiri için ÖZEL KONTROL ---
+        if (item.type === 'health_regen_potion') {
+            const purchaseCount = user.potionPurchaseCounts?.[itemId] || 0;
+            // ★★★ FİYAT ARTIŞI MANTIĞI DÜZELTİLDİ ★★★
+            // 'hasOwnProperty' ile 0 değerinin doğru okunmasını sağlıyoruz.
+            const priceIncrease = item.hasOwnProperty('priceIncrease') ? item.priceIncrease : 1000;
+            const currentCost = item.cost + (purchaseCount * priceIncrease);
 
-        if (!capCheck.canAdd) {
-            displayMessage(`Bu bonus türünde zaten maksimum limite ulaştınız, daha fazla alamazsınız.`);
-            return;
+            if ((user.balance || 0) < currentCost) {
+                displayMessage(`Yetersiz Puan! Bu iksirin şu anki fiyatı ${currentCost} Puandır.`);
+                return;
+            }
+            // ★★★ İSTEDİĞİN METİN DEĞİŞİKLİĞİ BURADA ★★★
+            let confirmationMessage = `'Can Yenileme İksiri (%${item.value})' iksirini satın alarak envanterinize ekleyeceksiniz.`;
+            if (priceIncrease > 0) {
+                const nextCost = currentCost + priceIncrease;
+                confirmationMessage += `<br><br>Bu alımdan sonra bu iksirin fiyatı sizin için <b class="text-yellow-400">${nextCost} Puana</b> yükselecektir.`;
+            }
+            confirmationMessage += `<br><br>Onaylıyor musunuz?`;
+            const confirmed = await customConfirm(confirmationMessage);
+            if (!confirmed) return;
+
+            // Satın alma işlemi...
+            const updates = {};
+            const newBalance = user.balance - currentCost;
+            updates.balance = newBalance;
+            updates.totalSpentPoints = (user.totalSpentPoints || 0) + currentCost;
+            updates[`potionPurchaseCounts/${itemId}`] = purchaseCount + 1;
+            
+            // ★★★ DEĞİŞİKLİK: Can Yenileme İksiri, kalıcı bonuslar yerine envantere eklenir ★★★
+            const currentPotions = user.inventory?.health_regen_potion?.[item.value] || 0;
+            updates[`inventory/health_regen_potion/${item.value}`] = currentPotions + 1;
+
+            await userRef.update(updates);
         }
+        // --- DİĞER (BONUS VEREN) İKSİRLER İÇİN KONTROL ---
+        else {
+            const capCheck = checkPotionCap(user, item.type, item.value);
 
-        const purchaseCount = user.potionPurchaseCounts?.[itemId] || 0;
+            if (!capCheck.canAdd) {
+                displayMessage(`Bu bonus türünde zaten maksimum limite ulaştınız, daha fazla alamazsınız.`);
+                return;
+            }
+
+            const purchaseCount = user.potionPurchaseCounts?.[itemId] || 0;
+            // ★★★ FİYAT ARTIŞI MANTIĞI DÜZELTİLDİ ★★★
+            const priceIncrease = item.hasOwnProperty('priceIncrease') ? item.priceIncrease : 1000;
+            const currentCost = item.cost + (purchaseCount * priceIncrease);
+            
+            if ((user.balance || 0) < currentCost) {
+                displayMessage(`Yetersiz Puan! Bu iksirin şu anki fiyatı ${currentCost} Puandır.`);
+                return;
+            }
+
+            const valueToAdd = capCheck.amount;
+            if (valueToAdd <= 0) {
+                 displayMessage(`Bu bonus türünde zaten maksimum limite ulaştınız, daha fazla alamazsınız.`);
+                 return;
+            }
+            
+            // ★★★ İSTEDİĞİN METİN DEĞİŞİKLİĞİ BURADA ★★★
+            let confirmationMessage = `'${item.name}' iksirini satın alarak bu bonusa <b class="text-green-400">+${valueToAdd.toFixed(1)}</b> ekleyeceksiniz.`;
+            if (capCheck.isCapped) {
+                confirmationMessage += `<br><br><b class="text-yellow-400">UYARI:</b> Bu alım ile bu bonus türünde maksimum limite ulaşacaksınız.`;
+            }
+            if (priceIncrease > 0) {
+                const nextCost = currentCost + priceIncrease;
+                confirmationMessage += `<br><br>Bu alımdan sonra bu iksirin fiyatı sizin için <b class="text-yellow-400">${nextCost} Puana</b> yükselecektir.`;
+            }
+            confirmationMessage += `<br><br>Onaylıyor musunuz?`;
+            
+            const confirmed = await customConfirm(confirmationMessage);
+            if (!confirmed) return;
+            
+            // Satın alma işlemi...
+            const statKeyMap = { 'health_potion': 'hp', 'damage_potion': 'damage', 'defense_potion': 'defense', 'crit_potion': 'critChance', 'crit_damage_potion': 'critDamage', 'dodge_potion': 'dodgeChance', 'pierce_potion': 'pierceChance' };
+            const statKey = statKeyMap[item.type];
+            if (!statKey) {
+                displayMessage("Geçersiz iksir türü, işlem iptal edildi.");
+                return;
+            }
+
+            const statRef = db.ref(`users/${currentUser}/globalPotionBuffs/${statKey}`);
+            await statRef.transaction(currentValue => (currentValue || 0) + valueToAdd);
+
+            const newBalance = user.balance - currentCost;
+            const updates = {
+                balance: newBalance,
+                totalSpentPoints: (user.totalSpentPoints || 0) + currentCost,
+                [`potionPurchaseCounts/${itemId}`]: purchaseCount + 1
+            };
+            await userRef.update(updates);
+        }
         
-        // --- DEĞİŞİKLİK 2: FİYAT ARTIŞI DİNAMİK HALE GELDİ ---
-        // Artık sabit 1000 puan yerine, ürüne kaydettiğin 'priceIncrease' değerini kullanacak.
-        // Eğer bir değer belirtmemişsen, eski sistem gibi 1000 puan artırmaya devam edecek.
-        const priceIncrease = item.priceIncrease || 1000;
-        const currentCost = item.cost + (purchaseCount * priceIncrease);
-        
-        if ((user.balance || 0) < currentCost) {
-            displayMessage(`Yetersiz Puan! Bu iksirin şu anki fiyatı ${currentCost} Puandır.`);
-            return;
-        }
-
-        const valueToAdd = capCheck.amount;
-        if (valueToAdd <= 0) {
-             displayMessage(`Bu bonus türünde zaten maksimum limite ulaştınız, daha fazla alamazsınız.`);
-             return;
-        }
-
-        const nextCost = currentCost + priceIncrease; // Sonraki fiyatı da dinamik olarak hesaplıyor.
-        let confirmationMessage = `'${item.name}' iksirini satın alarak bu bonusa <b class="text-green-400">+${valueToAdd}</b> ekleyeceksiniz.`;
-        if (capCheck.isCapped) {
-            confirmationMessage += `<br><br><b class="text-yellow-400">UYARI:</b> Bu alım ile bu bonus türünde maksimum limite ulaşacaksınız.`;
-        }
-        confirmationMessage += `<br><br>Bu alımdan sonra bu iksirin fiyatı sizin için <b class="text-yellow-400">${nextCost} Puana</b> yükselecektir. Onaylıyor musunuz?`;
-        
-        const confirmed = await customConfirm(confirmationMessage);
-        if (!confirmed) return;
-        
-        const statKeyMap = { 'health_potion': 'hp', 'damage_potion': 'damage', 'defense_potion': 'defense', 'crit_potion': 'critChance', 'crit_damage_potion': 'critDamage', 'dodge_potion': 'dodgeChance', 'pierce_potion': 'pierceChance' };
-        const statKey = statKeyMap[item.type];
-        if (!statKey) {
-            displayMessage("Geçersiz iksir türü, işlem iptal edildi.");
-            return;
-        }
-
-        const statRef = db.ref(`users/${currentUser}/globalPotionBuffs/${statKey}`);
-        await statRef.transaction(currentValue => (currentValue || 0) + valueToAdd);
-
-        const newBalance = user.balance - currentCost;
-        const updates = {
-            balance: newBalance,
-            totalSpentPoints: (user.totalSpentPoints || 0) + currentCost,
-            [`potionPurchaseCounts/${itemId}`]: purchaseCount + 1
-        };
-        await userRef.update(updates);
-
+        // --- ORTAK İŞLEMLER ---
         await itemRef.transaction(currentItem => { 
             if (currentItem) { 
                 if (currentItem.stock !== undefined && currentItem.stock !== null) { currentItem.stock--; } 
@@ -12501,30 +12547,32 @@ async function buyItem(itemId) {
             } return currentItem; 
         });
 
-        const isPercent = ['defense_potion', 'crit_potion', 'crit_damage_potion', 'dodge_potion', 'pierce_potion', 'health_regen_potion'].includes(item.type);
-        const valuePrefix = isPercent ? '%' : '+';
-        const detailedItemName = `${valuePrefix}${valueToAdd} ${item.name}`;
+        // ★★★ İSTEDİĞİN METİN DEĞİŞİKLİĞİ BURADA ★★★
+        let detailedItemName, successMessage;
+        const isPercentMsg = ['defense_potion', 'crit_potion', 'crit_damage_potion', 'dodge_potion', 'pierce_potion', 'health_regen_potion'].includes(item.type);
+        if(item.type === 'health_regen_potion') {
+            detailedItemName = `1 adet %${item.value} Can Yenileme İksiri`;
+            successMessage = `Başarılı! '${item.name}' satın alındı ve envanterinize eklendi.`;
+        } else {
+            const formattedValue = isPercentMsg ? `+%${item.value.toFixed(1)}` : `+${item.value}`;
+            detailedItemName = `${formattedValue} ${item.name}`;
+            successMessage = `Başarılı! '${item.name}' satın alındı ve hesabınıza kalıcı olarak ${formattedValue} bonus eklendi.`;
+        }
 
         logActivity('buyItem', currentUser, { 
             itemName: detailedItemName,
-            itemCost: currentCost, 
+            itemCost: item.cost, // Loga temel maliyeti kaydetmek daha tutarlı
             itemType: item.type, 
-            itemValue: valueToAdd, 
-            itemDuration: null, 
-            newBalance: newBalance 
+            itemValue: item.value, 
+            newBalance: user.balance - item.cost
         });
         
-        const isPercentMsg = ['defense_potion', 'crit_potion', 'crit_damage_potion', 'dodge_potion', 'pierce_potion'].includes(item.type);
-        const formattedValue = isPercentMsg ? `+%${valueToAdd.toFixed(1)}` : `+${valueToAdd}`;
-        const successMessage = `Başarılı! '${item.name}' satın alındı ve hesabınıza kalıcı olarak ${formattedValue} bonus eklendi.`;
         displayMessage(successMessage);
-
         if (currentActiveSection === 'monsterBattle') { renderMonsterBattleUI(); }
-
         return;
     }
 
-    // Fonksiyonun geri kalanı aynı...
+    // Fonksiyonun geri kalanı (iksir olmayan ürünler için) aynı kalabilir.
     if (item.type === 'special') {
         const kasaPuani = user.kasaPuani || 0;
         if (kasaPuani < item.cost) {
@@ -12610,12 +12658,6 @@ async function buyItem(itemId) {
         else if (item.type === 'wheelTicket') updates.carkBileti = (user.carkBileti || 0) + itemValue;
         else if (item.type === 'clickCatchTicket') updates.clickCatchTickets = (user.clickCatchTickets || 0) + itemValue;
         else if (item.type === 'iflasShield') updates.iflasShieldUses = (user.iflasShieldUses || 0) + itemValue;
-        else if (item.type === 'health_regen_potion') {
-            if (!updates.inventory.health_regen_potion) updates.inventory.health_regen_potion = {};
-            const currentPotions = user.inventory?.health_regen_potion?.[itemValue] || 0;
-            updates.inventory.health_regen_potion[itemValue] = currentPotions + 1;
-            message = `Başarılı! Envanterine 1 adet %${itemValue} Can Yenileme İksiri eklendi.`;
-        }
         else if (item.type === 'revival_stone') updates.inventory.revival_stone = (user.inventory?.revival_stone || 0) + itemValue;
         else if (item.type === 'tempMultiplier') {
             updates.activeMultiplier = itemValue;
