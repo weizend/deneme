@@ -6634,43 +6634,22 @@ function renderActivityFeed(activities) {
     });
 }
 
-      /**
- * Verilen bir ödül türü ve değerine göre kullanıcıya gösterilecek metni formatlar.
- * Yüzdelik iksirler için doğru (+% veya %) ön ekini otomatik olarak ekler.
- * @param {string} type - Ödülün türü (örn: 'defense_potion', 'points').
- * @param {number|string} value - Ödülün miktarı.
- * @param {number} [uses=0] - Sadece çarpanlar için geçerli olan kullanım hakkı.
- * @returns {string} Formatlanmış ödül metni (örn: "+%2.5 Savunma Şansı", "%10 Can Yenileme İksiri").
- */
-// MEVCUT formatRewardText FONKSİYONUNU SİLİP BUNU YAPIŞTIRIN
+      // MEVCUT formatRewardText FONKSİYONUNU SİLİP BUNU YAPIŞTIRIN
 
-/**
- * Verilen bir ödül türü ve değerine göre kullanıcıya gösterilecek metni formatlar.
- * Yüzdelik iksirler için doğru (+% veya %) ön ekini otomatik olarak ekler.
- * @param {string} type - Ödülün türü (örn: 'defense_potion', 'points').
- * @param {number|string} value - Ödülün miktarı.
- * @param {number} [uses=0] - Sadece çarpanlar için geçerli olan kullanım hakkı.
- * @returns {string} Formatlanmış ödül metni (örn: "+%2.5 Savunma Şansı", "%10 Can Yenileme İksiri").
- */
 function formatRewardText(type, value, uses = 0) {
     const name = typeToName[type] || type;
     
-    // ★★★ YENİ VE DÜZELTİLMİŞ KISIM BAŞLANGICI ★★★
-
-    // Yüzdelik olarak GÖSTERİLECEK ama '+' ALMAYACAK iksirler (Sadece Can Yenileme)
+    // Yüzdelik olarak GÖSTERİLECEK ama '+' ALMAYACAK iksirler
     if (type === 'health_regen_potion') {
         return `%${value} ${name}`;
     }
     
-    // Yüzdelik olarak GÖSTERİLECEK ve '+' ALACAK kalıcı bonus iksirleri
+    // Yüzdelik olarak GÖSTERİLECEK ve '+' ALACAK iksirler
     const percentPotions = ['defense_potion', 'crit_potion', 'crit_damage_potion', 'dodge_potion', 'pierce_potion'];
     if (percentPotions.includes(type)) {
-        // Değeri ondalık olarak formatla (örn: 5 -> 5.0)
         const formattedValue = parseFloat(value).toFixed(1);
         return `+%${formattedValue} ${name}`;
     }
-
-    // ★★★ YENİ VE DÜZELTİLMİŞ KISIM SONU ★★★
 
     // Çarpan için özel format
     if (type === 'tempMultiplier') {
@@ -9308,6 +9287,8 @@ async function openDailyRewardModal() {
     }
 }
       
+// MEVCUT claimDailyReward FONKSİYONUNU SİLİP BUNU YAPIŞTIRIN
+
 async function claimDailyReward(rewardId) {
     if (isAdmin) {
         displayMessage("Adminler ödül alamaz.");
@@ -9476,7 +9457,8 @@ async function claimDailyReward(rewardId) {
                 rewardUses: reward.uses || 0
             });
             
-            const hasPotion = dayData.rewards.some(r => r.type.includes('_potion'));
+            // ★★★ HATA BURADAYDI: Bu satır 'dayData' yerine doğru değişken olan 'reward'ı kullanacak şekilde düzeltildi. ★★★
+            const hasPotion = reward.type.includes('_potion');
             if (hasPotion && currentActiveSection === 'monsterBattle') { renderMonsterBattleUI(); }
 
             for (const pack of cardPacksToOpen) {
@@ -12454,13 +12436,11 @@ async function buyItem(itemId) {
         if (item.type === 'health_regen_potion') {
             const purchaseCount = user.potionPurchaseCounts?.[itemId] || 0;
             const priceIncrease = item.hasOwnProperty('priceIncrease') ? item.priceIncrease : 1000;
-            const currentCost = item.cost + (purchaseCount * priceIncrease); // Kullanıcının ödeyeceği gerçek fiyat
-
+            const currentCost = item.cost + (purchaseCount * priceIncrease);
             if ((user.balance || 0) < currentCost) {
                 displayMessage(`Yetersiz Puan! Bu iksirin şu anki fiyatı ${currentCost} Puandır.`);
                 return;
             }
-
             let confirmationMessage = `'Can Yenileme İksiri (%${item.value})' iksirini <b class="text-yellow-400">${currentCost} Puana</b> satın alarak envanterinize ekleyeceksiniz.`;
             if (priceIncrease > 0) {
                 const nextCost = currentCost + priceIncrease;
@@ -12469,53 +12449,41 @@ async function buyItem(itemId) {
             confirmationMessage += `<br><br>Onaylıyor musunuz?`;
             const confirmed = await customConfirm(confirmationMessage);
             if (!confirmed) return;
-
             const updates = {};
             const newBalance = user.balance - currentCost;
             updates.balance = newBalance;
             updates.totalSpentPoints = (user.totalSpentPoints || 0) + currentCost;
             updates[`potionPurchaseCounts/${itemId}`] = purchaseCount + 1;
-            
             const currentPotions = user.inventory?.health_regen_potion?.[item.value] || 0;
             updates[`inventory/health_regen_potion/${item.value}`] = currentPotions + 1;
-
             await userRef.update(updates);
-            
-            logActivity('buyItem', currentUser, { 
+            logActivity('buyItem', currentUser, {
                 itemName: `1 adet %${item.value} Can Yenileme İksiri`,
-                itemCost: currentCost, 
-                itemType: item.type, 
-                itemValue: item.value, 
+                itemCost: currentCost,
+                itemType: item.type,
+                itemValue: item.value,
                 newBalance: newBalance
             });
-
-        } else { // Diğer (bonus veren) iksirler
+        } else {
             const capCheck = checkPotionCap(user, item.type, item.value);
             if (!capCheck.canAdd) {
                 displayMessage(`Bu bonus türünde zaten maksimum limite ulaştınız, daha fazla alamazsınız.`);
                 return;
             }
-
             const purchaseCount = user.potionPurchaseCounts?.[itemId] || 0;
             const priceIncrease = item.hasOwnProperty('priceIncrease') ? item.priceIncrease : 1000;
             const currentCost = item.cost + (purchaseCount * priceIncrease);
-            
             if ((user.balance || 0) < currentCost) {
                 displayMessage(`Yetersiz Puan! Bu iksirin şu anki fiyatı ${currentCost} Puandır.`);
                 return;
             }
-
             const valueToAdd = capCheck.amount;
             if (valueToAdd <= 0) {
-                 displayMessage(`Bu bonus türünde zaten maksimum limite ulaştınız, daha fazla alamazsınız.`);
-                 return;
+                displayMessage(`Bu bonus türünde zaten maksimum limite ulaştınız, daha fazla alamazsınız.`);
+                return;
             }
-            
-            // ★★★ DÜZELTİLEN KISIM BAŞLANGICI ★★★
             const isPercentPotion = ['defense_potion', 'crit_potion', 'crit_damage_potion', 'dodge_potion', 'pierce_potion'].includes(item.type);
             const valuePrefix = isPercentPotion ? '+%' : '+';
-            // ★★★ DÜZELTİLEN KISIM SONU ★★★
-
             let confirmationMessage = `'${item.name}' iksirini <b class="text-yellow-400">${currentCost} Puana</b> satın alarak bu bonusa <b class="text-green-400">${valuePrefix}${valueToAdd.toFixed(1)}</b> ekleyeceksiniz.`;
             if (capCheck.isCapped) {
                 confirmationMessage += `<br><br><b class="text-yellow-400">UYARI:</b> Bu alım ile bu bonus türünde maksimum limite ulaşacaksınız.`;
@@ -12525,20 +12493,16 @@ async function buyItem(itemId) {
                 confirmationMessage += `<br><br>Bu alımdan sonra bu iksirin fiyatı sizin için <b class="text-yellow-400">${nextCost} Puana</b> yükselecektir.`;
             }
             confirmationMessage += `<br><br>Onaylıyor musunuz?`;
-            
             const confirmed = await customConfirm(confirmationMessage);
             if (!confirmed) return;
-            
             const statKeyMap = { 'health_potion': 'hp', 'damage_potion': 'damage', 'defense_potion': 'defense', 'crit_potion': 'critChance', 'crit_damage_potion': 'critDamage', 'dodge_potion': 'dodgeChance', 'pierce_potion': 'pierceChance' };
             const statKey = statKeyMap[item.type];
             if (!statKey) {
                 displayMessage("Geçersiz iksir türü, işlem iptal edildi.");
                 return;
             }
-
             const statRef = db.ref(`users/${currentUser}/globalPotionBuffs/${statKey}`);
             await statRef.transaction(currentValue => (currentValue || 0) + valueToAdd);
-
             const newBalance = user.balance - currentCost;
             const updates = {
                 balance: newBalance,
@@ -12547,31 +12511,29 @@ async function buyItem(itemId) {
             };
             await userRef.update(updates);
             
-            // ★★★ DÜZELTİLEN KISIM BAŞLANGICI ★★★
-            const logItemName = isPercentPotion ? `+%${valueToAdd.toFixed(1)} ${item.name}` : `+${valueToAdd} ${item.name}`;
-            logActivity('buyItem', currentUser, { 
+            // ★★★ DÜZELTİLEN KISIM ★★★
+            // Artık log kaydını oluştururken önceden tanımladığımız valuePrefix'i kullanıyoruz.
+            const logItemName = `${valuePrefix}${valueToAdd.toFixed(1)} ${item.name}`;
+            logActivity('buyItem', currentUser, {
                 itemName: logItemName,
                 itemCost: currentCost,
-                itemType: item.type, 
-                itemValue: valueToAdd, 
+                itemType: item.type,
+                itemValue: valueToAdd,
                 newBalance: newBalance
             });
-            // ★★★ DÜZELTİLEN KISIM SONU ★★★
+            // ★★★ DÜZELTME SONU ★★★
         }
-        
-        await itemRef.transaction(currentItem => { 
-            if (currentItem) { 
-                if (currentItem.stock !== undefined && currentItem.stock !== null) { currentItem.stock--; } 
-                currentItem.purchaseCount = (currentItem.purchaseCount || 0) + 1; 
-            } return currentItem; 
+        await itemRef.transaction(currentItem => {
+            if (currentItem) {
+                if (currentItem.stock !== undefined && currentItem.stock !== null) { currentItem.stock--; }
+                currentItem.purchaseCount = (currentItem.purchaseCount || 0) + 1;
+            } return currentItem;
         });
-        
         displayMessage(`Başarılı! '${item.name}' satın alındı ve bonusların eklendi.`);
         if (currentActiveSection === 'monsterBattle') { renderMonsterBattleUI(); }
         return;
     }
-    
-    // Fonksiyonun geri kalanı aynı şekilde devam ediyor...
+    // ...fonksiyonun geri kalanı aynı...
     if (item.type === 'special') {
         const kasaPuani = user.kasaPuani || 0;
         if (kasaPuani < item.cost) {
