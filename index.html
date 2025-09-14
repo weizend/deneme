@@ -6504,7 +6504,7 @@ function getActivityIcon(type, details = {}) {
     `;
 }
       
-// ESKİ DOSYADAKİ (index (2).html) DOĞRU ÇALIŞAN FONKSİYON
+// MEVCUT renderActivityFeed FONKSİYONUNU SİLİP BUNU YAPIŞTIR
 function renderActivityFeed(activities) {
     const activityFeedList = document.getElementById('activityFeedList');
     activityFeedList.innerHTML = '';
@@ -6542,6 +6542,22 @@ function renderActivityFeed(activities) {
             const userHtml = `<b class="text-yellow-300 cursor-pointer hover:underline" onclick="openPublicUserDetailModal('${activity.username}')">${activity.username}</b>`;
 
             switch (activity.type) {
+                // ★★★ İSTEDİĞİN GÜNCELLEME BURADA ★★★
+                case 'buyItem':
+                    const isKP = (details.itemCost || '').toString().includes('KP');
+                    const costText = isKP ? details.itemCost : `${formatNumber(details.itemCost)} Puan`;
+                    const balance = isKP ? details.newKasaBalance : details.newBalance;
+                    const balanceUnit = isKP ? 'KP' : 'Puanı';
+                    
+                    // Eğer itemValue (adet) bilgisi varsa, onu mesaja ekle
+                    if (details.itemValue) {
+                         message = `${userHtml}, mağazadan <b class="text-red-500">-${costText}</b> harcayarak <b class="text-green-400">+${details.itemValue} ${details.itemName}</b> aldı. (Mevcut ${balanceUnit}: ${formatNumber(balance)})`;
+                    } else {
+                        // Eğer itemValue yoksa (eski kayıtlar veya özel ürünler için) normal mesajı göster
+                        message = `${userHtml}, mağazadan <b class="text-red-500">-${costText}</b> harcayarak <b class="text-green-400">${details.itemName}</b> aldı. (Mevcut ${balanceUnit}: ${formatNumber(balance)})`;
+                    }
+                    break;
+                // Diğer caseler aynı kalacak...
                 case 'monsterAttack':
                     const monsterNameHtml = `<b class="text-red-300 cursor-pointer hover:underline" onclick="openMonsterInfoModal()">${details.monsterName}</b>`;
                     let attackSummary = `${userHtml}, ${monsterNameHtml}'a saldırdı. `;
@@ -6707,13 +6723,7 @@ function renderActivityFeed(activities) {
                 case 'multiplierFound':
                     message = `${userHtml}, <b>${details.boxId}</b> numaralı kutudan <span class="text-purple-300 font-bold">${details.value}x Çarpan</span> buldu.`;
                     break;
-                case 'buyItem':
-                    const isKP = details.itemCost.toString().includes('KP');
-                    const costText = isKP ? details.itemCost : `${formatNumber(details.itemCost)} Puan`;
-                    const balance = isKP ? details.newKasaBalance : details.newBalance;
-                    const balanceUnit = isKP ? 'KP' : 'Puanı';
-                    message = `${userHtml}, mağazadan <b class="text-red-500">-${costText}</b> harcayarak <b class="text-green-400">${details.itemName}</b> aldı. (Mevcut ${balanceUnit}: ${formatNumber(balance)})`;
-                    break;
+                
                 case 'lobbyJoined':
                     message = `${userHtml}, Tıkla-Yakala lobisine <span class="text-red-400 font-bold">-${details.cost} Puan</span> karşılığında katıldı. <span class="text-gray-400">(Kalan Puan: ${details.newBalance})</span>`;
                     break;
@@ -7458,7 +7468,8 @@ function listenForSurpriseBox() {
     sessionRef.on('value', callback);
 }
       
-// Sürpriz Kutu bilgilendirme penceresini GÖSTEREN fonksiyon
+// MEVCUT showGlobalSurpriseBoxNotification FONKSİYONUNU BU BLOK İLE DEĞİŞTİRİN
+
 function showGlobalSurpriseBoxNotification(data) {
     document.getElementById('surpriseOpener').textContent = data.user;
     
@@ -7471,7 +7482,10 @@ function showGlobalSurpriseBoxNotification(data) {
 
     document.getElementById('surprisePoints').textContent = data.result.points;
     
-    let multiplierText = '';
+    // ★★★ İSTEDİĞİN GÜNCELLEME BURADA ★★★
+    let multiplierText = ''; // Varsayılan olarak metni boş yapıyoruz.
+    
+    // Sadece kutudan geldiyse çarpan metnini göster
     if (data.boxId !== 'Çark') {
         if (data.multiplier && data.multiplier > 1) {
             const basePoints = Math.round(data.result.points / data.multiplier);
@@ -7480,8 +7494,10 @@ function showGlobalSurpriseBoxNotification(data) {
             multiplierText = 'kazandı! (Çarpan kullanılmadı)';
         }
     } else {
+        // Çarktan geldiyse sadece "kazandı!" yazsın.
         multiplierText = 'kazandı!';
     }
+    // ★★★ GÜNCELLEME SONU ★★★
 
     document.getElementById('surpriseMultiplierInfo').innerHTML = multiplierText;
 
@@ -9951,42 +9967,6 @@ function updateSpectatorView(sessionData) {
             </button>
         `;
     }
-}
-
-
-// MEVCUT showGlobalSurpriseBoxNotification FONKSİYONUNU BU BLOK İLE DEĞİŞTİRİN
-
-function showGlobalSurpriseBoxNotification(data) {
-    document.getElementById('surpriseOpener').textContent = data.user;
-    
-    const sourceInfoEl = document.getElementById('surpriseSourceInfo');
-    if (data.boxId === 'Çark') {
-        sourceInfoEl.innerHTML = `<b>Şans Çarkı</b>'ndan Sürpriz Kutu elde etti ve kart seçiminden`;
-    } else {
-        sourceInfoEl.innerHTML = `<span class="text-red-400 font-bold">${data.boxId}</span> numaralı kutuyu açtı ve kart seçiminden`;
-    }
-
-    document.getElementById('surprisePoints').textContent = data.result.points;
-    
-    // *** İSTEĞİNİZE GÖRE DÜZENLENEN KISIM BAŞLANGICI ***
-    let multiplierText = ''; // Varsayılan olarak metni boş yapıyoruz.
-    // Sadece kutudan geldiyse çarpan metnini göster
-    if (data.boxId !== 'Çark') {
-        if (data.multiplier && data.multiplier > 1) {
-            const basePoints = Math.round(data.result.points / data.multiplier);
-            multiplierText = `kazandı! <br><span class="text-base text-gray-400">(${basePoints} Puan x ${data.multiplier} Çarpan)</span>`;
-        } else {
-            multiplierText = 'kazandı! (Çarpan kullanılmadı)';
-        }
-    } else {
-        // Çarktan geldiyse sadece "kazandı!" yazsın.
-        multiplierText = 'kazandı!';
-    }
-    // *** DÜZENLENEN KISIM SONU ***
-
-    document.getElementById('surpriseMultiplierInfo').innerHTML = multiplierText;
-
-    document.getElementById('globalSurpriseBoxModal').style.display = 'flex';
 }
 
 // MEVCUT closeSpectatorModal FONKSİYONUNU BU BLOK İLE DEĞİŞTİRİN
@@ -12594,10 +12574,10 @@ async function buyItem(itemId) {
             updates[`inventory/health_regen_potion/${item.value}`] = currentPotions + 1;
             await userRef.update(updates);
             logActivity('buyItem', currentUser, {
-                itemName: `1 adet %${item.value} Can Yenileme İksiri`,
+                itemName: `%${item.value} Can Yenileme İksiri`, // ★★★ DEĞİŞİKLİK: İsim artık daha açıklayıcı ★★★
                 itemCost: currentCost,
                 itemType: item.type,
-                itemValue: item.value,
+                itemValue: 1, // ★★★ DEĞİŞİKLİK: Adet olarak 1 gönderiyoruz ★★★
                 newBalance: newBalance
             });
         } else {
@@ -12647,17 +12627,14 @@ async function buyItem(itemId) {
             };
             await userRef.update(updates);
             
-            // ★★★ DÜZELTİLEN KISIM ★★★
-            // Artık log kaydını oluştururken önceden tanımladığımız valuePrefix'i kullanıyoruz.
             const logItemName = `${valuePrefix}${valueToAdd.toFixed(1)} ${item.name}`;
             logActivity('buyItem', currentUser, {
                 itemName: logItemName,
                 itemCost: currentCost,
                 itemType: item.type,
-                itemValue: valueToAdd,
+                itemValue: 1, // ★★★ DEĞİŞİKLİK: Adet olarak 1 gönderiyoruz ★★★
                 newBalance: newBalance
             });
-            // ★★★ DÜZELTME SONU ★★★
         }
         await itemRef.transaction(currentItem => {
             if (currentItem) {
@@ -12669,7 +12646,7 @@ async function buyItem(itemId) {
         if (currentActiveSection === 'monsterBattle') { renderMonsterBattleUI(); }
         return;
     }
-    // ...fonksiyonun geri kalanı aynı...
+    
     if (item.type === 'special') {
         const kasaPuani = user.kasaPuani || 0;
         if (kasaPuani < item.cost) {
@@ -12743,8 +12720,19 @@ async function buyItem(itemId) {
             startCardPackOpening(itemValue || 1, 'Mağaza', 1, item.type);
             return;
         }
+        
+        // ★★★ DEĞİŞİKLİK BURADA BAŞLIYOR ★★★
+        // logActivity çağrısını güncelliyoruz.
+        logActivity('buyItem', currentUser, { 
+            itemName: item.name, 
+            itemCost: item.cost, 
+            itemType: item.type, 
+            itemValue: item.value || null, // Ürünün değerini (adedini) ekliyoruz
+            itemDuration: item.duration || null, 
+            newBalance: user.balance - item.cost 
+        });
+        // ★★★ DEĞİŞİKLİK BURADA BİTİYOR ★★★
 
-        logActivity('buyItem', currentUser, { itemName: item.name, itemCost: item.cost, itemType: item.type, itemValue: item.value || null, itemDuration: item.duration || null, newBalance: user.balance - item.cost });
         let updates = { balance: user.balance - item.cost, totalSpentPoints: (user.totalSpentPoints || 0) + item.cost, storePurchasesCount: (user.storePurchasesCount || 0) + 1 };
         let message = 'Satın alma başarılı!';
         const itemDuration = parseInt(item.duration) || 0;
