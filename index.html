@@ -3850,7 +3850,11 @@ const defaultWheelSegments = [
     }
   }
   
-  async function login() {
+  // =================================================================================
+// MEVCUT login FONKSİYONUNU SİLİP, BU GÜVENLİ VERSİYONU YAPIŞTIR
+// =================================================================================
+
+async function login() {
     const user = document.getElementById("loginUsername").value.trim().toLowerCase();
     const pass = document.getElementById("loginPassword").value.trim();
 
@@ -3864,12 +3868,14 @@ const defaultWheelSegments = [
         try {
             await auth.signInWithEmailAndPassword(adminEmail, pass);
         } catch (error) {
+            console.error("Admin giriş hatası:", error);
             displayMessage("Admin kullanıcı adı veya şifresi yanlış!");
         }
         return;
     }
 
-    db.ref('users/' + user).once('value').then(snap => {
+    db.ref('users/' + user).once('value')
+      .then(snap => {
         if (!snap.exists()) {
             displayMessage("Hesap bulunamadı. Lütfen 'Kayıt Ol' sekmesinden yeni bir hesap oluşturun.");
             return;
@@ -3892,18 +3898,17 @@ const defaultWheelSegments = [
             return;
         }
         
-        // --- YENİ EKLENEN SATIR BAŞLANGICI ---
-        // Kullanıcı adı ve şifre doğruysa, tarayıcıya kullanıcı adını kaydet.
         localStorage.setItem('weizendOyunUser', user);
-        // --- YENİ EKLENEN SATIR SONU ---
 
         checkAndProceedLogin(user, data);
 
-    }).catch(error => {
+    })
+    .catch(error => {
         console.error("Firebase veritabanı okuma hatası: ", error);
-        displayMessage("Giriş yaparken bir sorun oluştu.");
+        displayMessage("Giriş yaparken bir sunucu hatası oluştu. Lütfen internet bağlantınızı kontrol edin veya daha sonra tekrar deneyin.");
     });
 }
+
   // MEVCUT register fonksiyonunu bununla değiştir
 async function register() {
     const username = document.getElementById("registerUsername").value.trim().toLowerCase();
@@ -6786,9 +6791,13 @@ function renderActivityFeed(activities) {
 function formatRewardText(type, value, uses = 0) {
     const name = typeToName[type] || type;
     
-    const percentPotions = ['defense_potion', 'crit_potion', 'crit_damage_potion', 'dodge_potion', 'pierce_potion', 'health_regen_potion'];
+    if (type === 'health_regen_potion') {
+        return `1 Adet %${value} ${name}`;
+    }
+
+    const percentPotions = ['defense_potion', 'crit_potion', 'crit_damage_potion', 'dodge_potion', 'pierce_potion'];
     if (percentPotions.includes(type)) {
-        const prefix = type === 'health_regen_potion' ? '%' : '+%';
+        const prefix = '+%';
         const formattedValue = parseFloat(value).toFixed(1);
         return `${prefix}${formattedValue} ${name}`;
     }
@@ -9469,7 +9478,9 @@ async function openDailyRewardModal() {
     }
 }
       
-// MEVCUT claimDailyReward FONKSİYONUNU SİLİP BUNU YAPIŞTIRIN
+// =================================================================================
+// ADIM 2: MEVCUT claimDailyReward FONKSİYONUNU SİLİP, BU YENİ VERSİYONU YAPIŞTIR
+// =================================================================================
 
 async function claimDailyReward(rewardId) {
     if (isAdmin) {
@@ -9507,6 +9518,7 @@ async function claimDailyReward(rewardId) {
             throw new Error("Bu ödül için bekleme süresi henüz dolmadı.");
         }
         
+        // Çarpan ödülü için ön kontrol ve onay
         if (reward.type === 'tempMultiplier') {
             const hasActiveMultiplier = (user.multiplierSource === 'box') || (user.multiplierSource === 'store' && (user.multiplierRemainingUses || 0) > 0);
             if (hasActiveMultiplier) {
@@ -9528,7 +9540,7 @@ async function claimDailyReward(rewardId) {
             }
         }
         
-        const cardPacksToOpen = [];
+        let cardPacksToOpen = [];
         let activityLogDetails = {};
 
         const { committed, snapshot } = await userRef.transaction(userData => {
@@ -9543,85 +9555,36 @@ async function claimDailyReward(rewardId) {
 
                 userData.dailyRewardsClaimed[rewardId] = getSyncedTime();
 
-                switch (reward.type) {
-                    case 'points':
-                        userData.balance = (userData.balance || 0) + reward.value;
-                        userData.kariyerPuani = (userData.kariyerPuani || 0) + reward.value;
-                        activityLogDetails = { newBalance: userData.balance };
-                        break;
-                    case 'boxRights': userData.kutuHakki = (userData.kutuHakki || 0) + reward.value; break;
-                    case 'wheelTicket': userData.carkBileti = (userData.carkBileti || 0) + reward.value; break;
-                    case 'clickCatchTicket': userData.clickCatchTickets = (userData.clickCatchTickets || 0) + reward.value; break;
-                    case 'iflasShield': userData.iflasShieldUses = (userData.iflasShieldUses || 0) + reward.value; break;
-                    case 'wildcard': userData.wildcards = (userData.wildcards || 0) + reward.value; break;
-                    case 'tempMultiplier':
-                        const hasActiveMultiplier = (userData.multiplierSource === 'box') || (userData.multiplierSource === 'store' && (userData.multiplierRemainingUses || 0) > 0);
-                        if (hasActiveMultiplier) {
-                            const rewardValue = parseInt(reward.value);
-                            const userMultiplierValue = parseInt(userData.activeMultiplier);
-                            if (rewardValue === userMultiplierValue) {
-                                userData.multiplierRemainingUses = (userData.multiplierRemainingUses || 0) + reward.uses;
-                                logActivity('dailyRewardMultiplierStacked', currentUser, { source: "Günlük Ödül'den", usesAdded: reward.uses, newTotalUses: userData.multiplierRemainingUses, multiplierValue: rewardValue });
-                            } else if (rewardValue > userMultiplierValue) {
-                                const refundedBoxRights = userData.multiplierRemainingUses || 0;
-                                logActivity('multiplierUpgraded', currentUser, { 
-                                    source: "Günlük Ödül", 
-                                    oldValue: userMultiplierValue, 
-                                    oldUses: refundedBoxRights, 
-                                    newValue: rewardValue, 
-                                    newUses: reward.uses, 
-                                    boxRights: refundedBoxRights 
-                                });
-                                userData.kutuHakki = (userData.kutuHakki || 0) + refundedBoxRights;
-                                userData.activeMultiplier = reward.value;
-                                userData.multiplierRemainingUses = reward.uses;
-                                userData.multiplierSource = 'store';
-                            } else {
-                                userData.kutuHakki = (userData.kutuHakki || 0) + (reward.uses || 0);
-                                logActivity('dailyRewardMultiplierConverted', currentUser, { keptMultiplierValue: userMultiplierValue, boxRights: reward.uses, rewardValue: rewardValue, source: "Günlük Ödül'den" });
-                            }
-                        } else {
+                // Çarpan mantığı burada ayrıca ele alınır
+                if (reward.type === 'tempMultiplier') {
+                    const hasActiveMultiplier = (userData.multiplierSource === 'box') || (userData.multiplierSource === 'store' && (userData.multiplierRemainingUses || 0) > 0);
+                    if (hasActiveMultiplier) {
+                        const rewardValue = parseInt(reward.value);
+                        const userMultiplierValue = parseInt(userData.activeMultiplier);
+                        if (rewardValue === userMultiplierValue) {
+                            userData.multiplierRemainingUses = (userData.multiplierRemainingUses || 0) + reward.uses;
+                            logActivity('dailyRewardMultiplierStacked', currentUser, { source: "Günlük Ödül'den", usesAdded: reward.uses, newTotalUses: userData.multiplierRemainingUses, multiplierValue: rewardValue });
+                        } else if (rewardValue > userMultiplierValue) {
+                            const refundedBoxRights = userData.multiplierRemainingUses || 0;
+                            logActivity('multiplierUpgraded', currentUser, { source: "Günlük Ödül", oldValue: userMultiplierValue, oldUses: refundedBoxRights, newValue: rewardValue, newUses: reward.uses, boxRights: refundedBoxRights });
+                            userData.kutuHakki = (userData.kutuHakki || 0) + refundedBoxRights;
                             userData.activeMultiplier = reward.value;
                             userData.multiplierRemainingUses = reward.uses;
                             userData.multiplierSource = 'store';
+                        } else {
+                            userData.kutuHakki = (userData.kutuHakki || 0) + (reward.uses || 0);
+                            logActivity('dailyRewardMultiplierConverted', currentUser, { keptMultiplierValue: userMultiplierValue, boxRights: reward.uses, rewardValue: rewardValue, source: "Günlük Ödül'den" });
                         }
-                        activityLogDetails = { rewardUses: reward.uses };
-                        break;
-                    case 'avatar':
-                         const newAvatarId = firebase.database().ref().push().key;
-                         if (!userData.avatars) userData.avatars = {};
-                         userData.avatars[newAvatarId] = { id: newAvatarId, name: reward.avatarName, imageUrl: reward.avatarImageUrl };
-                         break;
-                    case 'card_pack':
-                    case 'card_pack_normal':
-                    case 'card_pack_gumus':
-                    case 'card_pack_altin':
-                    case 'card_pack_efsanevi':
-                        cardPacksToOpen.push(reward);
-                        break;
-                    case 'revival_stone':
-                        if (!userData.inventory) userData.inventory = {};
-                        userData.inventory.revival_stone = (userData.inventory.revival_stone || 0) + reward.value;
-                        break;
-                    case 'health_regen_potion':
-                        if(!userData.inventory) userData.inventory = {};
-                        if(!userData.inventory.health_regen_potion) userData.inventory.health_regen_potion = {};
-                        const currentPotions = userData.inventory.health_regen_potion[reward.value] || 0;
-                        userData.inventory.health_regen_potion[reward.value] = currentPotions + 1;
-                        break;
-                    case 'health_potion': case 'damage_potion': case 'defense_potion':
-                    case 'crit_potion': case 'crit_damage_potion': case 'dodge_potion': case 'pierce_potion':
-                        const statKeyMap = { 
-                            'health_potion': 'hp', 'damage_potion': 'damage', 'defense_potion': 'defense', 
-                            'crit_potion': 'critChance', 'crit_damage_potion': 'critDamage', 
-                            'dodge_potion': 'dodgeChance', 'pierce_potion': 'pierceChance' 
-                        };
-                        const statKey = statKeyMap[reward.type];
-                        if (statKey) {
-                            if (!userData.globalPotionBuffs) userData.globalPotionBuffs = {};
-                            userData.globalPotionBuffs[statKey] = (userData.globalPotionBuffs[statKey] || 0) + reward.value;
-                        }
-                        break;
+                    } else {
+                        userData.activeMultiplier = reward.value;
+                        userData.multiplierRemainingUses = reward.uses;
+                        userData.multiplierSource = 'store';
+                    }
+                    activityLogDetails = { rewardUses: reward.uses };
+                } else {
+                    // Diğer tüm ödüller için yardımcı fonksiyonu kullan
+                    const result = applyRewardToUser(userData, reward);
+                    cardPacksToOpen = result.cardPacksToOpen; // Kart paketlerini dışarıda işlemek için al
                 }
             }
             return userData;
@@ -9636,10 +9599,10 @@ async function claimDailyReward(rewardId) {
                 rewardName: reward.name, 
                 rewardType: reward.type, 
                 rewardValue: reward.type === 'avatar' ? reward.avatarName : reward.value,
-                rewardUses: reward.uses || 0
+                rewardUses: reward.uses || 0,
+                newBalance: snapshot.val().balance // Log için yeni bakiye
             });
             
-            // ★★★ HATA BURADAYDI: Bu satır 'dayData' yerine doğru değişken olan 'reward'ı kullanacak şekilde düzeltildi. ★★★
             const hasPotion = reward.type.includes('_potion');
             if (hasPotion && currentActiveSection === 'monsterBattle') { renderMonsterBattleUI(); }
 
@@ -9664,6 +9627,78 @@ async function claimDailyReward(rewardId) {
             claimButton.textContent = 'Ödülü Al';
         }
     }
+}
+
+// =====================================================================
+// ADIM 1: BU YENİ YARDIMCI FONKSİYONU, SCRIPT BLOĞUNUN UYGUN BİR YERİNE EKLE
+// =====================================================================
+
+/**
+ * Bir kullanıcıya belirtilen ödülü uygular. Bu fonksiyon transaction içinde kullanılmak üzere tasarlanmıştır.
+ * @param {object} userData - İşlem yapılacak kullanıcının mevcut verisi (transaction içindeki).
+ * @param {object} reward - Uygulanacak ödül nesnesi (type, value, uses vb. içermeli).
+ * @returns {object} { cardPacksToOpen: array } - Transaction sonrası işlenmesi gereken kart paketlerini döndürür.
+ */
+function applyRewardToUser(userData, reward) {
+    const cardPacksToOpen = [];
+
+    switch (reward.type) {
+        case 'points':
+            userData.balance = (userData.balance || 0) + reward.value;
+            userData.kariyerPuani = (userData.kariyerPuani || 0) + reward.value;
+            break;
+        case 'boxRights':
+            userData.kutuHakki = (userData.kutuHakki || 0) + reward.value;
+            break;
+        case 'wheelTicket':
+            userData.carkBileti = (userData.carkBileti || 0) + reward.value;
+            break;
+        case 'clickCatchTicket':
+            userData.clickCatchTickets = (userData.clickCatchTickets || 0) + reward.value;
+            break;
+        case 'iflasShield':
+            userData.iflasShieldUses = (userData.iflasShieldUses || 0) + reward.value;
+            break;
+        case 'wildcard':
+            userData.wildcards = (userData.wildcards || 0) + reward.value;
+            break;
+        case 'avatar':
+            const newAvatarId = firebase.database().ref().push().key;
+            if (!userData.avatars) userData.avatars = {};
+            userData.avatars[newAvatarId] = { id: newAvatarId, name: reward.avatarName, imageUrl: reward.avatarImageUrl };
+            break;
+        case 'card_pack':
+        case 'card_pack_normal':
+        case 'card_pack_gumus':
+        case 'card_pack_altin':
+        case 'card_pack_efsanevi':
+            cardPacksToOpen.push(reward);
+            break;
+        case 'revival_stone':
+            if (!userData.inventory) userData.inventory = {};
+            userData.inventory.revival_stone = (userData.inventory.revival_stone || 0) + reward.value;
+            break;
+        case 'health_potion':
+        case 'damage_potion':
+        case 'defense_potion':
+        case 'crit_potion':
+        case 'crit_damage_potion':
+        case 'dodge_potion':
+        case 'pierce_potion':
+            const statKeyMap = { 
+                'health_potion': 'hp', 'damage_potion': 'damage', 'defense_potion': 'defense', 
+                'crit_potion': 'critChance', 'crit_damage_potion': 'critDamage', 
+                'dodge_potion': 'dodgeChance', 'pierce_potion': 'pierceChance' 
+            };
+            const statKey = statKeyMap[reward.type];
+            if (statKey) {
+                if (!userData.globalPotionBuffs) userData.globalPotionBuffs = {};
+                userData.globalPotionBuffs[statKey] = (userData.globalPotionBuffs[statKey] || 0) + reward.value;
+            }
+            break;
+    }
+    
+    return { cardPacksToOpen };
 }
       
 function handleDailyRewardTypeChange() {
@@ -10752,15 +10787,22 @@ function listenForLobbyChanges() {
 
         startSoloGameBtn.disabled = false;
 
+        // --- DEĞİŞİKLİK 1: KAZANAN EKRANININ KAYBOLMASINI ENGELLEYEN KONTROL ---
         if (!lobbyData || !lobbyData.state) {
+            // Eğer oyun bitti ekranı zaten görünür durumdaysa, arayüzü sıfırlama.
+            // Bu, 5 saniyelik temizlik sürecinin ekranı kapatmasını engeller.
+            const isGameOverVisible = !lobbyGameOverScreen.classList.contains('hidden');
+            if (isGameOverVisible) {
+                return; // Ekranı açık bırak ve fonksiyondan çık
+            }
+            
+            // Eğer oyun bitti ekranı görünür değilse, normal sıfırlama işlemini yap.
             lobbyGameSettings = {};
             hasShownLobbyNotification = false; 
             closeLobbyNotificationModal(); 
             lobbyStatusContainer.classList.add('hidden');
-            lobbyGameOverScreen.classList.add('hidden');
             startScreen.style.display = 'flex';
             
-            // Oyun bitince veya iptal olunca arayüzdeki zamanlayıcıları temizle
             if (clickCatchItemInterval) {
                 clearInterval(clickCatchItemInterval);
                 clickCatchItemInterval = null;
@@ -10776,10 +10818,10 @@ function listenForLobbyChanges() {
             document.getElementById('displayTarget').classList.add('hidden');
             return;
         }
+        // --- DEĞİŞİKLİK 1 SONU ---
 
         lobbyGameSettings = lobbyData;
         lobbyStatusContainer.classList.remove('hidden');
-        lobbyGameOverScreen.classList.add('hidden');
 
         const useTickets = lobbyData.entryTickets > 0;
         const entryRequirement = useTickets ? `${lobbyData.entryTickets} Bilet` : `${lobbyData.entryFee} Puan`;
@@ -10795,9 +10837,16 @@ function listenForLobbyChanges() {
         if (hasPlayers) {
             const sortedPlayers = Object.entries(players).sort(([, a], [, b]) => b.score - a.score);
             playerListEl.innerHTML = `Katılımcılar: <br>`;
+            
+            // --- DEĞİŞİKLİK 2: KULLANICI ADLARI TIKLANABİLİR YAPILDI ---
             sortedPlayers.forEach(([username, playerData]) => {
-                playerListEl.innerHTML += `<b>${username}:</b> ${playerData.score} / ${lobbyData.target}<br>`;
+                playerListEl.innerHTML += `
+                    <b class="text-white cursor-pointer hover:underline" onclick="openPublicUserDetailModal('${username}')">${username}</b>: 
+                    ${playerData.score} / ${lobbyData.target}<br>
+                `;
             });
+            // --- DEĞİŞİKLİK 2 SONU ---
+
         } else {
             playerListEl.textContent = `Henüz katılan yok.`;
         }
@@ -10848,18 +10897,13 @@ function listenForLobbyChanges() {
                 showSection('clickCatch');
             }
             
-            // ================== PERFORMANS DÜZELTMESİ BURADA ==================
-            // Bu blok artık sadece lobiye katılan oyuncularda çalışacak.
             if (isCurrentUserInLobby) {
                 if (!clickCatchItemInterval) {
                    showGameCountdown(() => {
-                       // Hedef oluşturma döngüsü sadece katılımcı için başlar.
                        clickCatchItemInterval = setInterval(() => createCatchItem('lobby'), lobbyData.itemInterval);
                    });
                 }
             }
-            // =================================================================
-
         } else if (lobbyData.state === 'finished') {
             lobbyStatusContainer.classList.add('hidden');
             lobbyGameOverScreen.classList.remove('hidden');
@@ -11152,45 +11196,97 @@ async function triggerLobbyGameStart() {
   }
 
   async function handleLobbyItemClick(event) {
+    // Bu fonksiyonun en başında, oyunun hala aktif olup olmadığını global değişkenden kontrol et
     if (lobbyGameSettings.state !== 'active') return;
     
-    // Düzeltilen kısım: Tıklanan element ne olursa olsun, en yakın ebeveyn catch-item'ı bulur
     const item = event.target.closest('.catch-item');
-    if (!item) return; // Eğer doğru element bulunamazsa işlemi durdur
+    if (!item) return;
 
     const itemType = item.dataset.type;
-
     const lobbyPlayerRef = db.ref(`clickCatchLobby/players/${currentUser}`);
     
-    const playerSnap = await lobbyPlayerRef.once('value');
-    const playerData = playerSnap.val();
-    if (!playerData) return;
+    // Oyuncunun mevcut skorunu al ve güncelle
+    const { snapshot } = await lobbyPlayerRef.child('score').transaction(currentScore => {
+        if (currentScore === null) return 0; // Eğer oyuncu yeni katıldıysa skoru 0'dan başlar
+        if (itemType === 'bomb') {
+            return Math.max(0, currentScore - 1);
+        }
+        return currentScore + 1;
+    });
 
-    let newScore = playerData.score;
+    const newScore = snapshot.val();
 
-    if (itemType === 'bomb') {
-        newScore = Math.max(0, newScore - 1); // Skoru 1 azalt, ama 0'ın altına düşmesin
-        showFloatingText('-1', event.clientX, event.clientY);
-    } else {
-        newScore++;
-        showFloatingText('+1', event.clientX, event.clientY);
-    }
-
-    await lobbyPlayerRef.update({ score: newScore });
-
+    // Arayüzdeki skoru anında güncelle
     document.getElementById('clickCatchTarget').textContent = `${newScore} / ${lobbyGameSettings.target}`;
 
-    if(newScore >= lobbyGameSettings.target) {
-        db.ref('clickCatchLobby/state').once('value').then(snap => {
-            if (snap.val() === 'active') {
-                setWinner(currentUser);
-            }
-        });
+    // Kazananı belirleme mantığı
+    if (itemType !== 'bomb' && newScore >= lobbyGameSettings.target) {
+        // setWinner fonksiyonunu çağırarak kazananı belirle
+        setWinner(currentUser);
     }
 
+    // Tıklanan öğeyi kaldır
     item.remove();
 }
 
+      async function setWinner(winnerUsername) {
+    const lobbyRef = db.ref('clickCatchLobby');
+    
+    // İki oyuncunun aynı anda kazanmasını engellemek için "transaction" kullanıyoruz.
+    const { committed, snapshot } = await lobbyRef.transaction(currentLobbyData => {
+        // Eğer lobi verisi yoksa veya oyun "aktif" durumda değilse (yani zaten biri kazanmışsa), işlemi iptal et.
+        if (!currentLobbyData || currentLobbyData.state !== 'active') {
+            return; // Değişiklik yapmadan çık
+        }
+        
+        // Oyun durumunu 'finished' olarak değiştir, kazananı ve bitiş zamanını kaydet.
+        currentLobbyData.state = 'finished';
+        currentLobbyData.winner = winnerUsername;
+        currentLobbyData.endTimestamp = firebase.database.ServerValue.TIMESTAMP;
+        
+        return currentLobbyData;
+    });
+
+    // Eğer bu işlem başarıyla tamamlandıysa (yani kazanan ilk defa bu client tarafından belirlendiyse)
+    if (committed) {
+        const finalLobbyData = snapshot.val();
+        
+        // Son kazanan paneli için oyunun özetini kaydet
+        await db.ref('clickCatchLobbyLastGameSummary').set({
+            winner: finalLobbyData.winner,
+            prize: finalLobbyData.prize,
+            target: finalLobbyData.target,
+            players: finalLobbyData.players,
+            startTimestamp: finalLobbyData.startTimestamp,
+            endTimestamp: finalLobbyData.endTimestamp
+        });
+        
+        // Kazananın ödülünü ver
+        const winnerRef = db.ref(`users/${winnerUsername}`);
+        await winnerRef.transaction(userData => {
+            if (userData) {
+                const prize = finalLobbyData.prize || 0;
+                userData.balance = (userData.balance || 0) + prize;
+                userData.kariyerPuani = (userData.kariyerPuani || 0) + prize;
+            }
+            return userData;
+        });
+        
+        // "Son Eylemler" paneline kazanma olayını kaydet
+        const finalUserSnap = await winnerRef.once('value');
+        const finalUserData = finalUserSnap.val();
+        logActivity('clickCatchLobby', winnerUsername, { 
+            prize: finalLobbyData.prize, 
+            newBalance: finalUserData.balance 
+        });
+
+        // 5 saniye sonra lobi verisini tamamen temizle ki yeni lobi kurulabilsin.
+        setTimeout(() => {
+            lobbyRef.remove();
+        }, 5000);
+    }
+}
+      
 // **** YENİ EKLENECEK FONKSİYONLAR BAŞLANGICI ****
 
 /**
@@ -12893,17 +12989,21 @@ async function renderMonsterBattleUI() {
     document.getElementById('monsterHealthText').textContent = `${formatNumber(monster.currentHP)} / ${formatNumber(monster.maxHP)} Can`;
 
     const leaderboardEl = document.getElementById('monsterLeaderboard');
-    // *** HATA DÜZELTMESİ BURADA: Sıralama çizilmeden önce liste temizleniyor ***
-    leaderboardEl.innerHTML = '';
+    leaderboardEl.innerHTML = ''; 
     const sortedLeaderboard = Object.entries(leaderboard).sort((a, b) => b[1].totalDamage - a[1].totalDamage);
 
     if (sortedLeaderboard.length === 0) {
         leaderboardEl.innerHTML = '<p class="text-center text-gray-500">Henüz kimse canavara saldırmadı.</p>';
     } else {
-        for (const [username, data] of sortedLeaderboard) {
-            const userSnap = await db.ref(`users/${username}`).once('value');
+        const userPromises = sortedLeaderboard.map(([username]) => db.ref(`users/${username}`).once('value'));
+        const userSnapshots = await Promise.all(userPromises);
+        
+        let leaderboardHtml = ''; 
+        
+        sortedLeaderboard.forEach(([username, data], index) => {
+            const userSnap = userSnapshots[index];
             const userData = userSnap.val();
-            if (!userData) continue;
+            if (!userData) return;
 
             const avatarUrl = data.lockedAvatarUrl || userData.selectedAvatar?.url || defaultAvatarUrl;
             const sanitizedId = sanitizeFirebaseKey(avatarUrl);
@@ -12913,9 +13013,9 @@ async function renderMonsterBattleUI() {
             const userCurrentHP = data.currentHP < 0 ? 0 : data.currentHP;
             const userHealthPercent = (userCurrentHP / userMaxHP) * 100;
 
-            const itemHtml = `
+            leaderboardHtml += `
                 <div class="leaderboard-item" onclick="openPublicUserDetailModal('${username}')">
-                    <span class="rank">${leaderboardEl.children.length + 1}.</span>
+                    <span class="rank">${index + 1}.</span>
                     <img src="${avatarUrl}" class="avatar" onclick="event.stopPropagation(); openAvatarStatsModal('${username}')">
                     <div class="flex-grow">
                         <p class="font-bold text-white">${username}</p>
@@ -12928,8 +13028,9 @@ async function renderMonsterBattleUI() {
                     <p class="text-yellow-400 font-bold">${formatNumber(data.totalDamage)} Hasar</p>
                 </div>
             `;
-            leaderboardEl.innerHTML += itemHtml;
-        }
+        });
+        
+        leaderboardEl.innerHTML = leaderboardHtml; 
     }
 
     const playerSnap = await db.ref(`users/${currentUser}`).once('value');
@@ -13414,10 +13515,8 @@ function closeWheelLegendModal() {
     const callback = snap => {
         const summaryData = snap.val();
 
-        // EĞER VERİ VARSA VE KAZANAN BELLİ İSE BİLGİLERİ GÖSTER
         if (summaryData && summaryData.winner) {
             
-            // 1. Oyun Süresini Hesapla
             let durationText = '';
             if (summaryData.startTimestamp && summaryData.endTimestamp) {
                 const durationMs = summaryData.endTimestamp - summaryData.startTimestamp;
@@ -13427,7 +13526,6 @@ function closeWheelLegendModal() {
                 durationText = ` (Süre: ${minutes}dk ${remainingSeconds}sn)`;
             }
 
-            // 2. Ana Başlığı Güncelle (Admin için silme butonuyla birlikte)
             let deleteButton = '';
             if (isAdmin) {
                 deleteButton = `
@@ -13436,9 +13534,9 @@ function closeWheelLegendModal() {
                     </button>
                 `;
             }
-            titleEl.innerHTML = `🏆 Son Lobi Galibi: <b class="text-white">${summaryData.winner}</b> (+${summaryData.prize} Puan)${durationText}${deleteButton}`;
+            // --- DEĞİŞİKLİK 1: KAZANANIN ADI TIKLANABİLİR YAPILDI ---
+            titleEl.innerHTML = `🏆 Son Lobi Galibi: <b class="text-white cursor-pointer hover:underline" onclick="openPublicUserDetailModal('${summaryData.winner}')">${summaryData.winner}</b> (+${summaryData.prize} Puan)${durationText}${deleteButton}`;
 
-            // 3. Oyuncu Listesini Oluştur ve Sırala
             const players = summaryData.players || {};
             const sortedPlayers = Object.entries(players).sort(([, a], [, b]) => b.score - a.score);
             
@@ -13448,24 +13546,26 @@ function closeWheelLegendModal() {
                 const rowClass = isWinner ? 'bg-green-800/50 border-green-500' : 'bg-gray-800/50 border-gray-700';
                 const rankIcon = index === 0 ? '🥇' : (index === 1 ? '🥈' : (index === 2 ? '🥉' : `${index + 1}.`));
                 
+                // --- DEĞİŞİKLİK 2: SIRALAMADAKİ TÜM İSİMLER TIKLANABİLİR YAPILDI ---
                 detailsHtml += `
                     <div class="flex justify-between items-center p-2 rounded border ${rowClass}">
-                        <span class="font-bold">${rankIcon} ${username}</span>
+                        <span class="font-bold">
+                            ${rankIcon} 
+                            <span class="cursor-pointer hover:underline" onclick="openPublicUserDetailModal('${username}')">${username}</span>
+                        </span>
                         <span class="text-gray-300">Skor: <b class="text-white">${data.score} / ${summaryData.target}</b></span>
                     </div>
                 `;
             });
             
             detailsListEl.innerHTML = detailsHtml;
-            container.classList.remove('hidden'); // Paneli görünür yap
+            container.classList.remove('hidden');
 
         } else {
-            // SORUNU ÇÖZEN KISIM: EĞER VERİ SİLİNMİŞSE (NULL İSE) PANELİ GİZLE
             container.classList.add('hidden');
         }
     };
     
-    // Listener'ı tekrar tekrar eklememek için kontrol
     if (activeListeners.lobbySummary) {
         activeListeners.lobbySummary.ref.off('value', activeListeners.lobbySummary.callback);
     }
