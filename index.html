@@ -360,6 +360,7 @@
     border: 2px solid white;
     transform: rotate(-15deg);
     animation: pulse-new 1.5s infinite;
+    z-index: 5; /* BU SATIRI EKLE */
 }
 
 @keyframes pulse-new {
@@ -6563,16 +6564,19 @@ function renderActivityFeed(activities) {
                     const balanceUnit = isKP ? 'KP' : 'Puanı';
                     const isPotion = details.itemType && details.itemType.endsWith('_potion');
 
+                    // ★★★ İSTEĞE GÖRE GÜNCELLENEN MESAJ ALANI BAŞLANGICI ★★★
                     if (isPotion) {
                         const isPercent = percentPotions.includes(details.itemType);
-                        let effectText = '';
+                        let bonusText = '';
                         if (isPercent) {
-                            effectText = ` (%${(details.itemEffectValue || 0).toFixed(1)})`;
+                            bonusText = `%${(details.itemEffectValue || 0).toFixed(1)}`;
                         } else {
-                            effectText = ` (+${formatNumber(details.itemEffectValue || 0)})`;
+                            bonusText = `+${formatNumber(details.itemEffectValue || 0)}`;
                         }
-                        message = `${userHtml}, mağazadan <b class="text-red-500">-${costText}</b> harcayarak <b class="text-green-400">${details.itemValue} adet ${details.itemName}${effectText}</b> aldı. (Mevcut ${balanceUnit}: ${formatNumber(balance)})`;
-                    } else if (details.itemValue) {
+                        message = `${userHtml}, mağazadan <b class="text-red-500">-${costText}</b> harcayarak kalıcı olarak <b class="text-green-400">${bonusText} ${details.itemName}</b> bonusu kazandı. (Mevcut ${balanceUnit}: ${formatNumber(balance)})`;
+                    } 
+                    // ★★★ GÜNCELLENEN MESAJ ALANI SONU ★★★
+                    else if (details.itemValue) {
                          message = `${userHtml}, mağazadan <b class="text-red-500">-${costText}</b> harcayarak <b class="text-green-400">+${details.itemValue} ${details.itemName}</b> aldı. (Mevcut ${balanceUnit}: ${formatNumber(balance)})`;
                     } else {
                         message = `${userHtml}, mağazadan <b class="text-red-500">-${costText}</b> harcayarak <b class="text-green-400">${details.itemName}</b> aldı. (Mevcut ${balanceUnit}: ${formatNumber(balance)})`;
@@ -6650,13 +6654,12 @@ function renderActivityFeed(activities) {
                     let displayItemName = details.itemType ? typeToName[details.itemType] : details.itemName;
                     let displayItemAmount = details.itemName ? details.itemName.split(' ')[0] : '+1'; 
                     let valuePrefixNewItem = '+';
-                    if (percentPotions.includes(details.itemType)) { valuePrefixNewItem = '+%'; } 
+                    if (percentPotions.includes(details.itemType)) { valuePrefixNewItem = '%'; } 
                     else if (details.itemType === 'health_regen_potion') { valuePrefixNewItem = '%'; }
                     if (details.itemValue) { displayItemAmount = `${valuePrefixNewItem}${details.itemValue}`; }
                     message = `${userHtml}, <b>${details.boxId}</b> numaralı kutudan <span class="text-cyan-300 font-bold">${displayItemAmount} ${displayItemName}</span> buldu.${newItemMultiplierText}`;
                     break;
                 
-                // --- İSTEĞİN ÜZERİNE GÜNCELLENEN BÖLÜM BAŞLANGICI ---
                 case 'multiplierUpgraded':
                 case 'multiplierUpgradedFromStore':
                     const upgradeSource = details.source || 'Mağazadan';
@@ -6684,7 +6687,6 @@ function renderActivityFeed(activities) {
 
                     message = `${userHtml}, ${conversionSourceText} kazandığı <b>${details.rewardValue || details.foundValue}x</b> çarpanı, <b class="text-cyan-300 font-bold">+${details.boxRights} Kutu Hakkı</b>'na dönüştürüldü.${keptMultiplierText}`;
                     break;
-                // --- GÜNCELLENEN BÖLÜM SONU ---
                 
                 case 'multiplierStackedFromStore':
                      message = `${userHtml}, mağazadan aldığı çarpan ile mevcut <b>${details.multiplierValue}x</b> çarpanının kullanım hakkını <b class="text-teal-300 font-bold">+${details.usesAdded}</b> artırarak toplam <b class="text-teal-300 font-bold">${details.newTotalUses}</b> adete çıkardı.`;
@@ -6733,7 +6735,8 @@ function renderActivityFeed(activities) {
                     if (prizeType === 'pas') { message = `${userHtml}, çarkı çevirdi ve <span class="text-gray-400 font-bold">Pas</span> geçti.`; } 
                     else {
                         const isPercentSpin = percentPotions.includes(prizeType);
-                        const valuePrefixSpin = isPercentSpin ? `+%` : `+`;
+                        // ★★★ İSTEĞE GÖRE GÜNCELLENEN MESAJ ALANI ★★★
+                        const valuePrefixSpin = isPercentSpin ? `%` : `+`;
                         if (prizeType === 'points') { prizeText = `+${prizeValue} Puan`; } 
                         else if (prizeType === 'tempMultiplier') { prizeText = `${prizeValue}X Çarpan`; } 
                         else { prizeText = `${valuePrefixSpin}${prizeValue} ${typeToName[prizeType] || prizeType}`; }
@@ -6753,7 +6756,8 @@ function renderActivityFeed(activities) {
                         message = `${userHtml}, günlük ödül olarak ${rewardText} kazandı.`;
                     } else {
                         const isPercentDaily = percentPotions.includes(rewardType);
-                        const valuePrefixDaily = isPercentDaily ? `+%` : `+`;
+                        // ★★★ İSTEĞE GÖRE GÜNCELLENEN MESAJ ALANI ★★★
+                        const valuePrefixDaily = isPercentDaily ? `%` : `+`;
                         if (rewardType === 'tempMultiplier') { 
                             rewardText = `${rewardValue}x Çarpan (${details.rewardUses} kullanım)`;
                         } else { 
@@ -6787,7 +6791,7 @@ function renderActivityFeed(activities) {
     });
 }
 
-      // ESKİ DOSYADAKİ (index (2).html) DOĞRU ÇALIŞAN FONKSİYON
+      // MEVCUT formatRewardText FONKSİYONUNU SİLİP BUNU YAPIŞTIR
 function formatRewardText(type, value, uses = 0) {
     const name = typeToName[type] || type;
     
@@ -6795,9 +6799,10 @@ function formatRewardText(type, value, uses = 0) {
         return `1 Adet %${value} ${name}`;
     }
 
+    // ★★★ İSTEĞE GÖRE GÜNCELLENEN MESAJ ALANI ★★★
     const percentPotions = ['defense_potion', 'crit_potion', 'crit_damage_potion', 'dodge_potion', 'pierce_potion'];
     if (percentPotions.includes(type)) {
-        const prefix = '+%';
+        const prefix = '%'; // '+' işareti kaldırıldı
         const formattedValue = parseFloat(value).toFixed(1);
         return `${prefix}${formattedValue} ${name}`;
     }
@@ -12626,16 +12631,17 @@ async function buyItem(itemId) {
             updates[`inventory/health_regen_potion/${item.value}`] = currentPotions + 1;
             await userRef.update(updates);
             
-            // ★★★ DEĞİŞİKLİK BURADA BAŞLIYOR ★★★
             logActivity('buyItem', currentUser, {
-                itemName: item.name, // Sadece 'Can Yenileme İksiri'
+                itemName: item.name,
                 itemCost: currentCost,
                 itemType: item.type,
-                itemValue: 1, // Adet
-                itemEffectValue: item.value, // Yüzde değeri
+                itemValue: 1,
+                itemEffectValue: item.value,
                 newBalance: newBalance
             });
-            // ★★★ DEĞİŞİKLİK BURADA BİTİYOR ★★★
+            
+            // ★★★ İSTEĞE GÖRE GÜNCELLENEN BAŞARI MESAJI ★★★
+            displayMessage(`Başarılı! '${item.name}' envanterine eklendi.`);
 
         } else {
             const capCheck = checkPotionCap(user, item.type, item.value);
@@ -12656,7 +12662,7 @@ async function buyItem(itemId) {
                 return;
             }
             const isPercentPotion = ['defense_potion', 'crit_potion', 'crit_damage_potion', 'dodge_potion', 'pierce_potion'].includes(item.type);
-            const valuePrefix = isPercentPotion ? '+%' : '+';
+            const valuePrefix = isPercentPotion ? '%' : '+';
             let confirmationMessage = `'${item.name}' iksirini <b class="text-yellow-400">${currentCost} Puana</b> satın alarak bu bonusa <b class="text-green-400">${valuePrefix}${valueToAdd.toFixed(1)}</b> ekleyeceksiniz.`;
             if (capCheck.isCapped) {
                 confirmationMessage += `<br><br><b class="text-yellow-400">UYARI:</b> Bu alım ile bu bonus türünde maksimum limite ulaşacaksınız.`;
@@ -12684,16 +12690,18 @@ async function buyItem(itemId) {
             };
             await userRef.update(updates);
             
-            // ★★★ DEĞİŞİKLİK BURADA BAŞLIYOR ★★★
             logActivity('buyItem', currentUser, {
-                itemName: item.name, // Sadece 'Hasar İksiri'
+                itemName: item.name,
                 itemCost: currentCost,
                 itemType: item.type,
-                itemValue: 1, // Adet
-                itemEffectValue: valueToAdd, // Etki değeri (+50 gibi)
+                itemValue: 1,
+                itemEffectValue: valueToAdd,
                 newBalance: newBalance
             });
-            // ★★★ DEĞİŞİKLİK BURADA BİTİYOR ★★★
+
+            // ★★★ İSTEĞE GÖRE GÜNCELLENEN BAŞARI MESAJI ★★★
+            const displayPrefix = isPercentPotion ? '%' : '+';
+            displayMessage(`Başarılı! Kalıcı olarak ${displayPrefix}${valueToAdd.toFixed(1)} ${item.name} bonusu eklendi.`);
         }
         await itemRef.transaction(currentItem => {
             if (currentItem) {
@@ -12701,7 +12709,7 @@ async function buyItem(itemId) {
                 currentItem.purchaseCount = (currentItem.purchaseCount || 0) + 1;
             } return currentItem;
         });
-        displayMessage(`Başarılı! '${item.name}' satın alındı.`);
+        
         if (currentActiveSection === 'monsterBattle') { renderMonsterBattleUI(); }
         return;
     }
@@ -16773,6 +16781,7 @@ async function claimLoginStreakReward(day) {
                         case 'crit_damage_potion':
                         case 'dodge_potion':
                         case 'pierce_potion':
+                        case 'health_regen_potion': // Can yenileme de eklendi
                             const statKeyMap = { 
                                 'health_potion': 'hp', 'damage_potion': 'damage', 'defense_potion': 'defense', 
                                 'crit_potion': 'critChance', 'crit_damage_potion': 'critDamage', 
@@ -16796,15 +16805,22 @@ async function claimLoginStreakReward(day) {
         });
 
         if (committed) {
+            // ★★★ İSTEĞE GÖRE GÜNCELLENEN MESAJ ALANI BAŞLANGICI ★★★
             const rewardNames = dayData.rewards.map(r => {
+                const percentPotions = ['defense_potion', 'crit_potion', 'crit_damage_potion', 'dodge_potion', 'pierce_potion', 'health_regen_potion'];
+                
                 if (r.type === 'avatar') {
                     return `'${r.avatarName}' Avatarı`;
                 } else if (r.type === 'tempMultiplier') {
                     return `+${r.uses} Kullanım Hakkı ${r.value}x Çarpan`;
                 } else {
-                    return `+${r.value} ${typeToName[r.type] || 'Ödül'}`;
+                    const isPercent = percentPotions.includes(r.type);
+                    const prefix = isPercent ? '%' : '+';
+                    const valueDisplay = isPercent ? r.value.toFixed(1) : r.value;
+                    return `${prefix}${valueDisplay} ${typeToName[r.type] || 'Ödül'}`;
                 }
             }).join(', ');
+            // ★★★ GÜNCELLENEN MESAJ ALANI SONU ★★★
 
             displayMessage(`Tebrikler! ${day}. gün ödüllerin (${rewardNames}) envanterine eklendi!`);
             
@@ -16813,8 +16829,6 @@ async function claimLoginStreakReward(day) {
                 packageName: dayData.name || `${day}. Gün Paketi`
             });
             
-            // ★★★ HATA BURADAYDI ★★★
-            // 'dayData' yerine doğru değişken olan 'dayData' kullanılıyor.
             const hasPotion = dayData.rewards.some(r => r.type.includes('_potion'));
             if (hasPotion && currentActiveSection === 'monsterBattle') { renderMonsterBattleUI(); }
 
@@ -17358,7 +17372,7 @@ function addRewardToTier(element, rewardData = {}) {
     rewardsListContainer.appendChild(rewardRow);
 }
 
-// MEVCUT attackMonster FONKSİYONUNU SİL VE BUNUNLA DEĞİŞTİR
+// MEVCUT attackMonster FONKSİYONUNU SİLİP BUNU YAPIŞTIR
 async function attackMonster() {
     if (isAdmin) {
         displayMessage("Adminler saldıramaz.");
@@ -17422,7 +17436,6 @@ async function attackMonster() {
         const monsterDefenseReduction = Math.min((monsterStats.defense || 0) / 100, 0.8);
         const playerDefenseReduction = Math.min((playerStats.defense || 0) / 100, 0.8);
 
-        // --- Oyuncunun Saldırı Hesaplaması (GÜNCELLENDİ) ---
         let finalDamageToMonster = 0;
         let playerAttackType = 'normal';
         const playerPierced = (Math.random() * 100) < playerStats.pierceChance;
@@ -17435,18 +17448,14 @@ async function attackMonster() {
             const playerCritted = (Math.random() * 100) < playerStats.critChance;
             let totalDamage;
 
-            // ★★★ İSTEĞİNE GÖRE DEĞİŞEN KRİTİK VURUŞ HESAPLAMASI BAŞLANGICI ★★★
             if (playerCritted) {
-                // Kritik vuruş, MAKSİMUM hasarın üzerine kritik hasar bonusunu ekler.
                 totalDamage = playerStats.maxDamage + Math.floor(playerStats.maxDamage * (playerStats.critDamage / 100));
             } else {
-                // Normal vuruş, minimum ve maksimum hasar arasında rastgele bir değer alır.
                 totalDamage = Math.floor(Math.random() * (playerStats.maxDamage - playerStats.minDamage + 1)) + playerStats.minDamage;
             }
-            // ★★★ KRİTİK VURUŞ HESAPLAMASI SONU ★★★
             
             if (playerPierced) {
-                finalDamageToMonster = playerStats.maxDamage; // Delici vuruş her zaman maksimum hasar verir.
+                finalDamageToMonster = playerStats.maxDamage;
                 playerAttackType = 'pierce';
                 playerAttackDetails = `📌 <b class="text-purple-400">Delici Vuruş</b> ile canavara <b class="text-white">${finalDamageToMonster} hasar</b> verdin.`;
             } else {
@@ -17460,7 +17469,6 @@ async function attackMonster() {
             }
         }
 
-        // --- Canavarın Saldırı Hesaplaması (GÜNCELLENDİ) ---
         let finalDamageToPlayer = 0;
         let monsterAttackType = 'normal';
         const monsterPierced = (Math.random() * 100) < (monsterStats.pierceChance || 5);
@@ -17473,18 +17481,14 @@ async function attackMonster() {
             const monsterCritted = (Math.random() * 100) < (monsterStats.critChance || 5);
             let totalDamage;
 
-            // ★★★ CANAVAR İÇİN DEĞİŞEN KRİTİK VURUŞ HESAPLAMASI BAŞLANGICI ★★★
             if (monsterCritted) {
-                // Kritik vuruş, MAKSİMUM hasarın üzerine kritik hasar bonusunu ekler.
                 totalDamage = monsterStats.maxDamage + Math.floor(monsterStats.maxDamage * ((monsterStats.critDamage || 10) / 100));
             } else {
-                // Normal vuruş, minimum ve maksimum hasar arasında rastgele bir değer alır.
                 totalDamage = Math.floor(Math.random() * (monsterStats.maxDamage - monsterStats.minDamage + 1)) + monsterStats.minDamage;
             }
-            // ★★★ KRİTİK VURUŞ HESAPLAMASI SONU ★★★
 
             if (monsterPierced) {
-                finalDamageToPlayer = monsterStats.maxDamage; // Delici vuruş her zaman maksimum hasar verir.
+                finalDamageToPlayer = monsterStats.maxDamage;
                 monsterAttackType = 'pierce';
                 monsterAttackDetails = `📌 Canavar <b class="text-purple-400">delici vuruşla</b> sana <b class="text-red-400">${finalDamageToPlayer} hasar</b> verdi.`;
             } else {
@@ -17545,8 +17549,9 @@ async function attackMonster() {
         if (randomReward) {
             const { type, value } = randomReward;
             const prizeName = typeToName[type] || 'Ödül';
-            const isPercent = ['defense_potion', 'crit_potion', 'crit_damage_potion', 'dodge_potion', 'pierce_potion'].includes(type);
-            const valuePrefix = isPercent ? `+%` : `+`;
+            const isPercent = ['defense_potion', 'crit_potion', 'crit_damage_potion', 'dodge_potion', 'pierce_potion', 'health_regen_potion'].includes(type);
+            // ★★★ İSTEĞE GÖRE GÜNCELLENEN MESAJ ALANI ★★★
+            const valuePrefix = isPercent ? `%` : `+`;
             
             rewardMessage = `<hr class="border-gray-600 my-2">🎉 <b>Ödül:</b> <b class="text-green-400">${valuePrefix}${value} ${prizeName}</b> kazandın!`;
             rewardLogText = `${valuePrefix}${value} ${prizeName}`;
