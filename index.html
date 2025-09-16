@@ -11,6 +11,223 @@
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
 
 <style>
+/* --- YENİ EKLENECEK KOD: SOHBET SİSTEMİ STİLLERİ --- */
+
+/* Sohbeti Aç/Kapat Butonu */
+#chatToggleBtn {
+    position: fixed;
+    bottom: 1.5rem; /* 24px */
+    right: 1.5rem;  /* 24px */
+    z-index: 9998; /* Diğer her şeyin üstünde ama modalların altında */
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: linear-gradient(145deg, #b91c1c, #7f1d1d); /* Koyu kırmızı */
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 2px solid #fecaca; /* Açık kırmızı kenarlık */
+    box-shadow: 0 10px 20px rgba(0,0,0,0.3);
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+#chatToggleBtn:hover {
+    transform: scale(1.1) rotate(15deg);
+    box-shadow: 0 15px 30px rgba(0,0,0,0.4);
+}
+/* Yeni mesaj geldiğinde butona eklenecek animasyon */
+#chatToggleBtn .notification-dot {
+    position: absolute;
+    top: -2px;
+    right: -2px;
+    width: 16px;
+    height: 16px;
+    background-color: #fde047; /* yellow-400 */
+    border-radius: 50%;
+    border: 2px solid #111827; /* bg-gray-900 */
+    animation: pulse-dot 1.5s infinite;
+}
+@keyframes pulse-dot {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.3); opacity: 0.7; }
+}
+
+/* Sohbet Paneli */
+#chatPanel {
+    position: fixed;
+    bottom: 6rem;   /* 96px - Butonun üstünde */
+    right: 1.5rem;  /* 24px */
+    width: 90%;
+    max-width: 400px;
+    height: 500px;
+    z-index: 9997;
+    background-color: rgba(17, 24, 39, 0.95); /* bg-gray-900/95 */
+    backdrop-filter: blur(8px);
+    border-radius: 1rem; /* rounded-2xl */
+    border: 1px solid #4b5563; /* border-gray-600 */
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+    display: flex;
+    flex-direction: column;
+    /* Başlangıçta gizli ve küçük */
+    transform: translateY(20px) scale(0.95);
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+/* Sohbet paneli açıldığında */
+#chatPanel.open {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+    visibility: visible;
+}
+
+/* Sohbet Paneli Başlığı */
+#chatPanel .chat-header {
+    padding: 1rem;
+    border-bottom: 1px solid #4b5563;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-shrink: 0;
+}
+
+/* Mesajların olduğu alan */
+#chatMessages {
+    flex-grow: 1;
+    overflow-y: auto;
+    padding: 1rem;
+    display: flex;
+    flex-direction: column-reverse; /* Yeni mesajlar altta görünür */
+}
+
+/* Tek bir mesaj balonu */
+.chat-message {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem; /* 12px */
+    margin-bottom: 1rem;
+    max-width: 90%;
+}
+.chat-message .avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    border: 2px solid #6b7280; /* border-gray-500 */
+    object-fit: cover;
+}
+.chat-message .message-content {
+    display: flex;
+    flex-direction: column;
+}
+.chat-message .message-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem; /* 8px */
+    margin-bottom: 0.25rem; /* 4px */
+}
+.chat-message .message-header .username {
+    font-weight: 700; /* bold */
+    color: #fde047; /* text-yellow-300 */
+    font-size: 0.875rem; /* text-sm */
+}
+.chat-message .message-header .timestamp {
+    font-size: 0.75rem; /* text-xs */
+    color: #6b7280; /* text-gray-500 */
+}
+.chat-message .message-body {
+    background-color: #374151; /* bg-gray-700 */
+    padding: 0.5rem 0.75rem;
+    border-radius: 0.75rem; /* rounded-xl */
+    color: #f3f4f6; /* text-gray-100 */
+    word-break: break-word;
+}
+
+/* Mevcut kullanıcının mesajı */
+.chat-message.current-user {
+    align-self: flex-end;
+    flex-direction: row-reverse; /* Avatar sağda */
+}
+.chat-message.current-user .message-header {
+    flex-direction: row-reverse;
+}
+.chat-message.current-user .message-body {
+    background-color: #7f1d1d; /* bg-red-800 */
+}
+
+/* Mesaj Yazma Alanı */
+#chatInputContainer {
+    padding: 1rem;
+    border-top: 1px solid #4b5563; /* border-gray-600 */
+    display: flex;
+    gap: 0.75rem; /* 12px */
+    flex-shrink: 0;
+}
+#chatInput {
+    flex-grow: 1;
+    background-color: #1f2937; /* bg-gray-800 */
+    border: 1px solid #4b5563;
+    border-radius: 9999px; /* rounded-full */
+    padding: 0.5rem 1rem;
+    color: white;
+    outline: none;
+}
+#chatInput:focus {
+    border-color: #ef4444; /* focus:border-red-500 */
+    box-shadow: 0 0 0 2px #ef444460;
+}
+#chatSendBtn {
+    background-color: #b91c1c; /* bg-red-700 */
+    border: none;
+    border-radius: 50%;
+    width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+#chatSendBtn:hover {
+    background-color: #991b1b; /* hover:bg-red-800 */
+}
+#chatSendBtn:disabled {
+    background-color: #4b5563; /* bg-gray-600 */
+    cursor: not-allowed;
+}
+
+/* Admin Mesaj Silme Butonu */
+.delete-msg-btn {
+    background: none;
+    border: none;
+    color: #9ca3af; /* text-gray-400 */
+    cursor: pointer;
+    margin-left: 0.5rem;
+    visibility: hidden; /* Normalde gizli */
+}
+.chat-message:hover .delete-msg-btn {
+    visibility: visible; /* Hover'da görünür */
+}
+.delete-msg-btn:hover {
+    color: #ef4444; /* text-red-500 */
+}
+
+/* Mobil için panelin konumunu ayarla */
+@media (max-width: 640px) {
+    #chatPanel {
+        bottom: 5.5rem;
+        right: 0.5rem;
+        left: 0.5rem;
+        width: auto;
+        height: 60vh;
+    }
+    #chatToggleBtn {
+        bottom: 1rem;
+        right: 1rem;
+    }
+}
+/* --- SOHBET STİLLERİ SONU --- */
     @keyframes glowing-item {
   0% { box-shadow: 0 0 5px #fde047; }
   50% { box-shadow: 0 0 20px #facc15, 0 0 30px #fde047; }
@@ -3550,6 +3767,33 @@ body.modal-open .modal-content {
     <p class="text-lg">Oyunun özelliklerini kullanabilmek için internet bağlantısı gereklidir.</p>
     <p class="mt-4 text-yellow-400 animate-pulse">Bağlantı kontrol ediliyor, lütfen bekleyin...</p>
 </div>
+<button id="chatToggleBtn" onclick="toggleChat()" class="hidden" title="Sohbeti Aç/Kapat">
+    <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" viewBox="0 0 20 20" fill="currentColor">
+        <path fill-rule="evenodd" d="M18 5v8a2 2 0 01-2 2h-5l-5 4v-4H4a2 2 0 01-2-2V5a2 2 0 012-2h12a2 2 0 012 2zM7 8H5v2h2V8zm2 0h2v2H9V8zm6 0h-2v2h2V8z" clip-rule="evenodd" />
+    </svg>
+    <span id="chatNotificationDot" class="notification-dot hidden"></span>
+</button>
+
+<div id="chatPanel">
+    <div class="chat-header">
+        <h3 class="text-xl font-bold text-yellow-400">Genel Sohbet</h3>
+        <button onclick="toggleChat()" class="p-2 rounded-full hover:bg-gray-700 transition-colors">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+            </svg>
+        </button>
+    </div>
+    <div id="chatMessages" class="scrollable-list">
+        </div>
+    <div id="chatInputContainer">
+        <input type="text" id="chatInput" placeholder="Mesajını yaz..." maxlength="150">
+        <button id="chatSendBtn" onclick="sendMessage()">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" viewBox="0 0 20 20" fill="currentColor">
+                <path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z" />
+            </svg>
+        </button>
+    </div>
+</div>
   <script>
       
       // YENİ EKLENECEK GİZLİ ADMİN GİRİŞİ KODU
@@ -3668,6 +3912,8 @@ function getSyncedTime() {
   let latestAnnouncementTimestamp = 0;
   let latestStoreItemTimestamp = 0;
   let newlyAcquiredCards = new Set();
+  let chatCooldown = false;
+  let lastMessageTime = 0;
   let ticketsUsedThisRound = 1;
 
   const defaultAvatarUrl = 'https://i.hizliresim.com/n01dnz4.png?_gl=1*11uaptm*_ga*NTE1MDc3ODEyLjE3Mzg5Mjg1MDk.*_ga_M9ZRXYS2YN*czE3NTQ2OTEwMTgkbzkkZzEkdDE3NTQ2OTEwMjYkajUyJGwwJGgw'; // Varsayılan profil resmi
@@ -4516,6 +4762,8 @@ async function executeWeeklyReset() {
 
     // İnternet kopması gibi durumlarda kalan ödülleri kontrol et
     processPendingRewards(); 
+    listenForChatMessages();
+document.getElementById('chatToggleBtn').classList.remove('hidden');
 }
 
   function switchStoreTab(tab) {
@@ -4707,6 +4955,7 @@ async function logout() {
     
     // 2. SONRA tüm geçici verileri ve değişkenleri temizle
     resetGlobalState();
+    document.getElementById('chatToggleBtn').classList.add('hidden');
     
     // 3. Tüm admin kontrollerini gizle
     hideAllAdminControls();
@@ -7813,7 +8062,8 @@ cardDiv.innerHTML = `
     }
 }
 
-      function goToStoreWithFilter(itemType, specificItemId = null) {
+      // Mağazayı açarken belirli bir ürüne veya sekmeye yönlendirir
+function goToStoreWithFilter(itemType, specificItemId = null) {
     const monsterStoreItemTypes = [
         'revival_stone', 'health_potion', 'damage_potion', 'defense_potion',
         'crit_potion', 'crit_damage_potion', 'dodge_potion', 'pierce_potion',
@@ -7821,14 +8071,15 @@ cardDiv.innerHTML = `
     ];
 
     let targetTab = 'game';
-    if (monsterStoreItemTypes.includes(itemType)) {
+    // DÜZELTME: Gelen isteğin 'monster_battle' olup olmadığını kontrol et
+    if (monsterStoreItemTypes.includes(itemType) || itemType === 'monster_battle') {
         targetTab = 'monster';
     }
 
-    // 1. Önce mağaza bölümünü göster, bu işlem `loadStoreItems`'ı tetikleyecek
+    // 1. Önce mağaza bölümünü göster
     showSection('store');
 
-    // 2. `loadStoreItems` render işlemini bitirdikten sonra sekmeyi değiştir ve kaydır
+    // 2. Sonra doğru sekmeyi aç
     setTimeout(() => {
         switchStoreTab(targetTab);
 
@@ -7839,10 +8090,10 @@ cardDiv.innerHTML = `
                 itemElement.classList.add('glowing-item-highlight');
                 setTimeout(() => {
                     itemElement.classList.remove('glowing-item-highlight');
-                }, 1500); // 1.5 saniye sonra parlama efektini kaldır
+                }, 1500); 
             }
         }
-    }, 100); // Render işleminin bitmesi için küçük bir gecikme
+    }, 100); 
 }
   
   // DÜZELTİLMİŞ FONKSİYON
@@ -18386,8 +18637,10 @@ let storeFilter = null; // Mağazayı filtrelemek için kullanılacak global de�
 
 // Canavar sayfasından mağazaya yönlendirir ve iksir filtresini aktif eder
 function goToMonsterStore() {
-    storeFilter = 'monster_battle'; // Filtreyi 'canavar savaşı' olarak ayarla
-    showSection('store'); // Mağaza bölümünü göster
+    // Filtreyi 'canavar savaşı' olarak ayarla
+    storeFilter = { type: 'monster_battle' };
+    // Mağaza bölümünü göster
+    showSection('store');
 }
 
 // MEVCUT listenForPersistentNotifications FONKSİYONUNU SİLİP BUNU YAPIŞTIR
@@ -18468,6 +18721,127 @@ document.addEventListener('DOMContentLoaded', () => {
         handleOffline();
     }
 });
+
+// --- YENİ EKLENECEK KOD: SOHBET SİSTEMİ FONKSİYONLARI ---
+
+/**
+ * Sohbet panelinin görünürlüğünü açar veya kapatır.
+ */
+function toggleChat() {
+    const panel = document.getElementById('chatPanel');
+    const dot = document.getElementById('chatNotificationDot');
+    panel.classList.toggle('open');
+    
+    // Panel açıldığında bildirim noktasını gizle
+    if (panel.classList.contains('open')) {
+        dot.classList.add('hidden');
+    }
+}
+
+/**
+ * Kullanıcının girdiği mesajı Firebase veritabanına gönderir.
+ */
+async function sendMessage() {
+    if (chatCooldown) {
+        displayMessage("Çok hızlı mesaj gönderiyorsun, lütfen bekle.");
+        return;
+    }
+    const input = document.getElementById('chatInput');
+    const text = input.value.trim();
+    if (text === '') return;
+
+    const userSnap = await db.ref('users/' + currentUser).once('value');
+    const userData = userSnap.val();
+    const avatarUrl = userData.selectedAvatar ? userData.selectedAvatar.url : defaultAvatarUrl;
+
+    const messageData = {
+        username: currentUser,
+        text: text,
+        avatarUrl: avatarUrl,
+        timestamp: firebase.database.ServerValue.TIMESTAMP
+    };
+
+    // Mesajı veritabanına ekle
+    db.ref('chat/messages').push(messageData);
+    input.value = ''; // Input'u temizle
+
+    // Cooldown'u başlat
+    chatCooldown = true;
+    setTimeout(() => { chatCooldown = false; }, 3000); // 3 saniye bekleme süresi
+}
+
+/**
+ * Adminin bir sohbet mesajını silmesini sağlar.
+ */
+async function deleteChatMessage(messageId) {
+    if (!isAdmin) return;
+    const confirmed = await customConfirm("Bu sohbet mesajını silmek istediğinize emin misiniz?");
+    if (confirmed) {
+        await db.ref(`chat/messages/${messageId}`).remove();
+    }
+}
+
+
+/**
+ * Veritabanındaki sohbet mesajlarını dinler ve ekrana yazar.
+ */
+function listenForChatMessages() {
+    const messagesContainer = document.getElementById('chatMessages');
+    const chatRef = db.ref('chat/messages').limitToLast(50); // Son 50 mesajı al
+
+    const callback = (snap) => {
+        const messageId = snap.key;
+        const message = snap.val();
+        
+        const messageEl = document.createElement('div');
+        messageEl.className = 'chat-message';
+        if (message.username === currentUser) {
+            messageEl.classList.add('current-user');
+        }
+
+        const adminControls = isAdmin ? `
+            <button class="delete-msg-btn" onclick="deleteChatMessage('${messageId}')" title="Mesajı Sil">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                    <path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1-1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" />
+                </svg>
+            </button>` : '';
+
+        messageEl.innerHTML = `
+            <img src="${message.avatarUrl}" class="avatar">
+            <div class="message-content">
+                <div class="message-header">
+                    <span class="username">${message.username}</span>
+                    <span class="timestamp">${new Date(message.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+                    ${adminControls}
+                </div>
+                <div class="message-body">${message.text.replace(/</g, "&lt;").replace(/>/g, "&gt;")}</div>
+            </div>
+        `;
+
+        messagesContainer.insertBefore(messageEl, messagesContainer.firstChild); // Mesajı en üste ekle (ters sıralama nedeniyle)
+
+        // Sohbet paneli kapalıysa bildirim noktasını göster
+        const panel = document.getElementById('chatPanel');
+        if (!panel.classList.contains('open') && message.username !== currentUser) {
+            document.getElementById('chatNotificationDot').classList.remove('hidden');
+        }
+    };
+    
+    // Dinleyiciyi tekrar tekrar eklememek için kontrol et ve kaydet
+    if(activeListeners.chat) {
+        activeListeners.chat.ref.off('child_added', activeListeners.chat.callback);
+    }
+    activeListeners.chat = { ref: chatRef, event: 'child_added', callback };
+    chatRef.on('child_added', callback);
+
+    // Enter tuşuna basıldığında mesaj göndermeyi sağla
+    document.getElementById('chatInput').addEventListener('keypress', function (e) {
+        if (e.key === 'Enter') {
+            sendMessage();
+        }
+    });
+}
+// --- SOHBET FONKSİYONLARI SONU ---
 // --- KOD SONU ---
 
 
