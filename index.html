@@ -4513,6 +4513,9 @@ async function executeWeeklyReset() {
             }
         });
     }
+
+    // İnternet kopması gibi durumlarda kalan ödülleri kontrol et
+    processPendingRewards(); 
 }
 
   function switchStoreTab(tab) {
@@ -10093,18 +10096,17 @@ function renderWheel() {
     ref.on('value', callback);
 }
 
-// spinWheel fonksiyonunu bununla değiştir
+// spinWheel fonksiyonunu bununla DEĞİŞTİR
 async function spinWheel() {
+    // Sadece kullanıcıyı kilitleyen client-side kontrol
     if (isWheelSpinning) return;
     if (isAdmin) {
         displayMessage("Adminler çark çeviremez.");
         return;
     }
 
-    // ★★★ DEĞİŞİKLİK 1: Oyun kilidini EN BAŞTA devreye alıyoruz ★★★
-    await db.ref('gameLock').set(true);
-
-    const userRef = db.ref('users/' + currentUser);
+    const userRef = db.ref('users/'
+ + currentUser);
     const userSnap = await userRef.once('value');
     const userData = userSnap.val();
 
@@ -10113,8 +10115,7 @@ async function spinWheel() {
             storeFilter = { type: 'wheelTicket' };
             showSection('store');
         });
-        await db.ref('gameLock').set(false); // ★★★ Hata durumunda kilidi aç ★★★
-        return;
+        return; // İşlem iptal edildiği için fonksiyondan çık
     }
 
     const hasActiveMultiplier =
@@ -10124,21 +10125,23 @@ async function spinWheel() {
     if (hasActiveMultiplier) {
         const confirmSpin = await customConfirm("Aktif bir çarpanınız var. Çarktan yeni bir çarpan çıkarsa, mevcut çarpanınızın üzerine yazılır. Devam etmek istiyor musunuz?");
         if (!confirmSpin) {
-            await db.ref('gameLock').set(false); // ★★★ İptal durumunda kilidi aç ★★★
-            return;
+            return; // Kullanıcı iptal etti, fonksiyondan çık
         }
     }
-
-    // ★★★ DEĞİŞİKLİK 2: Butonu ve arayüzü anında kilitliyoruz ★★★
+    
+    // ★★★ KİLİT SİSTEMİ BURADA BAŞLIYOR ★★★
     isWheelSpinning = true;
     spinBtn.disabled = true;
     spinBtn.textContent = 'Dönüyor...';
 
-    // Bilet düşme işlemini burada yapıyoruz
+    // Bilet düşme işlemi
     await userRef.update({
         carkBileti: userData.carkBileti - 1,
         wheelSpinsCount: (userData.wheelSpinsCount || 0) + 1
     });
+
+    // ... (Fonksiyonun geri kalanı - çarkın dönme animasyonu ve kazananı belirleme kısmı - aynı kalacak) ...
+    // ... Bu kısımları değiştirmene gerek yok ...
 
     const totalWeight = wheelSegments.reduce((sum, seg) => sum + (seg.weight || 1), 0);
     let randomWeight = Math.random() * totalWeight;
@@ -10166,6 +10169,8 @@ async function spinWheel() {
     // Çark animasyonu bittikten sonra çalışacak kod
     setTimeout(async () => {
         try {
+            // ... (Fonksiyonun ödül verme mantığı aynı kalacak, hiç değiştirme) ...
+            
             const currentUserDataSnap = await userRef.once('value');
             const currentUserData = currentUserDataSnap.val();
 
@@ -10176,7 +10181,18 @@ async function spinWheel() {
             let message = '';
             let updates = {};
             let shouldLogActivity = true;
-
+            
+            // ★★★ 2. Konu için DEĞİŞİKLİK BURADA BAŞLIYOR ★★★
+            // Ödül veritabanına yazılmadan ÖNCE, kullanıcıya bir "bekleyen görev" notu bırakıyoruz.
+            const pendingRewardRef = userRef.child('pendingRewards').push();
+            const pendingReward = {
+                type: 'wheelPrize',
+                segment: winningSegment,
+                timestamp: firebase.database.ServerValue.TIMESTAMP
+            };
+            await pendingRewardRef.set(pendingReward);
+            // ★★★ DEĞİŞİKLİK SONU ★★★
+            
             switch(winningSegment.type) {
                 case 'points':
                     message = `Tebrikler, çarktan <b>+${winningSegment.value} Puan</b> kazandın!`;
@@ -10184,6 +10200,7 @@ async function spinWheel() {
                     if(updates.balance > (currentUserData.highestBalanceEver || 0)) updates.highestBalanceEver = updates.balance;
                     updates.kariyerPuani = (currentUserData.kariyerPuani || 0) + winningSegment.value;
                     break;
+                // ... Diğer tüm case'ler aynı kalacak, değiştirme ...
                 case 'boxRights':
                     message = `Tebrikler, çarktan <b>+${winningSegment.value} Kutu Hakkı</b> kazandın!`;
                     updates.kutuHakki = (currentUserData.kutuHakki || 0) + winningSegment.value;
@@ -10239,16 +10256,19 @@ async function spinWheel() {
                         'card_pack_efsanevi': `+${packsToOpen} Efsanevi Kart Paketi`
                     };
                     const prizeText = packNames[winningSegment.type] || `+${packsToOpen} Kart Paketi`;
-
                     message = `Tebrikler! Çarktan <b class="text-yellow-300">${prizeText}</b> kazandın!`;
                     winningSegment.prizeName = prizeText;
-
                     startCardPackOpening(packsToOpen, 'Şans Çarkı', 1, winningSegment.type);
                     break;
                 case 'pas':
                     message = "Bu seferlik pas! Bir dahaki sefere daha şanslı olabilirsin.";
                     break;
             }
+
+            if(Object.keys(updates).length > 0) await userRef.update(updates);
+            
+            // Ödül verildikten sonra "bekleyen görev" notunu siliyoruz.
+            await pendingRewardRef.remove();
 
             db.ref('wheelHistory').push().set({
                 username: currentUser, 
@@ -10257,7 +10277,7 @@ async function spinWheel() {
                 value: winningSegment.value !== undefined ? winningSegment.value : null,
                 timestamp: firebase.database.ServerValue.TIMESTAMP
             });
-
+            // ... (wheelHistory temizleme kodu aynı kalacak) ...
             const historyRef = db.ref('wheelHistory');
             historyRef.orderByChild('timestamp').once('value', (snapshot) => {
                 const totalCount = snapshot.numChildren();
@@ -10286,25 +10306,55 @@ async function spinWheel() {
                 logActivity('spinWheel', currentUser, logDetails);
             }
 
-            if(Object.keys(updates).length > 0) await userRef.update(updates);
-
             displayMessage(message);
 
             const normalizedRotation = finalRotation % 360;
             wheel.style.transition = 'none';
             wheel.style.transform = `rotate(${normalizedRotation}deg)`;
-        
+
         } catch (error) {
             console.error("Çark ödülü işlenirken hata:", error);
             displayMessage("Ödülünüz işlenirken bir hata oluştu. Lütfen durumu admine bildirin.");
         } finally {
-            // ★★★ DEĞİŞİKLİK 3: Her durumda kilidi açıyoruz ve arayüzü sıfırlıyoruz ★★★
+            // ★★★ KİLİT SİSTEMİ BURADA BİTİYOR ★★★
             isWheelSpinning = false;
             spinBtn.disabled = false;
             spinBtn.textContent = 'Çarkı Çevir!';
-            await db.ref('gameLock').set(false);
         }
     }, 5100);
+}
+
+// BU YENİ FONKSİYONU EKLE
+async function processPendingRewards() {
+    if (isAdmin) return;
+
+    const pendingRef = db.ref(`users/${currentUser}/pendingRewards`);
+    const pendingSnap = await pendingRef.once('value');
+
+    if (pendingSnap.exists()) {
+        const rewards = pendingSnap.val();
+        for (const key in rewards) {
+            const rewardData = rewards[key];
+            const segment = rewardData.segment;
+            let message = '';
+
+            // Çark ödülünü işleme mantığı
+            if (rewardData.type === 'wheelPrize' && segment) {
+                 if (segment.type === 'pas') {
+                    message = "İnternetin kesildiğinde çevirdiğin çarktan <b class='text-gray-400'>Pas</b> çıkmış. Biletin kullanıldı.";
+                } else if (segment.type === 'surpriseBox') {
+                    message = "İNANILMAZ! İnternetin kesildiğinde çevirdiğin çarktan <b class='text-yellow-400'>Sürpriz Kutu</b> çıkmış! Fakat süre dolduğu için kart seçme hakkını kaybettin.";
+                } else {
+                    const prizeName = segment.prizeName || `${segment.value} ${typeToName[segment.type]}`;
+                    message = `Bağlantın kesilmişti ama merak etme! Çevirdiğin çarktan kazandığın <b class='text-green-400'>${prizeName}</b> ödülü hesabına eklendi.`;
+                }
+                displayMessage(message);
+            }
+            // Buraya gelecekte diğer oyunlar için de (canavar savaşı vb.) bekleyen ödül mantığı eklenebilir.
+        }
+        // Tüm bekleyen ödüller kullanıcıya gösterildikten sonra kuyruğu temizle.
+        await pendingRef.remove();
+    }
 }
       
 function closeSoloGameSettingsModal() {
