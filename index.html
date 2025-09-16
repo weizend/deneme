@@ -3848,13 +3848,20 @@ body.modal-open .modal-content {
 
 <div id="chatPanel">
     <div class="chat-header">
-        <h3 class="text-xl font-bold text-yellow-400">Genel Sohbet</h3>
+    <h3 class="text-xl font-bold text-yellow-400">Genel Sohbet</h3>
+    <div class="flex items-center gap-2">
+        <button id="clearChatBtn" onclick="clearChatHistory()" class="hidden p-2 rounded-full hover:bg-gray-700 transition-colors" title="Sohbet Geçmişini Temizle">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+            </svg>
+        </button>
         <button onclick="toggleChat()" class="p-2 rounded-full hover:bg-gray-700 transition-colors">
             <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
             </svg>
         </button>
     </div>
+</div>
     <div id="chatMessages" class="scrollable-list">
         </div>
     <div id="chatInputContainer" class="relative">
@@ -4783,13 +4790,10 @@ async function executeWeeklyReset() {
     console.log("Haftalık sıfırlama başarıyla tamamlandı.");
 }
       
-  // MEVCUT afterLogin FONKSİYONUNU SİL VE BUNUNLA DEĞİŞTİR
-async function afterLogin() {
+  async function afterLogin() {
     document.getElementById("loginContainer").style.display = "none";
     document.getElementById("gameDiv").style.display = "block";
     
-    // --- GÜNCELLEME BURADA ---
-    // Giriş yapınca sohbet butonunu görünür yapıyoruz (display: flex olacak şekilde)
     document.getElementById('chatToggleBtn').style.display = 'flex';
     
     document.getElementById("currentUser").textContent = currentUser;
@@ -4800,9 +4804,13 @@ async function afterLogin() {
       document.getElementById('adminPanelToggleButton').classList.remove('hidden');
       document.getElementById('boxSettingsButton').classList.remove('hidden');
       document.getElementById('currentUserAvatar').src = 'https://i.hizliresim.com/mtwdr1x.png?_gl=1*1vzhmma*_ga*MTA2NTkzNzE4OC4xNzQ3MTQ1Mzk0*_ga_M9ZRXYS2YN*czE3NTUxNzY3MTckbzEwJGcxJHQxNzU1MTc3NTAwJGozNyRsMCRoMA..';
+      // YENİ EKLENEN SATIR
+      document.getElementById('clearChatBtn').classList.remove('hidden');
     } else {
       document.getElementById('adminPanelToggleButton').classList.add('hidden');
       document.getElementById('boxSettingsButton').classList.add('hidden');
+      // YENİ EKLENEN SATIR
+      document.getElementById('clearChatBtn').classList.add('hidden');
       
       const userSnap = await db.ref('users/' + currentUser).once('value');
       const userData = userSnap.val();
@@ -18966,85 +18974,88 @@ async function deleteChatMessage(messageId) {
     }
 }
 
-// MEVCUT listenForChatMessages FONKSİYONUNU SİL VE BUNUNLA DEĞİŞTİR
 function listenForChatMessages() {
     const messagesContainer = document.getElementById('chatMessages');
     const chatRef = db.ref('chat/messages').limitToLast(50);
 
+    // Dinleyiciyi tekrar tekrar eklememek için kontrol
+    if(activeListeners.chat) {
+        activeListeners.chat.ref.off('value', activeListeners.chat.callback);
+    }
+
     const callback = (snap) => {
-        const messageId = snap.key;
-        const message = snap.val();
+        messagesContainer.innerHTML = ''; // Her değişiklikte sohbeti temizle
+        const messages = [];
         
-        const messageEl = document.createElement('div');
-        messageEl.className = 'chat-message';
-        if (message.username === currentUser) {
-            messageEl.classList.add('current-user');
-        }
+        snap.forEach(childSnap => {
+            messages.push({ id: childSnap.key, ...childSnap.val() });
+        });
 
-        // Admin ise ve mesaj sahibi kendisi değilse çöp kutusu ikonunu göster
-        const adminControls = (isAdmin && message.username !== currentUser) ? `
-            <button class="delete-msg-btn" onclick="openAdminChatActionModal('${messageId}', '${message.username}')" title="Mesaj Eylemleri">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z" /></svg>
-            </button>` : '';
-            
-        let messageBodyHtml = '';
-        let messageBodyClass = 'message-body';
+        // Mesajları en yeniden en eskiye doğru işle
+        messages.reverse().forEach(message => {
+            const messageEl = document.createElement('div');
+            messageEl.className = 'chat-message';
+            if (message.username === currentUser) {
+                messageEl.classList.add('current-user');
+            }
 
-        if (message.isDeleted) {
-            // Eğer mesaj silinmişse, içeriği değiştir ve stil uygula
-            messageBodyHtml = '[Mesaj Admin Tarafından Silindi]';
-            messageBodyClass += ' deleted-message-body';
-        } else {
-            // Mesaj silinmemişse, etiketleri (@username) işle
-            // Önce HTML'i güvenli hale getir, sonra etiketleri linke çevir
-            const safeText = message.text.replace(/</g, "&lt;").replace(/>/g, "&gt;");
-            messageBodyHtml = safeText.replace(/@(\w+)/g, (match, username) => {
-                return `<span class="user-mention" onclick="openPublicUserDetailModal('${username}')">${match}</span>`;
-            });
-        }
+            const adminControls = (isAdmin && message.username !== currentUser) ? `
+                <button class="delete-msg-btn" onclick="openAdminChatActionModal('${message.id}', '${message.username}')" title="Mesaj Eylemleri">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z" /></svg>
+                </button>` : '';
+                
+            let messageBodyHtml = '';
+            let messageBodyClass = 'message-body';
 
-        messageEl.innerHTML = `
-            <img src="${message.avatarUrl}" class="avatar" onclick="openAvatarStatsModal('${message.username}')">
-            <div class="message-content">
-                <div class="message-header">
-                    <span class="username" onclick="openPublicUserDetailModal('${message.username}')">${message.username}</span>
-                    <span class="timestamp">${new Date(message.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
-                    ${adminControls}
+            if (message.isDeleted) {
+                // YENİ: Uzaklaştırma bilgisini kontrol et
+                if (message.deletedInfo && message.deletedInfo.reason === 'muted') {
+                    messageBodyHtml = `[Mesaj silindi - Kullanıcı ${message.deletedInfo.duration} dakika uzaklaştırıldı]`;
+                } else {
+                    messageBodyHtml = '[Mesaj Admin Tarafından Silindi]';
+                }
+                messageBodyClass += ' deleted-message-body';
+            } else {
+                const safeText = message.text.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+                messageBodyHtml = safeText.replace(/@(\w+)/g, (match, username) => {
+                    return `<span class="user-mention" onclick="openPublicUserDetailModal('${username}')">${match}</span>`;
+                });
+            }
+
+            messageEl.innerHTML = `
+                <img src="${message.avatarUrl}" class="avatar" onclick="openAvatarStatsModal('${message.username}')">
+                <div class="message-content">
+                    <div class="message-header">
+                        <span class="username" onclick="openPublicUserDetailModal('${message.username}')">${message.username}</span>
+                        <span class="timestamp">${new Date(message.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+                        ${adminControls}
+                    </div>
+                    <div class="${messageBodyClass}">${messageBodyHtml}</div>
                 </div>
-                <div class="${messageBodyClass}">${messageBodyHtml}</div>
-            </div>
-        `;
+            `;
 
-        messagesContainer.insertBefore(messageEl, messagesContainer.firstChild);
+            messagesContainer.appendChild(messageEl);
+        });
 
         const panel = document.getElementById('chatPanel');
-        if (!panel.classList.contains('open') && message.username !== currentUser) {
+        const lastMessage = messages[0];
+        if (lastMessage && !panel.classList.contains('open') && lastMessage.username !== currentUser) {
             document.getElementById('chatNotificationDot').classList.remove('hidden');
         }
     };
     
-    // Var olan dinleyiciyi kapatıp yenisini ekliyoruz ki kod tekrar çalıştığında sorun olmasın.
-    if(activeListeners.chat) {
-        activeListeners.chat.ref.off('child_added', activeListeners.chat.callback);
-    }
-    // Önemli: Yeni bir mesaj geldiğinde eski mesajların tekrar yüklenmemesi için
-    // mevcut mesajları dinlemek yerine SADECE yeni eklenenleri dinliyoruz ('child_added').
-    messagesContainer.innerHTML = ''; // Paneli her yeniden başlatmada temizle
-    activeListeners.chat = { ref: chatRef, event: 'child_added', callback };
-    chatRef.on('child_added', callback);
+    // ANLIK GÜNCELLEME İÇİN 'value' DİNLEYİCİSİ KULLANILIYOR
+    activeListeners.chat = { ref: chatRef, event: 'value', callback };
+    chatRef.on('value', callback);
 
-    // listenForChatMessages fonksiyonunun içindeki bu kısmı bul:
     document.getElementById('chatInput').addEventListener('keypress', function (e) {
         if (e.key === 'Enter') {
             sendMessage();
         }
     });
 
-// ... ve hemen altına bu YENİ KODU ekle:
     document.getElementById('chatInput').addEventListener('input', handleChatInput);
 }
-
-// --- YENİ EKLENECEK KOD: SOHBET MODERASYON FONKSİYONLARI ---
 
 /**
  * Admin için 'Mesajı Sil / Kullanıcıyı Uzaklaştır' penceresini açar.
@@ -19086,9 +19097,6 @@ function closeMuteUserModal() {
     chatMuteTarget = {}; // Hedefi temizle
 }
 
-/**
- * Kullanıcıyı belirtilen süre kadar sohbetten uzaklaştırır ve tüm mesajlarını siler.
- */
 async function confirmMuteUser() {
     const durationMinutes = parseInt(document.getElementById('muteDurationInput').value);
     const usernameToMute = chatMuteTarget.username;
@@ -19100,24 +19108,40 @@ async function confirmMuteUser() {
 
     const muteUntilTimestamp = getSyncedTime() + (durationMinutes * 60 * 1000);
     
-    // 1. Kullanıcının profiline ne zamana kadar susturulduğunu yaz
     await db.ref(`users/${usernameToMute}`).update({ chatMutedUntil: muteUntilTimestamp });
 
-    // 2. Bu kullanıcının yazdığı TÜM mesajları bul ve 'silindi' olarak işaretle
     const messagesRef = db.ref('chat/messages');
     const userMessagesSnap = await messagesRef.orderByChild('username').equalTo(usernameToMute).once('value');
     
     if (userMessagesSnap.exists()) {
         const updates = {};
         userMessagesSnap.forEach(childSnap => {
+            // YENİ: SİLİNME BİLGİSİNİ DETAYLI OLARAK KAYDET
             updates[`/chat/messages/${childSnap.key}/isDeleted`] = true;
+            updates[`/chat/messages/${childSnap.key}/deletedInfo`] = {
+                reason: 'muted',
+                duration: durationMinutes
+            };
         });
         await db.ref().update(updates);
     }
     
     displayMessage(`${usernameToMute} adlı kullanıcı ${durationMinutes} dakika boyunca sohbetten uzaklaştırıldı ve tüm mesajları silindi.`);
     closeMuteUserModal();
-    listenForChatMessages(); // Arayüzü güncelle
+    // Arayüzün güncellenmesi için sohbet dinleyicisini yeniden başlatmıyoruz, 'value' listener bunu otomatik yapacak.
+}
+
+/**
+ * YENİ: Adminin tüm sohbet geçmişini temizlemesini sağlar.
+ */
+async function clearChatHistory() {
+    if (!isAdmin) return;
+    const confirmed = await customConfirm("Tüm sohbet geçmişini kalıcı olarak silmek istediğinizden emin misiniz? Bu işlem geri alınamaz!");
+    if (confirmed) {
+        await db.ref('chat/messages').remove();
+        displayMessage("Sohbet geçmişi başarıyla temizlendi.");
+        // 'value' listener sayesinde arayüz anında güncellenecek.
+    }
 }
 
 </script>
