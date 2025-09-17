@@ -10623,9 +10623,6 @@ async function spinWheel() {
         wheelSpinsCount: (userData.wheelSpinsCount || 0) + 1
     });
 
-    // ... (Fonksiyonun geri kalanı - çarkın dönme animasyonu ve kazananı belirleme kısmı - aynı kalacak) ...
-    // ... Bu kısımları değiştirmene gerek yok ...
-
     const totalWeight = wheelSegments.reduce((sum, seg) => sum + (seg.weight || 1), 0);
     let randomWeight = Math.random() * totalWeight;
     let winningIndex = -1;
@@ -10652,8 +10649,6 @@ async function spinWheel() {
     // Çark animasyonu bittikten sonra çalışacak kod
     setTimeout(async () => {
         try {
-            // ... (Fonksiyonun ödül verme mantığı aynı kalacak, hiç değiştirme) ...
-            
             const currentUserDataSnap = await userRef.once('value');
             const currentUserData = currentUserDataSnap.val();
 
@@ -10665,8 +10660,6 @@ async function spinWheel() {
             let updates = {};
             let shouldLogActivity = true;
             
-            // ★★★ 2. Konu için DEĞİŞİKLİK BURADA BAŞLIYOR ★★★
-            // Ödül veritabanına yazılmadan ÖNCE, kullanıcıya bir "bekleyen görev" notu bırakıyoruz.
             const pendingRewardRef = userRef.child('pendingRewards').push();
             const pendingReward = {
                 type: 'wheelPrize',
@@ -10674,7 +10667,6 @@ async function spinWheel() {
                 timestamp: firebase.database.ServerValue.TIMESTAMP
             };
             await pendingRewardRef.set(pendingReward);
-            // ★★★ DEĞİŞİKLİK SONU ★★★
             
             switch(winningSegment.type) {
                 case 'points':
@@ -10683,7 +10675,6 @@ async function spinWheel() {
                     if(updates.balance > (currentUserData.highestBalanceEver || 0)) updates.highestBalanceEver = updates.balance;
                     updates.kariyerPuani = (currentUserData.kariyerPuani || 0) + winningSegment.value;
                     break;
-                // ... Diğer tüm case'ler aynı kalacak, değiştirme ...
                 case 'boxRights':
                     message = `Tebrikler, çarktan <b>+${winningSegment.value} Kutu Hakkı</b> kazandın!`;
                     updates.kutuHakki = (currentUserData.kutuHakki || 0) + winningSegment.value;
@@ -10750,7 +10741,6 @@ async function spinWheel() {
 
             if(Object.keys(updates).length > 0) await userRef.update(updates);
             
-            // Ödül verildikten sonra "bekleyen görev" notunu siliyoruz.
             await pendingRewardRef.remove();
 
             db.ref('wheelHistory').push().set({
@@ -10760,7 +10750,7 @@ async function spinWheel() {
                 value: winningSegment.value !== undefined ? winningSegment.value : null,
                 timestamp: firebase.database.ServerValue.TIMESTAMP
             });
-            // ... (wheelHistory temizleme kodu aynı kalacak) ...
+
             const historyRef = db.ref('wheelHistory');
             historyRef.orderByChild('timestamp').once('value', (snapshot) => {
                 const totalCount = snapshot.numChildren();
@@ -10774,9 +10764,25 @@ async function spinWheel() {
                     });
                 }
             });
+            
+            // ★★★ SORUNU DÜZELTEN DEĞİŞİKLİK BURADA BAŞLIYOR ★★★
+            // "Son Eylemler" paneline kaydedilecek metni burada, ikon yerine metin olacak şekilde oluşturuyoruz.
+            let prizeTextForLog;
+            if (winningSegment.type === 'tempMultiplier') {
+                prizeTextForLog = `${winningSegment.value}x Çarpan (${winningSegment.duration} kullanım)`;
+            } else if (winningSegment.type === 'pas') {
+                prizeTextForLog = 'Pas';
+            } else if (winningSegment.type === 'surpriseBox') {
+                 prizeTextForLog = 'Sürpriz Kutu';
+            } else {
+                const nameForLog = typeToName[winningSegment.type] || winningSegment.type;
+                prizeTextForLog = `+${winningSegment.value} ${nameForLog}`;
+            }
+            // ★★★ DEĞİŞİKLİK BİTİŞ ★★★
 
             const logDetails = {
-                result: winningSegment.prizeName || winningSegment.label,
+                // ★★★ DEĞİŞİKLİK: Artık 'result' alanına her zaman oluşturduğumuz metni yazıyoruz. ★★★
+                result: prizeTextForLog,
                 type: winningSegment.type,
                 value: winningSegment.value !== undefined ? winningSegment.value : null,
                 duration: winningSegment.duration !== undefined ? winningSegment.duration : null
@@ -10799,7 +10805,6 @@ async function spinWheel() {
             console.error("Çark ödülü işlenirken hata:", error);
             displayMessage("Ödülünüz işlenirken bir hata oluştu. Lütfen durumu admine bildirin.");
         } finally {
-            // ★★★ KİLİT SİSTEMİ BURADA BİTİYOR ★★★
             isWheelSpinning = false;
             spinBtn.disabled = false;
             spinBtn.textContent = 'Çarkı Çevir!';
