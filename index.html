@@ -53,8 +53,8 @@
 
 /* @kullaniciadi etiket stili */
 .user-mention {
-    background-color: rgba(253, 224, 71, 0.2); /* yellow-300/20 */
-    color: #fde047; /* text-yellow-300 */
+    background-color: rgba(59, 130, 246, 0.2); /* blue-500/20 */
+    color: #93c5fd; /* text-blue-300 */
     padding: 2px 6px;
     border-radius: 5px;
     cursor: pointer;
@@ -62,7 +62,13 @@
     transition: background-color 0.2s;
 }
 .user-mention:hover {
-    background-color: rgba(253, 224, 71, 0.4);
+    background-color: rgba(59, 130, 246, 0.4);
+}
+/* ★★★ YENİ EKLENEN KOD: VURGULU ETİKET STİLİ ★★★ */
+.user-mention.highlighted {
+    background-color: rgba(253, 224, 71, 0.3); /* yellow-300/30 */
+    color: #fde047; /* text-yellow-300 */
+    box-shadow: 0 0 8px rgba(253, 224, 71, 0.5);
 }
 
 /* Admin tarafından silinmiş (üstü çizili) mesaj stili */
@@ -95,7 +101,6 @@
     border-radius: 50%;
     background: linear-gradient(145deg, #b91c1c, #7f1d1d);
     color: white;
-    /* --- BU SATIRI DEĞİŞTİR --- */
     display: none; /* Varsayılan olarak gizli */ 
     align-items: center;
     justify-content: center;
@@ -113,16 +118,33 @@
     position: absolute;
     top: -2px;
     right: -2px;
-    width: 16px;
-    height: 16px;
+    min-width: 20px; /* ★★★ DEĞİŞİKLİK: Genişliği sayıya göre ayarla ★★★ */
+    height: 20px;
+    padding: 0 4px; /* ★★★ DEĞİŞİKLİK: İç boşluk ★★★ */
     background-color: #fde047; /* yellow-400 */
-    border-radius: 50%;
+    border-radius: 10px; /* ★★★ DEĞİŞİKLİK: Yuvarlaklığı ayarla ★★★ */
     border: 2px solid #111827; /* bg-gray-900 */
     animation: pulse-dot 1.5s infinite;
+    font-size: 12px; /* ★★★ DEĞİŞİKLİK: Yazı boyutu ★★★ */
+    font-weight: bold; /* ★★★ DEĞİŞİKLİK: Yazı kalınlığı ★★★ */
+    color: #111827; /* ★★★ DEĞİŞİKLİK: Yazı rengi ★★★ */
+    display: flex; /* ★★★ DEĞİŞİKLİK: İçeriği ortala ★★★ */
+    align-items: center; /* ★★★ DEĞİŞİKLİK: İçeriği ortala ★★★ */
+    justify-content: center; /* ★★★ DEĞİŞİKLİK: İçeriği ortala ★★★ */
 }
+
 @keyframes pulse-dot {
   0%, 100% { transform: scale(1); opacity: 1; }
   50% { transform: scale(1.3); opacity: 0.7; }
+}
+
+/* ★★★ YENİ EKLENEN KOD: ÇARK DÖNERKEN ZIPLAMA ANİMASYONU ★★★ */
+.wheel-spin-bounce {
+    animation: bounce-spin 0.5s ease-in-out 4; /* 4 kere zıplasın (2 saniye) */
+}
+@keyframes bounce-spin {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-15px) rotate(5deg); }
 }
 
 /* Sohbet Paneli */
@@ -213,6 +235,7 @@
     border-radius: 0.75rem; /* rounded-xl */
     color: #f3f4f6; /* text-gray-100 */
     word-break: break-word;
+    position: relative; /* ★★★ DEĞİŞİKLİK: Beğeni butonu için gerekli ★★★ */
 }
 
 /* Mevcut kullanıcının mesajı */
@@ -226,6 +249,40 @@
 .chat-message.current-user .message-body {
     background-color: #7f1d1d; /* bg-red-800 */
 }
+
+/* ★★★ YENİ EKLENEN KOD: MESAJ BEĞENİ BUTONU STİLİ ★★★ */
+.like-btn {
+    background: rgba(0,0,0,0.3);
+    border: 1px solid #4b5563;
+    color: #d1d5db; /* text-gray-300 */
+    border-radius: 12px;
+    padding: 2px 6px;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 12px;
+    line-height: 1;
+    position: absolute;
+    bottom: -10px;
+    right: 10px;
+    visibility: hidden; /* Normalde gizli */
+    opacity: 0;
+}
+.chat-message:hover .like-btn {
+    visibility: visible; /* Mesajın üzerine gelince görünür yap */
+    opacity: 1;
+}
+.like-btn.liked {
+    background-color: #ef4444; /* red-500 */
+    color: white;
+    border-color: #fca5a5; /* red-300 */
+}
+.like-btn:hover {
+    transform: scale(1.1);
+}
+
 
 /* Mesaj Yazma Alanı */
 #chatInputContainer {
@@ -299,7 +356,7 @@
         right: 1rem;
     }
 }
-/* --- SOHBET STİLLERİ SONU --- */
+/* Diğer stilleriniz buraya... */
     @keyframes glowing-item {
   0% { box-shadow: 0 0 5px #fde047; }
   50% { box-shadow: 0 0 20px #facc15, 0 0 30px #fde047; }
@@ -4091,6 +4148,9 @@ function getSyncedTime() {
   let lastMessageTime = 0;
   let ticketsUsedThisRound = 1;
   let chatMuteTarget = {};
+  let recentChatUsers = [];
+const ADMIN_AVATAR_URL = 'https://i.hizliresim.com/mtwdr1x.png'; // Admin avatarı
+// ★★★ YENİ DEĞİŞKENLER SONU ★★★
   // YENİ: Sohbet yavaş mod ayarlarını tutar
   let chatSettings = { slowModeSeconds: 3 }; 
   // YENİ: Kullanıcının son mesaj atma zamanını tutar
@@ -4862,7 +4922,9 @@ async function executeWeeklyReset() {
     console.log("Haftalık sıfırlama başarıyla tamamlandı.");
 }
       
-  async function afterLogin() {
+  // ESKİ afterLogin FONKSİYONUNU SİL VE BUNU YAPIŞTIR
+
+async function afterLogin() {
     document.getElementById("loginContainer").style.display = "none";
     document.getElementById("gameDiv").style.display = "block";
     
@@ -4875,7 +4937,7 @@ async function executeWeeklyReset() {
     if (isAdmin) {
       document.getElementById('adminPanelToggleButton').classList.remove('hidden');
       document.getElementById('boxSettingsButton').classList.remove('hidden');
-      document.getElementById('currentUserAvatar').src = 'https://i.hizliresim.com/mtwdr1x.png?_gl=1*1vzhmma*_ga*MTA2NTkzNzE4OC4xNzQ3MTQ1Mzk0*_ga_M9ZRXYS2YN*czE3NTUxNzY3MTckbzEwJGcxJHQxNzU1MTc3NTAwJGozNyRsMCRoMA..';
+      document.getElementById('currentUserAvatar').src = ADMIN_AVATAR_URL;
       document.getElementById('clearChatBtn').classList.remove('hidden');
     } else {
       document.getElementById('adminPanelToggleButton').classList.add('hidden');
@@ -4892,7 +4954,6 @@ async function executeWeeklyReset() {
     await loadWheelSettingsFromDB();
     renderWheel();
     
-    // YENİ: Sohbet ayarlarını dinlemeyi başlat
     listenForChatSettings();
 
     loadBalanceAndBoxRights();
@@ -4933,6 +4994,7 @@ async function executeWeeklyReset() {
         listenForNewAnnouncements(); 
         listenForNewStoreItems(); 
         checkAvailableDailyRewards();
+        listenForMentionNotifications(); // ★★★ YENİ EKLENEN SATIR ★★★
 
         const userRef = db.ref('users/' + currentUser);
         userRef.once('value').then(snap => {
@@ -5163,17 +5225,13 @@ async function logout() {
     });
 }
 
-// --- YENİ EKLENECEK KOD: KULLANICI ETİKETLEME ÖNERİ SİSTEMİ ---
+// ESKİ handleChatInput FONKSİYONUNU SİL VE BUNU YAPIŞTIR
 
-/**
- * Sohbet giriş alanındaki @ karakterini ve sonraki yazıyı dinler.
- */
 function handleChatInput() {
     const input = document.getElementById('chatInput');
     const text = input.value;
     const cursorPosition = input.selectionStart;
 
-    // İmlecin bulunduğu yerdeki kelimeyi bul
     const textBeforeCursor = text.substring(0, cursorPosition);
     const atIndex = textBeforeCursor.lastIndexOf('@');
 
@@ -5184,10 +5242,22 @@ function handleChatInput() {
 
     const searchTerm = textBeforeCursor.substring(atIndex + 1).toLowerCase();
     
-    // allUsersCache içindeki kullanıcıları filtrele
-    const suggestions = allUsersCache
+    // ★★★ DEĞİŞİKLİK BAŞLANGICI: Akıllı sıralama ★★★
+    // Önce en son sohbet edenleri, sonra diğerlerini alfabetik olarak sırala
+    const sortedUserCache = [...allUsersCache].sort((a, b) => {
+        const indexA = recentChatUsers.indexOf(a.username);
+        const indexB = recentChatUsers.indexOf(b.username);
+
+        if (indexA !== -1 && indexB !== -1) return indexA - indexB; // İkisi de son yazanlardaysa, sıraya göre
+        if (indexA !== -1) return -1; // Sadece A son yazanlardaysa, A öne
+        if (indexB !== -1) return 1;  // Sadece B son yazanlardaysa, B öne
+        return a.username.localeCompare(b.username); // İkisi de değilse, alfabetik
+    });
+    
+    const suggestions = sortedUserCache
         .filter(user => user.username.toLowerCase().startsWith(searchTerm) && user.username.toLowerCase() !== currentUser.toLowerCase())
         .map(user => user.username);
+    // ★★★ DEĞİŞİKLİK SONU ★★★
 
     if (suggestions.length > 0) {
         renderChatSuggestions(suggestions);
@@ -5195,6 +5265,72 @@ function handleChatInput() {
         closeChatSuggestions();
     }
 }
+
+// ★★★ BU YENİ FONKSİYONLARI SCRIPT'İN SONUNA EKLE ★★★
+
+/**
+ * Bir sohbet mesajına bırakılan beğeniyi (kalp) yönetir.
+ * @param {string} messageId - Beğenilecek mesajın ID'si.
+ */
+function toggleChatMessageLike(messageId) {
+    if (isAdmin) {
+        displayMessage("Adminler beğeni yapamaz.");
+        return;
+    }
+
+    const messageRef = db.ref(`chat/messages/${messageId}`);
+    
+    messageRef.transaction(messageData => {
+        if (messageData) {
+            if (!messageData.likedBy) {
+                messageData.likedBy = {};
+            }
+            if (messageData.likedBy[currentUser]) {
+                // Beğeniyi geri al
+                messageData.likes = (messageData.likes || 1) - 1;
+                messageData.likedBy[currentUser] = null; // Firebase'de null olarak ayarlamak siler
+            } else {
+                // Beğen
+                messageData.likes = (messageData.likes || 0) + 1;
+                messageData.likedBy[currentUser] = true;
+            }
+        }
+        return messageData;
+    });
+}
+
+/**
+ * Kullanıcının okunmamış etiket bildirimlerini dinler ve sohbet ikonunu günceller.
+ */
+function listenForMentionNotifications() {
+    if (isAdmin) return;
+
+    const ref = db.ref(`users/${currentUser}/unreadMentions`);
+
+    if (activeListeners.mentions) {
+        ref.off('value', activeListeners.mentions.callback);
+    }
+    
+    const callback = (snap) => {
+        const count = snap.val() || 0;
+        const dot = document.getElementById('chatNotificationDot');
+        const toggleButton = document.getElementById('chatToggleBtn');
+
+        if (count > 0) {
+            dot.textContent = count;
+            dot.classList.remove('hidden');
+            toggleButton.title = `${count} kez sizden bahsedildi!`;
+        } else {
+            dot.classList.add('hidden');
+            toggleButton.title = 'Sohbeti Aç/Kapat';
+        }
+    };
+    
+    activeListeners.mentions = { ref, event: 'value', callback };
+    ref.on('value', callback);
+}
+
+// ★★★ YENİ FONKSİYONLARIN SONU ★★★
 
 /**
  * Filtrelenen kullanıcıları öneri kutusunda gösterir.
@@ -19026,25 +19162,32 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 
-// --- YENİ EKLENECEK KOD: SOHBET SİSTEMİ FONKSİYONLARI ---
+// ESKİ toggleChat FONKSİYONUNU SİL VE BUNU YAPIŞTIR
 
-/**
- * Sohbet panelinin görünürlüğünü açar veya kapatır.
- */
 function toggleChat() {
     const panel = document.getElementById('chatPanel');
     const dot = document.getElementById('chatNotificationDot');
+    const toggleButton = document.getElementById('chatToggleBtn'); // ★★★ DEĞİŞİKLİK: Butonu seç
+
     panel.classList.toggle('open');
     
-    // Panel açıldığında bildirim noktasını gizle
+    // Panel açıldığında bildirim noktasını ve başlığı sıfırla
     if (panel.classList.contains('open')) {
         dot.classList.add('hidden');
+        dot.textContent = '0'; // ★★★ DEĞİŞİKLİK: Sayıyı da sıfırla
+        toggleButton.title = 'Sohbeti Aç/Kapat'; // ★★★ DEĞİŞİKLİK: Başlığı normale döndür
+        
+        // ★★★ DEĞİŞİKLİK: Firebase'deki okunmamış etiket sayacını sıfırla
+        if (!isAdmin) {
+            db.ref(`users/${currentUser}/unreadMentions`).set(0);
+        }
     }
 }
 
+// ESKİ sendMessage FONKSİYONUNU SİL VE BUNU YAPIŞTIR
+
 async function sendMessage() {
     const now = getSyncedTime();
-    // YENİ: Yavaş mod kontrolü
     if (chatSettings.slowModeSeconds > 0 && now < lastMessageTimestamp + (chatSettings.slowModeSeconds * 1000)) {
         const remaining = Math.ceil(((lastMessageTimestamp + (chatSettings.slowModeSeconds * 1000)) - now) / 1000);
         displayMessage(`Yavaş mod aktif. Mesaj göndermek için ${remaining} saniye beklemelisin.`);
@@ -19055,29 +19198,49 @@ async function sendMessage() {
     const text = input.value.trim();
     if (text === '') return;
 
-    const userSnap = await db.ref(`users/${currentUser}`).once('value');
-    const userData = userSnap.val();
-    
-    if (userData.chatMutedUntil && userData.chatMutedUntil > now) {
-        const remainingMinutes = Math.ceil((userData.chatMutedUntil - now) / 60000);
-        displayMessage(`Sohbetten uzaklaştırıldın. Kalan süre: ${remainingMinutes} dakika.`);
-        return;
+    // ★★★ DEĞİŞİKLİK BAŞLANGICI: Admin avatarı ve etiketleme ★★★
+    let avatarUrl = defaultAvatarUrl;
+    if (isAdmin) {
+        avatarUrl = ADMIN_AVATAR_URL;
+    } else {
+        const userSnap = await db.ref(`users/${currentUser}`).once('value');
+        const userData = userSnap.val();
+        
+        if (userData.chatMutedUntil && userData.chatMutedUntil > now) {
+            const remainingMinutes = Math.ceil((userData.chatMutedUntil - now) / 60000);
+            displayMessage(`Sohbetten uzaklaştırıldın. Kalan süre: ${remainingMinutes} dakika.`);
+            return;
+        }
+        avatarUrl = userData.selectedAvatar ? userData.selectedAvatar.url : defaultAvatarUrl;
     }
+    
+    // Mesajdaki etiketleri bul
+    const mentions = text.match(/@(\w+)/g) || [];
+    if (mentions.length > 0) {
+        const mentionedUsernames = mentions.map(m => m.substring(1).toLowerCase());
+        const uniqueUsernames = [...new Set(mentionedUsernames)]; // Aynı kişiyi birden fazla etiketlemeyi tek say
 
-    const avatarUrl = userData.selectedAvatar ? userData.selectedAvatar.url : defaultAvatarUrl;
+        uniqueUsernames.forEach(username => {
+            if (username !== currentUser.toLowerCase()) {
+                const mentionRef = db.ref(`users/${username}/unreadMentions`);
+                mentionRef.transaction(currentCount => (currentCount || 0) + 1);
+            }
+        });
+    }
+    // ★★★ DEĞİŞİKLİK SONU ★★★
 
     const messageData = {
         username: currentUser,
         text: text,
         avatarUrl: avatarUrl,
         timestamp: firebase.database.ServerValue.TIMESTAMP,
-        isDeleted: false
+        isDeleted: false,
+        likes: 0,      // ★★★ YENİ: Beğeni sayacı
+        likedBy: {}    // ★★★ YENİ: Beğenenlerin listesi
     };
 
     db.ref('chat/messages').push(messageData);
     input.value = '';
-
-    // YENİ: Son mesaj zamanını güncelle
     lastMessageTimestamp = now;
 }
 
@@ -19092,24 +19255,30 @@ async function deleteChatMessage(messageId) {
     }
 }
 
+// ESKİ listenForChatMessages FONKSİYONUNU SİL VE BUNU YAPIŞTIR
+
 function listenForChatMessages() {
     const messagesContainer = document.getElementById('chatMessages');
     const chatRef = db.ref('chat/messages').limitToLast(50);
 
-    // Dinleyiciyi tekrar tekrar eklememek için kontrol
     if(activeListeners.chat) {
         activeListeners.chat.ref.off('value', activeListeners.chat.callback);
     }
 
     const callback = (snap) => {
-        messagesContainer.innerHTML = ''; // Her değişiklikte sohbeti temizle
+        messagesContainer.innerHTML = '';
         const messages = [];
         
         snap.forEach(childSnap => {
             messages.push({ id: childSnap.key, ...childSnap.val() });
         });
 
-        // Mesajları en yeniden en eskiye doğru işle
+        // ★★★ YENİ KOD BAŞLANGICI: Akıllı öneri için kullanıcı listesini güncelle ★★★
+        const uniqueUsernames = new Set();
+        messages.slice().reverse().forEach(msg => uniqueUsernames.add(msg.username));
+        recentChatUsers = Array.from(uniqueUsernames);
+        // ★★★ YENİ KOD SONU ★★★
+
         messages.reverse().forEach(message => {
             const messageEl = document.createElement('div');
             messageEl.className = 'chat-message';
@@ -19126,19 +19295,30 @@ function listenForChatMessages() {
             let messageBodyClass = 'message-body';
 
             if (message.isDeleted) {
-                // YENİ: Uzaklaştırma bilgisini kontrol et
-                if (message.deletedInfo && message.deletedInfo.reason === 'muted') {
-                    messageBodyHtml = `[Mesaj silindi - Kullanıcı ${message.deletedInfo.duration} dakika uzaklaştırıldı]`;
-                } else {
-                    messageBodyHtml = '[Mesaj Admin Tarafından Silindi]';
-                }
+                messageBodyHtml = message.deletedInfo?.reason === 'muted'
+                    ? `[Mesaj silindi - Kullanıcı ${message.deletedInfo.duration} dakika uzaklaştırıldı]`
+                    : '[Mesaj Admin Tarafından Silindi]';
                 messageBodyClass += ' deleted-message-body';
             } else {
                 const safeText = message.text.replace(/</g, "&lt;").replace(/>/g, "&gt;");
                 messageBodyHtml = safeText.replace(/@(\w+)/g, (match, username) => {
-                    return `<span class="user-mention" onclick="openPublicUserDetailModal('${username}')">${match}</span>`;
+                    // ★★★ DEĞİŞİKLİK: Vurgu mantığı eklendi ★★★
+                    const isCurrentUserMentioned = username.toLowerCase() === (currentUser || '').toLowerCase();
+                    const highlightClass = isCurrentUserMentioned ? 'user-mention highlighted' : 'user-mention';
+                    return `<span class="${highlightClass}" onclick="openPublicUserDetailModal('${username}')">${match}</span>`;
                 });
             }
+
+            // ★★★ YENİ KOD BAŞLANGICI: Kalp butonu mantığı ★★★
+            const hasLiked = message.likedBy && message.likedBy[currentUser];
+            const likeCount = message.likes || 0;
+            const likeButtonHtml = `
+                <button class="like-btn ${hasLiked ? 'liked' : ''}" onclick="toggleChatMessageLike('${message.id}')">
+                    <span>❤️</span>
+                    <span>${likeCount}</span>
+                </button>
+            `;
+            // ★★★ YENİ KOD SONU ★★★
 
             messageEl.innerHTML = `
                 <img src="${message.avatarUrl}" class="avatar" onclick="openAvatarStatsModal('${message.username}')">
@@ -19148,21 +19328,23 @@ function listenForChatMessages() {
                         <span class="timestamp">${new Date(message.timestamp).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
                         ${adminControls}
                     </div>
-                    <div class="${messageBodyClass}">${messageBodyHtml}</div>
+                    <div class="${messageBodyClass}">
+                        ${messageBodyHtml}
+                        ${likeButtonHtml}
+                    </div>
                 </div>
             `;
-
             messagesContainer.appendChild(messageEl);
         });
 
         const panel = document.getElementById('chatPanel');
         const lastMessage = messages[0];
+        // Bu kısım normal mesaj bildirimleri için kalabilir, etiketler ayrı yönetiliyor.
         if (lastMessage && !panel.classList.contains('open') && lastMessage.username !== currentUser) {
-            document.getElementById('chatNotificationDot').classList.remove('hidden');
+            // document.getElementById('chatNotificationDot').classList.remove('hidden');
         }
     };
     
-    // ANLIK GÜNCELLEME İÇİN 'value' DİNLEYİCİSİ KULLANILIYOR
     activeListeners.chat = { ref: chatRef, event: 'value', callback };
     chatRef.on('value', callback);
 
