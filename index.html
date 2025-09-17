@@ -112,30 +112,26 @@
     transform: scale(1.1) rotate(15deg);
     box-shadow: 0 15px 30px rgba(0,0,0,0.4);
 }
-/* Yeni mesaj geldiğinde butona eklenecek animasyon */
 #chatToggleBtn .notification-dot {
     position: absolute;
     top: -2px;
     right: -2px;
-    min-width: 20px; 
+    min-width: 20px;
     height: 20px;
-    padding: 0 4px; 
-    background-color: #fde047; /* yellow-400 */
-    border-radius: 10px; 
-    border: 2px solid #111827; /* bg-gray-900 */
-    animation: pulse-dot 1.5s infinite;
-    font-size: 12px; 
-    font-weight: bold; 
-    color: #111827; 
-    display: flex; 
-    align-items: center; 
-    justify-content: center; 
+    padding: 0 4px;
+    background-color: #fde047;
+    border-radius: 10px;
+    border: 2px solid #111827;
+    /* Animasyon satırı silindi */
+    font-size: 12px;
+    font-weight: bold;
+    color: #111827;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
-@keyframes pulse-dot {
-  0%, 100% { transform: scale(1); opacity: 1; }
-  50% { transform: scale(1.3); opacity: 0.7; }
-}
+/* @keyframes pulse-dot bloğu silindi */
 
 .wheel-spin-bounce {
     animation: bounce-spin 0.5s ease-in-out 4; 
