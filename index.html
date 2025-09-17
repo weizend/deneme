@@ -6543,8 +6543,7 @@ function handleRowTypeChange(selectElement) {
     }
 }
 
-// --- BU GÜNCEL FONKSİYONU ESKİSİNİN YERİNE YAPIŞTIRIN ---
-// openBox fonksiyonunu bununla değiştir
+// MEVCUT openBox FONKSİYONUNU KOMPLE SİL VE BUNUNLA DEĞİŞTİR
 async function openBox(index) {
     const lastSurpriseSnap = await db.ref('gameStats/lastSurpriseInfo').once('value');
     const lastSurpriseData = lastSurpriseSnap.val();
@@ -6577,14 +6576,13 @@ async function openBox(index) {
     }
 
     if ((user.kutuHakki || 0) < BOX_RIGHTS_COST_PER_BOX) {
-        // GÜNCELLEME BURADA
         displayMessageWithRedirect("Yetersiz kutu hakkı.", "Mağazaya Git", () => {
-            storeFilter = { type: 'boxRights' }; // Sadece genel tip yeterli
+            storeFilter = { type: 'boxRights' };
             showSection('store');
         });
         return;
     }
-    // Fonksiyonun geri kalanı aynı...
+    
     const initialConfirm = await customConfirm(`<b>${boxes[index].id}</b> numaralı kutuyu açmak istediğinize emin misiniz?`);
     if (!initialConfirm) {
         return;
@@ -6699,7 +6697,23 @@ async function openBox(index) {
             const boxRightsFromMultiplier = foundMultiplierValue;
             updates.kutuHakki += boxRightsFromMultiplier;
             message = `Mevcut <b>${existingMultiplierValue}x</b> çarpanın daha güçlü olduğu için korundu. Bulduğun ${foundMultiplierValue}x çarpan ise <b class="text-green-400">+${boxRightsFromMultiplier} Kutu Hakkı</b>'na dönüştürüldü!`;
-            logActivity('multiplierConvertedToBoxRights', currentUser, { boxId: box.id, rewardValue: foundMultiplierValue, boxRights: boxRightsFromMultiplier, source: 'Kutudan', multiplier: finalMultiplier });
+            
+            // =========================================================================
+            // ★★★ İSTEDİĞİN DEĞİŞİKLİK İÇİN DÜZELTME BURADA ★★★
+            // Eksik olan 'existingValue' ve 'existingUses' log kaydına ekleniyor.
+            // =========================================================================
+            logActivity('multiplierConvertedToBoxRights', currentUser, {
+                boxId: box.id,
+                rewardValue: foundMultiplierValue,
+                boxRights: boxRightsFromMultiplier,
+                source: 'Kutudan',
+                multiplier: finalMultiplier,
+                existingValue: existingMultiplierValue, // <-- BU SATIR EKLENDİ
+                existingUses: existingMultiplierUses   // <-- BU SATIR EKLENDİ
+            });
+            // =========================================================================
+            // ★★★ DEĞİŞİKLİK SONU ★★★
+            // =========================================================================
         }
     }
     else if (box.content === 'points') {
@@ -7222,6 +7236,10 @@ function renderActivityFeed(activities) {
                     const upgradeSource = details.source || 'Mağazadan';
                     message = `${userHtml}, ${upgradeSource}'den aldığı <b>${details.newValue}x (${details.newUses} kullanım)</b> çarpan ile mevcut çarpanını yükseltti. Eski <b>${details.oldValue}x (${details.oldUses} kullanım)</b> çarpanı için <b class="text-green-300 font-bold">+${details.boxRights} Kutu Hakkı</b> iade edildi.`;
                     break;
+
+                // =========================================================================
+                // ★★★ İSTEDİĞİN DEĞİŞİKLİK BURADA ★★★
+                // =========================================================================
                 case 'multiplierConvertedToBoxRights':
                 case 'multiplierConvertedOnUsedOpen':
                 case 'multiplierConvertedOnUnusedOpen':
@@ -7238,13 +7256,18 @@ function renderActivityFeed(activities) {
                     let keptMultiplierText = '';
                     const keptValue = details.keptMultiplierValue || details.existingValue;
                     const keptUses = details.existingUses;
+
+                    // Yeni mesaj formatı burada oluşturuluyor.
                     if (keptValue && keptUses) {
-                        keptMultiplierText = ` Mevcut <b>${keptValue}x</b> (${keptUses} kullanım) çarpanı korundu.`;
+                        keptMultiplierText = ` Mevcut <b>${keptValue}x</b> (${keptUses} kullanım) hakkı daha yüksek olduğu için korundu.`;
                     }
 
                     message = `${userHtml}, ${conversionSourceText} kazandığı <b>${details.rewardValue || details.foundValue}x</b> çarpanı, <b class="text-cyan-300 font-bold">+${details.boxRights} Kutu Hakkı</b>'na dönüştürüldü.${keptMultiplierText}`;
                     break;
-                
+                // =========================================================================
+                // ★★★ DEĞİŞİKLİK SONU ★★★
+                // =========================================================================
+
                 case 'multiplierStackedFromStore':
                      message = `${userHtml}, mağazadan aldığı çarpan ile mevcut <b>${details.multiplierValue}x</b> çarpanının kullanım hakkını <b class="text-teal-300 font-bold">+${details.usesAdded}</b> artırarak toplam <b class="text-teal-300 font-bold">${details.newTotalUses}</b> adete çıkardı.`;
                     break;
@@ -7326,13 +7349,9 @@ function renderActivityFeed(activities) {
                     break;
             }
 
-            // ★★★ DEĞİŞİKLİK BURADA BAŞLIYOR ★★★
-            // Paylaş butonu için HTML'den arındırılmış bir metin oluşturuyoruz.
             const plainTextMessage = message.replace(/<[^>]*>?/gm, '');
-            // HTML'deki tırnak işaretlerinin bozulmaması için &quot; ile değiştiriyoruz.
             const escapedMessage = plainTextMessage.replace(/"/g, '&quot;');
 
-            // Paylaş butonunu oluşturuyoruz.
             const shareButtonHtml = `
                 <button 
                     onclick="shareActivityToChat(this)" 
@@ -7346,7 +7365,6 @@ function renderActivityFeed(activities) {
                 </button>
             `;
 
-            // Final HTML'i oluşturuyoruz.
             const activityHtml = `
                 <div class="bg-gray-800/70 p-3 rounded-xl flex items-center gap-4 border border-transparent hover:border-gray-700 transition-all duration-200">
                     ${iconHtml}
@@ -7361,7 +7379,6 @@ function renderActivityFeed(activities) {
                         </div>
                     </div>
                 </div>`;
-            // ★★★ DEĞİŞİKLİK BURADA BİTİYOR ★★★
             
             activityFeedList.innerHTML += activityHtml;
         } catch (error) {
