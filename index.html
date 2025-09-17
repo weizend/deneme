@@ -7123,7 +7123,6 @@ function renderActivityFeed(activities) {
                     const balanceUnit = isKP ? 'KP' : 'Puanı';
                     const isPotion = details.itemType && details.itemType.endsWith('_potion');
 
-                    // ★★★ İSTEĞE GÖRE GÜNCELLENEN MESAJ ALANI BAŞLANGICI ★★★
                     if (isPotion) {
                         const isPercent = percentPotions.includes(details.itemType);
                         let bonusText = '';
@@ -7134,7 +7133,6 @@ function renderActivityFeed(activities) {
                         }
                         message = `${userHtml}, mağazadan <b class="text-red-500">-${costText}</b> harcayarak <b class="text-green-400">${bonusText} ${details.itemName}</b> bonusu kazandı. (Mevcut ${balanceUnit}: ${formatNumber(balance)})`;
                     } 
-                    // ★★★ GÜNCELLENEN MESAJ ALANI SONU ★★★
                     else if (details.itemValue) {
                          message = `${userHtml}, mağazadan <b class="text-red-500">-${costText}</b> harcayarak <b class="text-green-400">+${details.itemValue} ${details.itemName}</b> aldı. (Mevcut ${balanceUnit}: ${formatNumber(balance)})`;
                     } else {
@@ -7261,7 +7259,7 @@ function renderActivityFeed(activities) {
                     message = `${userHtml}, Koleksiyonu tamamladığı için ${details.source}'dan aldığı ${details.wildcards} Joker Kart'ı <b class="text-cyan-300 font-bold">+${details.boxRights} Kutu Hakkı</b>'na dönüştürdü.`;
                     break;
                 case 'cardPackConverted':
-                    message = `${userHtml}, Koleksiyonu tamamladığı için ${details.source}'dan aldığı ${details.packs} Kart Paketi'ni <b class="text-green-300 font-bold">+${details.points} Puana</b> dönüştürdü.`;
+                    message = `${userHtml}, Koleksiyonu tamamladığı için ${details.source}'dan aldığı ${details.packs} Kart Paketi'ni <b class="text-green-300 font-bold">+${formatNumber(details.points)} Puana</b> dönüştürdü.`;
                     break;
                 case 'multiplierCombined':
                     message = `${userHtml}, <b>${details.boxId}</b> numaralı kutudan <b>${details.foundValue}x çarpan</b> buldu. Mevcut çarpanıyla birleştirerek tek kullanımlık <b class="text-teal-300 font-bold">${details.combinedValue}x</b> gücüne ulaştı ve <span class="text-green-300 font-bold">+1 Kutu Hakkı</span> iade aldı.`;
@@ -7294,7 +7292,6 @@ function renderActivityFeed(activities) {
                     if (prizeType === 'pas') { message = `${userHtml}, çarkı çevirdi ve <span class="text-gray-400 font-bold">Pas</span> geçti.`; } 
                     else {
                         const isPercentSpin = percentPotions.includes(prizeType);
-                        // ★★★ İSTEĞE GÖRE GÜNCELLENEN MESAJ ALANI ★★★
                         const valuePrefixSpin = isPercentSpin ? `%` : `+`;
                         if (prizeType === 'points') { prizeText = `+${prizeValue} Puan`; } 
                         else if (prizeType === 'tempMultiplier') { prizeText = `${prizeValue}X Çarpan`; } 
@@ -7315,7 +7312,6 @@ function renderActivityFeed(activities) {
                         message = `${userHtml}, günlük ödül olarak ${rewardText} kazandı.`;
                     } else {
                         const isPercentDaily = percentPotions.includes(rewardType);
-                        // ★★★ İSTEĞE GÖRE GÜNCELLENEN MESAJ ALANI ★★★
                         const valuePrefixDaily = isPercentDaily ? `%` : `+`;
                         if (rewardType === 'tempMultiplier') { 
                             rewardText = `${rewardValue}x Çarpan (${details.rewardUses} kullanım)`;
@@ -7330,6 +7326,27 @@ function renderActivityFeed(activities) {
                     break;
             }
 
+            // ★★★ DEĞİŞİKLİK BURADA BAŞLIYOR ★★★
+            // Paylaş butonu için HTML'den arındırılmış bir metin oluşturuyoruz.
+            const plainTextMessage = message.replace(/<[^>]*>?/gm, '');
+            // HTML'deki tırnak işaretlerinin bozulmaması için &quot; ile değiştiriyoruz.
+            const escapedMessage = plainTextMessage.replace(/"/g, '&quot;');
+
+            // Paylaş butonunu oluşturuyoruz.
+            const shareButtonHtml = `
+                <button 
+                    onclick="shareActivityToChat(this)" 
+                    data-activity-text="${escapedMessage}"
+                    class="p-1 rounded-full text-gray-500 hover:text-blue-400 hover:bg-white/10 transition-colors" 
+                    title="Sohbette Paylaş"
+                >
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                        <path d="M15 8a3 3 0 10-2.977-2.63l-4.94 2.47a3 3 0 100 4.319l4.94 2.47a3 3 0 10.875-1.972l-4.94-2.47a3.027 3.027 0 000-.74l4.94-2.47C13.456 7.68 14.19 8 15 8z" />
+                    </svg>
+                </button>
+            `;
+
+            // Final HTML'i oluşturuyoruz.
             const activityHtml = `
                 <div class="bg-gray-800/70 p-3 rounded-xl flex items-center gap-4 border border-transparent hover:border-gray-700 transition-all duration-200">
                     ${iconHtml}
@@ -7337,10 +7354,14 @@ function renderActivityFeed(activities) {
                         <p class="text-gray-200 text-sm leading-relaxed">${message}</p>
                         <div class="flex justify-between items-center mt-1">
                             <span class="text-xs text-gray-500">${timeAgo}</span>
-                            ${deleteButtonHtml}
+                            <div class="flex items-center">
+                                ${shareButtonHtml}
+                                ${deleteButtonHtml}
+                            </div>
                         </div>
                     </div>
                 </div>`;
+            // ★★★ DEĞİŞİKLİK BURADA BİTİYOR ★★★
             
             activityFeedList.innerHTML += activityHtml;
         } catch (error) {
