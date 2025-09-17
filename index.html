@@ -11,36 +11,37 @@
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
 
 <style>
-/* --- YENİ EKLENECEK KOD: KULLANICI ETİKETLEME ÖNERİ KUTUSU --- */
+/* --- SOHBET SİSTEMİ STİLLERİ BAŞLANGIÇ --- */
+
+/* --- KULLANICI ETİKETLEME ÖNERİ KUTUSU --- */
 #chatSuggestions {
     position: absolute;
-    bottom: 100%; /* Giriş alanının hemen üstünde */
+    bottom: 100%;
     left: 1rem;
     right: 1rem;
-    background-color: #1f2937; /* bg-gray-800 */
-    border: 1px solid #4b5563; /* border-gray-600 */
-    border-bottom: none; /* Alt kenarlığı kaldır */
-    border-radius: 0.75rem 0.75rem 0 0; /* Sadece üst köşeleri yuvarla */
+    background-color: #1f2937;
+    border: 1px solid #4b5563;
+    border-bottom: none;
+    border-radius: 0.75rem 0.75rem 0 0;
     max-height: 150px;
     overflow-y: auto;
     z-index: 9999;
 }
 .suggestion-item {
     padding: 0.5rem 1rem;
-    color: #d1d5db; /* text-gray-300 */
+    color: #d1d5db;
     cursor: pointer;
-    border-bottom: 1px solid #374151; /* border-gray-700 */
+    border-bottom: 1px solid #374151;
 }
 .suggestion-item:hover, .suggestion-item.active {
-    background-color: #4b5563; /* bg-gray-600 */
+    background-color: #4b5563;
     color: white;
 }
 .suggestion-item:last-child {
     border-bottom: none;
 }
-/* --- YENİ EKLENECEK KOD: GELİŞMİŞ SOHBET STİLLERİ --- */
 
-/* Tıklanabilir avatar ve kullanıcı adı için fare imleci */
+/* --- GELİŞMİŞ SOHBET STİLLERİ --- */
 .chat-message .avatar,
 .chat-message .message-header .username {
     cursor: pointer;
@@ -51,10 +52,9 @@
     opacity: 0.8;
 }
 
-/* @kullaniciadi etiket stili */
 .user-mention {
-    background-color: rgba(59, 130, 246, 0.2); /* blue-500/20 */
-    color: #93c5fd; /* text-blue-300 */
+    background-color: rgba(59, 130, 246, 0.2);
+    color: #93c5fd;
     padding: 2px 6px;
     border-radius: 5px;
     cursor: pointer;
@@ -65,42 +65,39 @@
     background-color: rgba(59, 130, 246, 0.4);
 }
 .user-mention.highlighted {
-    background-color: rgba(253, 224, 71, 0.3); /* yellow-300/30 */
-    color: #fde047; /* text-yellow-300 */
+    background-color: rgba(253, 224, 71, 0.3);
+    color: #fde047;
     box-shadow: 0 0 8px rgba(253, 224, 71, 0.5);
 }
 
-/* Admin tarafından silinmiş (üstü çizili) mesaj stili */
 .deleted-message-body {
     text-decoration: line-through;
-    color: #9ca3af; /* text-gray-400 */
+    color: #9ca3af;
     font-style: italic;
 }
 
-/* Admin sohbet eylem menüsü (modal) */
 .admin-chat-modal .modal-content {
-    border-color: #ef4444; /* border-red-500 */
+    border-color: #ef4444;
 }
 .admin-chat-modal .modal-content h4 {
-    color: #f87171; /* text-red-400 */
+    color: #f87171;
 }
 .admin-chat-modal .modal-content button {
     transition: all 0.2s;
 }
-/* --- YENİ EKLENECEK KOD: SOHBET SİSTEMİ STİLLERİ --- */
 
-/* Sohbeti Aç/Kapat Butonu */
+/* --- ANA SOHBET SİSTEMİ STİLLERİ --- */
 #chatToggleBtn {
     position: fixed;
-    bottom: 1.5rem; /* 24px */
-    right: 1.5rem;  /* 24px */
+    bottom: 1.5rem;
+    right: 1.5rem;
     z-index: 9998;
     width: 60px;
     height: 60px;
     border-radius: 50%;
     background: linear-gradient(145deg, #b91c1c, #7f1d1d);
     color: white;
-    display: none; /* Varsayılan olarak gizli */ 
+    display: none;
     align-items: center;
     justify-content: center;
     border: 2px solid #fecaca;
@@ -122,7 +119,7 @@
     background-color: #fde047;
     border-radius: 10px;
     border: 2px solid #111827;
-    /* Animasyon satırı silindi */
+    animation: pulse-dot 1.5s infinite; /* <<< Animasyon burada */
     font-size: 12px;
     font-weight: bold;
     color: #111827;
@@ -130,8 +127,231 @@
     align-items: center;
     justify-content: center;
 }
+@keyframes pulse-dot {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50% { transform: scale(1.3); opacity: 0.7; }
+}
 
-/* @keyframes pulse-dot bloğu silindi */
+.wheel-spin-bounce {
+    animation: bounce-spin 0.5s ease-in-out 4;
+}
+@keyframes bounce-spin {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-15px) rotate(5deg); }
+}
+
+#chatPanel {
+    position: fixed;
+    bottom: 6rem;
+    right: 1.5rem;
+    width: 90%;
+    max-width: 400px;
+    height: 500px;
+    z-index: 9997;
+    background-color: rgba(17, 24, 39, 0.95);
+    backdrop-filter: blur(8px);
+    border-radius: 1rem;
+    border: 1px solid #4b5563;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+    display: flex;
+    flex-direction: column;
+    transform: translateY(20px) scale(0.95);
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+#chatPanel.open {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+    visibility: visible;
+}
+
+#chatPanel .chat-header {
+    padding: 1rem;
+    border-bottom: 1px solid #4b5563;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-shrink: 0;
+}
+
+#chatMessages {
+    flex-grow: 1;
+    overflow-y: auto;
+    padding: 1rem;
+    display: flex;
+    flex-direction: column-reverse;
+}
+
+.chat-message {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    margin-bottom: 1.5rem;
+    max-width: 90%;
+}
+.chat-message .avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    border: 2px solid #6b7280;
+    object-fit: cover;
+}
+.chat-message .message-content {
+    display: flex;
+    flex-direction: column;
+}
+.chat-message .message-header {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.25rem;
+}
+.chat-message .message-header .username {
+    font-weight: 700;
+    color: #fde047;
+    font-size: 0.875rem;
+}
+.chat-message .message-header .timestamp {
+    font-size: 0.75rem;
+    color: #6b7280;
+}
+.chat-message .message-body {
+    background-color: #374151;
+    padding: 0.5rem 0.75rem;
+    border-radius: 0.75rem;
+    color: #f3f4f6;
+    word-break: break-word;
+    position: relative;
+}
+
+.chat-message.current-user {
+    align-self: flex-end;
+    flex-direction: row-reverse;
+}
+.chat-message.current-user .message-header {
+    flex-direction: row-reverse;
+}
+.chat-message.current-user .message-body {
+    background-color: #7f1d1d;
+}
+
+.reaction-buttons-container {
+    position: absolute;
+    bottom: -12px;
+    right: 10px;
+    display: flex;
+    gap: 6px;
+    background: rgba(17, 24, 39, 0.8);
+    padding: 4px;
+    border-radius: 16px;
+    border: 1px solid #4b5563;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.4);
+    visibility: hidden;
+    opacity: 0;
+    transform: translateY(5px);
+    transition: all 0.2s ease-in-out;
+}
+.chat-message:hover .reaction-buttons-container {
+    visibility: visible;
+    opacity: 1;
+    transform: translateY(0);
+}
+.reaction-btn {
+    background: none;
+    border: none;
+    color: #d1d5db;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 13px;
+    padding: 2px 6px;
+    border-radius: 12px;
+    transition: all 0.2s;
+}
+.reaction-btn:hover {
+    background-color: rgba(255,255,255,0.1);
+}
+.reaction-btn.liked {
+    color: #4ade80;
+    font-weight: bold;
+}
+.reaction-btn.disliked {
+    color: #f87171;
+    font-weight: bold;
+}
+
+#chatInputContainer {
+    padding: 1rem;
+    border-top: 1px solid #4b5563;
+    display: flex;
+    gap: 0.75rem;
+    flex-shrink: 0;
+}
+#chatInput {
+    flex-grow: 1;
+    background-color: #1f2937;
+    border: 1px solid #4b5563;
+    border-radius: 9999px;
+    padding: 0.5rem 1rem;
+    color: white;
+    outline: none;
+}
+#chatInput:focus {
+    border-color: #ef4444;
+    box-shadow: 0 0 0 2px #ef444460;
+}
+#chatSendBtn {
+    background-color: #b91c1c;
+    border: none;
+    border-radius: 50%;
+    width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+#chatSendBtn:hover {
+    background-color: #991b1b;
+}
+#chatSendBtn:disabled {
+    background-color: #4b5563;
+    cursor: not-allowed;
+}
+
+.delete-msg-btn {
+    background: none;
+    border: none;
+    color: #9ca3af;
+    cursor: pointer;
+    margin-left: 0.5rem;
+    visibility: hidden;
+}
+.chat-message:hover .delete-msg-btn {
+    visibility: visible;
+}
+.delete-msg-btn:hover {
+    color: #ef4444;
+}
+
+@media (max-width: 640px) {
+    #chatPanel {
+        bottom: 5.5rem;
+        right: 0.5rem;
+        left: 0.5rem;
+        width: auto;
+        height: 60vh;
+    }
+    #chatToggleBtn {
+        bottom: 1rem;
+        right: 1rem;
+    }
+}
+/* --- SOHBET SİSTEMİ STİLLERİ SONU --- */
 
 .wheel-spin-bounce {
     animation: bounce-spin 0.5s ease-in-out 4; 
@@ -5231,8 +5451,6 @@ async function logout() {
     });
 }
 
-// ESKİ handleChatInput FONKSİYONUNU SİL VE BUNU YAPIŞTIR
-
 function handleChatInput() {
     const input = document.getElementById('chatInput');
     const text = input.value;
@@ -5248,22 +5466,19 @@ function handleChatInput() {
 
     const searchTerm = textBeforeCursor.substring(atIndex + 1).toLowerCase();
     
-    // ★★★ DEĞİŞİKLİK BAŞLANGICI: Akıllı sıralama ★★★
-    // Önce en son sohbet edenleri, sonra diğerlerini alfabetik olarak sırala
     const sortedUserCache = [...allUsersCache].sort((a, b) => {
         const indexA = recentChatUsers.indexOf(a.username);
         const indexB = recentChatUsers.indexOf(b.username);
 
-        if (indexA !== -1 && indexB !== -1) return indexA - indexB; // İkisi de son yazanlardaysa, sıraya göre
-        if (indexA !== -1) return -1; // Sadece A son yazanlardaysa, A öne
-        if (indexB !== -1) return 1;  // Sadece B son yazanlardaysa, B öne
-        return a.username.localeCompare(b.username); // İkisi de değilse, alfabetik
+        if (indexA !== -1 && indexB !== -1) return indexA - indexB;
+        if (indexA !== -1) return -1;
+        if (indexB !== -1) return 1;
+        return a.username.localeCompare(b.username);
     });
     
     const suggestions = sortedUserCache
         .filter(user => user.username.toLowerCase().startsWith(searchTerm) && user.username.toLowerCase() !== currentUser.toLowerCase())
         .map(user => user.username);
-    // ★★★ DEĞİŞİKLİK SONU ★★★
 
     if (suggestions.length > 0) {
         renderChatSuggestions(suggestions);
@@ -5290,7 +5505,6 @@ function reactToMessage(messageId, reactionType) {
     
     messageRef.transaction(messageData => {
         if (messageData) {
-            // Gerekli objelerin var olduğundan emin ol
             if (!messageData.likes) messageData.likes = { count: 0, users: {} };
             if (!messageData.dislikes) messageData.dislikes = { count: 0, users: {} };
 
@@ -5298,19 +5512,15 @@ function reactToMessage(messageId, reactionType) {
             const hasReacted = messageData[reactionType].users && messageData[reactionType].users[currentUser];
             const hasReactedOpposite = messageData[oppositeType].users && messageData[oppositeType].users[currentUser];
 
-            // 1. Durum: Aynı reaksiyonu geri alıyor
             if (hasReacted) {
                 messageData[reactionType].count--;
                 messageData[reactionType].users[currentUser] = null;
             } 
-            // 2. Durum: Yeni bir reaksiyon veriyor
             else {
-                // a) Önceki zıt reaksiyonu kaldır
                 if (hasReactedOpposite) {
                     messageData[oppositeType].count--;
                     messageData[oppositeType].users[currentUser] = null;
                 }
-                // b) Yeni reaksiyonu ekle
                 messageData[reactionType].count++;
                 if (!messageData[reactionType].users) messageData[reactionType].users = {};
                 messageData[reactionType].users[currentUser] = true;
@@ -5334,14 +5544,13 @@ function listenForMentionNotifications() {
         const dot = document.getElementById('chatNotificationDot');
         const toggleButton = document.getElementById('chatToggleBtn');
 
-        // ★★★ DEĞİŞİKLİK BURADA: Artık 0 ise gizleniyor ★★★
         if (count > 0) {
             dot.textContent = count;
             dot.classList.remove('hidden');
             toggleButton.title = `${count} kez sizden bahsedildi!`;
         } else {
             dot.classList.add('hidden');
-            dot.textContent = ''; // içeriğini temizle
+            dot.textContent = '';
             toggleButton.title = 'Sohbeti Aç/Kapat';
         }
     };
@@ -19180,8 +19389,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 
-// ESKİ toggleChat FONKSİYONUNU SİL VE BUNU YAPIŞTIR
-
 function toggleChat() {
     const panel = document.getElementById('chatPanel');
     const dot = document.getElementById('chatNotificationDot');
@@ -19189,20 +19396,18 @@ function toggleChat() {
 
     panel.classList.toggle('open');
     
+    // Panel açıldığında bildirim noktasını ve başlığı sıfırla
     if (panel.classList.contains('open')) {
         dot.classList.add('hidden');
-        dot.textContent = ''; // ★★★ DEĞİŞİKLİK: 0 yerine boş yap ★★★
+        dot.textContent = ''; // içeriğini temizle
         toggleButton.title = 'Sohbeti Aç/Kapat';
         
+        // Firebase'deki okunmamış etiket sayacını sıfırla
         if (!isAdmin) {
             db.ref(`users/${currentUser}/unreadMentions`).set(0);
         }
     }
 }
-
-
-
-// ESKİ sendMessage FONKSİYONUNU SİL VE BUNU YAPIŞTIR
 
 async function sendMessage() {
     const now = getSyncedTime();
@@ -19216,7 +19421,6 @@ async function sendMessage() {
     const text = input.value.trim();
     if (text === '') return;
 
-    // ★★★ DEĞİŞİKLİK BAŞLANGICI: Admin avatarı ve etiketleme ★★★
     let avatarUrl = defaultAvatarUrl;
     if (isAdmin) {
         avatarUrl = ADMIN_AVATAR_URL;
@@ -19232,11 +19436,10 @@ async function sendMessage() {
         avatarUrl = userData.selectedAvatar ? userData.selectedAvatar.url : defaultAvatarUrl;
     }
     
-    // Mesajdaki etiketleri bul
     const mentions = text.match(/@(\w+)/g) || [];
     if (mentions.length > 0) {
         const mentionedUsernames = mentions.map(m => m.substring(1).toLowerCase());
-        const uniqueUsernames = [...new Set(mentionedUsernames)]; // Aynı kişiyi birden fazla etiketlemeyi tek say
+        const uniqueUsernames = [...new Set(mentionedUsernames)];
 
         uniqueUsernames.forEach(username => {
             if (username !== currentUser.toLowerCase()) {
@@ -19245,7 +19448,6 @@ async function sendMessage() {
             }
         });
     }
-    // ★★★ DEĞİŞİKLİK SONU ★★★
 
     const messageData = {
         username: currentUser,
@@ -19253,8 +19455,8 @@ async function sendMessage() {
         avatarUrl: avatarUrl,
         timestamp: firebase.database.ServerValue.TIMESTAMP,
         isDeleted: false,
-        likes: 0,      // ★★★ YENİ: Beğeni sayacı
-        likedBy: {}    // ★★★ YENİ: Beğenenlerin listesi
+        likes: { count: 0, users: {} },
+        dislikes: { count: 0, users: {} }
     };
 
     db.ref('chat/messages').push(messageData);
@@ -19272,8 +19474,6 @@ async function deleteChatMessage(messageId) {
         await db.ref(`chat/messages/${messageId}`).remove();
     }
 }
-
-// ESKİ listenForChatMessages FONKSİYONUNU SİL VE BUNU YAPIŞTIR
 
 function listenForChatMessages() {
     const messagesContainer = document.getElementById('chatMessages');
@@ -19324,7 +19524,6 @@ function listenForChatMessages() {
                 });
             }
 
-            // ★★★ YENİ KOD BAŞLANGICI: REAKSİYON BUTONLARI ★★★
             const likes = message.likes || { count: 0, users: {} };
             const dislikes = message.dislikes || { count: 0, users: {} };
             
@@ -19343,7 +19542,6 @@ function listenForChatMessages() {
                     </button>
                 </div>
             `;
-            // ★★★ YENİ KOD SONU ★★★
 
             messageEl.innerHTML = `
                 <img src="${message.avatarUrl}" class="avatar" onclick="openAvatarStatsModal('${message.username}')">
@@ -19361,12 +19559,6 @@ function listenForChatMessages() {
             `;
             messagesContainer.appendChild(messageEl);
         });
-
-        const panel = document.getElementById('chatPanel');
-        const lastMessage = messages[0];
-        if (lastMessage && !panel.classList.contains('open') && lastMessage.username !== currentUser) {
-            // Normal mesajlar için bildirim noktası kaldırıldı, sadece etiketler için çalışacak.
-        }
     };
     
     activeListeners.chat = { ref: chatRef, event: 'value', callback };
