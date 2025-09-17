@@ -7078,7 +7078,7 @@ function getActivityIcon(type, details = {}) {
     `;
 }
       
-// ESKİ renderActivityFeed FONKSİYONUNU SİL VE BUNU YAPIŞTIR
+// MEVCUT renderActivityFeed FONKSİYONUNU SİLİP BUNU YAPIŞTIR
 function renderActivityFeed(activities) {
     const activityFeedList = document.getElementById('activityFeedList');
     activityFeedList.innerHTML = '';
@@ -7110,10 +7110,8 @@ function renderActivityFeed(activities) {
             const details = activity.details || {};
             let iconHtml = getActivityIcon(activity.type, details);
             let message = '';
-            let plainTextMessage = ''; // Sohbette paylaşılacak temiz metin
             const timeAgo = formatTimeAgo(activity.timestamp);
             const deleteButtonHtml = isAdmin ? `<button onclick="deleteActivity('${activity.id}')" class="ml-2 p-1 rounded-full text-gray-500 hover:text-red-500 hover:bg-white/10 transition-colors" title="Bu Eylemi Sil"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1-1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" /></svg></button>` : '';
-            const shareButtonHtml = `<button onclick="shareActivityToChat(this)" data-activity-text="" class="ml-2 p-1 rounded-full text-gray-500 hover:text-blue-500 hover:bg-white/10 transition-colors" title="Sohbette Paylaş"><svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path d="M15 8a3 3 0 10-2.977-2.63l-4.94 2.47a3 3 0 100 4.319l4.94 2.47a3 3 0 10.895-1.789l-4.94-2.47a3.027 3.027 0 000-.74l4.94-2.47C13.456 7.68 14.19 8 15 8z" /></svg></button>`;
             
             const userHtml = `<b class="text-yellow-300 cursor-pointer hover:underline" onclick="openPublicUserDetailModal('${activity.username}')">${activity.username}</b>`;
 
@@ -7125,192 +7123,210 @@ function renderActivityFeed(activities) {
                     const balanceUnit = isKP ? 'KP' : 'Puanı';
                     const isPotion = details.itemType && details.itemType.endsWith('_potion');
 
+                    // ★★★ İSTEĞE GÖRE GÜNCELLENEN MESAJ ALANI BAŞLANGICI ★★★
                     if (isPotion) {
                         const isPercent = percentPotions.includes(details.itemType);
-                        let bonusText = isPercent ? `%${(details.itemEffectValue || 0).toFixed(1)}` : `+${formatNumber(details.itemEffectValue || 0)}`;
+                        let bonusText = '';
+                        if (isPercent) {
+                            bonusText = `%${(details.itemEffectValue || 0).toFixed(1)}`;
+                        } else {
+                            bonusText = `+${formatNumber(details.itemEffectValue || 0)}`;
+                        }
                         message = `${userHtml}, mağazadan <b class="text-red-500">-${costText}</b> harcayarak <b class="text-green-400">${bonusText} ${details.itemName}</b> bonusu kazandı. (Mevcut ${balanceUnit}: ${formatNumber(balance)})`;
-                        plainTextMessage = `${activity.username}, mağazadan -${costText} harcayarak ${bonusText} ${details.itemName} bonusu kazandı. (Mevcut ${balanceUnit}: ${formatNumber(balance)})`;
                     } 
+                    // ★★★ GÜNCELLENEN MESAJ ALANI SONU ★★★
                     else if (details.itemValue) {
                          message = `${userHtml}, mağazadan <b class="text-red-500">-${costText}</b> harcayarak <b class="text-green-400">+${details.itemValue} ${details.itemName}</b> aldı. (Mevcut ${balanceUnit}: ${formatNumber(balance)})`;
-                         plainTextMessage = `${activity.username}, mağazadan -${costText} harcayarak +${details.itemValue} ${details.itemName} aldı. (Mevcut ${balanceUnit}: ${formatNumber(balance)})`;
                     } else {
                         message = `${userHtml}, mağazadan <b class="text-red-500">-${costText}</b> harcayarak <b class="text-green-400">${details.itemName}</b> aldı. (Mevcut ${balanceUnit}: ${formatNumber(balance)})`;
-                        plainTextMessage = `${activity.username}, mağazadan -${costText} harcayarak ${details.itemName} aldı. (Mevcut ${balanceUnit}: ${formatNumber(balance)})`;
                     }
                     break;
                 case 'surpriseBox':
-                    let surpriseMultiplierText = (details.multiplier && details.multiplier > 1) ? ` <span class="text-xs text-purple-400">(${details.multiplier}x çarpan kullandı)</span>` : ` <span class="text-xs text-gray-400">(çarpan kullanmadı)</span>`;
-                    let plainSurpriseMultiplierText = (details.multiplier && details.multiplier > 1) ? ` (${details.multiplier}x çarpan kullandı)` : ``;
+                    let surpriseMultiplierText = '';
+                    if (details.boxId !== 'Çark') {
+                        surpriseMultiplierText = (details.multiplier && details.multiplier > 1) ? ` <span class="text-xs text-purple-400">(${details.multiplier}x çarpan kullandı)</span>` : ` <span class="text-xs text-gray-400">(çarpan kullanmadı)</span>`;
+                    }
                     const source = details.boxId === 'Çark' ? 'Şans Çarkı\'ndan' : `<b>${details.boxId}</b> numaralı kutudan`;
-                    const plainSource = details.boxId === 'Çark' ? 'Şans Çarkı\'ndan' : `${details.boxId} numaralı kutudan`;
-                    message = `${userHtml}, ${source} Sürpriz Kutu buldu ve <span class="text-green-300 font-bold">+${formatNumber(details.points)} Puan</span> kazandı!${surpriseMultiplierText} <span class="text-gray-400">(Mevcut Puan: ${formatNumber(details.newBalance)})</span>`;
-                    plainTextMessage = `${activity.username}, ${plainSource} Sürpriz Kutu buldu ve +${formatNumber(details.points)} Puan kazandı!${plainSurpriseMultiplierText} (Mevcut Puan: ${formatNumber(details.newBalance)})`;
+                    message = `${userHtml}, ${source} Sürpriz Kutu buldu ve <span class="text-green-300 font-bold">+${details.points} Puan</span> kazandı!${surpriseMultiplierText} <span class="text-gray-400">(Mevcut Puan: ${details.newBalance})</span>`;
                     break;
                 case 'monsterAttack':
                     const monsterNameHtml = `<b class="text-red-300 cursor-pointer hover:underline" onclick="openMonsterInfoModal()">${details.monsterName}</b>`;
                     let attackSummary = `${userHtml}, ${monsterNameHtml}'a saldırdı. `;
-                    let plainAttackSummary = `${activity.username}, ${details.monsterName}'a saldırdı. `;
-                    if (details.didMonsterDodge) { attackSummary += `Canavar <b class="text-cyan-400">sıyrıldı!</b>`; plainAttackSummary += `Canavar sıyrıldı!`; } 
-                    else if (details.playerAttackType === 'pierce') { attackSummary += `📌 <b class="text-purple-400">Delici Vuruş</b> ile <b class="text-green-300">${formatNumber(details.damageDealt)} hasar</b> verdi. `; plainAttackSummary += `Delici Vuruş ile ${formatNumber(details.damageDealt)} hasar verdi. `; } 
-                    else if (details.playerAttackType === 'crit') { attackSummary += `💥 <b class="text-green-300">Kritik Vuruş</b> ile <b class="text-green-300">${formatNumber(details.damageDealt)} hasar</b> verdi. `; plainAttackSummary += `Kritik Vuruş ile ${formatNumber(details.damageDealt)} hasar verdi. `; } 
-                    else { attackSummary += `<b class="text-green-300">${formatNumber(details.damageDealt)} hasar</b> verdi. `; plainAttackSummary += `${formatNumber(details.damageDealt)} hasar verdi. `; }
-                    if (details.didPlayerDodge) { attackSummary += `Canavarın saldırısından <b class="text-cyan-400">sıyrıldı!</b>`; plainAttackSummary += `Canavarın saldırısından sıyrıldı!`; } 
+                    if (details.didMonsterDodge) { attackSummary += `Canavar <b class="text-cyan-400">sıyrıldı!</b>`; } 
+                    else if (details.playerAttackType === 'pierce') { attackSummary += `📌 <b class="text-purple-400">Delici Vuruş</b> ile <b class="text-green-300">${details.damageDealt} hasar</b> verdi. `; } 
+                    else if (details.playerAttackType === 'crit') { attackSummary += `💥 <b class="text-green-300">Kritik Vuruş</b> ile <b class="text-green-300">${details.damageDealt} hasar</b> verdi. `; } 
+                    else { attackSummary += `<b class="text-green-300">${details.damageDealt} hasar</b> verdi. `; }
+                    if (details.didPlayerDodge) { attackSummary += `Canavarın saldırısından <b class="text-cyan-400">sıyrıldı!</b>`; } 
                     else {
-                        let monsterAttackText = 'saldırısıyla'; let plainMonsterAttackText = 'saldırısıyla';
-                        if (details.monsterAttackType === 'crit') { monsterAttackText = `💥 <b class="text-red-600">kritik saldırısıyla</b>`; plainMonsterAttackText = `kritik saldırısıyla`; } 
-                        else if (details.monsterAttackType === 'pierce') { monsterAttackText = `📌 <b class="text-purple-500">delici saldırısıyla</b>`; plainMonsterAttackText = `delici saldırısıyla`; }
-                        attackSummary += ` Canavarın ${monsterAttackText} <b class="text-red-400">${formatNumber(details.damageTaken)} hasar</b> aldı.`;
-                        plainAttackSummary += ` Canavarın ${plainMonsterAttackText} ${formatNumber(details.damageTaken)} hasar aldı.`;
+                        let monsterAttackText = 'saldırısıyla';
+                        if (details.monsterAttackType === 'crit') { monsterAttackText = `💥 <b class="text-red-600">kritik saldırısıyla</b>`; } 
+                        else if (details.monsterAttackType === 'pierce') { monsterAttackText = `📌 <b class="text-purple-500">delici saldırısıyla</b>`; }
+                        attackSummary += ` Canavarın ${monsterAttackText} <b class="text-red-400">${details.damageTaken} hasar</b> aldı.`;
                     }
                     attackSummary += `<div class="text-xs mt-1 text-gray-400">Canavar Canı: ${formatNumber(details.monsterRemainingHP)}/${formatNumber(details.monsterMaxHP)} | ${activity.username} Canı: ${formatNumber(details.playerRemainingHP)}/${formatNumber(details.playerMaxHP)} | Toplam Hasar: ${formatNumber(details.playerTotalDamage)}</div>`;
-                    if (details.rewardWon) { attackSummary += ` Ek olarak <b class="text-yellow-300">${details.rewardWon}</b> kazandı.`; plainAttackSummary += ` Ek olarak ${details.rewardWon} kazandı.`; }
-                    if (details.playerDied) { attackSummary += ` <b class="text-black bg-red-500 px-1 rounded">MAĞLUP OLDU!</b>`; plainAttackSummary += ` MAĞLUP OLDU!`; }
+                    if (details.rewardWon) { attackSummary += ` Ek olarak <b class="text-yellow-300">${details.rewardWon}</b> kazandı.`; }
+                    if (details.playerDied) attackSummary += ` <b class="text-black bg-red-500 px-1 rounded">MAĞLUP OLDU!</b>`;
                     message = attackSummary;
-                    plainTextMessage = plainAttackSummary;
                     break;
                 case 'monsterDefeated':
-                    message = `<b class="text-red-400">${details.monsterName}</b> mağlup edildi! En çok hasarı veren ${userHtml} (<b class="text-white">${formatNumber(details.totalDamage)} Hasar</b>), <b class="text-green-300">${details.prize}</b> ödülünü kazandı.`;
-                    plainTextMessage = `${details.monsterName} mağlup edildi! En çok hasarı veren ${activity.username} (${formatNumber(details.totalDamage)} Hasar), ${details.prize} ödülünü kazandı.`;
+                    const winnerHtml = `<b class="text-yellow-300 cursor-pointer hover:underline" onclick="openPublicUserDetailModal('${details.winner}')">${details.winner}</b>`;
+                    const defeatedMonsterNameHtml = `<b class="text-red-400 cursor-pointer hover:underline" onclick="openMonsterInfoModal()">${details.monsterName}</b>`;
+                    message = `${defeatedMonsterNameHtml} mağlup edildi! En çok hasarı veren ${winnerHtml} (<b class="text-white">${formatNumber(details.totalDamage)} Hasar</b>), <b class="text-green-300">${details.prize}</b> ödülünü kazandı.`;
                     break;
                 case 'collectionCompleted':
-                    if (details.isFirst) { 
-                        message = `${userHtml}, koleksiyonu tamamlayan <b class="text-amber-400">İLK KİŞİ</b> oldu ve büyük ödülü kazandı!`;
-                        plainTextMessage = `${activity.username}, koleksiyonu tamamlayan İLK KİŞİ oldu ve büyük ödülü kazandı!`;
-                    } 
-                    else { 
-                        message = `${userHtml}, koleksiyonu tamamlayan <b class="text-amber-400">${details.rank}. KİŞİ</b> oldu. Tebrikler!`;
-                        plainTextMessage = `${activity.username}, koleksiyonu tamamlayan ${details.rank}. KİŞİ oldu. Tebrikler!`;
-                    }
+                    if (details.isFirst) { message = `${userHtml}, koleksiyonu tamamlayan <b class="text-amber-400">İLK KİŞİ</b> oldu ve büyük ödülü kazandı!`; } 
+                    else { message = `${userHtml}, koleksiyonu tamamlayan <b class="text-amber-400">${details.rank}. KİŞİ</b> oldu. Tebrikler!`; }
                     break;
                 case 'useRegenPotion':
-                     message = `${userHtml}, <b class="text-cyan-300">%${details.percentage} Can Yenileme İksiri</b> kullanarak <b class="text-green-300">${formatNumber(details.healed)} can</b> yeniledi. <span class="text-gray-400">(Can: ${formatNumber(details.newHP)}/${formatNumber(details.playerMaxHP)})</span>`;
-                     plainTextMessage = `${activity.username}, %${details.percentage} Can Yenileme İksiri kullanarak ${formatNumber(details.healed)} can yeniledi.`;
+                     message = `${userHtml}, <b class="text-cyan-300">%${details.percentage} Can Yenileme İksiri</b> kullanarak <b class="text-green-300">${details.healed} can</b> yeniledi. <span class="text-gray-400">(Can: ${formatNumber(details.newHP)}/${formatNumber(details.playerMaxHP)})</span>`;
                      break;
                 case 'wildcardConvertedToBoxRights':
                     message = `${userHtml}, 1 Joker Kart'ı <b class="text-cyan-300 font-bold">+${details.boxRights} Kutu Hakkı</b>'na dönüştürdü.`;
-                    plainTextMessage = `${activity.username}, 1 Joker Kart'ı +${details.boxRights} Kutu Hakkı'na dönüştürdü.`;
                     break;
                 case 'clickCatchSolo':
                     const { baseScore, finalScore, ticketsUsed, specialItems, newWeeklyScore } = details;
-                    message = `${userHtml}, Tıkla-Yakala oyununda <b class="text-white">${ticketsUsed} bilet</b> kullandı ve <span class="text-green-300 font-bold">${formatNumber(finalScore)} Skor</span> topladı. <small class="text-gray-400">(Skor: ${formatNumber(baseScore)} x ${ticketsUsed} Bilet)</small>`;
-                    plainTextMessage = `${activity.username}, Tıkla-Yakala oyununda ${ticketsUsed} bilet kullandı ve ${formatNumber(finalScore)} Skor topladı.`;
+                    message = `${userHtml}, Tıkla-Yakala oyununda <b class="text-white">${ticketsUsed} bilet</b> kullandı ve <span class="text-green-300 font-bold">${finalScore} Skor</span> topladı. <small class="text-gray-400">(Skor: ${baseScore} x ${ticketsUsed} Bilet)</small>`;
                     if (specialItems && specialItems.length > 0) {
-                        const itemsText = specialItems.map(item => `+${item.amount} ${item.name}`).join(', ');
-                        message += ` - (Ayrıca, <b class="text-cyan-300">${itemsText}</b>) kazandı.`;
-                        plainTextMessage += ` - (Ayrıca, ${itemsText}) kazandı.`;
-                    } else { 
-                        message += ' - (Özel eşya yakalanmadı)'; 
-                        plainTextMessage += ' - (Özel eşya yakalanmadı)';
-                    }
-                    const weeklyScoreText = (newWeeklyScore !== undefined) ? ` <span class="text-gray-400">(Haftalık Skor: ${formatNumber(newWeeklyScore)})</span>` : '';
+                        const itemsText = specialItems.map(item => `<b class="text-cyan-300">+${item.amount} ${item.name}</b>`).join(', ');
+                        message += ` - (Ayrıca, ${itemsText}) kazandı.`;
+                    } else { message += ' - (Özel eşya yakalanmadı)'; }
+                    const weeklyScoreText = (newWeeklyScore !== undefined) ? ` <span class="text-gray-400">(Haftalık Skor: ${newWeeklyScore})</span>` : '';
                     message += weeklyScoreText;
-                    plainTextMessage += (newWeeklyScore !== undefined) ? ` (Haftalık Skor: ${formatNumber(newWeeklyScore)})` : '';
                     break;
                 case 'weeklyChampion':
-                    message = `Tıkla-Yakala haftası sona erdi! ${userHtml}, <b class="text-white">${formatNumber(details.score)} skorla</b> şampiyon oldu ve <b class="text-green-300">${details.prize}</b> kazandı. Tüm katılımcılara +1 bilet hediye edildi.`;
-                    plainTextMessage = `Tıkla-Yakala haftası sona erdi! ${activity.username}, ${formatNumber(details.score)} skorla şampiyon oldu ve ${details.prize} kazandı. Tüm katılımcılara +1 bilet hediye edildi.`;
+                    const championHtml = `<b class="text-amber-300 cursor-pointer hover:underline" onclick="openPublicUserDetailModal('${details.winner}')">${details.winner}</b>`;
+                    message = `Tıkla-Yakala haftası sona erdi! ${championHtml}, <b class="text-white">${details.score} skorla</b> şampiyon oldu ve <b class="text-green-300">${details.prize}</b> kazandı. Tüm katılımcılara +1 bilet hediye edildi.`;
                     break; 
                 case 'loginStreakClaim':
                     message = `${userHtml}, giriş serisinde <b class="text-teal-300 font-bold">${details.day}. gün</b> <b class="text-white">'${details.packageName}'</b> ödülünü aldı.`;
-                    plainTextMessage = `${activity.username}, giriş serisinde ${details.day}. gün '${details.packageName}' ödülünü aldı.`;
                     break;
                 case 'tradeOfferCreated':
                     message = `${userHtml}, <b class="text-red-400">-${details.fee} Puan</b> ödeyip pazara yeni bir takas teklifi koydu: <b class="text-cyan-300">${details.offeredCardName}</b> karşılığında <b class="text-pink-300">${details.requestedCardName}</b> istiyor.`;
-                    plainTextMessage = `${activity.username}, -${details.fee} Puan ödeyip pazara yeni bir takas teklifi koydu: ${details.offeredCardName} karşılığında ${details.requestedCardName} istiyor.`;
-                    if (details.status === 'completed') { message += ` <span class="text-green-400 font-bold">(Takas Yapıldı)</span>`; plainTextMessage += ` (Takas Yapıldı)`; } 
-                    else if (details.status === 'cancelled') { message += ` <span class="text-red-500 font-bold">(İşlem İptal Edildi)</span>`; plainTextMessage += ` (İşlem İptal Edildi)`; }
+                    if (details.status === 'completed') { message += ` <span class="text-green-400 font-bold">(Takas Yapıldı)</span>`; } 
+                    else if (details.status === 'cancelled') { message += ` <span class="text-red-500 font-bold">(İşlem İptal Edildi)</span>`; }
                     break;
                 case 'tradeOfferAccepted':
                     message = `${userHtml}, <b class="text-red-400">-${details.fee} Puan</b> ödeyip, ${details.offerer}'in <b class="text-cyan-300">'${details.offeredCardName}'</b> kartı teklifini kabul etti ve karşılığında <b class="text-pink-300">'${details.requestedCardName}'</b> kartını verdi. <span class="text-gray-400">(Kalan Puan: ${formatNumber(details.newBalance)})</span>`;
-                    plainTextMessage = `${activity.username}, -${details.fee} Puan ödeyip, ${details.offerer}'in '${details.offeredCardName}' kartı teklifini kabul etti ve karşılığında '${details.requestedCardName}' kartını verdi. (Kalan Puan: ${formatNumber(details.newBalance)})`;
                     break;
                 case 'newItemFound':
-                    let newItemMultiplierText = (details.multiplier && details.multiplier > 1) ? ` <span class="text-xs text-purple-400">(${details.multiplier}x çarpan kullandı)</span>` : ``;
-                    message = `${userHtml}, <b>${details.boxId}</b> numaralı kutudan <span class="text-cyan-300 font-bold">${details.itemName}</span> buldu.${newItemMultiplierText}`;
-                    plainTextMessage = `${activity.username}, ${details.boxId} numaralı kutudan ${details.itemName} buldu.${(details.multiplier && details.multiplier > 1) ? ` (${details.multiplier}x çarpan kullandı)` : ''}`;
+                    let newItemMultiplierText = (details.multiplier && details.multiplier > 1) ? ` <span class="text-xs text-purple-400">(${details.multiplier}x çarpan kullandı)</span>` : ` <span class="text-xs text-gray-400">(çarpan kullanmadı)</span>`;
+                    let displayItemName = details.itemType ? typeToName[details.itemType] : details.itemName;
+                    let displayItemAmount = details.itemName ? details.itemName.split(' ')[0] : '+1'; 
+                    let valuePrefixNewItem = '+';
+                    if (percentPotions.includes(details.itemType)) { valuePrefixNewItem = '%'; } 
+                    else if (details.itemType === 'health_regen_potion') { valuePrefixNewItem = '%'; }
+                    if (details.itemValue) { displayItemAmount = `${valuePrefixNewItem}${details.itemValue}`; }
+                    message = `${userHtml}, <b>${details.boxId}</b> numaralı kutudan <span class="text-cyan-300 font-bold">${displayItemAmount} ${displayItemName}</span> buldu.${newItemMultiplierText}`;
                     break;
-                case 'multiplierUpgraded': case 'multiplierUpgradedFromStore':
-                    message = `${userHtml}, aldığı <b>${details.newValue}x (${details.newUses} kullanım)</b> çarpan ile mevcut çarpanını yükseltti. Eski <b>${details.oldValue}x (${details.oldUses} kullanım)</b> çarpanı için <b class="text-green-300 font-bold">+${details.boxRights} Kutu Hakkı</b> iade edildi.`;
-                    plainTextMessage = `${activity.username}, aldığı ${details.newValue}x (${details.newUses} kullanım) çarpan ile mevcut çarpanını yükseltti. Eski ${details.oldValue}x (${details.oldUses} kullanım) çarpanı için +${details.boxRights} Kutu Hakkı iade edildi.`;
+                
+                case 'multiplierUpgraded':
+                case 'multiplierUpgradedFromStore':
+                    const upgradeSource = details.source || 'Mağazadan';
+                    message = `${userHtml}, ${upgradeSource}'den aldığı <b>${details.newValue}x (${details.newUses} kullanım)</b> çarpan ile mevcut çarpanını yükseltti. Eski <b>${details.oldValue}x (${details.oldUses} kullanım)</b> çarpanı için <b class="text-green-300 font-bold">+${details.boxRights} Kutu Hakkı</b> iade edildi.`;
                     break;
-                case 'multiplierConvertedToBoxRights': case 'multiplierConvertedOnUsedOpen': case 'multiplierConvertedOnUnusedOpen': case 'dailyRewardMultiplierConverted':
-                    let keptMultiplierText = ``; let plainKeptMultiplierText = ``;
+                case 'multiplierConvertedToBoxRights':
+                case 'multiplierConvertedOnUsedOpen':
+                case 'multiplierConvertedOnUnusedOpen':
+                case 'dailyRewardMultiplierConverted':
+                    let conversionSourceText;
+                    if (details.boxId) {
+                        conversionSourceText = `<b>${details.boxId} numaralı kutudan</b>`;
+                    } else if (details.source) {
+                        conversionSourceText = `${details.source}'dan`;
+                    } else {
+                        conversionSourceText = 'bir yerden';
+                    }
+
+                    let keptMultiplierText = '';
                     const keptValue = details.keptMultiplierValue || details.existingValue;
                     const keptUses = details.existingUses;
                     if (keptValue && keptUses) {
                         keptMultiplierText = ` Mevcut <b>${keptValue}x</b> (${keptUses} kullanım) çarpanı korundu.`;
-                        plainKeptMultiplierText = ` Mevcut ${keptValue}x (${keptUses} kullanım) çarpanı korundu.`;
                     }
-                    message = `${userHtml}, <b>${details.boxId || details.source}</b>'dan kazandığı <b>${details.rewardValue || details.foundValue}x</b> çarpanı, <b class="text-cyan-300 font-bold">+${details.boxRights} Kutu Hakkı</b>'na dönüştürüldü.${keptMultiplierText}`;
-                    plainTextMessage = `${activity.username}, ${details.boxId || details.source}'dan kazandığı ${details.rewardValue || details.foundValue}x çarpanı, +${details.boxRights} Kutu Hakkı'na dönüştürüldü.${plainKeptMultiplierText}`;
+
+                    message = `${userHtml}, ${conversionSourceText} kazandığı <b>${details.rewardValue || details.foundValue}x</b> çarpanı, <b class="text-cyan-300 font-bold">+${details.boxRights} Kutu Hakkı</b>'na dönüştürüldü.${keptMultiplierText}`;
+                    break;
+                
+                case 'multiplierStackedFromStore':
+                     message = `${userHtml}, mağazadan aldığı çarpan ile mevcut <b>${details.multiplierValue}x</b> çarpanının kullanım hakkını <b class="text-teal-300 font-bold">+${details.usesAdded}</b> artırarak toplam <b class="text-teal-300 font-bold">${details.newTotalUses}</b> adete çıkardı.`;
+                    break;
+                case 'dailyRewardMultiplierStacked':
+                    const sourceTextStack = details.source || "Günlük Ödül'den";
+                    message = `${userHtml}, ${sourceTextStack} mevcut <b>${details.multiplierValue}x</b> çarpanıyla aynı değerde bir çarpan daha aldı. Kullanım hakkı <b class="text-teal-300 font-bold">+${details.usesAdded}</b> artırılarak toplam <b class="text-teal-300 font-bold">${details.newTotalUses}</b> oldu.`;
                     break;
                 case 'multiplierStacked':
-                    message = `${userHtml}, <b>${details.boxId} numaralı kutudan</b> mevcut <b>${details.value}x</b> çarpanıyla aynı değerde bir çarpan daha buldu. Kullanım hakkı <b class="text-teal-300 font-bold">+1</b> artırılarak toplam <b class="text-teal-300 font-bold">${details.newTotalUses}</b> oldu.`;
-                    plainTextMessage = `${activity.username}, ${details.boxId} numaralı kutudan mevcut ${details.value}x çarpanıyla aynı değerde bir çarpan daha buldu. Kullanım hakkı +1 artırılarak toplam ${details.newTotalUses} oldu.`;
+                    message = `${userHtml}, <b>${details.boxId} numaralı kutudan</b> mevcut <b>${details.value}x</b> çarpanıyla aynı değerde bir çarpan daha buldu. Kullanım hakkı <b class="text-teal-300 font-bold">+1</b> artırıldı.`;
                     break;
                 case 'wildcardConverted':
                     message = `${userHtml}, Koleksiyonu tamamladığı için ${details.source}'dan aldığı ${details.wildcards} Joker Kart'ı <b class="text-cyan-300 font-bold">+${details.boxRights} Kutu Hakkı</b>'na dönüştürdü.`;
-                    plainTextMessage = `${activity.username}, Koleksiyonu tamamladığı için ${details.source}'dan aldığı ${details.wildcards} Joker Kart'ı +${details.boxRights} Kutu Hakkı'na dönüştürdü.`;
                     break;
                 case 'cardPackConverted':
-                    message = `${userHtml}, Koleksiyonu tamamladığı için ${details.source}'dan aldığı ${details.packs} Kart Paketi'ni <b class="text-green-300 font-bold">+${formatNumber(details.points)} Puana</b> dönüştürdü.`;
-                    plainTextMessage = `${activity.username}, Koleksiyonu tamamladığı için ${details.source}'dan aldığı ${details.packs} Kart Paketi'ni +${formatNumber(details.points)} Puana dönüştürdü.`;
+                    message = `${userHtml}, Koleksiyonu tamamladığı için ${details.source}'dan aldığı ${details.packs} Kart Paketi'ni <b class="text-green-300 font-bold">+${details.points} Puana</b> dönüştürdü.`;
                     break;
                 case 'multiplierCombined':
                     message = `${userHtml}, <b>${details.boxId}</b> numaralı kutudan <b>${details.foundValue}x çarpan</b> buldu. Mevcut çarpanıyla birleştirerek tek kullanımlık <b class="text-teal-300 font-bold">${details.combinedValue}x</b> gücüne ulaştı ve <span class="text-green-300 font-bold">+1 Kutu Hakkı</span> iade aldı.`;
-                    plainTextMessage = `${activity.username}, ${details.boxId} numaralı kutudan ${details.foundValue}x çarpan buldu. Mevcut çarpanıyla birleştirerek tek kullanımlık ${details.combinedValue}x gücüne ulaştı ve +1 Kutu Hakkı iade aldı.`;
                     break;
                  case 'multiplierSwappedOnUnusedOpen':
                      message = `${userHtml}, mevcut <b>${details.existingValue}x (${details.refundedUses} kullanım)</b> çarpanını, kutudan çıkan yeni <b>${details.foundValue}x (1 kullanım)</b> çarpanı ile takas etti. Eski çarpanı için <b class="text-green-300 font-bold">+${details.boxRights} Kutu Hakkı</b> iade edildi.`;
-                     plainTextMessage = `${activity.username}, mevcut ${details.existingValue}x (${details.refundedUses} kullanım) çarpanını, kutudan çıkan yeni ${details.foundValue}x (1 kullanım) çarpanı ile takas etti. Eski çarpanı için +${details.boxRights} Kutu Hakkı iade edildi.`;
                      break;
                 case 'openBox':
-                    let openBoxMultiplierText = (details.multiplier && details.multiplier > 1) ? ` <span class="text-xs text-purple-400">(${details.multiplier}x çarpan kullandı)</span>` : ``;
-                    message = `${userHtml}, <b>${details.boxId}</b> numaralı kutudan <span class="text-green-300 font-bold">+${formatNumber(details.points)} Puan</span> kazandı.${openBoxMultiplierText} <span class="text-gray-400">(Mevcut Puan: ${formatNumber(details.newBalance)})</span>`;
-                    plainTextMessage = `${activity.username}, ${details.boxId} numaralı kutudan +${formatNumber(details.points)} Puan kazandı.${(details.multiplier && details.multiplier > 1) ? ` (${details.multiplier}x çarpan kullandı)`: ''} (Mevcut Puan: ${formatNumber(details.newBalance)})`;
+                    let openBoxMultiplierText = (details.multiplier && details.multiplier > 1) ? ` <span class="text-xs text-purple-400">(${details.multiplier}x çarpan kullandı)</span>` : ` <span class="text-xs text-gray-400">(çarpan kullanmadı)</span>`;
+                    message = `${userHtml}, <b>${details.boxId}</b> numaralı kutudan <span class="text-green-300 font-bold">+${details.points} Puan</span> kazandı.${openBoxMultiplierText} <span class="text-gray-400">(Mevcut Puan: ${details.newBalance})</span>`;
                     break;
                 case 'iflas':
-                    message = details.shieldUsed ? `${userHtml}, <b>${details.boxId}</b> numaralı kutudan bomba buldu ama iflas kalkanı onu korudu.` : `${userHtml}, <b>${details.boxId}</b> numaralı kutudan bomba buldu <span class="text-red-400 font-bold">-${formatNumber(details.lostPoints)} Puan</span> kaybetti. <span class="text-gray-400">(Kalan Puan: ${formatNumber(details.newBalance)})</span>`;
-                    plainTextMessage = details.shieldUsed ? `${activity.username}, ${details.boxId} numaralı kutudan bomba buldu ama iflas kalkanı onu korudu.` : `${activity.username}, ${details.boxId} numaralı kutudan bomba buldu -${formatNumber(details.lostPoints)} Puan kaybetti. (Kalan Puan: ${formatNumber(details.newBalance)})`;
+                    let iflasMultiplierText = (details.multiplier && details.multiplier > 1) ? ` <span class="text-xs text-purple-400">(${details.multiplier}x çarpan kullandı)</span>` : ` <span class="text-xs text-gray-400">(çarpan kullanmadı)</span>`;
+                    message = details.shieldUsed ? `${userHtml}, <b>${details.boxId}</b> numaralı kutudan bomba buldu ama iflas kalkanı onu korudu.${iflasMultiplierText}` : `${userHtml}, <b>${details.boxId}</b> numaralı kutudan bomba buldu <span class="text-red-400 font-bold">-${details.lostPoints} Puan</span> kaybetti.${iflasMultiplierText} <span class="text-gray-400">(Kalan Puan: ${details.newBalance})</span>`;
                     break;
                 case 'kasaTransfer':
-                    message = `${userHtml}, Kasa'sına <b class="text-purple-300 font-bold">${formatNumber(details.amount)} Puan</b> aktardı. <span class="text-gray-400">(Yeni Kasa Puanı: ${formatNumber(details.newKasaBalance)})</span>`;
-                    plainTextMessage = `${activity.username}, Kasa'sına ${formatNumber(details.amount)} Puan aktardı. (Yeni Kasa Puanı: ${formatNumber(details.newKasaBalance)})`;
+                    message = `${userHtml}, Kasa'sına <b class="text-purple-300 font-bold">${details.amount} Puan</b> aktardı. <span class="text-gray-400">(Yeni Kasa Puanı: ${details.newKasaBalance})</span>`;
+                    break;
+                case 'multiplierFound':
+                    message = `${userHtml}, <b>${details.boxId}</b> numaralı kutudan <span class="text-purple-300 font-bold">${details.value}x Çarpan</span> buldu.`;
                     break;
                 case 'lobbyJoined':
-                    message = `${userHtml}, Tıkla-Yakala lobisine <span class="text-red-400 font-bold">-${details.cost} Puan</span> karşılığında katıldı. <span class="text-gray-400">(Kalan Puan: ${formatNumber(details.newBalance)})</span>`;
-                    plainTextMessage = `${activity.username}, Tıkla-Yakala lobisine -${details.cost} Puan karşılığında katıldı. (Kalan Puan: ${formatNumber(details.newBalance)})`;
+                    message = `${userHtml}, Tıkla-Yakala lobisine <span class="text-red-400 font-bold">-${details.cost} Puan</span> karşılığında katıldı. <span class="text-gray-400">(Kalan Puan: ${details.newBalance})</span>`;
                     break;
                 case 'spinWheel':
-                    let wheelBalanceText = details.type === 'points' ? ` <span class="text-gray-400">(Mevcut Puan: ${formatNumber(details.newBalance)})</span>` : '';
-                    let plainWheelBalanceText = details.type === 'points' ? ` (Mevcut Puan: ${formatNumber(details.newBalance)})` : '';
-                    message = `${userHtml}, çarkı çevirerek <span class="text-pink-300 font-bold">${details.result}</span> kazandı.${wheelBalanceText}`;
-                    plainTextMessage = `${activity.username}, çarkı çevirerek ${details.result} kazandı.${plainWheelBalanceText}`;
+                    let prizeText = '';
+                    const prizeType = details.type;
+                    const prizeValue = details.value;
+                    let wheelBalanceText = prizeType === 'points' ? ` <span class="text-gray-400">(Mevcut Puan: ${details.newBalance})</span>` : '';
+                    if (prizeType === 'pas') { message = `${userHtml}, çarkı çevirdi ve <span class="text-gray-400 font-bold">Pas</span> geçti.`; } 
+                    else {
+                        const isPercentSpin = percentPotions.includes(prizeType);
+                        // ★★★ İSTEĞE GÖRE GÜNCELLENEN MESAJ ALANI ★★★
+                        const valuePrefixSpin = isPercentSpin ? `%` : `+`;
+                        if (prizeType === 'points') { prizeText = `+${prizeValue} Puan`; } 
+                        else if (prizeType === 'tempMultiplier') { prizeText = `${prizeValue}X Çarpan`; } 
+                        else { prizeText = `${valuePrefixSpin}${prizeValue} ${typeToName[prizeType] || prizeType}`; }
+                        message = `${userHtml}, çarkı çevirerek <span class="text-pink-300 font-bold">${prizeText}</span> kazandı.${wheelBalanceText}`;
+                    }
                     break;
                 case 'clickCatchLobby':
-                    message = `${userHtml}, lobi oyununu kazanarak <span class="text-yellow-300 font-bold">+${formatNumber(details.prize)} Puan</span> ödül aldı! <span class="text-gray-400">(Mevcut Puan: ${formatNumber(details.newBalance)})</span>`;
-                    plainTextMessage = `${activity.username}, lobi oyununu kazanarak +${formatNumber(details.prize)} Puan ödül aldı! (Mevcut Puan: ${formatNumber(details.newBalance)})`;
+                    message = `${userHtml}, lobi oyununu kazanarak <span class="text-yellow-300 font-bold">+${details.prize} Puan</span> ödül aldı! <span class="text-gray-400">(Mevcut Puan: ${details.newBalance})</span>`;
                     break;
                 case 'dailyReward':
+                    let rewardText = '';
                     const rewardType = details.rewardType;
                     const rewardValue = details.rewardValue;
-                    let rewardText = '';
+                    let dailyBalanceText = rewardType === 'points' ? ` <span class="text-gray-400">(Mevcut Puan: ${details.newBalance})</span>` : '';
                     if (rewardType === 'avatar') { 
-                        rewardText = `'${rewardValue}' avatarını`;
-                    } else if (rewardType === 'tempMultiplier') { 
-                        rewardText = `${rewardValue}x Çarpan (${details.rewardUses} kullanım)`;
-                    } else { 
+                        rewardText = `<span class="text-sky-300 font-bold">'${rewardValue}' avatarını</span>`;
+                        message = `${userHtml}, günlük ödül olarak ${rewardText} kazandı.`;
+                    } else {
                         const isPercentDaily = percentPotions.includes(rewardType);
+                        // ★★★ İSTEĞE GÖRE GÜNCELLENEN MESAJ ALANI ★★★
                         const valuePrefixDaily = isPercentDaily ? `%` : `+`;
-                        rewardText = `${valuePrefixDaily}${rewardValue} ${typeToName[rewardType] || details.rewardName}`;
+                        if (rewardType === 'tempMultiplier') { 
+                            rewardText = `${rewardValue}x Çarpan (${details.rewardUses} kullanım)`;
+                        } else { 
+                            rewardText = `${valuePrefixDaily}${rewardValue} ${typeToName[rewardType] || details.rewardName}`;
+                        }
+                        message = `${userHtml}, günlük ödül olarak <span class="text-teal-300 font-bold">${rewardText}</span> aldı.${dailyBalanceText}`;
                     }
-                    message = `${userHtml}, günlük ödül olarak <span class="text-teal-300 font-bold">${rewardText}</span> aldı.`;
-                    plainTextMessage = `${activity.username}, günlük ödül olarak ${rewardText} aldı.`;
                     break;
                 default:
-                    message = `${userHtml} bir eylem gerçekleştirdi.`;
-                    plainTextMessage = message;
+                    message = `${userHtml} bir eylem gerçekleştirdi. (Tip: ${activity.type})`;
                     break;
             }
 
@@ -7321,25 +7337,15 @@ function renderActivityFeed(activities) {
                         <p class="text-gray-200 text-sm leading-relaxed">${message}</p>
                         <div class="flex justify-between items-center mt-1">
                             <span class="text-xs text-gray-500">${timeAgo}</span>
-                            <div class="flex items-center">
-                                ${shareButtonHtml}
-                                ${deleteButtonHtml}
-                            </div>
+                            ${deleteButtonHtml}
                         </div>
                     </div>
                 </div>`;
             
-            const tempDiv = document.createElement('div');
-            tempDiv.innerHTML = activityHtml;
-            const shareBtn = tempDiv.querySelector('button[data-activity-text]');
-            if(shareBtn) {
-                 shareBtn.dataset.activityText = plainTextMessage;
-            }
-            
-            activityFeedList.appendChild(tempDiv.firstElementChild);
-
+            activityFeedList.innerHTML += activityHtml;
         } catch (error) {
-            console.error("Bir aktivite işlenirken hata oluştu, bu eylem atlandı:", error, activity);
+            console.error("Bir aktivite işlenirken hata oluştu, bu eylem atlandı:", error);
+            console.error("Hatalı aktivite verisi:", activity);
         }
     });
 }
