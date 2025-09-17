@@ -64,7 +64,6 @@
 .user-mention:hover {
     background-color: rgba(59, 130, 246, 0.4);
 }
-/* ★★★ YENİ EKLENEN KOD: VURGULU ETİKET STİLİ ★★★ */
 .user-mention.highlighted {
     background-color: rgba(253, 224, 71, 0.3); /* yellow-300/30 */
     color: #fde047; /* text-yellow-300 */
@@ -118,19 +117,19 @@
     position: absolute;
     top: -2px;
     right: -2px;
-    min-width: 20px; /* ★★★ DEĞİŞİKLİK: Genişliği sayıya göre ayarla ★★★ */
+    min-width: 20px; 
     height: 20px;
-    padding: 0 4px; /* ★★★ DEĞİŞİKLİK: İç boşluk ★★★ */
+    padding: 0 4px; 
     background-color: #fde047; /* yellow-400 */
-    border-radius: 10px; /* ★★★ DEĞİŞİKLİK: Yuvarlaklığı ayarla ★★★ */
+    border-radius: 10px; 
     border: 2px solid #111827; /* bg-gray-900 */
     animation: pulse-dot 1.5s infinite;
-    font-size: 12px; /* ★★★ DEĞİŞİKLİK: Yazı boyutu ★★★ */
-    font-weight: bold; /* ★★★ DEĞİŞİKLİK: Yazı kalınlığı ★★★ */
-    color: #111827; /* ★★★ DEĞİŞİKLİK: Yazı rengi ★★★ */
-    display: flex; /* ★★★ DEĞİŞİKLİK: İçeriği ortala ★★★ */
-    align-items: center; /* ★★★ DEĞİŞİKLİK: İçeriği ortala ★★★ */
-    justify-content: center; /* ★★★ DEĞİŞİKLİK: İçeriği ortala ★★★ */
+    font-size: 12px; 
+    font-weight: bold; 
+    color: #111827; 
+    display: flex; 
+    align-items: center; 
+    justify-content: center; 
 }
 
 @keyframes pulse-dot {
@@ -138,9 +137,8 @@
   50% { transform: scale(1.3); opacity: 0.7; }
 }
 
-/* ★★★ YENİ EKLENEN KOD: ÇARK DÖNERKEN ZIPLAMA ANİMASYONU ★★★ */
 .wheel-spin-bounce {
-    animation: bounce-spin 0.5s ease-in-out 4; /* 4 kere zıplasın (2 saniye) */
+    animation: bounce-spin 0.5s ease-in-out 4; 
 }
 @keyframes bounce-spin {
   0%, 100% { transform: translateY(0); }
@@ -150,26 +148,24 @@
 /* Sohbet Paneli */
 #chatPanel {
     position: fixed;
-    bottom: 6rem;   /* 96px - Butonun üstünde */
-    right: 1.5rem;  /* 24px */
+    bottom: 6rem;   
+    right: 1.5rem;  
     width: 90%;
     max-width: 400px;
     height: 500px;
     z-index: 9997;
-    background-color: rgba(17, 24, 39, 0.95); /* bg-gray-900/95 */
+    background-color: rgba(17, 24, 39, 0.95); 
     backdrop-filter: blur(8px);
-    border-radius: 1rem; /* rounded-2xl */
-    border: 1px solid #4b5563; /* border-gray-600 */
+    border-radius: 1rem; 
+    border: 1px solid #4b5563; 
     box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
     display: flex;
     flex-direction: column;
-    /* Başlangıçta gizli ve küçük */
     transform: translateY(20px) scale(0.95);
     opacity: 0;
     visibility: hidden;
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
-/* Sohbet paneli açıldığında */
 #chatPanel.open {
     transform: translateY(0) scale(1);
     opacity: 1;
@@ -192,22 +188,22 @@
     overflow-y: auto;
     padding: 1rem;
     display: flex;
-    flex-direction: column-reverse; /* Yeni mesajlar altta görünür */
+    flex-direction: column-reverse; 
 }
 
 /* Tek bir mesaj balonu */
 .chat-message {
     display: flex;
     align-items: flex-start;
-    gap: 0.75rem; /* 12px */
-    margin-bottom: 1rem;
+    gap: 0.75rem; 
+    margin-bottom: 1.5rem; /* ★★★ DEĞİŞİKLİK: Reaksiyon butonları için boşluk ★★★ */
     max-width: 90%;
 }
 .chat-message .avatar {
     width: 40px;
     height: 40px;
     border-radius: 50%;
-    border: 2px solid #6b7280; /* border-gray-500 */
+    border: 2px solid #6b7280;
     object-fit: cover;
 }
 .chat-message .message-content {
@@ -217,96 +213,110 @@
 .chat-message .message-header {
     display: flex;
     align-items: center;
-    gap: 0.5rem; /* 8px */
-    margin-bottom: 0.25rem; /* 4px */
+    gap: 0.5rem; 
+    margin-bottom: 0.25rem; 
 }
 .chat-message .message-header .username {
-    font-weight: 700; /* bold */
-    color: #fde047; /* text-yellow-300 */
-    font-size: 0.875rem; /* text-sm */
+    font-weight: 700;
+    color: #fde047; 
+    font-size: 0.875rem;
 }
 .chat-message .message-header .timestamp {
-    font-size: 0.75rem; /* text-xs */
-    color: #6b7280; /* text-gray-500 */
+    font-size: 0.75rem;
+    color: #6b7280;
 }
 .chat-message .message-body {
-    background-color: #374151; /* bg-gray-700 */
+    background-color: #374151; 
     padding: 0.5rem 0.75rem;
-    border-radius: 0.75rem; /* rounded-xl */
-    color: #f3f4f6; /* text-gray-100 */
+    border-radius: 0.75rem; 
+    color: #f3f4f6; 
     word-break: break-word;
-    position: relative; /* ★★★ DEĞİŞİKLİK: Beğeni butonu için gerekli ★★★ */
+    position: relative; 
 }
 
 /* Mevcut kullanıcının mesajı */
 .chat-message.current-user {
     align-self: flex-end;
-    flex-direction: row-reverse; /* Avatar sağda */
+    flex-direction: row-reverse; 
 }
 .chat-message.current-user .message-header {
     flex-direction: row-reverse;
 }
 .chat-message.current-user .message-body {
-    background-color: #7f1d1d; /* bg-red-800 */
+    background-color: #7f1d1d; 
 }
 
-/* ★★★ YENİ EKLENEN KOD: MESAJ BEĞENİ BUTONU STİLİ ★★★ */
-.like-btn {
-    background: rgba(0,0,0,0.3);
-    border: 1px solid #4b5563;
+/* ★★★ YENİ EKLENEN KOD: REAKSİYON BUTONLARI STİLİ ★★★ */
+.reaction-buttons-container {
+    position: absolute;
+    bottom: -12px;
+    right: 10px;
+    display: flex;
+    gap: 6px;
+    background: rgba(17, 24, 39, 0.8); /* bg-gray-900/80 */
+    padding: 4px;
+    border-radius: 16px;
+    border: 1px solid #4b5563; /* border-gray-600 */
+    box-shadow: 0 2px 5px rgba(0,0,0,0.4);
+    visibility: hidden;
+    opacity: 0;
+    transform: translateY(5px);
+    transition: all 0.2s ease-in-out;
+}
+.chat-message:hover .reaction-buttons-container {
+    visibility: visible;
+    opacity: 1;
+    transform: translateY(0);
+}
+.reaction-btn {
+    background: none;
+    border: none;
     color: #d1d5db; /* text-gray-300 */
-    border-radius: 12px;
-    padding: 2px 6px;
     cursor: pointer;
-    transition: all 0.2s;
     display: flex;
     align-items: center;
     gap: 4px;
-    font-size: 12px;
-    line-height: 1;
-    position: absolute;
-    bottom: -10px;
-    right: 10px;
-    visibility: hidden; /* Normalde gizli */
-    opacity: 0;
+    font-size: 13px;
+    padding: 2px 6px;
+    border-radius: 12px;
+    transition: all 0.2s;
 }
-.chat-message:hover .like-btn {
-    visibility: visible; /* Mesajın üzerine gelince görünür yap */
-    opacity: 1;
+.reaction-btn:hover {
+    background-color: rgba(255,255,255,0.1);
 }
-.like-btn.liked {
-    background-color: #ef4444; /* red-500 */
-    color: white;
-    border-color: #fca5a5; /* red-300 */
+.reaction-btn.liked {
+    color: #4ade80; /* text-green-400 */
+    font-weight: bold;
 }
-.like-btn:hover {
-    transform: scale(1.1);
+.reaction-btn.disliked {
+    color: #f87171; /* text-red-400 */
+    font-weight: bold;
 }
 
 
 /* Mesaj Yazma Alanı */
 #chatInputContainer {
     padding: 1rem;
-    border-top: 1px solid #4b5563; /* border-gray-600 */
+    border-top: 1px solid #4b5563; 
     display: flex;
-    gap: 0.75rem; /* 12px */
+    gap: 0.75rem;
     flex-shrink: 0;
 }
 #chatInput {
     flex-grow: 1;
-    background-color: #1f2937; /* bg-gray-800 */
+    background-color: #1f2937;
     border: 1px solid #4b5563;
-    border-radius: 9999px; /* rounded-full */
+    border-radius: 9999px;
     padding: 0.5rem 1rem;
     color: white;
     outline: none;
 }
 #chatInput:focus {
-    border-color: #ef4444; /* focus:border-red-500 */
+    border-color: #ef4444; 
     box-shadow: 0 0 0 2px #ef444460;
 }
 #chatSendBtn {
-    background-color: #b91c1c; /* bg-red-700 */
+    background-color: #b91c1c; 
     border: none;
     border-radius: 50%;
     width: 44px;
@@ -319,10 +329,10 @@
     transition: background-color 0.2s;
 }
 #chatSendBtn:hover {
-    background-color: #991b1b; /* hover:bg-red-800 */
+    background-color: #991b1b; 
 }
 #chatSendBtn:disabled {
-    background-color: #4b5563; /* bg-gray-600 */
+    background-color: #4b5563; 
     cursor: not-allowed;
 }
 
@@ -330,16 +340,16 @@
 .delete-msg-btn {
     background: none;
     border: none;
-    color: #9ca3af; /* text-gray-400 */
+    color: #9ca3af; 
     cursor: pointer;
     margin-left: 0.5rem;
-    visibility: hidden; /* Normalde gizli */
+    visibility: hidden;
 }
 .chat-message:hover .delete-msg-btn {
-    visibility: visible; /* Hover'da görünür */
+    visibility: visible;
 }
 .delete-msg-btn:hover {
-    color: #ef4444; /* text-red-500 */
+    color: #ef4444; 
 }
 
 /* Mobil için panelin konumunu ayarla */
@@ -5266,15 +5276,17 @@ function handleChatInput() {
     }
 }
 
-// ★★★ BU YENİ FONKSİYONLARI SCRIPT'İN SONUNA EKLE ★★★
+// ESKİ toggleChatMessageLike FONKSİYONUNU SİL
 
+// ★★★ YENİ reactToMessage FONKSİYONUNU EKLE ★★★
 /**
- * Bir sohbet mesajına bırakılan beğeniyi (kalp) yönetir.
- * @param {string} messageId - Beğenilecek mesajın ID'si.
+ * Bir sohbet mesajına 👍 veya 👎 reaksiyonu verir.
+ * @param {string} messageId - Reaksiyon verilecek mesajın ID'si.
+ * @param {string} reactionType - 'like' veya 'dislike'.
  */
-function toggleChatMessageLike(messageId) {
+function reactToMessage(messageId, reactionType) {
     if (isAdmin) {
-        displayMessage("Adminler beğeni yapamaz.");
+        displayMessage("Adminler reaksiyon gösteremez.");
         return;
     }
 
@@ -5282,26 +5294,36 @@ function toggleChatMessageLike(messageId) {
     
     messageRef.transaction(messageData => {
         if (messageData) {
-            if (!messageData.likedBy) {
-                messageData.likedBy = {};
-            }
-            if (messageData.likedBy[currentUser]) {
-                // Beğeniyi geri al
-                messageData.likes = (messageData.likes || 1) - 1;
-                messageData.likedBy[currentUser] = null; // Firebase'de null olarak ayarlamak siler
-            } else {
-                // Beğen
-                messageData.likes = (messageData.likes || 0) + 1;
-                messageData.likedBy[currentUser] = true;
+            // Gerekli objelerin var olduğundan emin ol
+            if (!messageData.likes) messageData.likes = { count: 0, users: {} };
+            if (!messageData.dislikes) messageData.dislikes = { count: 0, users: {} };
+
+            const oppositeType = reactionType === 'like' ? 'dislikes' : 'likes';
+            const hasReacted = messageData[reactionType].users && messageData[reactionType].users[currentUser];
+            const hasReactedOpposite = messageData[oppositeType].users && messageData[oppositeType].users[currentUser];
+
+            // 1. Durum: Aynı reaksiyonu geri alıyor
+            if (hasReacted) {
+                messageData[reactionType].count--;
+                messageData[reactionType].users[currentUser] = null;
+            } 
+            // 2. Durum: Yeni bir reaksiyon veriyor
+            else {
+                // a) Önceki zıt reaksiyonu kaldır
+                if (hasReactedOpposite) {
+                    messageData[oppositeType].count--;
+                    messageData[oppositeType].users[currentUser] = null;
+                }
+                // b) Yeni reaksiyonu ekle
+                messageData[reactionType].count++;
+                if (!messageData[reactionType].users) messageData[reactionType].users = {};
+                messageData[reactionType].users[currentUser] = true;
             }
         }
         return messageData;
     });
 }
 
-/**
- * Kullanıcının okunmamış etiket bildirimlerini dinler ve sohbet ikonunu günceller.
- */
 function listenForMentionNotifications() {
     if (isAdmin) return;
 
@@ -5316,12 +5338,14 @@ function listenForMentionNotifications() {
         const dot = document.getElementById('chatNotificationDot');
         const toggleButton = document.getElementById('chatToggleBtn');
 
+        // ★★★ DEĞİŞİKLİK BURADA: Artık 0 ise gizleniyor ★★★
         if (count > 0) {
             dot.textContent = count;
             dot.classList.remove('hidden');
             toggleButton.title = `${count} kez sizden bahsedildi!`;
         } else {
             dot.classList.add('hidden');
+            dot.textContent = ''; // içeriğini temizle
             toggleButton.title = 'Sohbeti Aç/Kapat';
         }
     };
@@ -5329,8 +5353,6 @@ function listenForMentionNotifications() {
     activeListeners.mentions = { ref, event: 'value', callback };
     ref.on('value', callback);
 }
-
-// ★★★ YENİ FONKSİYONLARIN SONU ★★★
 
 /**
  * Filtrelenen kullanıcıları öneri kutusunda gösterir.
@@ -19167,22 +19189,22 @@ document.addEventListener('DOMContentLoaded', () => {
 function toggleChat() {
     const panel = document.getElementById('chatPanel');
     const dot = document.getElementById('chatNotificationDot');
-    const toggleButton = document.getElementById('chatToggleBtn'); // ★★★ DEĞİŞİKLİK: Butonu seç
+    const toggleButton = document.getElementById('chatToggleBtn');
 
     panel.classList.toggle('open');
     
-    // Panel açıldığında bildirim noktasını ve başlığı sıfırla
     if (panel.classList.contains('open')) {
         dot.classList.add('hidden');
-        dot.textContent = '0'; // ★★★ DEĞİŞİKLİK: Sayıyı da sıfırla
-        toggleButton.title = 'Sohbeti Aç/Kapat'; // ★★★ DEĞİŞİKLİK: Başlığı normale döndür
+        dot.textContent = ''; // ★★★ DEĞİŞİKLİK: 0 yerine boş yap ★★★
+        toggleButton.title = 'Sohbeti Aç/Kapat';
         
-        // ★★★ DEĞİŞİKLİK: Firebase'deki okunmamış etiket sayacını sıfırla
         if (!isAdmin) {
             db.ref(`users/${currentUser}/unreadMentions`).set(0);
         }
     }
 }
+
+
 
 // ESKİ sendMessage FONKSİYONUNU SİL VE BUNU YAPIŞTIR
 
@@ -19273,11 +19295,9 @@ function listenForChatMessages() {
             messages.push({ id: childSnap.key, ...childSnap.val() });
         });
 
-        // ★★★ YENİ KOD BAŞLANGICI: Akıllı öneri için kullanıcı listesini güncelle ★★★
         const uniqueUsernames = new Set();
         messages.slice().reverse().forEach(msg => uniqueUsernames.add(msg.username));
         recentChatUsers = Array.from(uniqueUsernames);
-        // ★★★ YENİ KOD SONU ★★★
 
         messages.reverse().forEach(message => {
             const messageEl = document.createElement('div');
@@ -19302,21 +19322,30 @@ function listenForChatMessages() {
             } else {
                 const safeText = message.text.replace(/</g, "&lt;").replace(/>/g, "&gt;");
                 messageBodyHtml = safeText.replace(/@(\w+)/g, (match, username) => {
-                    // ★★★ DEĞİŞİKLİK: Vurgu mantığı eklendi ★★★
                     const isCurrentUserMentioned = username.toLowerCase() === (currentUser || '').toLowerCase();
                     const highlightClass = isCurrentUserMentioned ? 'user-mention highlighted' : 'user-mention';
                     return `<span class="${highlightClass}" onclick="openPublicUserDetailModal('${username}')">${match}</span>`;
                 });
             }
 
-            // ★★★ YENİ KOD BAŞLANGICI: Kalp butonu mantığı ★★★
-            const hasLiked = message.likedBy && message.likedBy[currentUser];
-            const likeCount = message.likes || 0;
-            const likeButtonHtml = `
-                <button class="like-btn ${hasLiked ? 'liked' : ''}" onclick="toggleChatMessageLike('${message.id}')">
-                    <span>❤️</span>
-                    <span>${likeCount}</span>
-                </button>
+            // ★★★ YENİ KOD BAŞLANGICI: REAKSİYON BUTONLARI ★★★
+            const likes = message.likes || { count: 0, users: {} };
+            const dislikes = message.dislikes || { count: 0, users: {} };
+            
+            const userHasLiked = likes.users && likes.users[currentUser];
+            const userHasDisliked = dislikes.users && dislikes.users[currentUser];
+
+            const reactionButtonsHtml = `
+                <div class="reaction-buttons-container">
+                    <button class="reaction-btn ${userHasLiked ? 'liked' : ''}" onclick="reactToMessage('${message.id}', 'like')">
+                        <span>👍</span>
+                        <span>${likes.count || 0}</span>
+                    </button>
+                    <button class="reaction-btn ${userHasDisliked ? 'disliked' : ''}" onclick="reactToMessage('${message.id}', 'dislike')">
+                        <span>👎</span>
+                        <span>${dislikes.count || 0}</span>
+                    </button>
+                </div>
             `;
             // ★★★ YENİ KOD SONU ★★★
 
@@ -19330,7 +19359,7 @@ function listenForChatMessages() {
                     </div>
                     <div class="${messageBodyClass}">
                         ${messageBodyHtml}
-                        ${likeButtonHtml}
+                        ${reactionButtonsHtml}
                     </div>
                 </div>
             `;
@@ -19339,9 +19368,8 @@ function listenForChatMessages() {
 
         const panel = document.getElementById('chatPanel');
         const lastMessage = messages[0];
-        // Bu kısım normal mesaj bildirimleri için kalabilir, etiketler ayrı yönetiliyor.
         if (lastMessage && !panel.classList.contains('open') && lastMessage.username !== currentUser) {
-            // document.getElementById('chatNotificationDot').classList.remove('hidden');
+            // Normal mesajlar için bildirim noktası kaldırıldı, sadece etiketler için çalışacak.
         }
     };
     
