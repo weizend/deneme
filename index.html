@@ -645,17 +645,10 @@ transition: transform 0.3s ease; /* Yumuşak dönüş için */
 
 .new-card-badge {
     position: absolute;
-    top: -10px;
-    left: -10px;
-    background-color: #22c55e; /* bg-green-500 */
-    color: white;
-    font-weight: bold;
-    font-size: 0.8rem;
-    padding: 3px 8px;
-    border-radius: 12px;
-    border: 2px solid white;
-    transform: rotate(-15deg);
-    animation: pulse-new 1.5s infinite;
+    top: 5px; /* Değişiklik */
+    left: 5px; /* Değişiklik */
+    /* ...diğer stiller... */
+    z-index: 5; /* Garanti olsun diye eklendi */
 }
 
 @keyframes pulse-new {
@@ -1016,22 +1009,12 @@ transition: transform 0.3s ease; /* Yumuşak dönüş için */
     text-shadow: 1px 1px 2px black;
 }
 
-/* Fazla kartları gösteren rozet */
 .duplicate-badge {
     position: absolute;
-    top: -10px;
-    right: -10px;
-    background-color: #fde047; /* yellow-400 */
-    color: #111827; /* gray-900 */
-    width: 30px;
-    height: 30px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-weight: bold;
-    font-size: 0.9rem;
-    border: 2px solid white;
+    top: 5px; /* Değişiklik */
+    right: 5px; /* Değişiklik */
+    /* ...diğer stiller... */
+    z-index: 5; /* Garanti olsun diye eklendi */
 }
 
 /* --- NADİRLİK ÇERÇEVELERİ (GÜNCELLENMİŞ) --- */
@@ -4997,17 +4980,12 @@ async function executeWeeklyReset() {
     }
 }
 
-// showSection fonksiyonunu bununla değiştir
+// BU FONKSİYONU BULUP TAMAMEN AŞAĞIDAKİYLE DEĞİŞTİRİN
 function showSection(sectionId) {
-    // ★★★ DEĞİŞİKLİK BURADA BAŞLIYOR ★★★
-    // Eğer mevcut aktif sekme "cardCollection" ise VE tıklanan yeni sekme "cardCollection" DEĞİLSE,
-    // yani kullanıcı kart albümünden başka bir sekmeye geçiyorsa...
+    // Önceki sekme 'kart koleksiyonu' ise ve şimdi başka bir sekmeye geçiliyorsa, "yeni" listesini temizle.
     if (currentActiveSection === 'cardCollection' && sectionId !== 'cardCollection') {
-        // "Yeni" olarak işaretlenen kartların listesini temizle.
-        // Bu, bir sonraki sefere albüme girdiğinde eski kartların "yeni" görünmesini engeller.
         newlyAcquiredCards.clear();
     }
-    // ★★★ DEĞİŞİKLİK BURADA BİTİYOR ★★★
 
     if (sectionId !== 'store') {
         storeFilter = null;
@@ -5016,6 +4994,7 @@ function showSection(sectionId) {
     const contentIds = ['gameContent', 'storeSection', 'announcementsContent', 'chanceWheelContent', 'clickCatchContent', 'cardCollectionContent', 'monsterBattleContent'];
     const tabButtonIds = ['gameTabBtn', 'storeTabBtn', 'announcementsTabBtn', 'chanceWheelTabBtn', 'clickCatchTabBtn', 'cardCollectionTabBtn', 'monsterBattleTabBtn'];
 
+    // Tüm içerik alanlarını gizle ve butonların stillerini sıfırla
     contentIds.forEach(id => document.getElementById(id)?.classList.add('hidden'));
     tabButtonIds.forEach(btnId => {
         const btn = document.getElementById(btnId);
@@ -5027,18 +5006,26 @@ function showSection(sectionId) {
 
     hideAllAdminControls();
 
+    // Tıklanan sekmeye ait içeriği göster
     const contentToShow = document.getElementById(`${sectionId}Content`) || document.getElementById(`${sectionId}Section`);
     if(contentToShow) contentToShow.classList.remove('hidden');
 
+    // Tıklanan butonun stilini aktif yap
     const activeBtn = document.getElementById(`${sectionId}TabBtn`);
     if (activeBtn) {
         activeBtn.classList.add('bg-red-700', 'hover:bg-red-600');
         activeBtn.classList.remove('bg-gray-700', 'hover:bg-gray-600');
     }
 
+    // ★★★ SORUNU ÇÖZEN ANA DEĞİŞİKLİK BURADA ★★★
+    // Artık 'else if' yerine bağımsız bir 'if' kullanıyoruz.
+    // Hangi sekmeye tıklandığını kontrol edip ilgili fonksiyonları çağırıyoruz.
+
     if (sectionId === 'game' && isAdmin) {
         document.getElementById('boxSettingsButton').classList.remove('hidden');
-    } else if (sectionId === 'store') {
+    } 
+    
+    if (sectionId === 'store') {
         loadStoreItems(); 
         if (isAdmin) {
             document.getElementById('adminStoreManagementButtonContainer').classList.remove('hidden');
@@ -5050,38 +5037,52 @@ function showSection(sectionId) {
         if (!storeFilter) {
             switchStoreTab('game');
         }
-    } else if (sectionId === 'announcements') {
+    } 
+    
+    if (sectionId === 'announcements') {
         if (isAdmin) {
             document.getElementById('adminAnnouncementControls').classList.remove('hidden');
         } else {
             document.getElementById('announcementIndicator').classList.add('hidden');
             db.ref(`users/${currentUser}/lastSeenAnnouncementTimestamp`).set(latestAnnouncementTimestamp);
         }
-    } else if (sectionId === 'clickCatch') {
+    } 
+    
+    if (sectionId === 'clickCatch') {
         if (isAdmin) {
             document.getElementById('clickCatchAdminButtonsContainer').classList.remove('hidden');
             loadSoloGameSettings();
         }
-    } else if (sectionId === 'chanceWheel') {
+    } 
+    
+    if (sectionId === 'chanceWheel') {
         const wheelSettingsBtn = document.getElementById('wheelSettingsButton');
         if (isAdmin) {
             wheelSettingsBtn.classList.remove('hidden');
         } else {
             wheelSettingsBtn.classList.add('hidden');
         }
-    } else if (sectionId === 'cardCollection') {
+    } 
+    
+    if (sectionId === 'cardCollection') {
+        // Bu sekmeye her girildiğinde albümü yeniden yükle. Bu sayede "YENİ" rozetleri görünür.
+        loadCollectionAlbum(); 
+        
         if (isAdmin) {
             document.getElementById('collectionAdminBtn').classList.remove('hidden');
             loadMarketSettingsForAdmin();
             loadPrizeSettingsForAdmin();
         }
-    } else if (sectionId === 'monsterBattle') {
+    } 
+    
+    if (sectionId === 'monsterBattle') {
         renderMonsterBattleUI();
         if (isAdmin) {
             document.getElementById('monsterBattleAdminToggles')?.classList.remove('hidden');
         }
     }
     
+    // Son olarak, mevcut aktif sekmeyi güncelle
     currentActiveSection = sectionId;
 }
   
@@ -14767,86 +14768,119 @@ async function loadCollectionAlbum() {
     let masterDataCache = null;
     let userDataCache = null;
     
-    const renderAlbum = (masterCards, userData) => {
-        const progressSpan = document.getElementById('collectionProgress');
-        
-        if (!masterCards) {
-            albumContainer.innerHTML = '<p class="text-center col-span-full">Yönetici henüz bir koleksiyon oluşturmadı.</p>';
-            if(progressSpan) progressSpan.textContent = '0/0';
-            return;
-        }
+    // index.html'deki renderAlbum fonksiyonunu bununla tamamen değiştir.
+const renderAlbum = (masterCards, userData) => {
+    const albumContainer = document.getElementById('cardCollectionAlbum');
+    const progressSpan = document.getElementById('collectionProgress');
+    
+    if (!masterCards) {
+        albumContainer.innerHTML = '<p class="text-center col-span-full">Yönetici henüz bir koleksiyon oluşturmadı.</p>';
+        if(progressSpan) progressSpan.textContent = '0/0';
+        return;
+    }
 
-        const totalCardCount = Object.keys(masterCards).length;
-        const userCards = userData?.cardCollection || {};
-        const hasCompletedCollection = userData?.completedCollection === true;
-        const userWildcards = userData?.wildcards || 0;
-        const userOwnedCardCount = Object.keys(userCards).length;
+    const totalCardCount = Object.keys(masterCards).length;
+    const userCards = userData?.cardCollection || {};
+    const hasCompletedCollection = userData?.completedCollection === true;
+    const userWildcards = userData?.wildcards || 0;
+    const userOwnedCardCount = Object.keys(userCards).length;
 
-        if(progressSpan) progressSpan.textContent = `${userOwnedCardCount}/${totalCardCount}`;
-        
-        const wildcardIndicator = document.getElementById('wildcardIndicator');
-        const wildcardCountSpan = document.getElementById('wildcardCount');
-        if (wildcardIndicator) {
-            if (userWildcards > 0 || isAdmin) {
-                wildcardCountSpan.textContent = userWildcards;
-                wildcardIndicator.classList.remove('hidden');
-                const convertBtn = document.getElementById('convertWildcardBtn');
-                if (convertBtn) {
-                    convertBtn.classList.toggle('hidden', !(hasCompletedCollection && userWildcards > 0));
-                }
-            } else {
-                wildcardIndicator.classList.add('hidden');
+    if(progressSpan) progressSpan.textContent = `${userOwnedCardCount}/${totalCardCount}`;
+    
+    const wildcardIndicator = document.getElementById('wildcardIndicator');
+    const wildcardCountSpan = document.getElementById('wildcardCount');
+    if (wildcardIndicator) {
+        if (userWildcards > 0 || isAdmin) {
+            wildcardCountSpan.textContent = userWildcards;
+            wildcardIndicator.classList.remove('hidden');
+            const convertBtn = document.getElementById('convertWildcardBtn');
+            if (convertBtn) {
+                convertBtn.classList.toggle('hidden', !(hasCompletedCollection && userWildcards > 0));
             }
+        } else {
+            wildcardIndicator.classList.add('hidden');
         }
-        
-        albumContainer.innerHTML = ''; 
-        for (const cardId in masterCards) {
-            const cardInfo = masterCards[cardId];
-            const userHasCard = userCards[cardId];
+    }
+    
+    albumContainer.innerHTML = ''; 
+    for (const cardId in masterCards) {
+        const cardInfo = masterCards[cardId];
+        const userHasCard = userCards[cardId];
 
-            const slot = document.createElement('div');
-            slot.className = 'card-slot';
+        const slot = document.createElement('div');
+        slot.className = 'card-slot';
 
-            if (userHasCard || isAdmin) { 
-                const cardItem = document.createElement('div');
-                cardItem.className = `card-item rarity-${cardInfo.rarity || 'normal'}`;
-                
-                let duplicateBadge = userHasCard && userHasCard.count > 1 ? `<div class="duplicate-badge">+${userHasCard.count - 1}</div>` : '';
-                let adminCardControls = isAdmin ? `<div class="card-admin-buttons"><button onclick="openCardCreatorModal('${cardId}')">✏️</button><button onclick="deleteCard('${cardId}')">🗑️</button></div>` : '';
-                
-                cardItem.innerHTML = `
-                    ${newlyAcquiredCards.has(cardId) ? `<div class="new-card-badge">YENİ</div>` : ''}
-                    ${duplicateBadge}
-                    ${adminCardControls}
-                    <img class="card-image" src="${cardInfo.imageUrl}">
-                    <h4 class="card-name">${cardInfo.cardName}</h4>
-                `;
+        if (userHasCard || isAdmin) {
+            
+            // ★★★ SORUNU KESİN OLARAK ÇÖZEN YENİ MANTIK BURADA BAŞLIYOR ★★★
+            
+            // Ana kart elementini oluştur
+            const cardItem = document.createElement('div');
+            cardItem.className = `card-item rarity-${cardInfo.rarity || 'normal'}`;
 
-                if (userHasCard && userHasCard.count > 1) {
-                    if (hasCompletedCollection) {
-                        cardItem.onclick = () => handleDuplicateCardClick(cardId);
-                    } else {
-                        cardItem.onclick = () => openCreateOfferModal(cardId);
-                    }
-                }
-                
-                slot.appendChild(cardItem);
-
-            } else {
-                let wildcardButton = '';
-                if (userWildcards > 0 && !hasCompletedCollection) {
-                    wildcardButton = `<button class="absolute bottom-2 left-1/2 -translate-x-1/2 w-11/12 py-2 bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs rounded-lg animate-pulse" onclick="useWildcard('${cardId}', '${cardInfo.cardName}')">Joker Kullan</button>`;
-                }
-                slot.innerHTML = `
-                    <div class="card-item missing relative rarity-${cardInfo.rarity || 'normal'}">
-                        <div class="card-image flex items-center justify-center"><span class="missing-text">?</span></div>
-                        <h4 class="card-name text-gray-500">${cardInfo.cardName}</h4>
-                        ${wildcardButton}
-                    </div>`;
+            // 1. "YENİ" rozetini kontrol et ve GEREKİYORSA ekle
+            if (newlyAcquiredCards.has(cardId)) {
+                const newBadge = document.createElement('div');
+                newBadge.className = 'new-card-badge';
+                newBadge.textContent = 'YENİ';
+                cardItem.appendChild(newBadge);
             }
-            albumContainer.appendChild(slot);
+            
+            // 2. "DUPLİKE" rozetini kontrol et ve GEREKİYORSA ekle
+            if (userHasCard && userHasCard.count > 1) {
+                const duplicateBadge = document.createElement('div');
+                duplicateBadge.className = 'duplicate-badge';
+                duplicateBadge.textContent = `+${userHasCard.count - 1}`;
+                cardItem.appendChild(duplicateBadge);
+            }
+            
+            // 3. Admin butonlarını GEREKİYORSA ekle
+            if (isAdmin) {
+                const adminControls = document.createElement('div');
+                adminControls.className = 'card-admin-buttons';
+                adminControls.innerHTML = `<button onclick="openCardCreatorModal('${cardId}')">✏️</button><button onclick="deleteCard('${cardId}')">🗑️</button>`;
+                cardItem.appendChild(adminControls);
+            }
+
+            // 4. Kartın geri kalan resim ve isim gibi kısımlarını oluştur ve ekle
+            const cardImage = document.createElement('img');
+            cardImage.className = 'card-image';
+            cardImage.src = cardInfo.imageUrl;
+            cardItem.appendChild(cardImage);
+
+            const cardName = document.createElement('h4');
+            cardName.className = 'card-name';
+            cardName.textContent = cardInfo.cardName;
+            cardItem.appendChild(cardName);
+            
+            // ★★★ YENİ MANTIK BURADA BİTİYOR ★★★
+
+            // Tıklama olayını ekle
+            if (userHasCard && userHasCard.count > 1) {
+                if (hasCompletedCollection) {
+                    cardItem.onclick = () => handleDuplicateCardClick(cardId);
+                } else {
+                    cardItem.onclick = () => openCreateOfferModal(cardId);
+                }
+            }
+            
+            slot.appendChild(cardItem);
+
+        } else { // Eksik kartlar için eski basit yöntem devam edebilir, çünkü sorun burada değil.
+            let wildcardButton = '';
+            if (userWildcards > 0 && !hasCompletedCollection) {
+                wildcardButton = `<button class="absolute bottom-2 left-1/2 -translate-x-1/2 w-11/12 py-2 bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs rounded-lg animate-pulse" onclick="useWildcard('${cardId}', '${cardInfo.cardName}')">Joker Kullan</button>`;
+            }
+            slot.innerHTML = `
+                <div class="card-item missing relative rarity-${cardInfo.rarity || 'normal'}">
+                    <div class="card-image flex items-center justify-center"><span class="missing-text">?</span></div>
+                    <h4 class="card-name text-gray-500">${cardInfo.cardName}</h4>
+                    ${wildcardButton}
+                </div>`;
         }
-    };
+        albumContainer.appendChild(slot);
+    }
+};;
     
     const masterCallback = (snap) => { 
         masterDataCache = snap.val(); 
