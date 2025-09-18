@@ -104,6 +104,13 @@
     cursor: pointer;
     transition: all 0.3s ease;
 }
+/* #chatToggleBtn stilinin içine bu satırı ekle veya transition varsa değiştir */
+transition: transform 0.3s ease; /* Yumuşak dönüş için */
+
+/* Bu yeni stili CSS dosyanın uygun bir yerine ekle */
+#chatToggleBtn.open {
+    transform: rotate(90deg); /* Açıkken 90 derece dönsün */
+}
 #chatToggleBtn:hover {
     transform: scale(1.1) rotate(15deg);
     box-shadow: 0 15px 30px rgba(0,0,0,0.4);
@@ -2383,7 +2390,14 @@ body.modal-open .modal-content {
     <option value="iflasShield">🛡️ İflas Kalkanı</option>
     <option value="tempMultiplier">✖️ Çarpan</option>
     <option value="wildcard">🃏 Joker Kart</option>
-    <option value="health_regen_potion">🧪 Can Yenileme İksiri</option> <option value="revival_stone">💎 Dirilme Taşı</option>
+    
+    <option value="card_pack">🎴 Standart Kart Paketi</option>
+    <option value="card_pack_normal">🥉 Bronz Kart Paketi</option>
+    <option value="card_pack_gumus">🥈 Gümüş Kart Paketi</option>
+    <option value="card_pack_altin">🥇 Altın Kart Paketi</option>
+    <option value="card_pack_efsanevi">🏆 Efsanevi Kart Paketi</option>
+    <option value="health_regen_potion">🧪 Can Yenileme İksiri</option> 
+    <option value="revival_stone">💎 Dirilme Taşı</option>
     <option value="health_potion">🧪 Can İksiri</option>
     <option value="damage_potion">⚔️ Hasar İksiri</option>
     <option value="defense_potion">🛡️ Savunma İksiri</option>
@@ -5072,52 +5086,20 @@ function showSection(sectionId) {
     
     currentActiveSection = sectionId;
 }
-
-function openAdminPanelModal() { 
-  preventLayoutShift(); // YENİ HALİ
-  adminPanelModal.style.display = 'flex'; 
-  loadPendingUsers(); 
-  loadAllUsers(); 
-  loadPendingSpecialPurchases();
-}
-    
-function closeAdminPanelModal() { 
-  allowLayoutShift(); // YENİ HALİ
-  adminPanelModal.style.display = 'none'; 
-}
-
-// YENİ EKLENECEK KOD
-function getScrollbarWidth() {
-  // Dış div oluştur, görünmez yap ama boyutları olsun
-  const outer = document.createElement('div');
-  outer.style.visibility = 'hidden';
-  outer.style.overflow = 'scroll'; // Kaydırma çubuğunu zorla
-  document.body.appendChild(outer);
-
-  // İç div oluştur
-  const inner = document.createElement('div');
-  outer.appendChild(inner);
-
-  // Genişlik farkı kaydırma çubuğunun genişliğidir
-  const scrollbarWidth = (outer.offsetWidth - inner.offsetWidth);
-
-  // Oluşturulan elementleri temizle
-  outer.parentNode.removeChild(outer);
-
-  return scrollbarWidth;
-}
-
-function preventLayoutShift() {
-    const scrollbarWidth = getScrollbarWidth();
-    document.body.style.paddingRight = scrollbarWidth + 'px';
-    document.body.classList.add('modal-open');
-}
-
-function allowLayoutShift() {
-    document.body.style.paddingRight = '';
-    document.body.classList.remove('modal-open');
-}
-// YENİ EKLENECEK KOD SONU
+  
+  // Admin panel
+  function openAdminPanelModal() { 
+    document.body.classList.add('modal-open'); // BU SATIRI EKLE
+    adminPanelModal.style.display = 'flex'; 
+    loadPendingUsers(); 
+    loadAllUsers(); 
+    loadPendingSpecialPurchases();
+  }
+      
+  function closeAdminPanelModal() { 
+    document.body.classList.remove('modal-open'); // BU SATIRI EKLE
+    adminPanelModal.style.display = 'none'; 
+  }
     
 // ★★★ YENİ FONKSİYON: Çıkış yapıldığında tüm global değişkenleri ve önbellekleri sıfırlar. ★★★
 function resetGlobalState() {
@@ -6222,7 +6204,19 @@ async function confirmBulkSendItem(isAdding = true) {
         if (user.approved && !user.blocked && username !== "weizendtv") {
             const userPath = `/users/${username}`;
             
-            if (type === 'health_regen_potion') {
+            // --- YENİ EKLENEN KART PAKETİ MANTIĞI ---
+            if (type.startsWith('card_pack')) {
+                if (isAdding) {
+                    const packKey = db.ref().push().key; // Benzersiz bir anahtar oluştur
+                    updates[`${userPath}/pendingActions/cardPacks/${packKey}`] = {
+                        type: type,
+                        count: value
+                    };
+                }
+                // Kart paketleri için silme işlemi desteklenmiyor, bu yüzden else bloğu yok.
+            }
+            // --- KART PAKETİ MANTIĞI SONU ---
+            else if (type === 'health_regen_potion') {
                  if(isAdding) {
                     const currentPotions = user.inventory?.health_regen_potion?.[value] || 0;
                     updates[`${userPath}/inventory/health_regen_potion/${value}`] = currentPotions + 1;
@@ -8787,12 +8781,28 @@ async function deletePurchase(purchaseId) {
   function openBadgeInfoModal() { badgeInfoModal.style.display = 'flex'; }
   function closeBadgeInfoModal() { badgeInfoModal.style.display = 'none'; }
 
-// MEVCUT openPublicUserDetailModal FONKSİYONUNU SİL VE BUNU YAPIŞTIR
 async function openPublicUserDetailModal(username) {
     if (!username) return;
 
     const modal = document.getElementById('publicUserDetailModal');
     if (!modal) return;
+    
+    // --- YENİ VE NİHAİ DÜZELTME BURADA ---
+    // Artık kimin tıkladığına bakmaksızın, eğer profili açılan kişi 'weizendtv' ise özel admin panelini göster.
+    if (username.toLowerCase() === 'weizendtv') {
+        document.getElementById('publicUserName').textContent = 'WeizendTv (Admin)';
+        document.getElementById('publicUserAvatar').src = 'https://i.hizliresim.com/mtwdr1x.png'; // Sabit admin avatarı
+        document.getElementById('publicUserProfileBadges').innerHTML = '👑';
+        
+        // Admin için istatistik alanlarını gizle
+        modal.querySelector('.grid').style.display = 'none';
+        document.getElementById('publicUserChampionships').style.display = 'none';
+        
+        modal.style.display = 'flex';
+        document.body.classList.add('modal-open');
+        return; // Fonksiyonu burada bitir.
+    }
+    // --- DÜZELTME SONU ---
 
     modal.style.display = 'flex';
     document.body.classList.add('modal-open');
@@ -8807,11 +8817,16 @@ async function openPublicUserDetailModal(username) {
     const userRef = db.ref('users/' + username);
     
     const userProfileCallback = async (userSnap) => {
+        // Fonksiyonun geri kalanı aynı...
         const userData = userSnap.val();
         if (!userData) {
             closePublicUserDetailModal();
             return;
         }
+
+        // İstatistik alanlarını tekrar görünür yap (admin profilinden sonra normale dönmesi için)
+        modal.querySelector('.grid').style.display = '';
+        document.getElementById('publicUserChampionships').style.display = '';
 
         const allUsersSnap = await db.ref('users').once('value');
         const leaders = await calculateAllLeaders(allUsersSnap.val());
@@ -9184,6 +9199,14 @@ async function removeTyChampionship(username) {
 
 function closePublicUserDetailModal() {
     const publicUserDetailModal = document.getElementById('publicUserDetailModal');
+    
+    // --- YENİ EKLENEN KISIM BAŞLANGICI ---
+    // Pencere kapandığında, admin için gizlediğimiz istatistik alanlarını
+    // tekrar görünür yapıyoruz ki normal bir kullanıcıya tıklandığında sorun olmasın.
+    publicUserDetailModal.querySelector('.grid').style.display = '';
+    document.getElementById('publicUserChampionships').style.display = '';
+    // --- YENİ EKLENEN KISIM SONU ---
+
     publicUserDetailModal.style.display = 'none';
     document.body.classList.remove('modal-open');
 
@@ -17637,11 +17660,26 @@ function listenForAvatarBaseStats() {
 // Hangi kullanıcının profilini dinlediğimizi takip etmek için global bir değişken
 let activeProfileListener = null;
 
-// --- YENİ VE İSTEDİĞİN GÖRÜNÜMDEKİ FONKSİYON ---
 async function openAvatarStatsModal(username) {
     const modal = document.getElementById('avatarStatsModal');
     const contentEl = document.getElementById('statsModalContent');
     const titleEl = document.getElementById('statsModalUsername');
+
+    // --- YENİ VE NİHAİ DÜZELTME BURADA ---
+    // Artık kimin tıkladığına bakmaksızın, eğer profili açılan kişi 'weizendtv' ise özel admin panelini göster.
+    if (username.toLowerCase() === 'weizendtv') {
+        titleEl.textContent = `WeizendTv (Admin) Avatar Özellikleri`;
+        contentEl.innerHTML = `
+            <div class="flex flex-col items-center mb-4">
+                <img src="https://i.hizliresim.com/mtwdr1x.png" alt="Admin Avatar" class="w-24 h-24 rounded-full border-2 border-yellow-500 mb-2">
+                <span class="text-lg font-bold text-white">WeizendTv</span>
+            </div>
+            <p class="text-center text-gray-400">Admin hesabının oyun içi istatistikleri bulunmamaktadır.</p>
+        `;
+        modal.style.display = 'flex';
+        return; // Fonksiyonu burada bitir.
+    }
+    // --- DÜZELTME SONU ---
 
     titleEl.textContent = `Yükleniyor...`;
     contentEl.innerHTML = '<p class="text-gray-400">Yükleniyor...</p>';
@@ -17654,6 +17692,7 @@ async function openAvatarStatsModal(username) {
     const userRef = db.ref(`users/${username}`);
     
     const userProfileCallback = (userSnap) => {
+        // Fonksiyonun geri kalanı aynı...
         const userData = userSnap.val();
 
         if (!userData) {
@@ -17689,7 +17728,7 @@ async function openAvatarStatsModal(username) {
             hp: (baseStats.hp || 1000) + (globalBuffs.hp || 0),
             minDamage: (baseStats.minDamage || 50) + (globalBuffs.damage || 0),
             maxDamage: (baseStats.maxDamage || 100) + (globalBuffs.damage || 0),
-            defense: (baseStats.defense || 0) + (globalBuffs.defense || 0), // Savunma artık yüzdelik
+            defense: (baseStats.defense || 0) + (globalBuffs.defense || 0),
             critChance: (baseStats.critChance || 5) + (globalBuffs.critChance || 0),
             critDamage: (baseStats.critDamage || 10) + (globalBuffs.critDamage || 0),
             dodgeChance: (baseStats.dodgeChance || 5) + (globalBuffs.dodgeChance || 0),
@@ -17705,7 +17744,6 @@ async function openAvatarStatsModal(username) {
             return cap ? ` / <span class="text-gray-400">${cap.toFixed(1)}%</span>` : '';
         };
 
-        // İSTEDİĞİN YENİ SIRALAMA VE METİNLER
         contentEl.innerHTML = `
             <div class="flex flex-col items-center mb-4">
                 <img src="${selectedAvatar.url}" alt="${selectedAvatar.name || 'Avatar'}" class="w-24 h-24 rounded-full border-2 border-green-500 mb-2">
@@ -19058,15 +19096,16 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 
-// --- YENİ EKLENECEK KOD: SOHBET SİSTEMİ FONKSİYONLARI ---
-
 /**
- * Sohbet panelinin görünürlüğünü açar veya kapatır.
+ * Sohbet panelinin görünürlüğünü açar veya kapatır. (GÜNCELLENDİ)
  */
 function toggleChat() {
     const panel = document.getElementById('chatPanel');
+    const btn = document.getElementById('chatToggleBtn'); // Butonu da seçiyoruz
     const dot = document.getElementById('chatNotificationDot');
+    
     panel.classList.toggle('open');
+    btn.classList.toggle('open'); // Butona da 'open' sınıfını ekleyip/kaldırıyoruz
     
     // Panel açıldığında bildirim noktasını gizle
     if (panel.classList.contains('open')) {
@@ -19087,16 +19126,27 @@ async function sendMessage() {
     const text = input.value.trim();
     if (text === '') return;
 
-    const userSnap = await db.ref(`users/${currentUser}`).once('value');
-    const userData = userSnap.val();
-    
-    if (userData.chatMutedUntil && userData.chatMutedUntil > now) {
-        const remainingMinutes = Math.ceil((userData.chatMutedUntil - now) / 60000);
-        displayMessage(`Sohbetten uzaklaştırıldın. Kalan süre: ${remainingMinutes} dakika.`);
-        return;
-    }
+    let avatarUrl;
 
-    const avatarUrl = userData.selectedAvatar ? userData.selectedAvatar.url : defaultAvatarUrl;
+    if (isAdmin) {
+        // Admin ise avatar URL'sini direkt olarak ata
+        avatarUrl = 'https://i.hizliresim.com/mtwdr1x.png'; 
+    } else {
+        // Normal bir kullanıcı ise veritabanından bilgilerini çek
+        const userSnap = await db.ref(`users/${currentUser}`).once('value');
+        const userData = userSnap.val();
+
+        // Kullanıcı verisi yoksa veya mute'lu ise işlemi durdur
+        if (!userData) return;
+        if (userData.chatMutedUntil && userData.chatMutedUntil > now) {
+            const remainingMinutes = Math.ceil((userData.chatMutedUntil - now) / 60000);
+            displayMessage(`Sohbetten uzaklaştırıldın. Kalan süre: ${remainingMinutes} dakika.`);
+            return;
+        }
+
+        // Kullanıcının seçili avatarını veya varsayılan avatarı kullan
+        avatarUrl = userData.selectedAvatar ? userData.selectedAvatar.url : defaultAvatarUrl;
+    }
 
     const messageData = {
         username: currentUser,
