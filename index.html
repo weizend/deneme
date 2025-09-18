@@ -117,14 +117,21 @@ transition: transform 0.3s ease; /* Yumuşak dönüş için */
 }
 #chatToggleBtn .notification-dot {
     position: absolute;
-    top: -2px;
-    right: -2px;
-    width: 16px;
-    height: 16px;
-    /* --- BU SATIRI DEĞİŞTİR --- */
+    top: -4px; /* Biraz yukarı aldık */
+    right: -4px; /* Biraz sağa aldık */
+    min-width: 20px; /* Minimum genişlik verdik */
+    height: 20px;
+    padding: 0 4px; /* İçeriğe göre genişlesin diye padding ekledik */
+    font-size: 12px; /* Yazı boyutu ekledik */
+    font-weight: bold; /* Yazıyı kalın yaptık */
     background-color: #ef4444; /* red-500 */
-    border-radius: 50%;
-    border: 2px solid #111827; /* bg-gray-900 */
+    color: white; /* Yazı rengi */
+    border-radius: 10px; /* Yuvarlaklığı ayarladık */
+    border: 2px solid #111827;
+    /* Flex ile sayıyı ortalıyoruz */
+    display: flex;
+    align-items: center;
+    justify-content: center;
     animation: pulse-dot 1.5s infinite;
 }
 @keyframes pulse-dot {
@@ -19094,18 +19101,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 
-// MEVCUT toggleChat FONKSİYONUNU BUNUNLA DEĞİŞTİR
-function toggleChat() {
-    const panel = document.getElementById('chatPanel');
-    const dot = document.getElementById('chatNotificationDot');
-    panel.classList.toggle('open');
-    
-    // Panel açıldığında bildirim noktasını gizle (Mesajlar okundu sayılır)
-    if (panel.classList.contains('open')) {
-        dot.classList.add('hidden');
-    }
-}
-
 async function sendMessage() {
     const now = getSyncedTime();
     // YENİ: Yavaş mod kontrolü
@@ -19167,24 +19162,59 @@ async function deleteChatMessage(messageId) {
     }
 }
 
+// MEVCUT toggleChat FONKSİYONUNU BUNUNLA DEĞİŞTİR
+function toggleChat() {
+    const panel = document.getElementById('chatPanel');
+    const dot = document.getElementById('chatNotificationDot');
+    panel.classList.toggle('open');
+    
+    // Panel açıldığında, bildirim noktasını gizle ve son okunma zamanını güncelle
+    if (panel.classList.contains('open')) {
+        dot.classList.add('hidden');
+        // Kullanıcının sohbete baktığı anın sunucu zamanını veritabanına kalıcı olarak kaydet
+        db.ref(`users/${currentUser}/lastCheckedChatTimestamp`).set(firebase.database.ServerValue.TIMESTAMP);
+    }
+}
+
+// MEVCUT listenForChatMessages FONKSİYONUNU TAMAMEN BUNUNLA DEĞİŞTİR
 function listenForChatMessages() {
     const messagesContainer = document.getElementById('chatMessages');
     const chatRef = db.ref('chat/messages').limitToLast(50);
+    const userRef = db.ref(`users/${currentUser}`);
 
-    // Dinleyiciyi tekrar tekrar eklememek için kontrol
     if(activeListeners.chat) {
         activeListeners.chat.ref.off('value', activeListeners.chat.callback);
     }
 
-    const callback = (snap) => {
-        messagesContainer.innerHTML = ''; // Her değişiklikte sohbeti temizle
+    const callback = async (snap) => {
+        // 1. Kullanıcının en son ne zaman sohbete baktığını veritabanından al
+        const userSnap = await userRef.child('lastCheckedChatTimestamp').once('value');
+        const lastChecked = userSnap.val() || 0;
+        
+        messagesContainer.innerHTML = '';
         const messages = [];
+        let unreadCount = 0;
         
         snap.forEach(childSnap => {
-            messages.push({ id: childSnap.key, ...childSnap.val() });
+            const message = { id: childSnap.key, ...childSnap.val() };
+            messages.push(message);
+            // Eğer mesajın zamanı, kullanıcının son bakma zamanından sonraysa VE mesajı kendi göndermemişse, okunmamış say
+            if (message.timestamp > lastChecked && message.username !== currentUser) {
+                unreadCount++;
+            }
         });
 
-        // Mesajları en yeniden en eskiye doğru işle
+        const dot = document.getElementById('chatNotificationDot');
+        const panel = document.getElementById('chatPanel');
+        
+        // Sadece sohbet kapalıyken ve okunmamış mesaj varsa bildirimi göster
+        if (unreadCount > 0 && !panel.classList.contains('open')) {
+            dot.textContent = unreadCount > 9 ? '9+' : unreadCount;
+            dot.classList.remove('hidden');
+        } else {
+            dot.classList.add('hidden');
+        }
+
         messages.reverse().forEach(message => {
             const messageEl = document.createElement('div');
             messageEl.className = 'chat-message';
@@ -19201,7 +19231,6 @@ function listenForChatMessages() {
             let messageBodyClass = 'message-body';
 
             if (message.isDeleted) {
-                // YENİ: Uzaklaştırma bilgisini kontrol et
                 if (message.deletedInfo && message.deletedInfo.reason === 'muted') {
                     messageBodyHtml = `[Mesaj silindi - Kullanıcı ${message.deletedInfo.duration} dakika uzaklaştırıldı]`;
                 } else {
@@ -19209,7 +19238,7 @@ function listenForChatMessages() {
                 }
                 messageBodyClass += ' deleted-message-body';
             } else {
-                const safeText = message.text.replace(/</g, "&lt;").replace(/>/g, "&gt;");
+                const safeText = (message.text || '').replace(/</g, "&lt;").replace(/>/g, "&gt;");
                 messageBodyHtml = safeText.replace(/@(\w+)/g, (match, username) => {
                     return `<span class="user-mention" onclick="openPublicUserDetailModal('${username}')">${match}</span>`;
                 });
@@ -19226,18 +19255,10 @@ function listenForChatMessages() {
                     <div class="${messageBodyClass}">${messageBodyHtml}</div>
                 </div>
             `;
-
             messagesContainer.appendChild(messageEl);
         });
-
-        const panel = document.getElementById('chatPanel');
-        const lastMessage = messages[0];
-        if (lastMessage && !panel.classList.contains('open') && lastMessage.username !== currentUser) {
-            document.getElementById('chatNotificationDot').classList.remove('hidden');
-        }
     };
     
-    // ANLIK GÜNCELLEME İÇİN 'value' DİNLEYİCİSİ KULLANILIYOR
     activeListeners.chat = { ref: chatRef, event: 'value', callback };
     chatRef.on('value', callback);
 
