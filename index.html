@@ -5923,7 +5923,9 @@ async function openPublicUserDetailModal(username) {
     activeUserProfileListener = { ref: userRef, callback: userProfileCallback };
 }
 
-  async function renderUserRankings() {
+  // renderUserRankings fonksiyonunu bul ve bu yeni versiyonla değiştir
+
+async function renderUserRankings() {
     const searchTerm = document.getElementById('searchUserRanking').value.trim().toLowerCase();
     
     let filteredUsers = allUsersCache;
@@ -5950,7 +5952,8 @@ async function openPublicUserDetailModal(username) {
             isBoxLeader: u.username === leaders.boxUser,
             isShieldLeader: u.username === leaders.shieldUser,
             isClickCatchLeader: u.username === leaders.clickCatchLeaderUser,
-            isWheelSpinLeader: u.username === leaders.wheelSpinUser
+            isWheelSpinLeader: u.username === leaders.wheelSpinUser,
+            isMonsterLeader: u.username === leaders.monsterDamageUser // Canavar lideri kontrolü eklendi
         };
 
         const userIcons = getUserBadgesHtml(u, userLeaderStatus);
@@ -5964,15 +5967,15 @@ async function openPublicUserDetailModal(username) {
 
         const scoreToShow = u.kariyerPuani || 0;
 
-        return `<div class="relative mb-3 p-3 bg-gray-800 rounded-xl border border-gray-700 cursor-pointer hover:bg-gray-700/70 transition-colors" onclick="openPublicUserDetailModal('${u.username}')">
-            <div class="flex items-center w-full gap-3">
-                <span class="font-bold text-xl text-gray-400 w-8 text-center flex-shrink-0">${i + 1}.</span>
-                <img src="${avatarUrl}" class="w-14 h-14 rounded-full object-cover flex-shrink-0 border-2 border-gray-600" onclick="event.stopPropagation(); openAvatarStatsModal('${u.username}')">
-                
-                <div class="flex flex-col min-w-0 flex-grow">
-                    <div class="h-6 min-h-[24px] flex items-center">${userIcons}</div>
-                    <p class="font-bold text-lg text-white truncate" title="${u.username}">${u.username}</p>
-                    <p class="text-sm font-semibold text-yellow-400/80">${scoreToShow} (Kariyer Puan)</p>
+        // YENİ HTML YAPISI (Liderler Sıralaması ile aynı)
+        return `<div class="mb-3 p-3 bg-gray-800 rounded-md border border-gray-700 cursor-pointer hover:bg-gray-700 transition-colors" onclick="openPublicUserDetailModal('${u.username}')">
+            <div class="text-center">${userIcons}</div>
+            <div class="flex items-center justify-start mt-1">
+                <span class="font-semibold text-lg text-yellow-300 mr-3 w-8 text-left">${i + 1}.</span>
+                <img src="${avatarUrl}" class="w-12 h-12 rounded-md mr-3 object-contain" onclick="event.stopPropagation(); openAvatarStatsModal('${u.username}')">
+                <div class="flex flex-col">
+                    <span class="font-semibold text-lg">${u.username}</span>
+                    <span class="text-sm font-semibold text-yellow-400/80">${scoreToShow} (Kariyer Puan)</span>
                 </div>
             </div>
             ${blockedInfo ? `<div class="text-center mt-2">${blockedInfo}</div>` : ''}
@@ -5983,6 +5986,8 @@ async function openPublicUserDetailModal(username) {
     document.getElementById("allUserRankings").innerHTML = html || "<div class='text-center text-gray-400'>Aramayla eşleşen kullanıcı bulunamadı.</div>";
     document.getElementById("totalUsers").textContent = allUsersCache.length;
 }
+
+// loadLeaderboardRanking fonksiyonunu bul ve bu yeni versiyonla değiştir
 
 async function loadLeaderboardRanking() {
     const ref = db.ref('users');
@@ -6003,10 +6008,12 @@ async function loadLeaderboardRanking() {
 
         const leaders = await calculateAllLeaders(usersData);
         
+        // --- HATA BURADAYDI: 'leaders.monsterDamageUser' bu listeye eklenmemişti. ARTIK EKLENDİ. ---
         const leaderUsernames = new Set([
             leaders.currentBalanceUser, leaders.highEverBalanceUser, leaders.surpriseBoxUser,
             leaders.bombUser, leaders.spentPointsUser, leaders.multiplierUser,
-            leaders.boxUser, leaders.shieldUser, leaders.clickCatchLeaderUser, leaders.wheelSpinUser
+            leaders.boxUser, leaders.shieldUser, leaders.clickCatchLeaderUser, leaders.wheelSpinUser,
+            leaders.monsterDamageUser 
         ]);
         leaderUsernames.delete(null);
         
@@ -6026,6 +6033,7 @@ async function loadLeaderboardRanking() {
                 if (user.username === leaders.shieldUser) count++;
                 if (user.username === leaders.clickCatchLeaderUser) count++;
                 if (user.username === leaders.wheelSpinUser) count++;
+                if (user.username === leaders.monsterDamageUser) count++; // Canavar lideri de sayıma eklendi
                 return count;
             };
 
@@ -6037,6 +6045,7 @@ async function loadLeaderboardRanking() {
         });
 
         const html = leaderUsers.map((u, i) => {
+            // --- HATA BURADAYDI: 'isMonsterLeader' kontrolü bu objede eksikti. ARTIK EKLENDİ. ---
             const userLeaderStatus = {
                 isCurrentLeader: u.username === leaders.currentBalanceUser,
                 isHighLeader: u.username === leaders.highEverBalanceUser,
@@ -6047,7 +6056,8 @@ async function loadLeaderboardRanking() {
                 isBoxLeader: u.username === leaders.boxUser,
                 isShieldLeader: u.username === leaders.shieldUser,
                 isClickCatchLeader: u.username === leaders.clickCatchLeaderUser,
-                isWheelSpinLeader: u.username === leaders.wheelSpinUser
+                isWheelSpinLeader: u.username === leaders.wheelSpinUser,
+                isMonsterLeader: u.username === leaders.monsterDamageUser
             };
             const badgesHtml = getUserBadgesHtml(u, userLeaderStatus);
             const avatarUrl = u.selectedAvatar ? u.selectedAvatar.url : defaultAvatarUrl;
@@ -17677,22 +17687,26 @@ function displayTemporaryNotification(message, color = 'bg-blue-600') {
     }, 2500);
 }
 
-// =======================================================
-// YENİ: CANAVAR SAVAŞI SİSTEMİ FONKSİYONLARI
-// =======================================================
+// listenForMonsterBattleData fonksiyonunu bul ve bu yeni versiyonla değiştir
 
-/**
- * Canavar ve Avatar stat verilerini Firebase'den dinler ve değişiklik olduğunda arayüzü günceller.
- */
 function listenForMonsterBattleData() {
     const ref = db.ref('gameConfig/monsterBattle');
     const callback = snap => {
         monsterBattleData = snap.val() || {};
+        
         // Sadece canavar savaşı sekmesi açıksa arayüzü güncelle
         if (currentActiveSection === 'monsterBattle') {
             renderMonsterBattleUI();
         }
+        
+        // --- SORUNU ÇÖZEN YENİ EKLENEN SATIRLAR ---
+        // Canavar verisi her değiştiğinde, lider durumu değişmiş olabileceğinden
+        // her iki sıralama listesini de yeniden çizmesi için tetikliyoruz.
+        renderUserRankings();
+        loadLeaderboardRanking();
+        // --- YENİ SATIRLARIN SONU ---
     };
+
     if (activeListeners.monsterBattle) ref.off('value', activeListeners.monsterBattle.callback);
     activeListeners.monsterBattle = { ref, event: 'value', callback };
     ref.on('value', callback);
