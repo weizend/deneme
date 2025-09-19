@@ -10757,7 +10757,8 @@ function renderWheel() {
 }
 
 // spinWheel fonksiyonunu bununla DEĞİŞTİR
-async function spinWheel() {
+async function spinWheel(event) {
+    event.preventDefault(); // <-- BU SATIRI EKLE
     // Sadece kullanıcıyı kilitleyen client-side kontrol
     if (isWheelSpinning) return;
     if (isAdmin) {
@@ -18133,7 +18134,8 @@ function addRewardToTier(element, rewardData = {}) {
 }
 
 // MEVCUT attackMonster FONKSİYONUNU SİLİP BUNU YAPIŞTIR
-async function attackMonster() {
+async function attackMonster(event) {
+    event.preventDefault(); // <-- BU SATIRI EKLE
     if (isAdmin) {
         displayMessage("Adminler saldıramaz.");
         return;
