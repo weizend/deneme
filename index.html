@@ -11,6 +11,21 @@
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
 
 <style>
+html, body {
+    /* Tarayıcının yaptığı ani kaydırmaları yumuşak bir geçişe çevirir */
+    scroll-behavior: smooth;
+}
+
+body {
+    /* Bu en önemlisi: Bir modal veya başka bir şeyin içindeki kaydırmanın
+       tüm sayfayı kaydırmasını engeller. Zıplamayı keser. */
+    overscroll-behavior-y: contain;
+}
+
+/* Bonus: Butonlara tıklandığında çıkan gri/mavi vurgu rengini kaldırır, daha temiz bir his verir */
+button, .button, [role="button"] {
+    -webkit-tap-highlight-color: transparent;
+}
 /* --- YENİ EKLENECEK KOD: KULLANICI ETİKETLEME ÖNERİ KUTUSU --- */
 #chatSuggestions {
     position: absolute;
@@ -10758,8 +10773,7 @@ function renderWheel() {
 
 // spinWheel fonksiyonunu bununla DEĞİŞTİR
 async function spinWheel(event) {
-    event.preventDefault(); // <-- BU SATIRI EKLE
-    // Sadece kullanıcıyı kilitleyen client-side kontrol
+    event.preventDefault();
     if (isWheelSpinning) return;
     if (isAdmin) {
         displayMessage("Adminler çark çeviremez.");
@@ -18135,7 +18149,7 @@ function addRewardToTier(element, rewardData = {}) {
 
 // MEVCUT attackMonster FONKSİYONUNU SİLİP BUNU YAPIŞTIR
 async function attackMonster(event) {
-    event.preventDefault(); // <-- BU SATIRI EKLE
+    event.preventDefault();
     if (isAdmin) {
         displayMessage("Adminler saldıramaz.");
         return;
