@@ -7640,7 +7640,7 @@ function renderActivityFeed(activities) {
                     const { baseScore, finalScore, ticketsUsed, specialItems, newWeeklyScore } = details;
                     message = `${userHtml}, Tıkla-Yakala oyununda <b class="text-white">${ticketsUsed} bilet</b> kullandı ve <span class="text-green-300 font-bold">${finalScore} Skor</span> topladı. <small class="text-gray-400">(Skor: ${baseScore} x ${ticketsUsed} Bilet)</small>`;
                     if (specialItems && specialItems.length > 0) {
-                        const itemsText = specialItems.map(item => `<b class="text-cyan-300">+${item.amount} ${item.name}</b>`).join(', ');
+                        const itemsText = specialItems.map(item => `<b class="text-cyan-300">${item.amount} ${item.name}</b>`).join(', ');
                         message += ` - (Ayrıca, ${itemsText}) kazandı.`;
                     } else { message += ' - (Özel eşya yakalanmadı)'; }
                     const weeklyScoreText = (newWeeklyScore !== undefined) ? ` <span class="text-gray-400">(Haftalık Skor: ${newWeeklyScore})</span>` : '';
@@ -12276,14 +12276,12 @@ async function endSoloClickCatchGame() {
     const finalWheelTickets = collectedWheelTickets * ticketsUsedThisRound;
     const finalWildcards = collectedWildcards * ticketsUsedThisRound;
 
-    // ★★★ YENİ EKLENEN KISIM: YAKALANAN İKSİRLERİ BİLET SAYISIYLA ÇARP ★★★
     const finalPotions = [];
     collectedPotions.forEach(potion => {
         for (let i = 0; i < ticketsUsedThisRound; i++) {
             finalPotions.push(potion);
         }
     });
-    // ★★★ YENİ KISIM SONU ★★★
 
     const aggregatedMultipliers = collectedMultipliers.reduce((acc, multiplier) => {
         const key = multiplier.value;
@@ -12301,22 +12299,21 @@ async function endSoloClickCatchGame() {
 
     if (finalBoxRights > 0) {
         finalUser.kutuHakki = (finalUser.kutuHakki || 0) + finalBoxRights;
-        specialItemsWonDetails.push({ name: 'Kutu Hakkı', amount: finalBoxRights });
+        specialItemsWonDetails.push({ name: 'Kutu Hakkı', amount: `+${finalBoxRights}` });
     }
     if (finalIflasShields > 0) {
         finalUser.iflasShieldUses = (finalUser.iflasShieldUses || 0) + finalIflasShields;
-        specialItemsWonDetails.push({ name: 'İflas Kalkanı', amount: finalIflasShields });
+        specialItemsWonDetails.push({ name: 'İflas Kalkanı', amount: `+${finalIflasShields}` });
     }
     if (finalWheelTickets > 0) {
         finalUser.carkBileti = (finalUser.carkBileti || 0) + finalWheelTickets;
-        specialItemsWonDetails.push({ name: 'Çark Bileti', amount: finalWheelTickets });
+        specialItemsWonDetails.push({ name: 'Çark Bileti', amount: `+${finalWheelTickets}` });
     }
     if (finalWildcards > 0) {
         finalUser.wildcards = (finalUser.wildcards || 0) + finalWildcards;
-        specialItemsWonDetails.push({ name: 'Joker Kart', amount: finalWildcards });
+        specialItemsWonDetails.push({ name: 'Joker Kart', amount: `+${finalWildcards}` });
     }
 
-    // ★★★ YENİ EKLENEN KISIM: İKSİR BONUSLARINI KULLANICININ KALICI STATLARINA EKLE ★★★
     const statKeyMap = { 
         health_potion: 'hp', damage_potion: 'damage', defense_potion: 'defense', 
         crit_potion: 'critChance', crit_damage_potion: 'critDamage', 
@@ -12326,13 +12323,11 @@ async function endSoloClickCatchGame() {
     finalPotions.forEach(potion => {
         const statKey = statKeyMap[potion.type];
         if (statKey) {
-            // Limiti kontrol et
             const capCheck = checkPotionCap(finalUser, potion.type, potion.value);
             if (capCheck.canAdd && capCheck.amount > 0) {
                 if (!finalUser.globalPotionBuffs) finalUser.globalPotionBuffs = {};
                 finalUser.globalPotionBuffs[statKey] = (finalUser.globalPotionBuffs[statKey] || 0) + capCheck.amount;
                 
-                // Log ve mesaj için detayı ekle
                 const potionName = typeToName[potion.type] || 'İksir';
                 const isPercent = ['defense_potion', 'crit_potion', 'crit_damage_potion', 'dodge_potion', 'pierce_potion'].includes(potion.type);
                 const prefix = isPercent ? '%' : '+';
@@ -12341,15 +12336,13 @@ async function endSoloClickCatchGame() {
         } else if (potion.type === 'revival_stone') {
              if (!finalUser.inventory) finalUser.inventory = {};
              finalUser.inventory.revival_stone = (finalUser.inventory.revival_stone || 0) + potion.value;
-             specialItemsWonDetails.push({ name: 'Dirilme Taşı', amount: potion.value });
+             specialItemsWonDetails.push({ name: 'Dirilme Taşı', amount: `+${potion.value}` });
         }
     });
-     // ★★★ YENİ KISIM SONU ★★★
 
     for (const key in aggregatedMultipliers) {
         const multiplierGroup = aggregatedMultipliers[key];
         const finalTotalUses = multiplierGroup.totalUses * ticketsUsedThisRound;
-
         const hasActiveMultiplier = (finalUser.multiplierSource && finalUser.multiplierSource !== 'none') && (finalUser.multiplierRemainingUses > 0 || finalUser.multiplierSource === 'box');
         
         if (hasActiveMultiplier) {
@@ -12363,20 +12356,34 @@ async function endSoloClickCatchGame() {
             finalUser.multiplierRemainingUses = finalTotalUses;
             finalUser.multiplierSource = 'store';
         }
-        specialItemsWonDetails.push({ name: `${multiplierGroup.value}x Çarpan`, amount: `${finalTotalUses} Kullanım` });
+        specialItemsWonDetails.push({ name: `${multiplierGroup.value}x Çarpan`, amount: `+${finalTotalUses} Kullanım` });
     }
 
     // Final güncellemelerini hazırla
-    updates[`/users/${currentUser}`] = finalUser; // Tüm kullanıcı objesini tek seferde güncelle
+    updates[`/users/${currentUser}/kutuHakki`] = finalUser.kutuHakki;
+    updates[`/users/${currentUser}/iflasShieldUses`] = finalUser.iflasShieldUses;
+    updates[`/users/${currentUser}/carkBileti`] = finalUser.carkBileti;
+    updates[`/users/${currentUser}/wildcards`] = finalUser.wildcards;
+    updates[`/users/${currentUser}/activeMultiplier`] = finalUser.activeMultiplier;
+    updates[`/users/${currentUser}/multiplierRemainingUses`] = finalUser.multiplierRemainingUses;
+    updates[`/users/${currentUser}/multiplierSource`] = finalUser.multiplierSource;
     
-    // Skorları ayrıca güncelle (transaction gerektirebilir)
+    // ★★★ SORUNU KÖKÜNDEN ÇÖZEN SATIR ★★★
+    // Hesaplanan yeni iksir bonuslarını veritabanına göndermek için bu satırı ekliyoruz.
+    updates[`/users/${currentUser}/globalPotionBuffs`] = finalUser.globalPotionBuffs;
+
+    if(finalUser.inventory && finalUser.inventory.revival_stone) {
+        updates[`/users/${currentUser}/inventory/revival_stone`] = finalUser.inventory.revival_stone;
+    }
+    
+    // Skorları güncelle
     const weeklyScoreRef = db.ref(`clickCatchWeeklyScores/${currentUser}`);
     const currentWeeklyScore = (await weeklyScoreRef.once('value')).val() || 0;
     const newTotalWeeklyScore = currentWeeklyScore + Math.max(0, finalScore);
     updates[`/clickCatchWeeklyScores/${currentUser}`] = newTotalWeeklyScore;
     updates[`/users/${currentUser}/clickCatchHighestScore`] = newTotalWeeklyScore;
 
-    // --- 3. ADIM: AKTİVİTE KAYDINI OLUŞTUR (TEK SEFERDE) ---
+    // --- 3. ADIM: AKTİVİTE KAYDINI OLUŞTUR ---
     logActivity('clickCatchSolo', currentUser, {
         baseScore: clickCatchScore,
         finalScore: finalScore,
@@ -12388,7 +12395,7 @@ async function endSoloClickCatchGame() {
     // --- 4. ADIM: KULLANICIYA BİLDİRİM GÖNDER ---
     let endMessage = `Oyun bitti! Bu turdaki toplam skorun: <b>${finalScore}</b>. <br><small class="text-gray-400">(Skor: ${clickCatchScore} x ${ticketsUsedThisRound} Bilet)</small>`;
     if (specialItemsWonDetails.length > 0) {
-        const itemsText = specialItemsWonDetails.map(item => `+${item.amount} ${item.name}`).join(', ');
+        const itemsText = specialItemsWonDetails.map(item => `${item.amount} ${item.name}`).join(', ');
         endMessage += `<br>Ayrıca, <b>${itemsText}</b> kazandın!`;
     }
     if (collectedCardPacks.length > 0) {
