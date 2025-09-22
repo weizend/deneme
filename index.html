@@ -16760,8 +16760,7 @@ async function loadCollectionLeaderboard() {
         });
 
         let html = '';
-        // --- YENİ KOD ---
-playersWithCards.forEach((userData, index) => {
+        playersWithCards.forEach((userData, index) => {
     const username = Object.keys(allUsersData).find(key => allUsersData[key] === userData);
     if (!username) return;
 
@@ -16770,39 +16769,40 @@ playersWithCards.forEach((userData, index) => {
     const rowClass = rank === 1 ? 'bg-amber-800/50 border-amber-500' : 'bg-gray-700/50 border-gray-600';
 
     const ownedCardCount = Object.keys(userData.cardCollection || {}).length;
-
-    // Avatar URL'sini alıyoruz, eğer yoksa varsayılanı kullanıyoruz
     const avatarUrl = userData.selectedAvatar?.url || defaultAvatarUrl;
 
     let progressHtml = '';
+    // Bu kısım aynı kalıyor, sadece nereye yerleştireceğimiz değişiyor
     if (ownedCardCount >= totalCardCount && totalCardCount > 0) {
         progressHtml = `
-            <span class="font-bold text-green-400 cursor-pointer hover:underline" onclick="openUserAlbumViewer('${username}')">
+            <span class="font-bold text-sm text-green-400 cursor-pointer hover:underline" onclick="openUserAlbumViewer('${username}')">
                 Tamamlandı (${ownedCardCount}/${totalCardCount})
             </span>
         `;
     } else {
         progressHtml = `
-            <span class="font-bold text-yellow-300 cursor-pointer hover:underline" onclick="openUserAlbumViewer('${username}')">
+            <span class="font-bold text-sm text-yellow-300 cursor-pointer hover:underline" onclick="openUserAlbumViewer('${username}')">
                 ${ownedCardCount}/${totalCardCount}
             </span>
         `;
     }
 
     html += `
-    <div class="flex items-center justify-between p-3 rounded-lg border ${rowClass}">
-        <div class="flex items-center gap-4">
-            <span class="font-bold text-xl w-8 text-center">${rankIcon}</span>
-            <img src="${avatarUrl}" class="w-12 h-12 rounded-md object-cover cursor-pointer" onclick="event.stopPropagation(); openAvatarStatsModal('${username}')">
-            <span class="text-lg text-white cursor-pointer hover:underline" onclick="openPublicUserDetailModal('${username}')">
-                ${username}
-            </span>
-        </div>
-        <div class="text-right">
-            ${progressHtml}
-        </div>
-    </div>
-`;
+        <div class="flex items-center p-3 rounded-lg border ${rowClass}">
+            <div class="flex items-center gap-4">
+                <span class="font-bold text-xl w-8 text-center">${rankIcon}</span>
+                <img src="${avatarUrl}" class="w-12 h-12 rounded-md object-cover cursor-pointer" onclick="event.stopPropagation(); openAvatarStatsModal('${username}')">
+                
+                <div class="flex flex-col">
+                    <span class="text-lg text-white cursor-pointer hover:underline" onclick="openPublicUserDetailModal('${username}')">
+                        ${username}
+                    </span>
+                    ${progressHtml}
+                </div>
+
+            </div>
+            </div>
+    `;
 });
         listEl.innerHTML = html;
     };
