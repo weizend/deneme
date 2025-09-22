@@ -3997,9 +3997,9 @@ body.modal-open .modal-content {
   </div>
 </div>
 <div id="clickCatchStatsModal" class="modal-overlay fixed inset-0 bg-black bg-opacity-70 flex justify-center items-center z-[99999] hidden">
-  <div class="modal-content bg-gray-800 p-8 rounded-xl shadow-2xl border border-yellow-500 w-11/12 max-w-lg text-center relative max-h-[90vh]">
+  <div class="modal-content bg-gray-800 p-6 sm:p-8 rounded-xl shadow-2xl border border-yellow-500 w-11/12 max-w-xl text-left relative max-h-[90vh]">
     <button class="modal-close-button" onclick="closeClickCatchStatsModal()">&times;</button>
-    <h4 id="clickCatchStatsTitle" class="text-yellow-400 text-2xl font-bold mb-6">Haftalık Skor Detayları</h4>
+    <h4 id="clickCatchStatsTitle" class="text-yellow-400 text-2xl font-bold mb-6 text-center">Haftalık Skor Detayları</h4>
     <div id="clickCatchStatsContent" class="scrollable-list max-h-[60vh] overflow-y-auto bg-gray-900 p-4 rounded-lg text-left">
       Yükleniyor...
     </div>
@@ -11389,13 +11389,13 @@ async function openClickCatchStatsModal(username) {
             db.ref(`clickCatchWeeklyStats/${username}`).once('value'),
             db.ref(`clickCatchWeeklyTickets/${username}`).once('value'),
             db.ref('gameSettings/clickCatchSolo').once('value'),
-            db.ref(`clickCatchWeeklyScores/${username}`).once('value') // Haftalık toplam skoru da alıyoruz
+            db.ref(`clickCatchWeeklyScores/${username}`).once('value')
         ]);
 
         const stats = statsSnap.val();
         const ticketsUsed = ticketsSnap.val() || 0;
         const settings = settingsSnap.val();
-        const finalWeeklyScore = weeklyScoreSnap.val() || 0; // Toplam skoru değişkene atıyoruz
+        const finalWeeklyScore = weeklyScoreSnap.val() || 0;
 
         if (!stats) {
             contentEl.innerHTML = '<p class="text-center text-gray-400">Bu kullanıcı için detaylı istatistik bulunamadı.</p>';
@@ -11405,14 +11405,14 @@ async function openClickCatchStatsModal(username) {
         let html = `<p class="mb-4">Bu skoru elde ederken toplam <b class="text-yellow-300">${ticketsUsed}</b> bilet harcandı.</p>`;
         html += '<div class="space-y-3">';
 
-        const items = [
+        const scoreItems = [
             { emoji: '🥮', count: stats.normalCount, value: settings.normalValue, name: 'Puan' },
             { emoji: '💰', count: stats.goldCount, value: settings.goldValue, name: 'Puan' },
             { emoji: '💣', count: stats.bombCount, value: settings.bombValue, name: 'Puan' },
             { emoji: '⏰', count: stats.timeCount, value: settings.timeValue, name: 'Saniye' }
         ];
 
-        items.forEach(item => {
+        scoreItems.forEach(item => {
             if (item.count > 0) {
                 const totalValue = item.count * item.value;
                 const valueClass = totalValue >= 0 ? 'text-green-400' : 'text-red-400';
@@ -11420,9 +11420,11 @@ async function openClickCatchStatsModal(username) {
 
                 html += `
                     <div class="flex justify-between items-center text-lg">
-                        <span class="flex-1">${item.emoji} ${valuePrefix}${item.value} ${item.name}</span>
-                        <span class="text-gray-400 mx-2">x</span>
-                        <span class="flex-1 text-right">${item.count} (<b class="${valueClass}">${totalValue >= 0 ? '+' : ''}${formatNumber(totalValue)} ${item.name}</b>)</span>
+                        <span>${item.emoji} ${valuePrefix}${formatNumber(item.value)} ${item.name}</span>
+                        <div class="flex items-center gap-x-4">
+                            <span>x${item.count}</span>
+                            <span>(<b class="${valueClass}">${totalValue >= 0 ? '+' : ''}${formatNumber(totalValue)} ${item.name}</b>)</span>
+                        </div>
                     </div>`;
             }
         });
@@ -11434,7 +11436,7 @@ async function openClickCatchStatsModal(username) {
                 <span class="text-yellow-300">${formatNumber(finalWeeklyScore)}</span>
             </div>`;
 
-        if (stats.specialItems) {
+        if (stats.specialItems && Object.keys(stats.specialItems).length > 0) {
             html += '<hr class="border-gray-600 my-2"><p class="font-bold text-teal-300 text-xl mt-4 mb-2">Yakalanan Özel Hediyeler:</p>';
             
             for (const type in stats.specialItems) {
@@ -11466,19 +11468,22 @@ async function openClickCatchStatsModal(username) {
 
                 if (type === 'tempMultiplier') {
                     baseText = `+${specialSettings.uses} Kullanım ${specialSettings.value}x Çarpan`;
-                    totalText = `(+${count * specialSettings.uses} Kullanım)`;
+                    totalText = `+${count * specialSettings.uses} Kullanım`;
                 } else {
                     const isPercent = ['defense_potion', 'crit_potion', 'crit_damage_potion', 'dodge_potion', 'pierce_potion'].includes(type);
                     const prefix = isPercent ? '%' : '+';
                     baseText = `${prefix}${specialSettings.value} ${name}`;
-                    totalText = `(${prefix}${formatNumber(count * specialSettings.value)}${isPercent ? '' : ' ' + name})`;
+                    // HATAYI DÜZELTEN SATIR: totalText içindeki parantez kaldırıldı
+                    totalText = `${prefix}${formatNumber(count * specialSettings.value)}${isPercent ? '' : ' ' + name}`;
                 }
                 
                 html += `
                     <div class="flex justify-between items-center text-lg">
-                        <span class="flex-1">${specialSettings.emoji} ${baseText}</span>
-                        <span class="text-gray-400 mx-2">x</span>
-                        <span class="flex-1 text-right">${count} (<b class="text-green-400">${totalText}</b>)</span>
+                        <span>${specialSettings.emoji} ${baseText}</span>
+                        <div class="flex items-center gap-x-4">
+                            <span>x${count}</span>
+                            <span>(<b class="text-green-400">${totalText}</b>)</span>
+                        </div>
                     </div>`;
             }
         }
