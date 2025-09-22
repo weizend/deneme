@@ -11374,6 +11374,7 @@ function closeClickCatchStatsModal() {
     document.getElementById('clickCatchStatsModal').style.display = 'none';
 }
 
+// MEVCUT openClickCatchStatsModal FONKSİYONUNU SİLİP BUNUNLA DEĞİŞTİR
 async function openClickCatchStatsModal(username) {
     const modal = document.getElementById('clickCatchStatsModal');
     const titleEl = document.getElementById('clickCatchStatsTitle');
@@ -11384,15 +11385,17 @@ async function openClickCatchStatsModal(username) {
     modal.style.display = 'flex';
 
     try {
-        const [statsSnap, ticketsSnap, settingsSnap] = await Promise.all([
+        const [statsSnap, ticketsSnap, settingsSnap, weeklyScoreSnap] = await Promise.all([
             db.ref(`clickCatchWeeklyStats/${username}`).once('value'),
             db.ref(`clickCatchWeeklyTickets/${username}`).once('value'),
-            db.ref('gameSettings/clickCatchSolo').once('value')
+            db.ref('gameSettings/clickCatchSolo').once('value'),
+            db.ref(`clickCatchWeeklyScores/${username}`).once('value') // Haftalık toplam skoru da alıyoruz
         ]);
 
         const stats = statsSnap.val();
         const ticketsUsed = ticketsSnap.val() || 0;
         const settings = settingsSnap.val();
+        const finalWeeklyScore = weeklyScoreSnap.val() || 0; // Toplam skoru değişkene atıyoruz
 
         if (!stats) {
             contentEl.innerHTML = '<p class="text-center text-gray-400">Bu kullanıcı için detaylı istatistik bulunamadı.</p>';
@@ -11400,48 +11403,83 @@ async function openClickCatchStatsModal(username) {
         }
 
         let html = `<p class="mb-4">Bu skoru elde ederken toplam <b class="text-yellow-300">${ticketsUsed}</b> bilet harcandı.</p>`;
-        html += '<div class="space-y-2">';
+        html += '<div class="space-y-3">';
 
         const items = [
-            { emoji: '🥮', count: stats.normalCount, value: settings.normalValue, name: 'Düşük Puan' },
-            { emoji: '💰', count: stats.goldCount, value: settings.goldValue, name: 'Yüksek Puan' },
-            { emoji: '💣', count: stats.bombCount, value: settings.bombValue, name: 'Bomba' },
-            { emoji: '⏰', count: stats.timeCount, value: settings.timeValue, name: 'Ekstra Süre' }
+            { emoji: '🥮', count: stats.normalCount, value: settings.normalValue, name: 'Puan' },
+            { emoji: '💰', count: stats.goldCount, value: settings.goldValue, name: 'Puan' },
+            { emoji: '💣', count: stats.bombCount, value: settings.bombValue, name: 'Puan' },
+            { emoji: '⏰', count: stats.timeCount, value: settings.timeValue, name: 'Saniye' }
         ];
 
         items.forEach(item => {
             if (item.count > 0) {
-                const totalPoints = item.count * item.value;
-                const pointClass = totalPoints >= 0 ? 'text-green-400' : 'text-red-400';
-                html += `<div class="flex justify-between items-center"><span class="text-lg">${item.emoji} ${item.name}</span> <span>${item.count}x (<b class="${pointClass}">${totalPoints} Puan</b>)</span></div>`;
+                const totalValue = item.count * item.value;
+                const valueClass = totalValue >= 0 ? 'text-green-400' : 'text-red-400';
+                const valuePrefix = item.value >= 0 ? '+' : '';
+
+                html += `
+                    <div class="flex justify-between items-center text-lg">
+                        <span class="flex-1">${item.emoji} ${valuePrefix}${item.value} ${item.name}</span>
+                        <span class="text-gray-400 mx-2">x</span>
+                        <span class="flex-1 text-right">${item.count} (<b class="${valueClass}">${totalValue >= 0 ? '+' : ''}${formatNumber(totalValue)} ${item.name}</b>)</span>
+                    </div>`;
             }
         });
+        
+        html += `<hr class="border-gray-600 my-2">`;
+        html += `
+            <div class="flex justify-between items-center text-xl font-bold">
+                <span>🎯 Toplam Skor:</span>
+                <span class="text-yellow-300">${formatNumber(finalWeeklyScore)}</span>
+            </div>`;
 
         if (stats.specialItems) {
-            html += '<hr class="border-gray-600 my-2"><p class="font-bold text-teal-300">Yakalanan Özel Hediyeler:</p>';
+            html += '<hr class="border-gray-600 my-2"><p class="font-bold text-teal-300 text-xl mt-4 mb-2">Yakalanan Özel Hediyeler:</p>';
+            
             for (const type in stats.specialItems) {
                 const count = stats.specialItems[type];
-                const specialInfo = {
-                    'boxRight': { emoji: '📦', name: 'Kutu Hakkı' },
-                    'iflasShield': { emoji: '🛡️', name: 'İflas Kalkanı' },
-                    'wheelTicket': { emoji: '🎫', name: 'Çark Bileti' },
-                    'tempMultiplier': { emoji: '✖️', name: `${settings.specialValue}x Çarpan` },
-                    'wildcard': { emoji: '🃏', name: `Joker Kart` },
-                    'card_pack': { emoji: '🎴', name: `Standart Kart Paketi` },
-                    'card_pack_normal': { emoji: '🥉', name: `Bronz Kart Paketi` },
-                    'card_pack_gumus': { emoji: '🥈', name: `Gümüş Kart Paketi` },
-                    'card_pack_altin': { emoji: '🥇', name: `Altın Kart Paketi` },
-                    'card_pack_efsanevi': { emoji: '🏆', name: `Efsanevi Kart Paketi` },
-                    'revival_stone': { emoji: '💎', name: `Dirilme Taşı` },
-                    'health_potion': { emoji: '🧪', name: `${settings.specialValue} Can İksiri` },
-                    'damage_potion': { emoji: '⚔️', name: `${settings.specialValue} Hasar İksiri` },
-                    'defense_potion': { emoji: '🛡️', name: `%${settings.specialValue} Savunma İksiri` },
-                    'crit_potion': { emoji: '💥', name: `%${settings.specialValue} Kritik Vuruş İksiri` },
-                    'crit_damage_potion': { emoji: '🎯', name: `%${settings.specialValue} Kritik Hasar İksiri` },
-                    'dodge_potion': { emoji: '💨', name: `%${settings.specialValue} Sıyrılma Şansı İksiri` },
-                    'pierce_potion': { emoji: '📌', name: `%${settings.specialValue} Delici Vuruş İksiri` },
-                }[type] || { emoji: '🎁', name: 'Özel Hediye' };
-                html += `<div class="flex justify-between items-center"><span class="text-lg">${specialInfo.emoji} ${specialInfo.name}</span> <span>${count}x</span></div>`;
+                const specialSettings = {
+                    'boxRight': { emoji: '📦', value: settings.specialValue },
+                    'iflasShield': { emoji: '🛡️', value: settings.specialValue },
+                    'wheelTicket': { emoji: '🎫', value: settings.specialValue },
+                    'tempMultiplier': { emoji: '✖️', value: settings.specialValue, uses: settings.specialMultiplierUses },
+                    'wildcard': { emoji: '🃏', value: settings.specialValue },
+                    'card_pack': { emoji: '🎴', value: settings.specialValue },
+                    'card_pack_normal': { emoji: '🥉', value: settings.specialValue },
+                    'card_pack_gumus': { emoji: '🥈', value: settings.specialValue },
+                    'card_pack_altin': { emoji: '🥇', value: settings.specialValue },
+                    'card_pack_efsanevi': { emoji: '🏆', value: settings.specialValue },
+                    'revival_stone': { emoji: '💎', value: settings.specialValue },
+                    'health_potion': { emoji: '🧪', value: settings.specialValue },
+                    'damage_potion': { emoji: '⚔️', value: settings.specialValue },
+                    'defense_potion': { emoji: '🛡️', value: settings.specialValue },
+                    'crit_potion': { emoji: '💥', value: settings.specialValue },
+                    'crit_damage_potion': { emoji: '🎯', value: settings.specialValue },
+                    'dodge_potion': { emoji: '💨', value: settings.specialValue },
+                    'pierce_potion': { emoji: '📌', value: settings.specialValue },
+                }[type] || { emoji: '🎁', value: settings.specialValue };
+
+                const name = typeToName[type] || 'Hediye';
+                let baseText = '';
+                let totalText = '';
+
+                if (type === 'tempMultiplier') {
+                    baseText = `+${specialSettings.uses} Kullanım ${specialSettings.value}x Çarpan`;
+                    totalText = `(+${count * specialSettings.uses} Kullanım)`;
+                } else {
+                    const isPercent = ['defense_potion', 'crit_potion', 'crit_damage_potion', 'dodge_potion', 'pierce_potion'].includes(type);
+                    const prefix = isPercent ? '%' : '+';
+                    baseText = `${prefix}${specialSettings.value} ${name}`;
+                    totalText = `(${prefix}${formatNumber(count * specialSettings.value)}${isPercent ? '' : ' ' + name})`;
+                }
+                
+                html += `
+                    <div class="flex justify-between items-center text-lg">
+                        <span class="flex-1">${specialSettings.emoji} ${baseText}</span>
+                        <span class="text-gray-400 mx-2">x</span>
+                        <span class="flex-1 text-right">${count} (<b class="text-green-400">${totalText}</b>)</span>
+                    </div>`;
             }
         }
         
