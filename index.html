@@ -11335,17 +11335,16 @@ async function getClickCatchLeaderUsername() {
               const userData = allUsersCache.find(user => user.username === entry.username);
               const avatarUrl = userData && userData.selectedAvatar ? userData.selectedAvatar.url : defaultAvatarUrl;
 
-              // --- DEĞİŞİKLİK 2: HTML yapısı skor altta olacak şekilde yeniden düzenlendi. ---
               html += `
-                <div onclick="openPublicUserDetailModal('${entry.username}')" class="flex items-center p-3 mb-2 bg-gray-800 rounded-lg cursor-pointer hover:bg-gray-700 transition-colors">
-                    <span class="font-bold text-lg text-gray-400 w-8 text-center">${index + 1}.</span>
-                    <img src="${avatarUrl}" class="w-12 h-12 rounded-full object-cover ml-2 mr-4">
-                    <div class="flex-grow">
-                        <p class="font-bold text-white text-lg">${entry.username}</p>
-                        <p class="font-semibold text-yellow-300">${entry.score} Skor</p>
-                    </div>
-                    ${deleteButton}
-                </div>`;
+  <div onclick="openPublicUserDetailModal('${entry.username}')" class="flex items-center p-3 mb-2 bg-gray-800 rounded-lg cursor-pointer hover:bg-gray-700 transition-colors">
+      <span class="font-bold text-lg text-gray-400 w-8 text-center">${index + 1}.</span>
+      <img src="${avatarUrl}" class="w-12 h-12 rounded-full object-cover ml-2 mr-4 cursor-pointer" onclick="event.stopPropagation(); openAvatarStatsModal('${entry.username}')">
+      <div class="flex-grow">
+          <p class="font-bold text-white text-lg">${entry.username}</p>
+          <p class="font-semibold text-yellow-300">${entry.score} Skor</p>
+      </div>
+      ${deleteButton}
+  </div>`;
           });
           rankingsList.innerHTML = html || '<p class="text-center text-gray-400">Aramayla eşleşen kullanıcı bulunamadı.</p>';
       };
@@ -13635,10 +13634,10 @@ async function renderMonsterBattleUI() {
             const userHealthPercent = (userCurrentHP / userMaxHP) * 100;
 
             leaderboardHtml += `
-                <div class="leaderboard-item" onclick="openPublicUserDetailModal('${username}')">
-                    <span class="rank">${index + 1}.</span>
-                    <img src="${avatarUrl}" class="avatar" onclick="event.stopPropagation(); openAvatarStatsModal('${username}')">
-                    <div class="flex-grow">
+    <div class="leaderboard-item" onclick="openPublicUserDetailModal('${username}')">
+        <span class="rank">${index + 1}.</span>
+        <img src="${avatarUrl}" class="avatar cursor-pointer" onclick="event.stopPropagation(); openAvatarStatsModal('${username}')">
+        <div class="flex-grow">
                         <p class="font-bold text-white">${username}</p>
                         <div class="health-bar-container mt-1">
                             <div class="health-bar ${userCurrentHP <= 0 ? 'bg-gray-500' : 'bg-green-500'}" style="width: ${userHealthPercent}%;">
@@ -16791,21 +16790,19 @@ playersWithCards.forEach((userData, index) => {
     }
 
     html += `
-        <div class="flex items-center justify-between p-3 rounded-lg border ${rowClass}">
-            <div class="flex items-center gap-4">
-                <span class="font-bold text-xl w-8 text-center">${rankIcon}</span>
-                
-                <img src="${avatarUrl}" class="w-12 h-12 rounded-md object-cover">
-                
-                <span class="text-lg text-white cursor-pointer hover:underline" onclick="openPublicUserDetailModal('${username}')">
-                    ${username}
-                </span>
-            </div>
-            <div class="text-right">
-                ${progressHtml}
-            </div>
+    <div class="flex items-center justify-between p-3 rounded-lg border ${rowClass}">
+        <div class="flex items-center gap-4">
+            <span class="font-bold text-xl w-8 text-center">${rankIcon}</span>
+            <img src="${avatarUrl}" class="w-12 h-12 rounded-md object-cover cursor-pointer" onclick="event.stopPropagation(); openAvatarStatsModal('${username}')">
+            <span class="text-lg text-white cursor-pointer hover:underline" onclick="openPublicUserDetailModal('${username}')">
+                ${username}
+            </span>
         </div>
-    `;
+        <div class="text-right">
+            ${progressHtml}
+        </div>
+    </div>
+`;
 });
         listEl.innerHTML = html;
     };
