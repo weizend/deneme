@@ -1785,7 +1785,7 @@ body.modal-open .modal-content {
     <h5 class="text-yellow-300 font-bold">Ödüller</h5>
     <label class="block text-sm font-medium text-gray-300 mb-1">Canavar Ölünce Lidere Verilecek Ödül:</label>
     <div class="grid grid-cols-2 gap-2">
-        <select id="adminMonsterKillRewardType" class="box-setting-input" onchange="handleMonsterRewardTypeChange(this.value)">
+        <select id="adminMonsterKillRewardType" class="box-setting-input">
             <option value="points">💰 Puan</option>
             <option value="boxRights">📦 Kutu Hakkı</option>
             <option value="wheelTicket">🎫 Çark Bileti</option>
@@ -1806,15 +1806,8 @@ body.modal-open .modal-content {
             <option value="crit_damage_potion">🎯 Kritik Hasar İksiri</option>
             <option value="dodge_potion">💨 Sıyrılma Şansı İksiri</option>
             <option value="pierce_potion">📌 Delici Şansı İksiri</option>
-            <option value="avatar">👤 Avatar</option>
-            <option value="special">🚀 Özel Ürün (Onay Gerektirir)</option>
         </select>
         <input type="number" id="adminMonsterKillReward" class="box-setting-input" placeholder="Miktar">
-    </div>
-    <div id="adminMonsterKillRewardExtraFields" class="hidden space-y-2 mt-2">
-        <input type="text" id="adminMonsterRewardAvatarName" class="box-setting-input hidden" placeholder="Avatar Adı">
-        <input type="text" id="adminMonsterRewardAvatarUrl" class="box-setting-input hidden" placeholder="Avatar Resim URL">
-        <input type="text" id="adminMonsterRewardSpecialName" class="box-setting-input hidden" placeholder="Özel Ürün Adı (Onay Gerektirir)">
     </div>
     <button onclick="saveAndSpawnMonster()" class="w-full py-2 bg-green-700 hover:bg-green-600 rounded-lg font-bold">Kaydet ve Canavarı Çağır</button>
     <hr class="border-gray-600 mt-4">
@@ -3750,29 +3743,24 @@ body.modal-open .modal-content {
 </div>
 
 <div id="grandPrizeSettingsModal" class="modal-overlay fixed inset-0 bg-black bg-opacity-70 flex justify-center items-center z-[50001] hidden">
-  <div class="modal-content bg-gray-800 p-8 rounded-xl shadow-2xl border border-yellow-500 w-11/12 max-w-4xl text-center relative max-h-[90vh] flex flex-col">
+  <div class="modal-content bg-gray-800 p-8 rounded-xl shadow-2xl border border-yellow-500 w-11/12 max-w-2xl text-center relative">
     <button class="modal-close-button" onclick="closeGrandPrizeSettingsModal()">&times;</button>
     <h3 class="text-yellow-300 text-3xl font-bold mb-6">Büyük Ödül Ayarları</h3>
     
-    <div class="flex-grow overflow-y-auto scrollable-list pr-4">
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 text-left">
-            <div class="flex flex-col">
-                <h4 class="text-lg font-bold text-amber-300 mb-2">🥇 İlk Bitiren Kullanıcının Ödülleri</h4>
-                <div id="firstPlaceRewardsContainer" class="space-y-3 p-3 bg-gray-900/50 rounded-lg border border-gray-700 flex-grow">
-                    </div>
-                <button onclick="addGrandPrizeRewardRow('firstPlace')" class="mt-3 w-full py-2 bg-blue-600 hover:bg-blue-500 rounded-lg text-sm font-bold">+ Ödül Ekle</button>
-            </div>
-
-            <div class="flex flex-col">
-                <h4 class="text-lg font-bold text-green-300 mb-2">🏆 Tamamlayan Herkesin Ödülleri</h4>
-                <div id="completionRewardsContainer" class="space-y-3 p-3 bg-gray-900/50 rounded-lg border border-gray-700 flex-grow">
-                    </div>
-                <button onclick="addGrandPrizeRewardRow('completion')" class="mt-3 w-full py-2 bg-blue-600 hover:bg-blue-500 rounded-lg text-sm font-bold">+ Ödül Ekle</button>
-            </div>
-        </div>
-    </div>
+    <div class="space-y-4">
+        <p class="text-sm text-gray-400">Koleksiyonu tamamlayan tüm oyunculara verilecek ödülleri buradan ayarlayın.</p>
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+    <input type="number" id="prizePoints" placeholder="Puan" class="box-setting-input">
+    <input type="number" id="prizeBoxRights" placeholder="Kutu Hakkı" class="box-setting-input">
+    <input type="number" id="prizeIflasShields" placeholder="İflas Kalkanı" class="box-setting-input">
+    <input type="number" id="prizeWheelTickets" placeholder="Çark Bileti" class="box-setting-input">
+    <input type="number" id="prizeClickCatchTickets" placeholder="T-Y Bileti" class="box-setting-input">
     
-    <div class="mt-6 pt-4 border-t border-gray-600 flex-shrink-0">
+    <input type="text" id="prizeAvatarName" placeholder="Ödül Avatar Adı" class="box-setting-input">
+    <input type="text" id="prizeAvatarImageUrl" placeholder="Ödül Avatar Resim URL" class="box-setting-input lg:col-span-2">
+
+    <input type="text" id="prizeDescription" placeholder="Diğer Ödül (Örn: VIP)" class="box-setting-input sm:col-span-2 lg:col-span-3">
+</div>
         <button onclick="saveGrandPrizeAndCloseModal()" class="w-full mt-3 py-3 bg-yellow-600 hover:bg-yellow-500 text-black font-bold rounded-lg">Büyük Ödülü Kaydet</button>
     </div>
   </div>
@@ -16173,44 +16161,19 @@ async function revealCard(cardElement) {
 
 async function saveGrandPrize() {
     if (!isAdmin) return;
+    const prizeData = {
+        points: parseInt(document.getElementById('prizePoints').value) || 0,
+        boxRights: parseInt(document.getElementById('prizeBoxRights').value) || 0,
+        iflasShields: parseInt(document.getElementById('prizeIflasShields').value) || 0, // DEĞİŞTİ
+        wheelTickets: parseInt(document.getElementById('prizeWheelTickets').value) || 0,
+        clickCatchTickets: parseInt(document.getElementById('prizeClickCatchTickets').value) || 0,
+        avatarName: document.getElementById('prizeAvatarName').value.trim() || '', // YENİ EKLENDİ
+        avatarImageUrl: document.getElementById('prizeAvatarImageUrl').value.trim() || '', // YENİ EKLENDİ
+        description: document.getElementById('prizeDescription').value.trim() || ''
+    };
 
-    const newPrizeData = { firstPlace: [], completion: [] };
-    let hasError = false;
-
-    ['firstPlace', 'completion'].forEach(tier => {
-        if(hasError) return;
-        const container = document.getElementById(tier === 'firstPlace' ? 'firstPlaceRewardsContainer' : 'completionRewardsContainer');
-        
-        container.querySelectorAll('.reward-entry').forEach((rewardRow) => {
-            if (hasError) return;
-            const reward = { type: rewardRow.querySelector('.reward-type').value };
-
-            if (reward.type === 'tempMultiplier') {
-                reward.value = parseInt(rewardRow.querySelector('.reward-value').value);
-                reward.uses = parseInt(rewardRow.querySelector('.reward-uses').value);
-                if (isNaN(reward.value) || isNaN(reward.uses) || reward.value <= 0 || reward.uses <= 0) {
-                    displayMessage(`${tier} ödüllerindeki Çarpan için geçerli Değer ve Kullanım Hakkı girin.`); hasError = true; return;
-                }
-            } else if (reward.type === 'avatar') {
-                reward.avatarName = rewardRow.querySelector('.reward-avatarName').value.trim();
-                reward.avatarImageUrl = rewardRow.querySelector('.reward-avatarImageUrl').value.trim();
-                if (!reward.avatarName || !reward.avatarImageUrl) {
-                    displayMessage(`${tier} ödüllerindeki Avatar için Ad ve Resim URL'si girin.`); hasError = true; return;
-                }
-            } else {
-                reward.value = parseStatValue(reward.type, rewardRow.querySelector('.reward-value').value);
-                if (isNaN(reward.value) || reward.value <= 0) {
-                    displayMessage(`${tier} ödüllerindeki bir ödül için geçerli bir Miktar/Adet girin.`); hasError = true; return;
-                }
-            }
-            newPrizeData[tier].push(reward);
-        });
-    });
-
-    if (hasError) return;
-    
-    await db.ref('gameConfig/collectionGrandPrize').set(newPrizeData);
-    displayMessage("Büyük Ödül ayarları başarıyla kaydedildi!");
+    await db.ref('gameConfig/collectionGrandPrize').set(prizeData);
+    displayMessage("Büyük Ödül başarıyla kaydedildi!");
     loadGrandPrizeDisplay();
 }
 
@@ -16219,66 +16182,14 @@ async function loadPrizeSettingsForAdmin() {
     const prizeSnap = await db.ref('gameConfig/collectionGrandPrize').once('value');
     const prizeData = prizeSnap.val() || {};
     
-    const firstPlaceContainer = document.getElementById('firstPlaceRewardsContainer');
-    const completionContainer = document.getElementById('completionRewardsContainer');
-    
-    firstPlaceContainer.innerHTML = '';
-    completionContainer.innerHTML = '';
-
-    if (prizeData.firstPlace && Array.isArray(prizeData.firstPlace)) {
-        prizeData.firstPlace.forEach(reward => addGrandPrizeRewardRow('firstPlace', reward));
-    }
-    if (prizeData.completion && Array.isArray(prizeData.completion)) {
-        prizeData.completion.forEach(reward => addGrandPrizeRewardRow('completion', reward));
-    }
-}
-
-// =======================================================
-// YENİ VE GÜNCELLENMİŞ: KART KOLEKSİYONU ÖDÜL YÖNETİMİ (HATALARI GİDERİLDİ)
-// =======================================================
-
-/**
- * Büyük Ödül Ayarları paneline yeni bir ödül satırı ekler.
- * @param {string} tier - 'firstPlace' veya 'completion'
- * @param {object} rewardData - Mevcut bir ödülün verisi (düzenleme için)
- */
-function addGrandPrizeRewardRow(tier, rewardData = {}) {
-    const container = document.getElementById(tier === 'firstPlace' ? 'firstPlaceRewardsContainer' : 'completionRewardsContainer');
-    if (!container) return;
-    
-    const rewardRow = document.createElement('div');
-    rewardRow.className = 'reward-entry grid grid-cols-1 sm:grid-cols-3 gap-2 p-2 bg-gray-900/50 rounded-md';
-    // Giriş Serisi'ndeki ödül listesini aynen kullanabiliriz
-    rewardRow.innerHTML = `
-        <select class="box-setting-input reward-type" onchange="handleAdminRewardTypeChange(this)">
-            <option value="points" ${rewardData.type === 'points' ? 'selected' : ''}>💰 Puan</option>
-            <option value="boxRights" ${rewardData.type === 'boxRights' ? 'selected' : ''}>📦 Kutu Hakkı</option>
-            <option value="wheelTicket" ${rewardData.type === 'wheelTicket' ? 'selected' : ''}>🎫 Çark Bileti</option>
-            <option value="clickCatchTicket" ${rewardData.type === 'clickCatchTicket' ? 'selected' : ''}>🎟️ T-Y Bileti</option>
-            <option value="iflasShield" ${rewardData.type === 'iflasShield' ? 'selected' : ''}>🛡️ İflas Kalkanı</option>
-            <option value="tempMultiplier" ${rewardData.type === 'tempMultiplier' ? 'selected' : ''}>✖️ Çarpan</option>
-            <option value="avatar" ${rewardData.type === 'avatar' ? 'selected' : ''}>👤 Avatar</option>
-            <option value="wildcard" ${rewardData.type === 'wildcard' ? 'selected' : ''}>🃏 Joker Kart</option>
-            <option value="card_pack" ${rewardData.type === 'card_pack' ? 'selected' : ''}>🎴 Standart Kart Paketi</option>
-            <option value="card_pack_normal" ${rewardData.type === 'card_pack_normal' ? 'selected' : ''}>🥉 Bronz Kart Paketi</option>
-            <option value="card_pack_gumus" ${rewardData.type === 'card_pack_gumus' ? 'selected' : ''}>🥈 Gümüş Kart Paketi</option>
-            <option value="card_pack_altin" ${rewardData.type === 'card_pack_altin' ? 'selected' : ''}>🥇 Altın Kart Paketi</option>
-            <option value="card_pack_efsanevi" ${rewardData.type === 'card_pack_efsanevi' ? 'selected' : ''}>🏆 Efsanevi Kart Paketi</option>
-            <option value="revival_stone" ${rewardData.type === 'revival_stone' ? 'selected' : ''}>💎 Dirilme Taşı</option>
-            <option value="health_potion" ${rewardData.type === 'health_potion' ? 'selected' : ''}>🧪 Can İksiri</option>
-            <option value="damage_potion" ${rewardData.type === 'damage_potion' ? 'selected' : ''}>⚔️ Hasar İksiri</option>
-            <option value="defense_potion" ${rewardData.type === 'defense_potion' ? 'selected' : ''}>🛡️ Savunma İksiri</option>
-            <option value="crit_potion" ${rewardData.type === 'crit_potion' ? 'selected' : ''}>💥 Kritik Vuruş İksiri</option>
-            <option value="crit_damage_potion" ${rewardData.type === 'crit_damage_potion' ? 'selected' : ''}>🎯 Kritik Hasar İksiri</option>
-            <option value="dodge_potion" ${rewardData.type === 'dodge_potion' ? 'selected' : ''}>💨 Sıyrılma Şansı İksiri</option>
-            <option value="pierce_potion" ${rewardData.type === 'pierce_potion' ? 'selected' : ''}>📌 Delici Şansı İksiri</option>
-        </select>
-        <div class="reward-fields-container grid grid-cols-2 gap-2 sm:col-span-2">
-            </div>
-    `;
-    container.appendChild(rewardRow);
-    const selectElement = rewardRow.querySelector('.reward-type');
-    handleAdminRewardTypeChange(selectElement, rewardData);
+    document.getElementById('prizePoints').value = prizeData.points || '';
+    document.getElementById('prizeBoxRights').value = prizeData.boxRights || '';
+    document.getElementById('prizeIflasShields').value = prizeData.iflasShields || ''; // DEĞİŞTİ
+    document.getElementById('prizeWheelTickets').value = prizeData.wheelTickets || '';
+    document.getElementById('prizeClickCatchTickets').value = prizeData.clickCatchTickets || '';
+    document.getElementById('prizeAvatarName').value = prizeData.avatarName || ''; // YENİ EKLENDİ
+    document.getElementById('prizeAvatarImageUrl').value = prizeData.avatarImageUrl || ''; // YENİ EKLENDİ
+    document.getElementById('prizeDescription').value = prizeData.description || '';
 }
 
 async function loadGrandPrizeDisplay() {
@@ -16289,91 +16200,120 @@ async function loadGrandPrizeDisplay() {
     const displayContainer = document.getElementById('grandPrizeDisplay');
     const prizeList = document.getElementById('prizeList');
 
-    const rewardsToShow = prizeData?.completion || [];
-    
-    if (!prizeData || rewardsToShow.length === 0) {
+    // DEĞİŞEN KONTROL: Yeni alanları da kontrol et
+    if (!prizeData || (prizeData.points === 0 && prizeData.boxRights === 0 && prizeData.iflasShields === 0 && prizeData.wheelTickets === 0 && prizeData.clickCatchTickets === 0 && prizeData.avatarName === '' && prizeData.description === '')) {
         displayContainer.classList.add('hidden');
         return;
     }
 
     prizeList.innerHTML = '';
-    rewardsToShow.forEach(reward => {
-        const rewardText = formatRewardText(reward.type, reward.value, reward.uses);
-        
-        // --- HATAYI GİDEREN GÜVENLİ KOD ---
-        let icon = '🏆'; // Varsayılan bir ikon belirle
-        const iconHtml = getActivityIcon(reward.type);
-        const iconMatch = iconHtml.match(/<span class="text-2xl">(.*?)<\/span>/);
-        if (iconMatch && iconMatch[1]) {
-            icon = iconMatch[1];
-        }
-        // --- DÜZELTME SONU ---
-
-        prizeList.innerHTML += `<div class="text-white font-bold text-lg">${icon} ${rewardText}</div>`;
-    });
+    if (prizeData.points > 0) prizeList.innerHTML += `<div class="text-white font-bold text-lg">💰 ${formatNumber(prizeData.points)} Puan</div>`;
+    if (prizeData.boxRights > 0) prizeList.innerHTML += `<div class="text-white font-bold text-lg">🎁 ${formatNumber(prizeData.boxRights)} Kutu Hakkı</div>`;
+    if (prizeData.iflasShields > 0) prizeList.innerHTML += `<div class="text-white font-bold text-lg">🛡️ ${formatNumber(prizeData.iflasShields)} İflas Kalkanı</div>`; // DEĞİŞTİ
+    if (prizeData.wheelTickets > 0) prizeList.innerHTML += `<div class="text-white font-bold text-lg">🎡 ${formatNumber(prizeData.wheelTickets)} Çark Bileti</div>`;
+    if (prizeData.clickCatchTickets > 0) prizeList.innerHTML += `<div class="text-white font-bold text-lg">🎟️ ${formatNumber(prizeData.clickCatchTickets)} T-Y Bileti</div>`;
+    if (prizeData.avatarName) prizeList.innerHTML += `<div class="text-white font-bold text-lg">👤 Özel Avatar: ${prizeData.avatarName}</div>`; // YENİ EKLENDİ
+    if (prizeData.description) prizeList.innerHTML += `<div class="text-white font-bold text-lg">🏆 ${prizeData.description}</div>`;
     
     displayContainer.classList.remove('hidden');
 }
+
+// MEVCUT checkAndGrantPrize FONKSİYONUNU SİL VE BUNU YAPIŞTIR
 
 async function checkAndGrantPrize(username) {
     const userRef = db.ref(`users/${username}`);
     const userSnap = await userRef.once('value');
     const userData = userSnap.val();
 
-    if (!userData || userData.completedCollection === true) return;
+    if (userData.completedCollection === true) {
+        return;
+    }
 
-    const ownedCardCount = Object.keys(userData.cardCollection || {}).length;
+    const userCards = userData.cardCollection || {};
+    const ownedCardCount = Object.keys(userCards).length;
+
     const masterListSnap = await db.ref('gameConfig/cardCollection').once('value');
-    const totalCardCount = masterListSnap.exists() ? Object.keys(masterListSnap.val()).length : 0;
+    const masterList = masterListSnap.val();
+    if (!masterList) return;
+    const totalCardCount = Object.keys(masterList).length;
 
-    if (totalCardCount > 0 && ownedCardCount >= totalCardCount) {
+    if (ownedCardCount >= totalCardCount) {
         const prizeSnap = await db.ref('gameConfig/collectionGrandPrize').once('value');
         const prizeData = prizeSnap.val();
         if (!prizeData) return;
 
         const finishersRef = db.ref('gameStats/collectionFinishers');
+        
         const finishersSnap = await finishersRef.once('value');
-        const rank = (finishersSnap.exists() ? finishersSnap.numChildren() : 0) + 1;
+        const finisherCount = finishersSnap.exists() ? finishersSnap.numChildren() : 0;
+        const rank = finisherCount + 1;
         const isFirstWinner = rank === 1;
 
-        const rewardsToGrant = isFirstWinner ? (prizeData.firstPlace || []) : (prizeData.completion || []);
-        if (rewardsToGrant.length === 0) return;
-
-        await finishersRef.push({ username: username, timestamp: firebase.database.ServerValue.TIMESTAMP });
-
-        const { committed, snapshot } = await userRef.transaction(currentData => {
-            if (currentData && !currentData.completedCollection) {
-                rewardsToGrant.forEach(reward => {
-                    applyRewardToUser(currentData, reward);
-                });
-                currentData.completedCollection = true;
-                currentData.collectionChampionshipsWon = (currentData.collectionChampionshipsWon || 0) + 1;
-            }
-            return currentData;
+        await finishersRef.push({
+            username: username,
+            timestamp: firebase.database.ServerValue.TIMESTAMP
         });
 
-        if (committed) {
-            let prizeMessage = isFirstWinner 
-                ? `İNANILMAZ! Koleksiyonu tamamlayan İLK KİŞİ oldun ve büyük ödülleri kazandın:`
-                : `TEBRİKLER! Koleksiyonu tamamlayan ${rank}. kişi oldun ve büyük ödülleri kazandın:`;
-            
-            const prizeParts = rewardsToGrant.map(r => formatRewardText(r.type, r.value, r.uses));
-            prizeMessage += prizeParts.join(', ');
-            prizeMessage += `!`;
+        const updates = {};
+        updates.balance = (userData.balance || 0) + (prizeData.points || 0);
+        updates.kutuHakki = (userData.kutuHakki || 0) + (prizeData.boxRights || 0);
+        updates.iflasShieldUses = (userData.iflasShieldUses || 0) + (prizeData.iflasShields || 0);
+        updates.carkBileti = (userData.carkBileti || 0) + (prizeData.wheelTickets || 0);
+        updates.clickCatchTickets = (userData.clickCatchTickets || 0) + (prizeData.clickCatchTickets || 0);
+        updates.completedCollection = true;
 
-            if (username === currentUser) {
-                displayMessage(prizeMessage);
-            } else {
-                const notificationData = {
-                    type: 'collectionCompleted',
-                    title: isFirstWinner ? '🏆 İLK ŞAMPİYON SENSİN! 🏆' : '🎉 KOLEKSİYON TAMAMLANDI! 🎉',
-                    message: prizeMessage
-                };
-                await db.ref(`users/${username}/persistentNotifications`).push(notificationData);
-            }
-
-            logActivity('collectionCompleted', username, { prizeText: 'Büyük Ödül', isFirst: isFirstWinner, rank: rank });
+        if (prizeData.avatarName && prizeData.avatarImageUrl) {
+            const newAvatarId = db.ref().push().key;
+            updates[`avatars/${newAvatarId}`] = {
+                id: newAvatarId,
+                name: prizeData.avatarName,
+                imageUrl: prizeData.avatarImageUrl
+            };
         }
+        
+        if (isFirstWinner) {
+            await userRef.child('collectionChampionshipsWon').transaction(currentCount => (currentCount || 0) + 1);
+        }
+        
+        await userRef.update(updates);
+
+        let prizeMessage = ``;
+        if (isFirstWinner) {
+            prizeMessage += `İNANILMAZ! Koleksiyonu tamamlayan İLK KİŞİ oldun ve büyük ödülleri kazandın:`;
+        } else {
+            prizeMessage += `TEBRİKLER! Koleksiyonu tamamlayan ${rank}. kişi oldun ve büyük ödülleri kazandın:`;
+        }
+        
+        let prizeParts = [];
+        if (prizeData.points > 0) prizeParts.push(` ${formatNumber(prizeData.points)} Puan`);
+        if (prizeData.boxRights > 0) prizeParts.push(` ${formatNumber(prizeData.boxRights)} Kutu Hakkı`);
+        if (prizeData.iflasShields > 0) prizeParts.push(` ${formatNumber(prizeData.iflasShields)} İflas Kalkanı`);
+        if (prizeData.wheelTickets > 0) prizeParts.push(` ${formatNumber(prizeData.wheelTickets)} Çark Bileti`);
+        if (prizeData.clickCatchTickets > 0) prizeParts.push(` ${formatNumber(prizeData.clickCatchTickets)} T-Y Bileti`);
+        if (prizeData.avatarName) prizeParts.push(` '${prizeData.avatarName}' Avatarı`);
+
+        prizeMessage += prizeParts.join(',');
+        prizeMessage += `!`;
+
+        // === ANA DEĞİŞİKLİK BURADA ===
+        if (username === currentUser) {
+            // Eğer ödülü kazanan kişi SENSEN, direkt mesajı göster
+            displayMessage(prizeMessage);
+        } else {
+            // Eğer ödülü kazanan BAŞKASIYSA (yani takas yaptığın kişi), ona özel bildirim gönder
+            const notificationData = {
+                type: 'collectionCompleted',
+                title: isFirstWinner ? '🏆 İLK ŞAMPİYON SENSİN! 🏆' : '🎉 KOLEKSİYON TAMAMLANDI! 🎉',
+                message: prizeMessage
+            };
+            await db.ref(`users/${username}/persistentNotifications`).push(notificationData);
+        }
+
+        logActivity('collectionCompleted', username, { 
+            prizeText: 'Büyük Ödül',
+            isFirst: isFirstWinner,
+            rank: rank 
+        });
     }
 }
 
@@ -18258,225 +18198,127 @@ async function loadAvatarStatsForAdmin() {
      * YENİ: Mevcut canavarın özelliklerini, savaşı sıfırlamadan günceller.
      */
     async function updateMonsterStats() {
-    if (!isAdmin) return;
-    const currentBattleData = (await db.ref('gameConfig/monsterBattle').once('value')).val();
-    if (!currentBattleData || !currentBattleData.monsterDetails) { displayMessage("Güncellenecek aktif bir canavar bulunamadı."); return; }
-    const minDamage = parseInt(document.getElementById('adminMonsterMinDamage').value) || 500;
-    const maxDamage = parseInt(document.getElementById('adminMonsterMaxDamage').value) || 1000;
-    if (minDamage > maxDamage) { displayMessage("Canavarın minimum hasarı, maksimum hasarından büyük olamaz."); return; }
-    const newMaxHP = parseInt(document.getElementById('adminMonsterMaxHP').value) || 1000000;
-    let newCurrentHP = currentBattleData.monsterDetails.currentHP;
-    if (newMaxHP < newCurrentHP) newCurrentHP = newMaxHP;
+        if (!isAdmin) return;
 
-    const onKillRewardType = document.getElementById('adminMonsterKillRewardType').value;
-    let onKillReward;
-    if (onKillRewardType === 'avatar') {
-        const avatarName = document.getElementById('adminMonsterRewardAvatarName').value.trim();
-        const avatarUrl = document.getElementById('adminMonsterRewardAvatarUrl').value.trim();
-        if (!avatarName || !avatarUrl) { displayMessage("Avatar ödülü için Avatar Adı ve Resim URL'si girilmelidir."); return; }
-        onKillReward = { type: 'avatar', avatarName, avatarImageUrl: avatarUrl };
-    } else if (onKillRewardType === 'special') {
-        const specialName = document.getElementById('adminMonsterRewardSpecialName').value.trim();
-        if (!specialName) { displayMessage("Özel Ürün ödülü için bir isim girilmelidir."); return; }
-        onKillReward = { type: 'special', name: specialName };
-    } else {
+        // Mevcut savaş verilerini al
+        const currentBattleData = (await db.ref('gameConfig/monsterBattle').once('value')).val();
+        if (!currentBattleData || !currentBattleData.monsterDetails) {
+            displayMessage("Güncellenecek aktif bir canavar bulunamadı.");
+            return;
+        }
+
+        const minDamage = parseInt(document.getElementById('adminMonsterMinDamage').value) || 500;
+        const maxDamage = parseInt(document.getElementById('adminMonsterMaxDamage').value) || 1000;
+        if (minDamage > maxDamage) {
+            displayMessage("Canavarın minimum hasarı, maksimum hasarından büyük olamaz.");
+            return;
+        }
+        
+        const newMaxHP = parseInt(document.getElementById('adminMonsterMaxHP').value) || 1000000;
+        let newCurrentHP = currentBattleData.monsterDetails.currentHP;
+        // Eğer yeni max can, mevcut candan düşükse, mevcut canı yeni max cana eşitle
+        if (newMaxHP < newCurrentHP) {
+            newCurrentHP = newMaxHP;
+        }
+
+        // Güncellenecek verileri bir obje içinde topla
+        const updates = {};
+        updates['/monsterDetails/name'] = document.getElementById('adminMonsterName').value.trim() || 'İsimsiz Dehşet';
+        updates['/monsterDetails/imageUrl'] = document.getElementById('adminMonsterImageUrl').value.trim();
+        updates['/monsterDetails/maxHP'] = newMaxHP;
+        updates['/monsterDetails/currentHP'] = newCurrentHP; // Güncellenmiş mevcut can
+        updates['/monsterDetails/minDamage'] = minDamage;
+        updates['/monsterDetails/maxDamage'] = maxDamage;
+        updates['/monsterDetails/defense'] = parseInt(document.getElementById('adminMonsterDefense').value) || 100;
+        updates['/monsterDetails/critChance'] = parseFloat(String(document.getElementById('adminMonsterCritChance').value).replace(',', '.')) || 5;
+        updates['/monsterDetails/critDamage'] = parseFloat(String(document.getElementById('adminMonsterCritDamage').value).replace(',', '.')) || 10;
+        updates['/monsterDetails/dodgeChance'] = parseFloat(String(document.getElementById('adminMonsterDodgeChance').value).replace(',', '.')) || 5;
+        updates['/monsterDetails/pierceChance'] = parseFloat(String(document.getElementById('adminMonsterPierceChance').value).replace(',', '.')) || 5;
+        
+        // Ödülleri de güncelle
+        const onKillRewardType = document.getElementById('adminMonsterKillRewardType').value;
         const onKillRewardValue = parseStatValue(onKillRewardType, document.getElementById('adminMonsterKillReward').value);
-        onKillReward = { type: onKillRewardType, value: onKillRewardValue || 50000 };
+        updates['/rewards/onKillLeader'] = { type: onKillRewardType, value: onKillRewardValue || 50000 };
+
+        const damageTiers = [];
+        document.querySelectorAll('.damage-tier-row').forEach(tierRow => {
+            const minDamage = parseInt(tierRow.querySelector('.min-damage').value);
+            if (isNaN(minDamage) || minDamage <= 0) return;
+            const tierRewards = [];
+            tierRow.querySelectorAll('.rewards-list > .grid').forEach(rewardRow => {
+                const type = rewardRow.querySelector('.reward-type').value;
+                const value = parseStatValue(type, rewardRow.querySelector('.reward-value').value);
+                const chance = parseInt(rewardRow.querySelector('.reward-chance').value);
+                if (type && !isNaN(value) && !isNaN(chance) && value > 0 && chance > 0) {
+                    tierRewards.push({ type, value, chance });
+                }
+            });
+            if(tierRewards.length > 0) damageTiers.push({ minDamage, rewards: tierRewards });
+        });
+        updates['/damageTiers'] = damageTiers;
+
+        // Onay al ve veritabanını güncelle
+        const confirmed = await customConfirm(`Canavarın özellikleri güncellenecek. Savaş kaldığı yerden devam edecek. Onaylıyor musun?`);
+        if (confirmed) {
+            await db.ref('gameConfig/monsterBattle').update(updates);
+            displayMessage("Canavarın özellikleri başarıyla güncellendi!");
+            toggleMonsterAdminPanel();
+        }
     }
     
-    const damageTiers = [];
-    let tierError = false;
-    document.querySelectorAll('.damage-tier-row').forEach(tierRow => {
-        if(tierError) return;
-        const minDamage = parseInt(tierRow.querySelector('.min-damage').value);
-        if (isNaN(minDamage) || minDamage <= 0) return;
-        const tierRewards = [];
-        tierRow.querySelectorAll('.rewards-list > .grid').forEach(rewardRow => {
-            if(tierError) return;
-            const type = rewardRow.querySelector('.reward-type').value;
-            const chance = parseInt(rewardRow.querySelector('.reward-chance').value);
-            let reward = { type, chance };
-            if (type === 'avatar') {
-                reward.avatarName = rewardRow.querySelector('.reward-avatarName').value.trim();
-                reward.avatarImageUrl = rewardRow.querySelector('.reward-avatarImageUrl').value.trim();
-                if(!reward.avatarName || !reward.avatarImageUrl) { displayMessage(`Hasar eşiğindeki Avatar ödülü için Ad ve URL girin.`); tierError = true; return; }
-            } else if (type === 'special') {
-                reward.name = rewardRow.querySelector('.reward-specialName').value.trim();
-                if(!reward.name) { displayMessage(`Hasar eşiğindeki Özel Ürün için bir ad girin.`); tierError = true; return; }
-            } else {
-                reward.value = parseStatValue(type, rewardRow.querySelector('.reward-value').value);
-                if(isNaN(reward.value) || reward.value <= 0) { displayMessage(`Hasar eşiği ödülü için geçerli bir Miktar girin.`); tierError = true; return; }
-            }
-            if(isNaN(chance) || chance <= 0) { displayMessage(`Hasar eşiği ödülü için geçerli bir Şans (%) girin.`); tierError = true; return; }
-            tierRewards.push(reward);
+    /**
+     * YENİ CANAVARI ÇAĞIRIR VE MEVCUT SAVAŞI TAMAMEN SIFIRLAR (Bu fonksiyon orijinal haliyle aynı, sadece adı değişti)
+     */
+    async function saveAndSpawnMonster() {
+        if (!isAdmin) return;
+        await db.ref('gameStats/lastMonsterChampion').remove();
+        const minDamage = parseInt(document.getElementById('adminMonsterMinDamage').value) || 500;
+        const maxDamage = parseInt(document.getElementById('adminMonsterMaxDamage').value) || 1000;
+        if (minDamage > maxDamage) {
+            displayMessage("Canavarın minimum hasarı, maksimum hasarından büyük olamaz.");
+            return;
+        }
+        const monsterDetails = {
+            name: document.getElementById('adminMonsterName').value.trim() || 'İsimsiz Dehşet',
+            imageUrl: document.getElementById('adminMonsterImageUrl').value.trim(),
+            maxHP: parseInt(document.getElementById('adminMonsterMaxHP').value) || 1000000,
+            minDamage: minDamage, maxDamage: maxDamage,
+            defense: parseInt(document.getElementById('adminMonsterDefense').value) || 100,
+            critChance: parseFloat(String(document.getElementById('adminMonsterCritChance').value).replace(',', '.')) || 5,
+            critDamage: parseFloat(String(document.getElementById('adminMonsterCritDamage').value).replace(',', '.')) || 10,
+            dodgeChance: parseFloat(String(document.getElementById('adminMonsterDodgeChance').value).replace(',', '.')) || 5,
+            pierceChance: parseFloat(String(document.getElementById('adminMonsterPierceChance').value).replace(',', '.')) || 5,
+        };
+        monsterDetails.currentHP = monsterDetails.maxHP;
+        const onKillRewardType = document.getElementById('adminMonsterKillRewardType').value;
+        const onKillRewardValue = parseStatValue(onKillRewardType, document.getElementById('adminMonsterKillReward').value);
+        const rewards = { onKillLeader: { type: onKillRewardType, value: onKillRewardValue || 50000 } };
+        const damageTiers = [];
+        document.querySelectorAll('.damage-tier-row').forEach(tierRow => {
+            const minDamage = parseInt(tierRow.querySelector('.min-damage').value);
+            if (isNaN(minDamage) || minDamage <= 0) return;
+            const tierRewards = [];
+            tierRow.querySelectorAll('.rewards-list > .grid').forEach(rewardRow => {
+                const type = rewardRow.querySelector('.reward-type').value;
+                const value = parseStatValue(type, rewardRow.querySelector('.reward-value').value);
+                const chance = parseInt(rewardRow.querySelector('.reward-chance').value);
+                if (type && !isNaN(value) && !isNaN(chance) && value > 0 && chance > 0) {
+                    tierRewards.push({ type, value, chance });
+                }
+            });
+            if(tierRewards.length > 0) damageTiers.push({ minDamage, rewards: tierRewards });
         });
-        if(tierRewards.length > 0) damageTiers.push({ minDamage, rewards: tierRewards });
-    });
-    if(tierError) return;
-    
-    const updates = {
-        '/monsterDetails/name': document.getElementById('adminMonsterName').value.trim() || 'İsimsiz Dehşet',
-        '/monsterDetails/imageUrl': document.getElementById('adminMonsterImageUrl').value.trim(),
-        '/monsterDetails/maxHP': newMaxHP,
-        '/monsterDetails/currentHP': newCurrentHP,
-        '/monsterDetails/minDamage': minDamage,
-        '/monsterDetails/maxDamage': maxDamage,
-        '/monsterDetails/defense': parseInt(document.getElementById('adminMonsterDefense').value) || 100,
-        '/monsterDetails/critChance': parseFloat(String(document.getElementById('adminMonsterCritChance').value).replace(',', '.')) || 5,
-        '/monsterDetails/critDamage': parseFloat(String(document.getElementById('adminMonsterCritDamage').value).replace(',', '.')) || 10,
-        '/monsterDetails/dodgeChance': parseFloat(String(document.getElementById('adminMonsterDodgeChance').value).replace(',', '.')) || 5,
-        '/monsterDetails/pierceChance': parseFloat(String(document.getElementById('adminMonsterPierceChance').value).replace(',', '.')) || 5,
-        '/rewards/onKillLeader': onKillReward,
-        '/damageTiers': damageTiers,
-    };
-
-    const confirmed = await customConfirm(`Canavarın özellikleri güncellenecek. Savaş kaldığı yerden devam edecek. Onaylıyor musun?`);
-    if (confirmed) {
-        await db.ref('gameConfig/monsterBattle').update(updates);
-        displayMessage("Canavarın özellikleri başarıyla güncellendi!");
+        const confirmed = await customConfirm(`<b>${monsterDetails.name}</b> canavarı ${formatNumber(monsterDetails.maxHP)} can ile çağrılacak. Mevcut savaş ilerlemesi (varsa) sıfırlanacak. Onaylıyor musun?`);
+        if (!confirmed) return;
+        await db.ref('gameConfig/monsterBattle').set({
+            monsterDetails: monsterDetails,
+            rewards: rewards,
+            damageTiers: damageTiers,
+            damageLeaderboard: null 
+        });
+        displayMessage("Canavar başarıyla çağrıldı ve savaş başladı!");
         toggleMonsterAdminPanel();
     }
-}
-    
-    async function saveAndSpawnMonster() {
-    if (!isAdmin) return;
-    await db.ref('gameStats/lastMonsterChampion').remove();
-
-    const minDamage = parseInt(document.getElementById('adminMonsterMinDamage').value) || 500;
-    const maxDamage = parseInt(document.getElementById('adminMonsterMaxDamage').value) || 1000;
-    if (minDamage > maxDamage) {
-        displayMessage("Canavarın minimum hasarı, maksimum hasarından büyük olamaz.");
-        return;
-    }
-
-    const onKillRewardType = document.getElementById('adminMonsterKillRewardType').value;
-    let onKillReward;
-    if (onKillRewardType === 'avatar') {
-        const avatarName = document.getElementById('adminMonsterRewardAvatarName').value.trim();
-        const avatarUrl = document.getElementById('adminMonsterRewardAvatarUrl').value.trim();
-        if (!avatarName || !avatarUrl) { displayMessage("Avatar ödülü için Avatar Adı ve Resim URL'si girilmelidir."); return; }
-        onKillReward = { type: 'avatar', avatarName, avatarImageUrl: avatarUrl };
-    } else if (onKillRewardType === 'special') {
-        const specialName = document.getElementById('adminMonsterRewardSpecialName').value.trim();
-        if (!specialName) { displayMessage("Özel Ürün ödülü için bir isim girilmelidir."); return; }
-        onKillReward = { type: 'special', name: specialName };
-    } else {
-        const onKillRewardValue = parseStatValue(onKillRewardType, document.getElementById('adminMonsterKillReward').value);
-        onKillReward = { type: onKillRewardType, value: onKillRewardValue || 50000 };
-    }
-    
-    const damageTiers = [];
-    let tierError = false;
-    document.querySelectorAll('.damage-tier-row').forEach(tierRow => {
-        if(tierError) return;
-        const minDamage = parseInt(tierRow.querySelector('.min-damage').value);
-        if (isNaN(minDamage) || minDamage <= 0) return;
-        const tierRewards = [];
-        tierRow.querySelectorAll('.rewards-list > .grid').forEach(rewardRow => {
-            if(tierError) return;
-            const type = rewardRow.querySelector('.reward-type').value;
-            const chance = parseInt(rewardRow.querySelector('.reward-chance').value);
-            let reward = { type, chance };
-            if (type === 'avatar') {
-                reward.avatarName = rewardRow.querySelector('.reward-avatarName').value.trim();
-                reward.avatarImageUrl = rewardRow.querySelector('.reward-avatarImageUrl').value.trim();
-                if(!reward.avatarName || !reward.avatarImageUrl) { displayMessage(`Hasar eşiğindeki Avatar ödülü için Ad ve URL girin.`); tierError = true; return; }
-            } else if (type === 'special') {
-                reward.name = rewardRow.querySelector('.reward-specialName').value.trim();
-                if(!reward.name) { displayMessage(`Hasar eşiğindeki Özel Ürün için bir ad girin.`); tierError = true; return; }
-            } else {
-                reward.value = parseStatValue(type, rewardRow.querySelector('.reward-value').value);
-                 if(isNaN(reward.value) || reward.value <= 0) { displayMessage(`Hasar eşiği ödülü için geçerli bir Miktar girin.`); tierError = true; return; }
-            }
-            if(isNaN(chance) || chance <= 0) { displayMessage(`Hasar eşiği ödülü için geçerli bir Şans (%) girin.`); tierError = true; return; }
-            tierRewards.push(reward);
-        });
-        if(tierRewards.length > 0) damageTiers.push({ minDamage, rewards: tierRewards });
-    });
-    if(tierError) return;
-
-    const monsterDetails = {
-        name: document.getElementById('adminMonsterName').value.trim() || 'İsimsiz Dehşet',
-        imageUrl: document.getElementById('adminMonsterImageUrl').value.trim(),
-        maxHP: parseInt(document.getElementById('adminMonsterMaxHP').value) || 1000000,
-        minDamage, maxDamage,
-        defense: parseInt(document.getElementById('adminMonsterDefense').value) || 100,
-        critChance: parseFloat(String(document.getElementById('adminMonsterCritChance').value).replace(',', '.')) || 5,
-        critDamage: parseFloat(String(document.getElementById('adminMonsterCritDamage').value).replace(',', '.')) || 10,
-        dodgeChance: parseFloat(String(document.getElementById('adminMonsterDodgeChance').value).replace(',', '.')) || 5,
-        pierceChance: parseFloat(String(document.getElementById('adminMonsterPierceChance').value).replace(',', '.')) || 5,
-    };
-    monsterDetails.currentHP = monsterDetails.maxHP;
-    
-    const confirmed = await customConfirm(`<b>${monsterDetails.name}</b> canavarı ${formatNumber(monsterDetails.maxHP)} can ile çağrılacak. Mevcut savaş ilerlemesi (varsa) sıfırlanacak. Onaylıyor musun?`);
-    if (!confirmed) return;
-
-    await db.ref('gameConfig/monsterBattle').set({
-        monsterDetails,
-        rewards: { onKillLeader: onKillReward },
-        damageTiers,
-        damageLeaderboard: null 
-    });
-    displayMessage("Canavar başarıyla çağrıldı ve savaş başladı!");
-    toggleMonsterAdminPanel();
-}
-
-function handleTierRewardTypeChange(selectElement, rewardData = {}) {
-    const type = selectElement.value;
-    const container = selectElement.closest('.grid').querySelector('.reward-fields-container');
-    let fieldsHtml = '';
-
-    if (type === 'avatar') {
-        fieldsHtml = `
-            <input type="text" class="box-setting-input reward-avatarName col-span-2" placeholder="Avatar Adı" value="${rewardData.avatarName || ''}">
-            <input type="text" class="box-setting-input reward-avatarImageUrl col-span-2" placeholder="Avatar Resim URL" value="${rewardData.avatarImageUrl || ''}">
-            <input type="number" class="box-setting-input reward-chance col-span-2" placeholder="Şans (%)" value="${rewardData.chance || ''}">
-            <button onclick="this.parentElement.parentElement.remove()" class="py-1 px-2 bg-red-600 hover:bg-red-500 rounded-md text-xs col-span-2">Sil</button>
-        `;
-    } else if (type === 'special') {
-        fieldsHtml = `
-            <input type="text" class="box-setting-input reward-specialName col-span-2" placeholder="Özel Ürün Adı" value="${rewardData.name || ''}">
-            <input type="number" class="box-setting-input reward-chance col-span-2" placeholder="Şans (%)" value="${rewardData.chance || ''}">
-            <button onclick="this.parentElement.parentElement.remove()" class="py-1 px-2 bg-red-600 hover:bg-red-500 rounded-md text-xs col-span-2">Sil</button>
-        `;
-    } else {
-        const isPercent = ['defense_potion', 'crit_potion', 'crit_damage_potion', 'dodge_potion', 'pierce_potion', 'health_regen_potion'].includes(type);
-        const valuePlaceholder = isPercent ? 'Değer (örn: 2.5)' : 'Miktar';
-        fieldsHtml = `
-            <input type="text" class="box-setting-input reward-value" placeholder="${valuePlaceholder}" value="${rewardData.value || ''}">
-            <div class="flex items-center gap-1">
-               <input type="number" class="box-setting-input reward-chance" placeholder="Şans (%)" value="${rewardData.chance || ''}">
-               <button onclick="this.parentElement.parentElement.remove()" class="text-red-500 text-xl font-bold">&times;</button>
-            </div>
-        `;
-    }
-    container.innerHTML = fieldsHtml;
-}
-
-function handleMonsterRewardTypeChange(type) {
-    const extraFieldsContainer = document.getElementById('adminMonsterKillRewardExtraFields');
-    const amountInput = document.getElementById('adminMonsterKillReward');
-    const avatarNameInput = document.getElementById('adminMonsterRewardAvatarName');
-    const avatarUrlInput = document.getElementById('adminMonsterRewardAvatarUrl');
-    const specialNameInput = document.getElementById('adminMonsterRewardSpecialName');
-
-    extraFieldsContainer.classList.add('hidden');
-    avatarNameInput.classList.add('hidden');
-    avatarUrlInput.classList.add('hidden');
-    specialNameInput.classList.add('hidden');
-    amountInput.classList.remove('hidden');
-
-    if (type === 'avatar') {
-        extraFieldsContainer.classList.remove('hidden');
-        avatarNameInput.classList.remove('hidden');
-        avatarUrlInput.classList.remove('hidden');
-        amountInput.classList.add('hidden');
-    } else if (type === 'special') {
-        extraFieldsContainer.classList.remove('hidden');
-        specialNameInput.classList.remove('hidden');
-        amountInput.classList.add('hidden');
-    }
-}
 
 function updateHealthBar(currentHP, maxHP) {
   const healthBarEl = document.getElementById('monsterHealthBar');
