@@ -3750,24 +3750,29 @@ body.modal-open .modal-content {
 </div>
 
 <div id="grandPrizeSettingsModal" class="modal-overlay fixed inset-0 bg-black bg-opacity-70 flex justify-center items-center z-[50001] hidden">
-  <div class="modal-content bg-gray-800 p-8 rounded-xl shadow-2xl border border-yellow-500 w-11/12 max-w-2xl text-center relative">
+  <div class="modal-content bg-gray-800 p-8 rounded-xl shadow-2xl border border-yellow-500 w-11/12 max-w-4xl text-center relative max-h-[90vh] flex flex-col">
     <button class="modal-close-button" onclick="closeGrandPrizeSettingsModal()">&times;</button>
     <h3 class="text-yellow-300 text-3xl font-bold mb-6">Büyük Ödül Ayarları</h3>
     
-    <div class="space-y-4">
-        <p class="text-sm text-gray-400">Koleksiyonu tamamlayan tüm oyunculara verilecek ödülleri buradan ayarlayın.</p>
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-    <input type="number" id="prizePoints" placeholder="Puan" class="box-setting-input">
-    <input type="number" id="prizeBoxRights" placeholder="Kutu Hakkı" class="box-setting-input">
-    <input type="number" id="prizeIflasShields" placeholder="İflas Kalkanı" class="box-setting-input">
-    <input type="number" id="prizeWheelTickets" placeholder="Çark Bileti" class="box-setting-input">
-    <input type="number" id="prizeClickCatchTickets" placeholder="T-Y Bileti" class="box-setting-input">
-    
-    <input type="text" id="prizeAvatarName" placeholder="Ödül Avatar Adı" class="box-setting-input">
-    <input type="text" id="prizeAvatarImageUrl" placeholder="Ödül Avatar Resim URL" class="box-setting-input lg:col-span-2">
+    <div class="flex-grow overflow-y-auto scrollable-list pr-4">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 text-left">
+            <div class="flex flex-col">
+                <h4 class="text-lg font-bold text-amber-300 mb-2">🥇 İlk Bitiren Kullanıcının Ödülleri</h4>
+                <div id="firstPlaceRewardsContainer" class="space-y-3 p-3 bg-gray-900/50 rounded-lg border border-gray-700 flex-grow">
+                    </div>
+                <button onclick="addGrandPrizeRewardRow('firstPlace')" class="mt-3 w-full py-2 bg-blue-600 hover:bg-blue-500 rounded-lg text-sm font-bold">+ Ödül Ekle</button>
+            </div>
 
-    <input type="text" id="prizeDescription" placeholder="Diğer Ödül (Örn: VIP)" class="box-setting-input sm:col-span-2 lg:col-span-3">
-</div>
+            <div class="flex flex-col">
+                <h4 class="text-lg font-bold text-green-300 mb-2">🏆 Tamamlayan Herkesin Ödülleri</h4>
+                <div id="completionRewardsContainer" class="space-y-3 p-3 bg-gray-900/50 rounded-lg border border-gray-700 flex-grow">
+                    </div>
+                <button onclick="addGrandPrizeRewardRow('completion')" class="mt-3 w-full py-2 bg-blue-600 hover:bg-blue-500 rounded-lg text-sm font-bold">+ Ödül Ekle</button>
+            </div>
+        </div>
+    </div>
+    
+    <div class="mt-6 pt-4 border-t border-gray-600 flex-shrink-0">
         <button onclick="saveGrandPrizeAndCloseModal()" class="w-full mt-3 py-3 bg-yellow-600 hover:bg-yellow-500 text-black font-bold rounded-lg">Büyük Ödülü Kaydet</button>
     </div>
   </div>
@@ -16189,14 +16194,65 @@ async function loadPrizeSettingsForAdmin() {
     const prizeSnap = await db.ref('gameConfig/collectionGrandPrize').once('value');
     const prizeData = prizeSnap.val() || {};
     
-    document.getElementById('prizePoints').value = prizeData.points || '';
-    document.getElementById('prizeBoxRights').value = prizeData.boxRights || '';
-    document.getElementById('prizeIflasShields').value = prizeData.iflasShields || ''; // DEĞİŞTİ
-    document.getElementById('prizeWheelTickets').value = prizeData.wheelTickets || '';
-    document.getElementById('prizeClickCatchTickets').value = prizeData.clickCatchTickets || '';
-    document.getElementById('prizeAvatarName').value = prizeData.avatarName || ''; // YENİ EKLENDİ
-    document.getElementById('prizeAvatarImageUrl').value = prizeData.avatarImageUrl || ''; // YENİ EKLENDİ
-    document.getElementById('prizeDescription').value = prizeData.description || '';
+    const firstPlaceContainer = document.getElementById('firstPlaceRewardsContainer');
+    const completionContainer = document.getElementById('completionRewardsContainer');
+    
+    firstPlaceContainer.innerHTML = '';
+    completionContainer.innerHTML = '';
+
+    if (prizeData.firstPlace && Array.isArray(prizeData.firstPlace)) {
+        prizeData.firstPlace.forEach(reward => addGrandPrizeRewardRow('firstPlace', reward));
+    }
+    if (prizeData.completion && Array.isArray(prizeData.completion)) {
+        prizeData.completion.forEach(reward => addGrandPrizeRewardRow('completion', reward));
+    }
+}
+
+// =======================================================
+// YENİ VE GÜNCELLENMİŞ: KART KOLEKSİYONU ÖDÜL YÖNETİMİ
+// =======================================================
+
+/**
+ * Büyük Ödül Ayarları paneline yeni bir ödül satırı ekler.
+ * @param {string} tier - 'firstPlace' veya 'completion'
+ * @param {object} rewardData - Mevcut bir ödülün verisi (düzenleme için)
+ */
+function addGrandPrizeRewardRow(tier, rewardData = {}) {
+    const container = document.getElementById(tier === 'firstPlace' ? 'firstPlaceRewardsContainer' : 'completionRewardsContainer');
+    
+    const rewardRow = document.createElement('div');
+    rewardRow.className = 'reward-entry grid grid-cols-1 sm:grid-cols-3 gap-2 p-2 bg-gray-900/50 rounded-md';
+    // Giriş Serisi'ndeki ödül listesini aynen kullanabiliriz
+    rewardRow.innerHTML = `
+        <select class="box-setting-input reward-type" onchange="handleAdminRewardTypeChange(this)">
+            <option value="points" ${rewardData.type === 'points' ? 'selected' : ''}>💰 Puan</option>
+            <option value="boxRights" ${rewardData.type === 'boxRights' ? 'selected' : ''}>📦 Kutu Hakkı</option>
+            <option value="wheelTicket" ${rewardData.type === 'wheelTicket' ? 'selected' : ''}>🎫 Çark Bileti</option>
+            <option value="clickCatchTicket" ${rewardData.type === 'clickCatchTicket' ? 'selected' : ''}>🎟️ T-Y Bileti</option>
+            <option value="iflasShield" ${rewardData.type === 'iflasShield' ? 'selected' : ''}>🛡️ İflas Kalkanı</option>
+            <option value="tempMultiplier" ${rewardData.type === 'tempMultiplier' ? 'selected' : ''}>✖️ Çarpan</option>
+            <option value="avatar" ${rewardData.type === 'avatar' ? 'selected' : ''}>👤 Avatar</option>
+            <option value="wildcard" ${rewardData.type === 'wildcard' ? 'selected' : ''}>🃏 Joker Kart</option>
+            <option value="card_pack" ${rewardData.type === 'card_pack' ? 'selected' : ''}>🎴 Standart Kart Paketi</option>
+            <option value="card_pack_normal" ${rewardData.type === 'card_pack_normal' ? 'selected' : ''}>🥉 Bronz Kart Paketi</option>
+            <option value="card_pack_gumus" ${rewardData.type === 'card_pack_gumus' ? 'selected' : ''}>🥈 Gümüş Kart Paketi</option>
+            <option value="card_pack_altin" ${rewardData.type === 'card_pack_altin' ? 'selected' : ''}>🥇 Altın Kart Paketi</option>
+            <option value="card_pack_efsanevi" ${rewardData.type === 'card_pack_efsanevi' ? 'selected' : ''}>🏆 Efsanevi Kart Paketi</option>
+            <option value="revival_stone" ${rewardData.type === 'revival_stone' ? 'selected' : ''}>💎 Dirilme Taşı</option>
+            <option value="health_potion" ${rewardData.type === 'health_potion' ? 'selected' : ''}>🧪 Can İksiri</option>
+            <option value="damage_potion" ${rewardData.type === 'damage_potion' ? 'selected' : ''}>⚔️ Hasar İksiri</option>
+            <option value="defense_potion" ${rewardData.type === 'defense_potion' ? 'selected' : ''}>🛡️ Savunma İksiri</option>
+            <option value="crit_potion" ${rewardData.type === 'crit_potion' ? 'selected' : ''}>💥 Kritik Vuruş İksiri</option>
+            <option value="crit_damage_potion" ${rewardData.type === 'crit_damage_potion' ? 'selected' : ''}>🎯 Kritik Hasar İksiri</option>
+            <option value="dodge_potion" ${rewardData.type === 'dodge_potion' ? 'selected' : ''}>💨 Sıyrılma Şansı İksiri</option>
+            <option value="pierce_potion" ${rewardData.type === 'pierce_potion' ? 'selected' : ''}>📌 Delici Şansı İksiri</option>
+        </select>
+        <div class="reward-fields-container grid grid-cols-2 gap-2 sm:col-span-2">
+            </div>
+    `;
+    container.appendChild(rewardRow);
+    const selectElement = rewardRow.querySelector('.reward-type');
+    handleAdminRewardTypeChange(selectElement, rewardData); // Mevcut veriyi de gönder
 }
 
 async function loadGrandPrizeDisplay() {
@@ -16207,120 +16263,86 @@ async function loadGrandPrizeDisplay() {
     const displayContainer = document.getElementById('grandPrizeDisplay');
     const prizeList = document.getElementById('prizeList');
 
-    // DEĞİŞEN KONTROL: Yeni alanları da kontrol et
-    if (!prizeData || (prizeData.points === 0 && prizeData.boxRights === 0 && prizeData.iflasShields === 0 && prizeData.wheelTickets === 0 && prizeData.clickCatchTickets === 0 && prizeData.avatarName === '' && prizeData.description === '')) {
+    // Artık 'completion' ödüllerini gösteriyoruz, çünkü bu herkes için geçerli olan ödül.
+    const rewardsToShow = prizeData?.completion || [];
+    
+    if (!prizeData || rewardsToShow.length === 0) {
         displayContainer.classList.add('hidden');
         return;
     }
 
     prizeList.innerHTML = '';
-    if (prizeData.points > 0) prizeList.innerHTML += `<div class="text-white font-bold text-lg">💰 ${formatNumber(prizeData.points)} Puan</div>`;
-    if (prizeData.boxRights > 0) prizeList.innerHTML += `<div class="text-white font-bold text-lg">🎁 ${formatNumber(prizeData.boxRights)} Kutu Hakkı</div>`;
-    if (prizeData.iflasShields > 0) prizeList.innerHTML += `<div class="text-white font-bold text-lg">🛡️ ${formatNumber(prizeData.iflasShields)} İflas Kalkanı</div>`; // DEĞİŞTİ
-    if (prizeData.wheelTickets > 0) prizeList.innerHTML += `<div class="text-white font-bold text-lg">🎡 ${formatNumber(prizeData.wheelTickets)} Çark Bileti</div>`;
-    if (prizeData.clickCatchTickets > 0) prizeList.innerHTML += `<div class="text-white font-bold text-lg">🎟️ ${formatNumber(prizeData.clickCatchTickets)} T-Y Bileti</div>`;
-    if (prizeData.avatarName) prizeList.innerHTML += `<div class="text-white font-bold text-lg">👤 Özel Avatar: ${prizeData.avatarName}</div>`; // YENİ EKLENDİ
-    if (prizeData.description) prizeList.innerHTML += `<div class="text-white font-bold text-lg">🏆 ${prizeData.description}</div>`;
+    rewardsToShow.forEach(reward => {
+        const rewardText = formatRewardText(reward.type, reward.value, reward.uses);
+        const icon = getActivityIcon(reward.type).match(/<span class="text-2xl">(.*?)<\/span>/)[1];
+        prizeList.innerHTML += `<div class="text-white font-bold text-lg">${icon} ${rewardText}</div>`;
+    });
     
     displayContainer.classList.remove('hidden');
 }
-
-// MEVCUT checkAndGrantPrize FONKSİYONUNU SİL VE BUNU YAPIŞTIR
 
 async function checkAndGrantPrize(username) {
     const userRef = db.ref(`users/${username}`);
     const userSnap = await userRef.once('value');
     const userData = userSnap.val();
 
-    if (userData.completedCollection === true) {
-        return;
-    }
+    if (userData.completedCollection === true) return;
 
-    const userCards = userData.cardCollection || {};
-    const ownedCardCount = Object.keys(userCards).length;
-
+    const ownedCardCount = Object.keys(userData.cardCollection || {}).length;
     const masterListSnap = await db.ref('gameConfig/cardCollection').once('value');
-    const masterList = masterListSnap.val();
-    if (!masterList) return;
-    const totalCardCount = Object.keys(masterList).length;
+    const totalCardCount = masterListSnap.exists() ? Object.keys(masterListSnap.val()).length : 0;
 
-    if (ownedCardCount >= totalCardCount) {
+    if (totalCardCount > 0 && ownedCardCount >= totalCardCount) {
         const prizeSnap = await db.ref('gameConfig/collectionGrandPrize').once('value');
         const prizeData = prizeSnap.val();
         if (!prizeData) return;
 
         const finishersRef = db.ref('gameStats/collectionFinishers');
-        
         const finishersSnap = await finishersRef.once('value');
-        const finisherCount = finishersSnap.exists() ? finishersSnap.numChildren() : 0;
-        const rank = finisherCount + 1;
+        const rank = (finishersSnap.exists() ? finishersSnap.numChildren() : 0) + 1;
         const isFirstWinner = rank === 1;
 
-        await finishersRef.push({
-            username: username,
-            timestamp: firebase.database.ServerValue.TIMESTAMP
+        const rewardsToGrant = isFirstWinner ? (prizeData.firstPlace || []) : (prizeData.completion || []);
+        if (rewardsToGrant.length === 0) return; // Verilecek ödül yoksa devam etme
+
+        await finishersRef.push({ username: username, timestamp: firebase.database.ServerValue.TIMESTAMP });
+
+        // Ödülleri uygulamak için transaction kullanıyoruz
+        const { committed, snapshot } = await userRef.transaction(currentData => {
+            if (currentData) {
+                rewardsToGrant.forEach(reward => {
+                    applyRewardToUser(currentData, reward); // Yardımcı fonksiyonu kullan
+                });
+                currentData.completedCollection = true;
+                if (isFirstWinner) {
+                    currentData.collectionChampionshipsWon = (currentData.collectionChampionshipsWon || 0) + 1;
+                }
+            }
+            return currentData;
         });
 
-        const updates = {};
-        updates.balance = (userData.balance || 0) + (prizeData.points || 0);
-        updates.kutuHakki = (userData.kutuHakki || 0) + (prizeData.boxRights || 0);
-        updates.iflasShieldUses = (userData.iflasShieldUses || 0) + (prizeData.iflasShields || 0);
-        updates.carkBileti = (userData.carkBileti || 0) + (prizeData.wheelTickets || 0);
-        updates.clickCatchTickets = (userData.clickCatchTickets || 0) + (prizeData.clickCatchTickets || 0);
-        updates.completedCollection = true;
+        if (committed) {
+            let prizeMessage = isFirstWinner 
+                ? `İNANILMAZ! Koleksiyonu tamamlayan İLK KİŞİ oldun ve büyük ödülleri kazandın:`
+                : `TEBRİKLER! Koleksiyonu tamamlayan ${rank}. kişi oldun ve büyük ödülleri kazandın:`;
+            
+            const prizeParts = rewardsToGrant.map(r => formatRewardText(r.type, r.value, r.uses));
+            prizeMessage += prizeParts.join(', ');
+            prizeMessage += `!`;
 
-        if (prizeData.avatarName && prizeData.avatarImageUrl) {
-            const newAvatarId = db.ref().push().key;
-            updates[`avatars/${newAvatarId}`] = {
-                id: newAvatarId,
-                name: prizeData.avatarName,
-                imageUrl: prizeData.avatarImageUrl
-            };
+            if (username === currentUser) {
+                displayMessage(prizeMessage);
+            } else {
+                const notificationData = {
+                    type: 'collectionCompleted',
+                    title: isFirstWinner ? '🏆 İLK ŞAMPİYON SENSİN! 🏆' : '🎉 KOLEKSİYON TAMAMLANDI! 🎉',
+                    message: prizeMessage
+                };
+                await db.ref(`users/${username}/persistentNotifications`).push(notificationData);
+            }
+
+            logActivity('collectionCompleted', username, { prizeText: 'Büyük Ödül', isFirst: isFirstWinner, rank: rank });
         }
-        
-        if (isFirstWinner) {
-            await userRef.child('collectionChampionshipsWon').transaction(currentCount => (currentCount || 0) + 1);
-        }
-        
-        await userRef.update(updates);
-
-        let prizeMessage = ``;
-        if (isFirstWinner) {
-            prizeMessage += `İNANILMAZ! Koleksiyonu tamamlayan İLK KİŞİ oldun ve büyük ödülleri kazandın:`;
-        } else {
-            prizeMessage += `TEBRİKLER! Koleksiyonu tamamlayan ${rank}. kişi oldun ve büyük ödülleri kazandın:`;
-        }
-        
-        let prizeParts = [];
-        if (prizeData.points > 0) prizeParts.push(` ${formatNumber(prizeData.points)} Puan`);
-        if (prizeData.boxRights > 0) prizeParts.push(` ${formatNumber(prizeData.boxRights)} Kutu Hakkı`);
-        if (prizeData.iflasShields > 0) prizeParts.push(` ${formatNumber(prizeData.iflasShields)} İflas Kalkanı`);
-        if (prizeData.wheelTickets > 0) prizeParts.push(` ${formatNumber(prizeData.wheelTickets)} Çark Bileti`);
-        if (prizeData.clickCatchTickets > 0) prizeParts.push(` ${formatNumber(prizeData.clickCatchTickets)} T-Y Bileti`);
-        if (prizeData.avatarName) prizeParts.push(` '${prizeData.avatarName}' Avatarı`);
-
-        prizeMessage += prizeParts.join(',');
-        prizeMessage += `!`;
-
-        // === ANA DEĞİŞİKLİK BURADA ===
-        if (username === currentUser) {
-            // Eğer ödülü kazanan kişi SENSEN, direkt mesajı göster
-            displayMessage(prizeMessage);
-        } else {
-            // Eğer ödülü kazanan BAŞKASIYSA (yani takas yaptığın kişi), ona özel bildirim gönder
-            const notificationData = {
-                type: 'collectionCompleted',
-                title: isFirstWinner ? '🏆 İLK ŞAMPİYON SENSİN! 🏆' : '🎉 KOLEKSİYON TAMAMLANDI! 🎉',
-                message: prizeMessage
-            };
-            await db.ref(`users/${username}/persistentNotifications`).push(notificationData);
-        }
-
-        logActivity('collectionCompleted', username, { 
-            prizeText: 'Büyük Ödül',
-            isFirst: isFirstWinner,
-            rank: rank 
-        });
     }
 }
 
