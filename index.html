@@ -16173,19 +16173,44 @@ async function revealCard(cardElement) {
 
 async function saveGrandPrize() {
     if (!isAdmin) return;
-    const prizeData = {
-        points: parseInt(document.getElementById('prizePoints').value) || 0,
-        boxRights: parseInt(document.getElementById('prizeBoxRights').value) || 0,
-        iflasShields: parseInt(document.getElementById('prizeIflasShields').value) || 0, // DEĞİŞTİ
-        wheelTickets: parseInt(document.getElementById('prizeWheelTickets').value) || 0,
-        clickCatchTickets: parseInt(document.getElementById('prizeClickCatchTickets').value) || 0,
-        avatarName: document.getElementById('prizeAvatarName').value.trim() || '', // YENİ EKLENDİ
-        avatarImageUrl: document.getElementById('prizeAvatarImageUrl').value.trim() || '', // YENİ EKLENDİ
-        description: document.getElementById('prizeDescription').value.trim() || ''
-    };
 
-    await db.ref('gameConfig/collectionGrandPrize').set(prizeData);
-    displayMessage("Büyük Ödül başarıyla kaydedildi!");
+    const newPrizeData = { firstPlace: [], completion: [] };
+    let hasError = false;
+
+    ['firstPlace', 'completion'].forEach(tier => {
+        if(hasError) return;
+        const container = document.getElementById(tier === 'firstPlace' ? 'firstPlaceRewardsContainer' : 'completionRewardsContainer');
+        
+        container.querySelectorAll('.reward-entry').forEach((rewardRow) => {
+            if (hasError) return;
+            const reward = { type: rewardRow.querySelector('.reward-type').value };
+
+            if (reward.type === 'tempMultiplier') {
+                reward.value = parseInt(rewardRow.querySelector('.reward-value').value);
+                reward.uses = parseInt(rewardRow.querySelector('.reward-uses').value);
+                if (isNaN(reward.value) || isNaN(reward.uses) || reward.value <= 0 || reward.uses <= 0) {
+                    displayMessage(`${tier} ödüllerindeki Çarpan için geçerli Değer ve Kullanım Hakkı girin.`); hasError = true; return;
+                }
+            } else if (reward.type === 'avatar') {
+                reward.avatarName = rewardRow.querySelector('.reward-avatarName').value.trim();
+                reward.avatarImageUrl = rewardRow.querySelector('.reward-avatarImageUrl').value.trim();
+                if (!reward.avatarName || !reward.avatarImageUrl) {
+                    displayMessage(`${tier} ödüllerindeki Avatar için Ad ve Resim URL'si girin.`); hasError = true; return;
+                }
+            } else {
+                reward.value = parseStatValue(reward.type, rewardRow.querySelector('.reward-value').value);
+                if (isNaN(reward.value) || reward.value <= 0) {
+                    displayMessage(`${tier} ödüllerindeki bir ödül için geçerli bir Miktar/Adet girin.`); hasError = true; return;
+                }
+            }
+            newPrizeData[tier].push(reward);
+        });
+    });
+
+    if (hasError) return;
+    
+    await db.ref('gameConfig/collectionGrandPrize').set(newPrizeData);
+    displayMessage("Büyük Ödül ayarları başarıyla kaydedildi!");
     loadGrandPrizeDisplay();
 }
 
@@ -16209,7 +16234,7 @@ async function loadPrizeSettingsForAdmin() {
 }
 
 // =======================================================
-// YENİ VE GÜNCELLENMİŞ: KART KOLEKSİYONU ÖDÜL YÖNETİMİ
+// YENİ VE GÜNCELLENMİŞ: KART KOLEKSİYONU ÖDÜL YÖNETİMİ (HATALARI GİDERİLDİ)
 // =======================================================
 
 /**
@@ -16219,6 +16244,7 @@ async function loadPrizeSettingsForAdmin() {
  */
 function addGrandPrizeRewardRow(tier, rewardData = {}) {
     const container = document.getElementById(tier === 'firstPlace' ? 'firstPlaceRewardsContainer' : 'completionRewardsContainer');
+    if (!container) return;
     
     const rewardRow = document.createElement('div');
     rewardRow.className = 'reward-entry grid grid-cols-1 sm:grid-cols-3 gap-2 p-2 bg-gray-900/50 rounded-md';
@@ -16252,7 +16278,7 @@ function addGrandPrizeRewardRow(tier, rewardData = {}) {
     `;
     container.appendChild(rewardRow);
     const selectElement = rewardRow.querySelector('.reward-type');
-    handleAdminRewardTypeChange(selectElement, rewardData); // Mevcut veriyi de gönder
+    handleAdminRewardTypeChange(selectElement, rewardData);
 }
 
 async function loadGrandPrizeDisplay() {
@@ -16263,7 +16289,6 @@ async function loadGrandPrizeDisplay() {
     const displayContainer = document.getElementById('grandPrizeDisplay');
     const prizeList = document.getElementById('prizeList');
 
-    // Artık 'completion' ödüllerini gösteriyoruz, çünkü bu herkes için geçerli olan ödül.
     const rewardsToShow = prizeData?.completion || [];
     
     if (!prizeData || rewardsToShow.length === 0) {
@@ -16274,7 +16299,16 @@ async function loadGrandPrizeDisplay() {
     prizeList.innerHTML = '';
     rewardsToShow.forEach(reward => {
         const rewardText = formatRewardText(reward.type, reward.value, reward.uses);
-        const icon = getActivityIcon(reward.type).match(/<span class="text-2xl">(.*?)<\/span>/)[1];
+        
+        // --- HATAYI GİDEREN GÜVENLİ KOD ---
+        let icon = '🏆'; // Varsayılan bir ikon belirle
+        const iconHtml = getActivityIcon(reward.type);
+        const iconMatch = iconHtml.match(/<span class="text-2xl">(.*?)<\/span>/);
+        if (iconMatch && iconMatch[1]) {
+            icon = iconMatch[1];
+        }
+        // --- DÜZELTME SONU ---
+
         prizeList.innerHTML += `<div class="text-white font-bold text-lg">${icon} ${rewardText}</div>`;
     });
     
@@ -16286,7 +16320,7 @@ async function checkAndGrantPrize(username) {
     const userSnap = await userRef.once('value');
     const userData = userSnap.val();
 
-    if (userData.completedCollection === true) return;
+    if (!userData || userData.completedCollection === true) return;
 
     const ownedCardCount = Object.keys(userData.cardCollection || {}).length;
     const masterListSnap = await db.ref('gameConfig/cardCollection').once('value');
@@ -16303,20 +16337,17 @@ async function checkAndGrantPrize(username) {
         const isFirstWinner = rank === 1;
 
         const rewardsToGrant = isFirstWinner ? (prizeData.firstPlace || []) : (prizeData.completion || []);
-        if (rewardsToGrant.length === 0) return; // Verilecek ödül yoksa devam etme
+        if (rewardsToGrant.length === 0) return;
 
         await finishersRef.push({ username: username, timestamp: firebase.database.ServerValue.TIMESTAMP });
 
-        // Ödülleri uygulamak için transaction kullanıyoruz
         const { committed, snapshot } = await userRef.transaction(currentData => {
-            if (currentData) {
+            if (currentData && !currentData.completedCollection) {
                 rewardsToGrant.forEach(reward => {
-                    applyRewardToUser(currentData, reward); // Yardımcı fonksiyonu kullan
+                    applyRewardToUser(currentData, reward);
                 });
                 currentData.completedCollection = true;
-                if (isFirstWinner) {
-                    currentData.collectionChampionshipsWon = (currentData.collectionChampionshipsWon || 0) + 1;
-                }
+                currentData.collectionChampionshipsWon = (currentData.collectionChampionshipsWon || 0) + 1;
             }
             return currentData;
         });
