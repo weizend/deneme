@@ -1890,7 +1890,7 @@ body.modal-open .modal-content {
     </div>
     <button onclick="savePotionCaps()" class="w-full py-2 bg-blue-700 hover:bg-blue-600 rounded-lg font-bold mt-3">Bonus Limitlerini Kaydet</button>
 </div>
-            <button onclick="saveAvatarStats()" class="w-full py-2 bg-green-700 hover:bg-green-600 rounded-lg font-bold mt-2">Tüm Avatar İstatistiklerini Kaydet</button>
+            
         </div>
         <div id="lastChampionPanel" class="hidden w-full max-w-2xl mx-auto mb-6 bg-gray-800 p-4 rounded-xl shadow-lg border-2 border-amber-500 text-center relative">
     </div>
@@ -2767,6 +2767,8 @@ body.modal-open .modal-content {
     <button onclick="denyUser(selectedUserForManagement, false, true)" class="py-3 bg-gray-600 hover:bg-gray-500 text-white font-bold rounded-lg shadow-md">Kullanıcıyı Sil</button>
     
     <button onclick="resetUserPotionBonuses(selectedUserForManagement)" class="py-3 bg-pink-600 hover:bg-pink-500 text-white font-bold rounded-lg shadow-md lg:col-span-3">🧪 İksir Bonuslarını Sıfırla</button>
+    
+    <button onclick="resetUserCards(selectedUserForManagement)" class="py-3 bg-indigo-600 hover:bg-indigo-500 text-white font-bold rounded-lg shadow-md lg:col-span-3">🃏 Kartları Sıfırla</button>
 </div>
         <div class="bg-gray-900 p-6 rounded-lg border border-gray-700 mt-6">
             <h4 class="text-yellow-300 text-xl font-semibold mb-4">Avatar Yönetimi</h4>
@@ -3893,9 +3895,10 @@ body.modal-open .modal-content {
           </div>
       
       <div class="flex-shrink-0 mt-4 pt-4 border-t border-gray-700 flex flex-wrap gap-4 justify-center">
-          <button onclick="addLoginStreakDay()" class="py-3 px-6 bg-green-700 hover:bg-green-600 text-white font-bold rounded-lg">Yeni Gün Ekle</button>
-          <button onclick="saveLoginStreakRewards()" class="py-3 px-6 bg-blue-700 hover:bg-blue-600 text-white font-bold rounded-lg">Tüm Ayarları Kaydet</button>
-      </div>
+    <button onclick="addLoginStreakDay()" class="py-2 px-4 bg-green-700 hover:bg-green-600 text-white font-bold rounded-lg">Yeni Gün Ekle</button>
+    <button onclick="saveLoginStreakRewards(false)" class="py-2 px-4 bg-blue-700 hover:bg-blue-600 text-white font-bold rounded-lg">Ayarları Kaydet (İlerlemeyi Koru)</button>
+    <button onclick="saveLoginStreakRewards(true)" class="py-2 px-4 bg-orange-700 hover:bg-orange-600 text-white font-bold rounded-lg">Kaydet ve Tüm Serileri Sıfırla</button>
+</div>
   </div>
 </div>
 <div id="avatarStatsModal" class="modal-overlay fixed inset-0 bg-black bg-opacity-70 flex justify-center items-center z-[10002] hidden">
@@ -5069,6 +5072,8 @@ async function executeWeeklyReset() {
   async function afterLogin() {
     document.getElementById("loginContainer").style.display = "none";
     document.getElementById("gameDiv").style.display = "block";
+    
+    await loadCodexAndStatsCache(); // Avatarların tıklanabilmesi
     
     document.getElementById('chatToggleBtn').style.display = 'flex';
     
@@ -7139,7 +7144,7 @@ function handleRowTypeChange(selectElement) {
 }
 
 // =================================================================================
-// DÜZELTİLMİŞ VE DOĞRU ÇALIŞAN openBox FONKSİYONU
+// MEVCUT openBox FONKSİYONUNU SİLİP, BU GÜVENLİ VE DÜZELTİLMİŞ VERSİYONU YAPIŞTIR
 // =================================================================================
 async function openBox(index) {
     const lastSurpriseSnap = await db.ref('gameStats/lastSurpriseInfo').once('value');
@@ -7360,7 +7365,9 @@ async function openBox(index) {
             updates[`/users/${currentUser}/${key}`] = tempUserState[key];
         }
     }
-    delete updates[`/users/${currentUser}/kutuHakki`]; 
+    
+    // !!! SORUNU ÇÖZEN DEĞİŞİKLİK: BU SATIRI SİLİYORUZ !!!
+    // delete updates[`/users/${currentUser}/kutuHakki`]; 
 
     await db.ref().update(updates);
     await db.ref('boxes/' + index).update(boxUpdate);
@@ -7370,76 +7377,6 @@ async function openBox(index) {
     }
     
     await db.ref('gameLock').set(false);
-    isGameLocked = false;
-}
-      
-// Senaryo B: Normal kutu açarken yeni bir çarpan bulma seçeneği
-function openMultiplierSwapChoiceModal(existing, found, boxId) {
-    const modal = document.getElementById('multiplierChoiceModal');
-    const infoEl = document.getElementById('multiplierChoiceInfo');
-    const convertBtn = document.getElementById('choiceConvertBtn');
-    const combineBtn = document.getElementById('choiceCombineBtn');
-
-    pendingMultiplierChoice = { existing, found, boxId };
-    
-    const boxRightsFromFound = found.value;
-    const convertText = `Yeni ${found.value}x Çarpanı, <b>+${boxRightsFromFound} Kutu Hakkı</b>'na dönüştür. <br><small>(Mevcut ${existing.value}x çarpanın korunur)</small>`;
-    
-    const boxRightsFromExisting = existing.uses;
-    const acceptNewText = `Yeni <b>tek kullanımlık ${found.value}x</b> çarpanı al. <br><small>(Mevcut ${existing.value}x çarpanının ${existing.uses} hakkı, +${boxRightsFromExisting} Kutu Hakkı'na dönüşecek)</small>`;
-
-    infoEl.innerHTML = `Kutudan <b class="text-yellow-300">${found.value}x Çarpan</b> buldun! Mevcut <b class="text-purple-300">${existing.uses} adet ${existing.value}x</b> çarpanın var. Ne yapmak istersin?`;
-    convertBtn.innerHTML = convertText;
-    combineBtn.innerHTML = acceptNewText;
-    
-    convertBtn.onclick = () => resolveMultiplierSwapChoice('convert');
-    combineBtn.onclick = () => resolveMultiplierSwapChoice('swap');
-    
-    modal.style.display = 'flex';
-}
-
-// Senaryo B'nin seçim sonucunu işleyen fonksiyon
-async function resolveMultiplierSwapChoice(choice) {
-    if (!pendingMultiplierChoice) return;
-
-    const { existing, found, boxId } = pendingMultiplierChoice;
-    const userRef = db.ref('users/' + currentUser);
-    const userSnap = await userRef.once('value');
-    const user = userSnap.val();
-    const updates = {};
-    let message = '';
-
-    if (choice === 'convert') {
-        updates.kutuHakki = (user.kutuHakki || 0) + found.value;
-        message = `Mevcut çarpanını korudun ve yeni çıkan ${found.value}x çarpanı <b>+${found.value} Kutu Hakkı</b>'na dönüştürüldü!`;
-        logActivity('multiplierConvertedOnUnusedOpen', currentUser, {
-            boxId: boxId,
-            foundValue: found.value,
-            existingValue: existing.value,
-            existingUses: existing.uses,
-            boxRights: found.value
-        });
-    } else if (choice === 'swap') {
-        const boxRightsFromExisting = existing.uses;
-        updates.kutuHakki = (user.kutuHakki || 0) + boxRightsFromExisting;
-        updates.activeMultiplier = found.value;
-        updates.multiplierSource = 'box';
-        updates.multiplierRemainingUses = 0;
-        updates.activeStoreMultiplierItemId = null; // Mağaza çarpanı iptal olduğu için ID'sini temizle
-        message = `Takas başarılı! Mevcut çarpan hakların <b>+${boxRightsFromExisting} Kutu Hakkı</b>'na dönüştürüldü ve envanterine yeni <b>tek kullanımlık ${found.value}x</b> çarpan eklendi!`;
-        logActivity('multiplierSwappedOnUnusedOpen', currentUser, {
-            boxId: boxId,
-            foundValue: found.value,
-            existingValue: existing.value,
-            refundedUses: existing.uses,
-            boxRights: boxRightsFromExisting
-        });
-    }
-    
-    await userRef.update(updates);
-    displayMessage(message);
-    closeMultiplierChoiceModal();
-    db.ref('gameLock').set(false);
     isGameLocked = false;
 }
 
@@ -7597,7 +7534,7 @@ function getActivityIcon(type, details = {}) {
     `;
 }
       
-// MEVCUT renderActivityFeed FONKSİYONUNU SİLİP BUNU YAPIŞTIR
+// YENİ VE GÜNCEL KODU KOPYALA ▼
 function renderActivityFeed(activities) {
     const activityFeedList = document.getElementById('activityFeedList');
     activityFeedList.innerHTML = '';
@@ -7742,9 +7679,6 @@ function renderActivityFeed(activities) {
                     message = `${userHtml}, ${upgradeSource}'den aldığı <b>${details.newValue}x (${details.newUses} kullanım)</b> çarpan ile mevcut çarpanını yükseltti. Eski <b>${details.oldValue}x (${details.oldUses} kullanım)</b> çarpanı için <b class="text-green-300 font-bold">+${details.boxRights} Kutu Hakkı</b> iade edildi.`;
                     break;
 
-                // =========================================================================
-                // ★★★ İSTEDİĞİN DEĞİŞİKLİK BURADA ★★★
-                // =========================================================================
                 case 'multiplierConvertedToBoxRights':
                 case 'multiplierConvertedOnUsedOpen':
                 case 'multiplierConvertedOnUnusedOpen':
@@ -7762,16 +7696,12 @@ function renderActivityFeed(activities) {
                     const keptValue = details.keptMultiplierValue || details.existingValue;
                     const keptUses = details.existingUses;
 
-                    // Yeni mesaj formatı burada oluşturuluyor.
                     if (keptValue && keptUses) {
                         keptMultiplierText = ` Mevcut <b>${keptValue}x</b> (${keptUses} kullanım) hakkı daha yüksek olduğu için korundu.`;
                     }
 
                     message = `${userHtml}, ${conversionSourceText} kazandığı <b>${details.rewardValue || details.foundValue}x</b> çarpanı, <b class="text-cyan-300 font-bold">+${details.boxRights} Kutu Hakkı</b>'na dönüştürüldü.${keptMultiplierText}`;
                     break;
-                // =========================================================================
-                // ★★★ DEĞİŞİKLİK SONU ★★★
-                // =========================================================================
 
                 case 'multiplierStackedFromStore':
                      message = `${userHtml}, mağazadan aldığı çarpan ile mevcut <b>${details.multiplierValue}x</b> çarpanının kullanım hakkını <b class="text-teal-300 font-bold">+${details.usesAdded}</b> artırarak toplam <b class="text-teal-300 font-bold">${details.newTotalUses}</b> adete çıkardı.`;
@@ -7836,8 +7766,14 @@ function renderActivityFeed(activities) {
                     const rewardValue = details.rewardValue;
                     let dailyBalanceText = rewardType === 'points' ? ` <span class="text-gray-400">(Mevcut Puan: ${details.newBalance})</span>` : '';
                     if (rewardType === 'avatar') { 
-                        rewardText = `<span class="text-sky-300 font-bold">'${rewardValue}' avatarını</span>`;
-                        message = `${userHtml}, günlük ödül olarak ${rewardText} kazandı.`;
+                        const avatarEntry = Object.entries(avatarCodexCache).find(([id, data]) => data.name === rewardValue);
+                        const sanitizedId = avatarEntry ? avatarEntry[0] : null;
+                        if(sanitizedId) {
+                            rewardText = `<span class="text-sky-300 font-bold cursor-pointer hover:underline" onclick="showAvatarDetails('${sanitizedId}', false)">'${rewardValue}' </span>`;
+                        } else {
+                            rewardText = `<span class="text-sky-300 font-bold">'${rewardValue}'</span>`;
+                        }
+                        message = `${userHtml}, günlük ödül olarak ${rewardText} avatarını aldı.`;
                     } else {
                         const isPercentDaily = percentPotions.includes(rewardType);
                         const valuePrefixDaily = isPercentDaily ? `%` : `+`;
@@ -8729,7 +8665,8 @@ function loadStoreItems() {
       }
   }
 
-  async function renderStoreItems(items, userData = {}) {
+  // MEVCUT renderStoreItems FONKSİYONUNU SİLİP BUNU YAPIŞTIR
+async function renderStoreItems(items, userData = {}) {
     const gameContainer = document.getElementById('gameStoreItemsContainer');
     const avatarContainer = document.getElementById('avatarStoreItemsContainer');
     const monsterContainer = document.getElementById('monsterStoreItemsContainer');
@@ -8828,31 +8765,40 @@ function loadStoreItems() {
                   </button>
               </div>`;
         }
+        
+        // --- GÜNCELLEME BURADA BAŞLIYOR ---
+        // Avatar ise, resme onclick özelliği ekliyoruz. Değilse, eklemiyoruz.
+        let imageOnClick = '';
+        if (isAvatar) {
+            const sanitizedId = sanitizeFirebaseKey(item.avatarImageUrl);
+            // Değişecek satır:
+imageOnClick = `onclick="showAvatarDetails('${sanitizedId}', false)"`;
+        }
+        // --- GÜNCELLEME BURADA BİTİYOR ---
 
         const cardDiv = document.createElement('div');
         cardDiv.id = `store-item-${itemId}`; 
         cardDiv.className = `relative bg-gray-800 p-6 rounded-xl shadow-lg border-2 border-red-700 text-center flex flex-col justify-between transition-all`;
         
-        // YENİ KOD BLOĞU (BUNU YAPIŞTIR)
-cardDiv.innerHTML = `
-    ${adminControlsHtml} 
-    <div>
-      <img src="${item.imageUrl || 'https://via.placeholder.com/150'}" alt="${item.name}" class="w-24 h-24 mx-auto mb-4 rounded-lg object-cover">
-      <h4 class="text-yellow-400 text-xl font-bold">${item.name}</h4>
-      <p class="text-gray-300 mb-2 flex-grow">${item.description}</p>
-    </div>
-    <div>
-      ${countdownHtml}
-      <p class="text-gray-400 text-sm mb-2">Stok: ${item.stock !== undefined && item.stock !== null ? item.stock : 'Sınırsız'}</p>
-
-      <p class="text-gray-400 text-sm mb-2">Satılan Adet: ${item.purchaseCount || 0}</p>
-
-      <p class="text-green-400 text-2xl font-bold mb-4" id="price-${itemId}">${priceText}</p>
-      <button id="buy-btn-${itemId}" onclick="buyItem('${itemId}')" ${disabled ? 'disabled' : ''} class="w-full py-3 mt-auto ${disabled ? 'bg-gray-600 cursor-not-allowed' : 'bg-red-700 hover:bg-red-600'} text-white font-bold rounded-lg transition duration-300">
-        ${isExpired ? 'Süre Doldu' : (outOfStock ? 'Stok Tükendi' : 'Satın Al')}
-      </button>
-    </div>
-  `;
+        cardDiv.innerHTML = `
+            ${adminControlsHtml} 
+            <div>
+              <img src="${item.imageUrl || 'https://via.placeholder.com/150'}" alt="${item.name}" 
+                   class="w-24 h-24 mx-auto mb-4 rounded-lg object-cover ${isAvatar ? 'cursor-pointer' : ''}" 
+                   ${imageOnClick}>
+              <h4 class="text-yellow-400 text-xl font-bold">${item.name}</h4>
+              <p class="text-gray-300 mb-2 flex-grow">${item.description}</p>
+            </div>
+            <div>
+              ${countdownHtml}
+              <p class="text-gray-400 text-sm mb-2">Stok: ${item.stock !== undefined && item.stock !== null ? item.stock : 'Sınırsız'}</p>
+              <p class="text-gray-400 text-sm mb-2">Satılan Adet: ${item.purchaseCount || 0}</p>
+              <p class="text-green-400 text-2xl font-bold mb-4" id="price-${itemId}">${priceText}</p>
+              <button id="buy-btn-${itemId}" onclick="buyItem('${itemId}')" ${disabled ? 'disabled' : ''} class="w-full py-3 mt-auto ${disabled ? 'bg-gray-600 cursor-not-allowed' : 'bg-red-700 hover:bg-red-600'} text-white font-bold rounded-lg transition duration-300">
+                ${isExpired ? 'Süre Doldu' : (outOfStock ? 'Stok Tükendi' : 'Satın Al')}
+              </button>
+            </div>
+          `;
         targetContainer.appendChild(cardDiv);
     });
 
@@ -10138,6 +10084,7 @@ function closeDailyRewardModal() {
     }
 }
     
+// MEVCUT openDailyRewardModal FONKSİYONUNU SİLİP BUNU YAPIŞTIR
 async function openDailyRewardModal() {
     const dailyRewardModal = document.getElementById('dailyRewardModal');
     if (!dailyRewardModal) {
@@ -10182,20 +10129,15 @@ async function openDailyRewardModal() {
             const cooldown = reward.cooldownMs || 0;
             const nextAvailableTime = lastClaim + cooldown;
 
-            // --- DEĞİŞTİRİLEN KONTROL MANTIĞI BAŞLANGICI ---
             let canClaim = false;
             if (!isAdmin) {
-                // Eğer bekleme süresi 0 ise (tek seferlik) VE daha önce alınmamışsa (lastClaim === 0), alınabilir.
                 if (cooldown === 0) {
                     canClaim = (lastClaim === 0);
                 } 
-                // Eğer bekleme süresi varsa, normal zaman kontrolü yapılır.
                 else {
                     canClaim = (Date.now() > nextAvailableTime);
                 }
             }
-            // --- DEĞİŞTİRİLEN KONTROL MANTIĞI SONU ---
-
 
             const card = document.createElement('div');
             card.className = 'relative bg-gray-900 p-4 rounded-xl shadow-lg border border-yellow-600 text-center flex flex-col justify-between';
@@ -10236,7 +10178,6 @@ async function openDailyRewardModal() {
                         }
 
                         if (timeLeft <= 0) {
-                            // DEĞİŞTİRİLEN KISIM: Tek seferlik ödüller için bu blok çalışmamalı.
                             if(cooldown > 0){
                                 el.innerHTML = '<span class="text-green-400">Şimdi Alınabilir!</span>';
                                 const claimButton = el.closest('.relative').querySelector('button');
@@ -10271,10 +10212,24 @@ async function openDailyRewardModal() {
                 }
             }
 
+            // --- GÜNCELLEME BURADA BAŞLIYOR ---
+            const isAvatarReward = reward.type === 'avatar';
+            // Avatar ödülü ise onun kendi resmini, değilse genel paket resmini kullan
+            const imageUrlToDisplay = isAvatarReward ? reward.avatarImageUrl : (reward.imageUrl || 'https://via.placeholder.com/150');
+            let imageOnClick = '';
+            if (isAvatarReward && reward.avatarImageUrl) {
+                const sanitizedId = sanitizeFirebaseKey(reward.avatarImageUrl);
+                // Değişecek satır:
+imageOnClick = `onclick="showAvatarDetails('${sanitizedId}', false)"`;
+            }
+            // --- GÜNCELLEME BURADA BİTİYOR ---
+
             card.innerHTML = `
                 ${adminControlsHtml}
                 <div>
-                    <img src="${reward.imageUrl || 'https://via.placeholder.com/150'}" alt="${reward.name}" class="w-20 h-20 mx-auto mb-3 rounded-lg object-cover">
+                    <img src="${imageUrlToDisplay}" alt="${reward.name}" 
+                         class="w-20 h-20 mx-auto mb-3 rounded-lg object-cover ${isAvatarReward ? 'cursor-pointer' : ''}" 
+                         ${imageOnClick}>
                     <h4 class="text-yellow-300 text-lg font-bold">${reward.name}</h4>
                     <p class="text-gray-400 text-sm mb-3">${reward.description}</p>
                     ${cooldownHTML}
@@ -10289,10 +10244,7 @@ async function openDailyRewardModal() {
     }
 }
       
-// =================================================================================
-// ADIM 2: MEVCUT claimDailyReward FONKSİYONUNU SİLİP, BU YENİ VERSİYONU YAPIŞTIR
-// =================================================================================
-
+// MEVCUT claimDailyReward FONKSİYONUNU SİLİP BUNU YAPIŞTIR
 async function claimDailyReward(rewardId) {
     if (isAdmin) {
         displayMessage("Adminler ödül alamaz.");
@@ -10329,7 +10281,6 @@ async function claimDailyReward(rewardId) {
             throw new Error("Bu ödül için bekleme süresi henüz dolmadı.");
         }
         
-        // Çarpan ödülü için ön kontrol ve onay
         if (reward.type === 'tempMultiplier') {
             const hasActiveMultiplier = (user.multiplierSource === 'box') || (user.multiplierSource === 'store' && (user.multiplierRemainingUses || 0) > 0);
             if (hasActiveMultiplier) {
@@ -10366,7 +10317,6 @@ async function claimDailyReward(rewardId) {
 
                 userData.dailyRewardsClaimed[rewardId] = getSyncedTime();
 
-                // Çarpan mantığı burada ayrıca ele alınır
                 if (reward.type === 'tempMultiplier') {
                     const hasActiveMultiplier = (userData.multiplierSource === 'box') || (userData.multiplierSource === 'store' && (userData.multiplierRemainingUses || 0) > 0);
                     if (hasActiveMultiplier) {
@@ -10393,16 +10343,17 @@ async function claimDailyReward(rewardId) {
                     }
                     activityLogDetails = { rewardUses: reward.uses };
                 } else {
-                    // Diğer tüm ödüller için yardımcı fonksiyonu kullan
                     const result = applyRewardToUser(userData, reward);
-                    cardPacksToOpen = result.cardPacksToOpen; // Kart paketlerini dışarıda işlemek için al
+                    cardPacksToOpen = result.cardPacksToOpen;
                 }
             }
             return userData;
         });
 
         if (committed) {
-            const rewardNameForMessage = formatRewardText(reward.type, reward.value, reward.uses);
+            // --- DEĞİŞİKLİK BURADA: Artık avatar ise `reward.avatarName` kullanılıyor ---
+            const valueForMessage = reward.type === 'avatar' ? reward.avatarName : reward.value;
+            const rewardNameForMessage = formatRewardText(reward.type, valueForMessage, reward.uses);
             displayMessage(`Tebrikler! '${reward.name}' ödülünü başarıyla aldın: ${rewardNameForMessage}`);
             
             logActivity('dailyReward', currentUser, { 
@@ -10411,7 +10362,7 @@ async function claimDailyReward(rewardId) {
                 rewardType: reward.type, 
                 rewardValue: reward.type === 'avatar' ? reward.avatarName : reward.value,
                 rewardUses: reward.uses || 0,
-                newBalance: snapshot.val().balance // Log için yeni bakiye
+                newBalance: snapshot.val().balance
             });
             
             const hasPotion = reward.type.includes('_potion');
@@ -13149,7 +13100,7 @@ function closeWheelSettingsModal() {
     wheelSettingsModal.style.display = 'none';
 }
 
-// Çark Ayarları için yeni satır ekler
+// MEVCUT addWheelSettingRow FONKSİYONUNU SİLİP BUNU YAPIŞTIRIN
 function addWheelSettingRow(item = {}) {
     const container = document.getElementById('wheelSettingsRowsContainer');
     const row = document.createElement('div');
@@ -13166,24 +13117,29 @@ function addWheelSettingRow(item = {}) {
     row.innerHTML = `
         <select class="setting-type col-span-1 bg-gray-700 p-2 rounded-md text-white border border-gray-600" onchange="handleWheelRowTypeChange(this)">
             <option value="points">💰 Puan</option>
-    <option value="boxRights">📦 Kutu Hakkı</option>
-    <option value="wheelTicket">🎫 Çark Bileti</option>
-    <option value="clickCatchTicket">🎟️ Tıkla-Yakala Bileti</option>
-    <option value="iflasShield">🛡️ İflas Kalkanı</option>
-    <option value="tempMultiplier">✖️ Çarpan</option>
-    <option value="avatar">👤 Avatar</option>
-    <option value="wildcard">🃏 Joker Kart</option>
-    <option value="card_pack">🎴 Standart Kart Paketi</option>
-    <option value="card_pack_normal">🥉 Bronz Kart Paketi</option>
-    <option value="card_pack_gumus">🥈 Gümüş Kart Paketi</option>
-    <option value="card_pack_altin">🥇 Altın Kart Paketi</option>
-    <option value="card_pack_efsanevi">🏆 Efsanevi Kart Paketi</option>
-    <option value="health_regen_potion">🧪 Can Yenileme İksiri</option>
-<option value="revival_stone">💎 Dirilme Taşı</option>
-<option value="health_potion">🧪 Can İksiri</option>
-<option value="defense_potion">🛡️ Savunma İksiri</option>
-<option value="damage_potion">⚔️ Hasar İksiri</option>
-<option value="crit_potion">💥 Kritik Vuruş İksiri</option>
+            <option value="boxRights">📦 Kutu Hakkı</option>
+            <option value="wheelTicket">🎫 Çark Bileti</option>
+            <option value="clickCatchTicket">🎟️ T-Y Bileti</option>
+            <option value="iflasShield">🛡️ İflas Kalkanı</option>
+            <option value="tempMultiplier">✖️ Çarpan</option>
+            <option value="avatar">👤 Avatar</option>
+            <option value="wildcard">🃏 Joker Kart</option>
+            <option value="card_pack">🎴 Standart Kart Paketi</option>
+            <option value="card_pack_normal">🥉 Bronz Kart Paketi</option>
+            <option value="card_pack_gumus">🥈 Gümüş Kart Paketi</option>
+            <option value="card_pack_altin">🥇 Altın Kart Paketi</option>
+            <option value="card_pack_efsanevi">🏆 Efsanevi Kart Paketi</option>
+            <option value="health_regen_potion">🧪 Can Yenileme İksiri</option>
+            <option value="revival_stone">💎 Dirilme Taşı</option>
+            <option value="health_potion">🧪 Can İksiri</option>
+            <option value="damage_potion">⚔️ Hasar İksiri</option>
+            <option value="defense_potion">🛡️ Savunma İksiri</option>
+            <option value="crit_potion">💥 Kritik Vuruş İksiri</option>
+            <option value="crit_damage_potion">🎯 Kritik Hasar İksiri</option>
+            <option value="dodge_potion">💨 Sıyrılma Şansı İksiri</option>
+            <option value="pierce_potion">📌 Delici Şansı İksiri</option>
+            <option value="pas">☠️ Pas</option>
+            <option value="surpriseBox">🎉 Sürpriz Kutu</option>
         </select>
         <input type="text" value="${label}" class="setting-label col-span-1 sm:col-span-2 bg-gray-700 p-2 rounded-md text-white" placeholder="Etiket (Örn: JOKER!)">
         <input type="text" value="${imageUrl}" class="setting-image-url col-span-1 sm:col-span-2 bg-gray-700 p-2 rounded-md text-white" placeholder="Resim URL (Opsiyonel)">
@@ -13195,6 +13151,9 @@ function addWheelSettingRow(item = {}) {
             <button class="bg-red-700 hover:bg-red-600 text-white p-2 rounded-md" onclick="this.parentElement.parentElement.remove();">Sil</button>
         </div>
     `;
+    // Select menüsünün değerini mevcut veriye göre ayarla
+    row.querySelector('.setting-type').value = type;
+    
     container.appendChild(row);
     handleWheelRowTypeChange(row.querySelector('.setting-type'));
 }
@@ -13231,6 +13190,7 @@ function handleWheelRowTypeChange(selectElement) {
     }
 }
 
+// MEVCUT saveWheelSettings FONKSİYONUNU SİLİP BUNU YAPIŞTIRIN
 async function saveWheelSettings() {
     if (!isAdmin) return;
 
@@ -13242,8 +13202,8 @@ async function saveWheelSettings() {
         const type = row.querySelector('.setting-type').value;
         const label = row.querySelector('.setting-label').value.trim();
         const imageUrl = row.querySelector('.setting-image-url').value.trim();
-        const value = parseInt(row.querySelector('.setting-value').value); // Değeri her zaman oku
-        const duration = parseInt(row.querySelector('.setting-duration').value); // Kullanım hakkını her zaman oku
+        const valueInput = row.querySelector('.setting-value').value; // Değeri string olarak al
+        const duration = parseInt(row.querySelector('.setting-duration').value);
         const color = row.querySelector('.setting-color').value;
         const weight = parseInt(row.querySelector('.setting-weight').value);
 
@@ -13255,15 +13215,23 @@ async function saveWheelSettings() {
 
         const segment = { type, label, imageUrl, color, weight, order: index };
         
-        // Değerin gerekli olduğu tipler için kontrol
-        const needsValue = ['points', 'boxRights', 'iflasShield', 'tempMultiplier', 'clickCatchTicket', 'wheelTicket', 'wildcard', 'card_pack', 'card_pack_normal', 'card_pack_gumus', 'card_pack_altin', 'card_pack_efsanevi'];
-        if(needsValue.includes(type)) {
-            if(isNaN(value)) {
+        // Değerin gerekli olduğu tipleri tanımla
+        const needsValue = [
+            'points', 'boxRights', 'iflasShield', 'tempMultiplier', 'clickCatchTicket', 'wheelTicket', 
+            'wildcard', 'card_pack', 'card_pack_normal', 'card_pack_gumus', 'card_pack_altin', 'card_pack_efsanevi',
+            'health_regen_potion', 'revival_stone', 'health_potion', 'damage_potion', 'defense_potion', 
+            'crit_potion', 'crit_damage_potion', 'dodge_potion', 'pierce_potion'
+        ];
+
+        // Sadece değer gerektiren tipler için değeri işle ve kontrol et
+        if (needsValue.includes(type)) {
+            const parsedValue = parseStatValue(type, valueInput); // Yüzdeli değerleri de doğru işler
+            if (isNaN(parsedValue)) {
                 displayMessage(`'${label}' adlı dilim için geçerli bir Değer girmelisiniz.`);
                 hasError = true;
                 return;
             }
-            segment.value = value;
+            segment.value = parsedValue;
         }
 
         // Sadece ÇARPAN tipi için Kullanım Hakkı'nı (duration) ekle
@@ -14644,6 +14612,10 @@ async function executeSeasonReset(isManual = false) {
         if (!confirmed) return;
     }
 
+    // ★★★ DEĞİŞİKLİK BURADA: Pazarı temizleme fonksiyonunu en başa ekliyoruz ★★★
+    await clearTradeMarketForSeasonEnd();
+    // ★★★ DEĞİŞİKLİK SONU ★★★
+
     displayMessage("Sezon sonu işlemleri başlatıldı... Bu işlem birkaç saniye sürebilir. Lütfen bekleyin.");
 
     const allUsersSnap = await db.ref('users').once('value');
@@ -14653,7 +14625,7 @@ async function executeSeasonReset(isManual = false) {
     const seasonSettings = settingsSnap.val();
     
     const puanLeader = leaders.highEverBalanceUser; 
-    const rozetLeaderData = await getTopBadgeHolder(allUsersData, leaders); // ★★★ YENİ: Hem ismi hem rozet sayısını al
+    const rozetLeaderData = await getTopBadgeHolder(allUsersData, leaders);
     const rozetLeader = rozetLeaderData.username;
     
     const puanAvatar = seasonSettings?.rewards?.puanLeaderAvatarUrl;
@@ -14678,7 +14650,6 @@ async function executeSeasonReset(isManual = false) {
         updates[`${userPath}/clickCatchTickets`] = (userData.clickCatchTickets || 0) + giftPackage.clickCatchTickets;
         updates[`${userPath}/iflasShieldUses`] = (userData.iflasShieldUses || 0) + giftPackage.iflasShieldUses;
         
-        // ★★★ DEĞİŞEN KISIM BAŞLANGICI: Detaylı başarım verisi kaydediliyor ★★★
         if (username === puanLeader) {
             if(puanAvatar) {
                 const newAvatarId = `sezon_odul_puan_${Date.now()}`;
@@ -14688,7 +14659,7 @@ async function executeSeasonReset(isManual = false) {
             const puanChampionships = userData.puanChampionships || [];
             puanChampionships.push({
                 timestamp: firebase.database.ServerValue.TIMESTAMP,
-                score: leaders.highestEverBalance // Kazandığı anki kariyer puanı
+                score: leaders.highestEverBalance
             });
             updates[`${userPath}/puanChampionships`] = puanChampionships;
         }
@@ -14701,11 +14672,10 @@ async function executeSeasonReset(isManual = false) {
             const rozetChampionships = userData.rozetChampionships || [];
             rozetChampionships.push({
                 timestamp: firebase.database.ServerValue.TIMESTAMP,
-                badgeCount: rozetLeaderData.badgeCount // Kazandığı anki rozet sayısı
+                badgeCount: rozetLeaderData.badgeCount
             });
             updates[`${userPath}/rozetChampionships`] = rozetChampionships;
         }
-        // ★★★ DEĞİŞEN KISIM SONU ★★★
         
         updates[`${userPath}/balance`] = 0;
         updates[`${userPath}/kariyerPuani`] = 0;
@@ -14719,7 +14689,6 @@ async function executeSeasonReset(isManual = false) {
         updates[`${userPath}/clickCatchHighestScore`] = 0;
         updates[`${userPath}/cardCollection`] = null;
         updates[`${userPath}/completedCollection`] = null;
-        // Eski sayaçları da sıfırla (isteğe bağlı ama tutarlılık için iyi)
         updates[`${userPath}/puanChampionshipsWon`] = null;
         updates[`${userPath}/rozetChampionshipsWon`] = null;
     }
@@ -15385,26 +15354,26 @@ async function deleteCard(cardId) {
     }
 }
 
+// MEVCUT resetWholeCollection FONKSİYONUNU SİL VE BUNU YAPIŞTIR
+
 async function resetWholeCollection() {
     if (!isAdmin) return;
-    // Onay mesajı aynı kalabilir, kullanıcı zaten bunu görüyor.
     const confirmed = await customConfirm("Bu işlem mevcut tüm kartları, kullanıcı ilerlemelerini ve şampiyonlukları SİLEREK yepyeni bir sezon başlatacaktır. Emin misiniz?");
     if (confirmed) {
+        // ★★★ DEĞİŞİKLİK BURADA: Her şeyi sıfırlamadan önce pazarı temizliyoruz ★★★
+        await clearTradeMarketForSeasonEnd();
+        // ★★★ DEĞİŞİKLİK SONU ★★★
+
         const updates = {};
-        // updates['/gameConfig/cardCollection'] = null; // <<<--- BU SATIR SİLİNDİ! ANA KART LİSTESİ ARTIK GÜVENDE.
         updates['/gameConfig/collectionWinner'] = null;
-        // Ödülü silmek yerine sıfırlanmasını beklemek daha mantıklı olabilir, ama şimdilik kalsın.
-        // updates['/gameConfig/collectionGrandPrize'] = null; 
         updates['/gameConfig/cardCollectionStatus'] = 'inactive'; 
 
         const usersSnap = await db.ref('users').once('value');
         if (usersSnap.exists()) {
             usersSnap.forEach(userSnap => {
                 const username = userSnap.key;
-                // Sadece kullanıcıların kart ilerlemesini ve durumunu sıfırlıyoruz.
                 updates[`/users/${username}/cardCollection`] = null;
                 updates[`/users/${username}/completedCollection`] = null;
-                // Şampiyonluklar bir başarı olduğu için kalıcı olabilir, ama isteğe göre bu satır da kalabilir.
                 updates[`/users/${username}/achievements/collectionChampion`] = null;
             });
         }
@@ -16681,21 +16650,24 @@ async function saveGrandPrizeAndCloseModal() {
     closeGrandPrizeSettingsModal(); // Modalı kapat
 }
 
-      // YENİ AKILLI FONKSİYON: Sezonu başlatır veya bitirir.
+      // MEVCUT toggleCardSeason FONKSİYONUNU SİL VE BUNU YAPIŞTIR
+
 async function toggleCardSeason() {
     if (!isAdmin) return;
 
-    // 1. Mevcut sezon durumunu kontrol et
     const statusRef = db.ref('gameConfig/cardCollectionStatus');
     const statusSnap = await statusRef.once('value');
     const currentStatus = statusSnap.val() || 'inactive';
 
-    // 2. Eğer sezon aktifse, BİTİRME işlemini yap
     if (currentStatus === 'active') {
         const confirmed = await customConfirm("Bu işlem mevcut sezonu sonlandıracak. Tüm kullanıcıların topladığı kartlar, joker kartları ve koleksiyon tamamlama durumları sıfırlanacak. ANA KART LİSTENİZ SİLİNMEZ. Emin misiniz?");
         if (!confirmed) return;
 
         try {
+            // ★★★ DEĞİŞİKLİK BURADA: Sezonu bitirmeden önce pazarı temizliyoruz ★★★
+            await clearTradeMarketForSeasonEnd();
+            // ★★★ DEĞİŞİKLİK SONU ★★★
+
             const updates = {};
             updates['/gameConfig/cardCollectionStatus'] = 'inactive';
             updates['/gameConfig/collectionWinner'] = null;
@@ -16711,21 +16683,20 @@ async function toggleCardSeason() {
             }
             await db.ref().update(updates);
             displayMessage("Sezon başarıyla bitirildi! Tüm kullanıcıların kart ilerlemesi sıfırlandı.");
-            loadCollectionAlbum(); // Arayüzü güncelle
+            loadCollectionAlbum();
         } catch (error) {
             console.error("Sezon bitirilirken hata oluştu:", error);
             displayMessage("Sezon bitirilirken bir hata meydana geldi.");
         }
     } 
-    // 3. Eğer sezon aktif değilse (bitmiş veya duraklatılmışsa), YENİ SEZON BAŞLATMA işlemini yap
     else {
         const confirmed = await customConfirm("Bu işlem mevcut tüm kartları, kullanıcı ilerlemelerini ve şampiyonlukları SİLEREK yepyeni bir sezon başlatacaktır. Emin misiniz?");
         if (!confirmed) return;
 
-        await resetWholeCollection(); // Bu fonksiyon zaten ilerlemeyi sıfırlıyor
+        await resetWholeCollection();
         await statusRef.set('active');
         displayMessage("YENİ KOLEKSİYON SEZONU BAŞLATILDI!");
-        loadCollectionAlbum(); // Arayüzü güncelle
+        loadCollectionAlbum();
     }
 }
 
@@ -17450,8 +17421,8 @@ function handleAdminRewardTypeChange(selectElement, rewardData = {}) {
     container.innerHTML = fieldsHtml;
 }
 
-// ESKİ saveLoginStreakRewards FONKSİYONUNU SİL VE BUNU YAPIŞTIR
-async function saveLoginStreakRewards() {
+// YENİ JAVASCRIPT KODU (BUNU YAPIŞTIR)
+async function saveLoginStreakRewards(shouldResetProgress = false) {
     if (!isAdmin) return;
     const container = document.getElementById('adminLoginStreakRowsContainer');
     const newRewardsData = [];
@@ -17486,7 +17457,6 @@ async function saveLoginStreakRewards() {
                     hasError = true; return;
                 }
             }
-
             dayRewards.push(reward);
         });
         
@@ -17509,21 +17479,43 @@ async function saveLoginStreakRewards() {
 
     if (hasError) return;
 
-    const confirmed = await customConfirm(`${newRewardsData.length} günlük yeni bir Giriş Serisi oluşturulacak. Mevcut seri silinecek ve tüm kullanıcıların ilerlemesi SIFIRLANACAK. Emin misiniz?`);
-    if (confirmed) {
-        const usersSnap = await db.ref('users').once('value');
-        const updates = {};
-        if(usersSnap.exists()) {
-            usersSnap.forEach(user => {
-                updates[`/users/${user.key}/loginStreak`] = null;
-            });
-        }
-        await db.ref().update(updates);
+    // --- DEĞİŞİKLİK BURADA BAŞLIYOR ---
 
+    // 1. Basılan butona göre (true/false) farklı bir onay mesajı gösteriyoruz.
+    let confirmationMessage = '';
+    if (shouldResetProgress) {
+        confirmationMessage = `${newRewardsData.length} günlük yeni bir Giriş Serisi oluşturulacak. Mevcut seri silinecek ve tüm kullanıcıların ilerlemesi SIFIRLANACAK. Emin misiniz?`;
+    } else {
+        confirmationMessage = `Giriş serisi ödüllerini bu ayarlarla güncellemek istediğinize emin misiniz? <br><br><small class="text-yellow-300">Bu işlem oyuncuların mevcut serilerini SIFIRLAMAZ, sadece ödülleri günceller.</small>`;
+    }
+
+    const confirmed = await customConfirm(confirmationMessage);
+    if (confirmed) {
+        // 2. Eğer "Sıfırla" butonuna basıldıysa (shouldResetProgress === true ise) bu blok çalışır.
+        if (shouldResetProgress) {
+            const usersSnap = await db.ref('users').once('value');
+            const updates = {};
+            if(usersSnap.exists()) {
+                usersSnap.forEach(user => {
+                    updates[`/users/${user.key}/loginStreak`] = null;
+                });
+            }
+            await db.ref().update(updates);
+        }
+
+        // Bu kısım her iki durumda da çalışır: Ödül ayarlarını kaydeder.
         await db.ref('gameConfig/loginStreakRewards').set(newRewardsData);
         loginStreakRewardsCache = newRewardsData;
 
-        displayMessage("Giriş Serisi başarıyla güncellendi ve tüm oyuncuların ilerlemesi sıfırlandı.");
+        // 3. Başarı mesajını da basılan butona göre dinamik olarak gösteriyoruz.
+        let successMessage = '';
+        if (shouldResetProgress) {
+            successMessage = "Giriş Serisi başarıyla güncellendi ve tüm oyuncuların ilerlemesi sıfırlandı.";
+        } else {
+            successMessage = "Giriş Serisi başarıyla güncellendi. Oyuncuların ilerlemesi korunmuştur.";
+        }
+        displayMessage(successMessage);
+
         closeAdminLoginStreakModal();
         openLoginStreakModal();
     }
@@ -17592,12 +17584,9 @@ async function openLoginStreakModal() {
             let rewardsListHtml = '<ul class="text-left list-disc list-inside space-y-1 text-sm text-gray-400 flex-grow mb-4">';
             (dayData.rewards || []).forEach(reward => {
                 let rewardText = '';
-                // ★★★ DEĞİŞİKLİK BURADA BAŞLIYOR ★★★
                 if (reward.type === 'tempMultiplier') {
-                    // İstenen yeni format: +3 Kullanım Hakkı 3x Çarpan
                     rewardText = `+${reward.uses} Kullanım Hakkı ${reward.value}x Çarpan`;
                 } 
-                // ★★★ DEĞİŞİKLİK BURADA BİTİYOR ★★★
                 else if (reward.type === 'avatar') {
                     rewardText = `'${reward.avatarName}' Avatarı`;
                 } else {
@@ -17606,13 +17595,25 @@ async function openLoginStreakModal() {
                 rewardsListHtml += `<li>${rewardText}</li>`;
             });
             rewardsListHtml += '</ul>';
+            
+            // --- GÜNCELLEME BURADA BAŞLIYOR ---
+            const avatarReward = (dayData.rewards || []).find(r => r.type === 'avatar');
+            let imageOnClick = '';
+            if (avatarReward && avatarReward.avatarImageUrl) {
+                const sanitizedId = sanitizeFirebaseKey(avatarReward.avatarImageUrl);
+                // Artık "false" parametresini de ekliyoruz ki "Nasıl Elde Edilir" bilgisi gizlensin.
+                imageOnClick = `onclick="showAvatarDetails('${sanitizedId}', false)"`;
+            }
+            // --- GÜNCELLEME BURADA BİTİYOR ---
 
             const card = document.createElement('div');
             card.className = `streak-card ${status}`;
             card.id = `streak-card-${day}`;
             card.innerHTML = `
                 <div class="day-number">${day}. Gün</div>
-                <img src="${dayData.imageUrl || 'https://i.hizliresim.com/pntfb6j.png'}" alt="${dayData.name}" class="reward-image">
+                <img src="${dayData.imageUrl || 'https://i.hizliresim.com/pntfb6j.png'}" alt="${dayData.name}" 
+                     class="reward-image ${avatarReward ? 'cursor-pointer' : ''}" 
+                     ${imageOnClick}>
                 <h4 class="reward-name">${dayData.name || day + '. Gün Paketi'}</h4>
                 <div class="reward-description">${rewardsListHtml}</div>
                 <button 
@@ -19879,7 +19880,8 @@ async function openAvatarCodexModal() {
         for (const [sanitizedId, avatarInfo] of sortedAvatars) {
             const avatarCard = document.createElement('div');
             avatarCard.className = 'relative p-2 rounded-lg cursor-pointer transition-transform hover:scale-105 bg-gray-800';
-            avatarCard.onclick = () => showAvatarDetails(sanitizedId);
+            // Değişecek satır:
+avatarCard.onclick = () => showAvatarDetails(sanitizedId, true);
 
             avatarCard.innerHTML = `
                 <img src="${avatarInfo.imageUrl}" alt="${avatarInfo.name}" class="w-full h-auto rounded-md object-cover aspect-square">
@@ -19932,10 +19934,13 @@ async function removeAvatarFromCodex(sanitizedId) {
     }
 }
 
+// YENİ KODU YAPIŞTIR ▼
 /**
  * Seçilen avatarın detay penceresini açar ve bilgileri doldurur.
+ * @param {string} sanitizedId - Avatarın temizlenmiş ID'si.
+ * @param {boolean} showObtainMethod - "Nasıl Elde Edilir?" bilgisinin gösterilip gösterilmeyeceği.
  */
-function showAvatarDetails(sanitizedId) {
+function showAvatarDetails(sanitizedId, showObtainMethod = true) {
     const avatarInfo = avatarCodexCache[sanitizedId];
     const avatarStats = avatarBaseStats[sanitizedId] || {};
 
@@ -19943,7 +19948,16 @@ function showAvatarDetails(sanitizedId) {
 
     document.getElementById('detailAvatarImage').src = avatarInfo.imageUrl;
     document.getElementById('detailAvatarName').textContent = avatarInfo.name;
-    document.getElementById('detailAvatarObtainMethod').textContent = avatarInfo.obtainMethod || 'Henüz bir açıklama eklenmemiş.';
+    
+    // --- GÜNCELLEME BURADA ---
+    const obtainMethodContainer = document.getElementById('detailAvatarObtainMethod').parentElement;
+    if (showObtainMethod) {
+        document.getElementById('detailAvatarObtainMethod').textContent = avatarInfo.obtainMethod || 'Henüz bir açıklama eklenmemiş.';
+        obtainMethodContainer.style.display = 'block';
+    } else {
+        obtainMethodContainer.style.display = 'none'; // "Nasıl Elde Edilir?" bölümünü gizle
+    }
+    // --- GÜNCELLEME SONU ---
 
     const statsEl = document.getElementById('detailAvatarStats');
     statsEl.innerHTML = `
@@ -19972,22 +19986,21 @@ function closeAvatarDetailModal() {
 
 let editingAvatarData = null; // Hangi avatarın düzenlendiğini tutar
 
-// openAdminAvatarCodexModal FONKSİYONUNUN ESKİ HALİNİ SİLİP BUNU YAPIŞTIR
+// MEVCUT openAdminAvatarCodexModal FONKSİYONUNU SİLİP BUNU YAPIŞTIR
 async function openAdminAvatarCodexModal() {
     if (!isAdmin) return;
     const listEl = document.getElementById('adminCodexList');
     listEl.innerHTML = '<p class="text-gray-400 text-center">Avatarlar taranıyor ve listeleniyor...</p>';
     document.getElementById('adminAvatarCodexModal').style.display = 'flex';
 
-    try {
-        const [codexSnap, statsSnap] = await Promise.all([
-            db.ref('gameConfig/avatarCodex').once('value'),
-            db.ref('gameConfig/avatarBaseStats').once('value')
-        ]);
-        
-        const codexData = codexSnap.val() || {};
-        const statsData = statsSnap.val() || {};
+    // Önceki dinleyiciyi temizle ki tekrar tekrar eklenmesin
+    if (activeListeners.adminCodex && activeListeners.adminCodex.ref) {
+        activeListeners.adminCodex.ref.off('value', activeListeners.adminCodex.callback);
+    }
 
+    const ref = db.ref('gameConfig/avatarCodex');
+    const callback = (codexSnap) => {
+        const codexData = codexSnap.val() || {};
         if (Object.keys(codexData).length === 0) {
             listEl.innerHTML = '<p class="text-center col-span-full">Kodekste hiç avatar bulunmuyor. Eklemek için "Yeni Avatar Ekle" butonunu kullanın.</p>';
             return;
@@ -20021,20 +20034,23 @@ async function openAdminAvatarCodexModal() {
             `;
             listEl.innerHTML += avatarHtml;
         });
-
-    } catch (error) {
-        console.error("Admin Kodeks paneli yüklenirken hata:", error);
-        listEl.innerHTML = '<p class="text-center text-red-500">Panel yüklenirken bir hata oluştu.</p>';
-    }
+    };
+    
+    // Dinleyiciyi başlat ve referansını kaydet
+    ref.on('value', callback);
+    activeListeners.adminCodex = { ref, callback };
 }
 
-/**
- * Admin Avatar Kodeksi yönetim panelini kapatır.
- */
+// MEVCUT closeAdminAvatarCodexModal FONKSİYONUNU SİLİP BUNU YAPIŞTIR
 function closeAdminAvatarCodexModal() {
+    // Paneli kapatmadan önce, açık olan dinleyiciyi durdur
+    if (activeListeners.adminCodex && activeListeners.adminCodex.ref) {
+        activeListeners.adminCodex.ref.off('value', activeListeners.adminCodex.callback);
+        delete activeListeners.adminCodex; // Referansı temizle
+    }
     document.getElementById('adminAvatarCodexModal').style.display = 'none';
 }
-
+      
 /**
  * Avatar ekleme/düzenleme formunu açar.
  */
@@ -20100,9 +20116,7 @@ function closeAvatarCreatorModal() {
     editingAvatarData = null;
 }
 
-/**
- * Avatar ekleme/düzenleme formundaki verileri kaydeder.
- */
+// MEVCUT saveAvatarData FONKSİYONUNU SİLİP BUNU YAPIŞTIR
 async function saveAvatarData() {
     if (!isAdmin) return;
 
@@ -20151,7 +20165,7 @@ async function saveAvatarData() {
         await db.ref().update(updates);
         displayMessage(`Avatar '${name}' başarıyla kaydedildi!`);
         closeAvatarCreatorModal();
-        openAdminAvatarCodexModal(); // Yönetim panelini yenile
+        // ARTIK BURADA openAdminAvatarCodexModal() ÇAĞIRMIYORUZ! Değişiklik anlık olarak zaten yansıyacak.
 
     } catch (error) {
         console.error("Avatar kaydedilirken hata:", error);
@@ -20191,6 +20205,118 @@ async function reorderAvatarInCodex(sanitizedId, direction) {
 
     await db.ref().update(updates);
     openAdminAvatarCodexModal(); // Paneli anında yenile
+}
+
+// =======================================================
+// YENİ GÜNCELLENMİŞ: PAZARI TEMİZLEME (ÜCRET İADESİZ) FONKSİYONU
+// =======================================================
+
+/**
+ * Aktif tüm takas tekliflerini iptal eder, KARTLARI sahiplerine iade eder. İŞLEM ÜCRETLERİ İADE EDİLMEZ.
+ */
+async function clearTradeMarketForSeasonEnd() {
+    console.log("Sezon sonu: Takas pazarı temizleniyor (ücret iadesiz)...");
+
+    const tradesRef = db.ref('trades');
+    const usersRef = db.ref('users');
+
+    const [tradesSnap, usersSnap] = await Promise.all([
+        tradesRef.once('value'),
+        usersRef.once('value')
+    ]);
+
+    if (!tradesSnap.exists()) {
+        console.log("Pazarda temizlenecek aktif takas teklifi bulunamadı.");
+        return;
+    }
+
+    const trades = tradesSnap.val();
+    const usersData = usersSnap.val();
+    const updates = {};
+
+    for (const tradeId in trades) {
+        const trade = trades[tradeId];
+        const offerer = trade.offerer;
+        const offeredCardId = trade.offeredCardId;
+
+        if (usersData && usersData[offerer]) {
+            const userPath = `/users/${offerer}`;
+            const userData = usersData[offerer];
+
+            // 1. KART İADESİ: Sadece teklife konulan kartın sayısını 1 artır.
+            const currentCardCount = userData.cardCollection?.[offeredCardId]?.count || 0;
+            updates[`${userPath}/cardCollection/${offeredCardId}/count`] = currentCardCount + 1;
+
+            // ★★★ DEĞİŞİKLİK BURADA: Ücret iadesi yapan kod bloğu tamamen kaldırıldı. ★★★
+
+            // 2. BİLDİRİM GÜNCELLEMESİ: Kullanıcıya sadece kartının iade edildiğini söyle.
+            const notifKey = db.ref().push().key;
+            updates[`${userPath}/notifications/${notifKey}`] = {
+                message: `Kart sezonu bittiği için pazardaki takas teklifin otomatik olarak iptal edildi ve kartın envanterine iade edildi.`,
+                timestamp: firebase.database.ServerValue.TIMESTAMP
+            };
+        }
+    }
+
+    // 3. TÜM TEKLİFLERİ SİL
+    updates['/trades'] = null;
+
+    if (Object.keys(updates).length > 0) {
+        await db.ref().update(updates);
+        console.log("Takas pazarı başarıyla temizlendi, kartlar iade edildi (ücretler iade edilmedi).");
+    }
+}
+
+/**
+ * YENİ: Belirtilen kullanıcının kart koleksiyonunu, joker kartlarını ve albüm tamamlama durumunu sıfırlar.
+ */
+async function resetUserCards(username) {
+    if (!isAdmin || !username) return;
+
+    const confirmed = await customConfirm(
+        `<b>${username}</b> adlı kullanıcının <b>tüm kart koleksiyonunu, joker kartlarını ve albüm tamamlama durumunu</b> kalıcı olarak sıfırlamak istediğinize emin misiniz? Bu işlem geri alınamaz!`
+    );
+
+    if (!confirmed) return;
+
+    try {
+        const userRef = db.ref(`users/${username}`);
+        
+        // Sıfırlanacak verileri tek bir işlemde güncellemek için bir obje hazırlıyoruz.
+        const updates = {};
+        updates['/cardCollection'] = null;      // Tüm kart koleksiyonunu siler.
+        updates['/completedCollection'] = null; // Albüm tamamlama durumunu siler.
+        updates['/wildcards'] = 0;              // Joker kart sayısını sıfırlar.
+
+        await userRef.update(updates);
+        
+        displayMessage(`${username} adlı kullanıcının tüm kart verileri başarıyla sıfırlandı.`);
+        
+        // Arayüzü anında güncellemek için yönetim penceresini yeniden aç
+        openUserManagementModal(event, username);
+        
+    } catch (error) {
+        console.error("Kullanıcının kartları sıfırlanırken hata oluştu:", error);
+        displayMessage("Kartlar sıfırlanırken bir hata meydana geldi: " + error.message);
+    }
+}
+
+// YENİ FONKSİYON (BUNU EKLE)
+/**
+ * Avatar Kodeksi ve Temel İstatistik verilerini sunucudan çekip önbelleğe alır.
+ */
+async function loadCodexAndStatsCache() {
+    try {
+        const [codexSnap, statsSnap] = await Promise.all([
+            db.ref('gameConfig/avatarCodex').once('value'),
+            db.ref('gameConfig/avatarBaseStats').once('value')
+        ]);
+        avatarCodexCache = codexSnap.val() || {};
+        avatarBaseStats = statsSnap.val() || {};
+        console.log("Avatar önbellekleri başarıyla yüklendi.");
+    } catch (error) {
+        console.error("Avatar önbellekleri yüklenirken hata oluştu:", error);
+    }
 }
 
 </script>
