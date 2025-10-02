@@ -11,7 +11,75 @@
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
 
 <style>
-/* --- FİNAL KODU: AVATAR KODEKSİ YÖNETİM PANELİ MOBİL DÜZELTMESİ --- */
+/* --- ESKİ #craftingDetailModal STİLLERİNİ SİLİP BUNU YAPIŞTIR --- */
+
+/* Üretim Detayları Modalı (Yenilendi ve Mobil Uyumlu Hale Getirildi) */
+#craftingDetailModal .modal-content {
+    /* Ekranın %90'ından fazla yer kaplamasın */
+    max-height: 90vh; 
+    /* !!! SORUNU ÇÖZEN ANAHTAR KOD !!! */
+    /* İçeriği esnek bir kutu haline getiriyoruz. */
+    display: flex; 
+    /* İçeriği dikey olarak hizala (başlık, gövde, buton) */
+    flex-direction: column; 
+}
+
+/* Üretim Detay Modalı İÇERİĞİ (Kaydırılabilir Alan) */
+#craftingDetailModal .modal-body {
+    /* Esneyerek başlık ve buton arasında kalan tüm alanı kapla */
+    flex-grow: 1; 
+    /* İçerik sığmazsa dikey kaydırma çubuğu ekle */
+    overflow-y: auto; 
+    /* Tailwind CSS (p-6) ile uyumlu iç boşluk */
+    padding: 1.5rem; 
+
+    /* Kaydırma çubuğunun modalın kenarlarına tam oturması için ince ayar */
+    margin-left: -1.5rem;
+    margin-right: -1.5rem;
+    padding-left: 1.5rem;
+    padding-right: 1.5rem;
+}
+
+/* Malzeme Listesi (Yeni Tasarım) - Bu kod zaten vardı, doğruluğunu teyit et */
+.material-list-item {
+    display: flex;
+    flex-direction: column; /* Mobil için dikey yerleşim */
+    justify-content: space-between;
+    gap: 0.5rem; /* Elemanlar arası boşluk */
+    padding: 1rem;
+    background-color: rgba(17, 24, 39, 0.7); /* bg-gray-900/70 */
+    border: 1px solid #374151; /* border-gray-700 */
+    border-radius: 0.75rem;
+}
+
+/* Masaüstü için malzeme listesini yan yana getir */
+@media (min-width: 640px) { /* sm breakpoint */
+    .material-list-item {
+        flex-direction: row;
+        align-items: center;
+    }
+}
+
+.material-list-item .material-info {
+    flex-grow: 1;
+}
+
+.material-list-item .material-name {
+    font-weight: bold;
+    color: white;
+}
+
+.material-list-item .material-stock {
+    font-size: 0.875rem;
+}
+
+.material-list-item.has-enough .material-stock {
+    color: #4ade80; /* text-green-400 */
+}
+.material-list-item.not-enough .material-stock {
+    color: #f87171; /* text-red-400 */
+}
+/* --- KOD SONU --- */
 @media (max-width: 768px) { /* Orta boy ve altındaki ekranlar için */
     .admin-codex-item {
         flex-direction: column;   /* Ana kutuyu dikey yap */
@@ -1587,7 +1655,7 @@ body.modal-open .modal-content {
     </div>
 
     <div id="loginDiv">
-        <input type="text" id="loginUsername" placeholder="Kick Kullanıcı Adı" autocomplete="username"
+        <input type="text" id="loginUsername" placeholder="YouTube Kullanıcı Adı" autocomplete="username"
                class="w-full p-3 mb-4 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500 transition duration-300" />
         <input type="password" id="loginPassword" placeholder="Şifre" autocomplete="current-password"
                class="w-full p-3 mb-6 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500 transition duration-300" />
@@ -1603,13 +1671,13 @@ body.modal-open .modal-content {
     </div>
 
     <div id="registerDiv" class="hidden">
-        <div id="kickWarning" class="bg-yellow-900/50 border border-yellow-400 text-yellow-300 px-4 py-3 rounded-lg relative mb-4 text-center">
-            <strong class="font-bold">Kick Kullanıcı Adı Zorunludur!</strong>
-            <span class="block sm:inline">Lütfen Kick platformundaki kullanıcı adınız ile kayıt olunuz.</span>
+        <div id="kickWarning" class="bg-red-900/50 border border-red-500 text-red-300 px-4 py-3 rounded-lg relative mb-4 text-center">
+            <strong class="font-bold">YouTube Kullanıcı Adı Zorunludur!</strong>
+            <span class="block sm:inline">Lütfen YouTube'daki kullanıcı adınız ile kayıt olunuz.</span>
             <br>
-            <span class="block sm:inline font-bold text-red-400 mt-2">ÖNEMLİ: Lütfen Kick şifrenizi değil, bu siteye özel yeni bir şifre oluşturun!</span>
+            <span class="block sm:inline font-bold text-yellow-300 mt-2">ÖNEMLİ: Lütfen YouTube şifrenizi değil, bu siteye özel yeni bir şifre oluşturun!</span>
         </div>
-        <input type="text" id="registerUsername" placeholder="Kick Kullanıcı Adı" autocomplete="username"
+        <input type="text" id="registerUsername" placeholder="YouTube Kullanıcı Adı" autocomplete="username"
                class="w-full p-3 mb-4 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500 transition duration-300" />
         <input type="password" id="registerPassword" placeholder="Şifre (Yeni Bir Şifre Oluşturun)" autocomplete="new-password"
                class="w-full p-3 mb-4 bg-gray-700 border border-gray-600 rounded-lg text-white focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-500 transition duration-300" />
@@ -1689,6 +1757,10 @@ body.modal-open .modal-content {
       Puan Alışverişi
       <span id="storeIndicator" class="hidden absolute -top-1 -right-1 h-3 w-3 rounded-full bg-red-500 animate-pulse"></span>
     </button>
+    <button id="craftingTabBtn" onclick="showSection('crafting')"
+        class="relative py-3 px-8 bg-gray-700 hover:bg-gray-600 text-white font-bold rounded-lg shadow-md hover:shadow-lg transform hover:-translate-y-1 transition duration-300">
+  Üretim Atölyesi
+</button>
     <button id="announcementsTabBtn" onclick="showSection('announcements')"
             class="relative py-3 px-8 bg-gray-700 hover:bg-gray-600 text-white font-bold rounded-lg shadow-md hover:shadow-lg transform hover:-translate-y-1 transition duration-300">
       Duyurular
@@ -2281,6 +2353,62 @@ body.modal-open .modal-content {
         </div>
     </div>
 </div>
+
+<div id="craftingContent" class="w-full hidden">
+    <div class="bg-gray-800 p-6 rounded-xl shadow-lg border border-red-700 text-center">
+        <div class="flex justify-center items-center gap-4 mb-6">
+            <h3 class="text-yellow-400 text-3xl font-bold">Üretim Atölyesi</h3>
+            <button id="craftingAdminBtn" onclick="openCraftingAdminModal()" class="hidden py-1 px-3 text-sm bg-purple-600 hover:bg-purple-500 rounded-lg">Üretim Yönetim Paneli</button>
+        </div>
+
+        <div id="craftingRecipesContainer" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            </div>
+    </div>
+</div>
+
+<div id="craftingDetailModal" class="modal-overlay fixed inset-0 bg-black bg-opacity-80 flex justify-center items-center z-[10001] hidden">
+  <div class="modal-content bg-gray-900/95 p-6 rounded-2xl shadow-2xl border border-yellow-500 w-11/12 max-w-lg text-center relative flex flex-col">
+    <button class="modal-close-button" onclick="closeCraftingDetailModal()">&times;</button>
+    <div id="craftingDetailContent">
+  </div>
+</div>
+
+<div id="craftingAdminModal" class="modal-overlay fixed inset-0 bg-black bg-opacity-70 flex justify-center items-center z-[50000] hidden">
+  <div class="modal-content bg-gray-800 p-6 rounded-xl shadow-2xl border border-purple-500 w-11/12 max-w-4xl text-left relative max-h-[90vh] flex flex-col">
+    <button class="modal-close-button" onclick="closeCraftingAdminModal()">&times;</button>
+    <h3 class="text-purple-300 text-3xl font-bold mb-4 text-center">Üretim Yönetim Paneli</h3>
+    <div id="adminRecipesList" class="flex-grow overflow-y-auto scrollable-list pr-4 space-y-3">
+        </div>
+    <div class="mt-4 pt-4 border-t border-gray-700 text-center">
+        <button onclick="openRecipeCreatorModal()" class="py-3 px-8 bg-green-700 hover:bg-green-600 text-white font-bold rounded-lg shadow-md">+ Yeni Tarif Ekle</button>
+    </div>
+  </div>
+</div>
+
+<div id="recipeCreatorModal" class="modal-overlay fixed inset-0 bg-black bg-opacity-70 flex justify-center items-center z-[50001] hidden">
+  <div class="modal-content bg-gray-800 p-6 rounded-xl shadow-2xl border border-yellow-500 w-11/12 max-w-3xl text-left relative max-h-[95vh] flex flex-col">
+    <button class="modal-close-button" onclick="closeRecipeCreatorModal()">&times;</button>
+    <h3 id="recipeCreatorTitle" class="text-yellow-300 text-3xl font-bold mb-4 text-center">Yeni Tarif Oluştur</h3>
+    
+    <div class="overflow-y-auto scrollable-list pr-2">
+        <div class="mb-4 p-4 bg-gray-900/50 rounded-lg">
+            <h4 class="text-lg font-semibold text-green-300 mb-2">Sonuç Ürün (Ne Üretilecek?)</h4>
+            <div id="recipeOutputContainer" class="grid grid-cols-1 sm:grid-cols-3 gap-2"></div>
+        </div>
+
+        <div class="p-4 bg-gray-900/50 rounded-lg">
+            <h4 class="text-lg font-semibold text-orange-300 mb-2">Gerekli Malzemeler (Ne Gerekli?)</h4>
+            <div id="recipeMaterialsContainer" class="space-y-3">
+                </div>
+            <button onclick="addMaterialRowToRecipeCreator()" class="mt-3 py-1 px-3 bg-blue-600 hover:bg-blue-500 rounded-md text-xs">+ Malzeme Ekle</button>
+        </div>
+    </div>
+
+    <div class="mt-4 pt-4 border-t border-gray-700 text-center">
+        <button onclick="saveRecipe()" class="w-full py-3 bg-yellow-600 hover:bg-yellow-500 text-black font-bold rounded-lg shadow-md">TARİFİ KAYDET</button>
+    </div>
+  </div>
+</div>
   
 <div id="adminStoreModal" class="modal-overlay fixed inset-0 bg-black bg-opacity-70 flex justify-center items-center z-60 hidden">
   <div class="modal-content bg-gray-800 p-8 rounded-xl shadow-2xl border border-red-700 w-11/12 max-w-3xl text-center relative max-h-[90vh] overflow-y-auto scrollable-list">
@@ -2605,14 +2733,14 @@ body.modal-open .modal-content {
 <div id="kickVerificationModal" class="modal-overlay fixed inset-0 bg-black bg-opacity-70 flex justify-center items-center z-[9999] hidden">
   <div class="modal-content bg-gray-800 p-8 rounded-xl shadow-2xl border border-red-700 w-11/12 max-w-md text-center relative">
     <button class="modal-close-button" onclick="closeKickVerificationModal()">&times;</button>
-    <h4 class="text-yellow-400 text-2xl font-bold mb-6">Kick Kullanıcı Adı Doğrulaması</h4>
+    <h4 class="text-yellow-400 text-2xl font-bold mb-6">YouTube Kanal Doğrulaması</h4>
     <p class="text-lg text-gray-300 mb-6">
-      Kayıt işleminin son adımı olarak, hesabınızı doğrulamak için Kick sohbet kanalımıza gidip
-      <span class="text-green-400 font-bold p-1 bg-gray-900 rounded">!doğrula</span>
-      yazarak göndermeniz gerekmektedir. Onaylandıktan sonra giriş yapabilirsiniz.
+      Kayıt işleminin son adımı olarak, hesabınızı doğrulamak için YouTube kanalımızdaki herhangi bir videonun altına 
+      <span class="text-red-400 font-bold p-1 bg-gray-900 rounded">❤️</span>
+       yorumu yapmanız gerekmektedir. Yorumunuz kontrol edildikten sonra hesabınız onaylanacaktır.
     </p>
-    <button onclick="window.open('https://kick.com/popout/weizendtv/chat', '_blank'); closeKickVerificationModal();" class="w-full py-3 bg-green-500 hover:bg-green-400 text-gray-900 font-bold rounded-lg">
-      Kick Sohbete Git
+    <button onclick="window.open('https://youtube.com/@weizend', '_blank'); closeKickVerificationModal();" class="w-full py-3 bg-red-700 hover:bg-red-600 text-white font-bold rounded-lg">
+      YouTube Kanalına Git
     </button>
   </div>
 </div>
@@ -2622,7 +2750,7 @@ body.modal-open .modal-content {
       <button class="modal-close-button" onclick="closePasswordResetModal()">&times;</button>
       <div id="resetStep1">
           <h4 class="text-yellow-400 text-2xl font-bold mb-6">Şifre Sıfırlama (Adım 1/2)</h4>
-          <input type="text" id="resetUsername" placeholder="Kick Kullanıcı Adı" class="w-full p-3 mb-4 bg-gray-700 rounded-lg">
+          <input type="text" id="resetUsername" placeholder="YouTube Kullanıcı Adı" class="w-full p-3 mb-4 bg-gray-700 rounded-lg">
           <input type="text" id="resetPin" placeholder="6 Haneli PIN" maxlength="6" class="w-full p-3 mb-4 bg-gray-700 rounded-lg">
           <button onclick="verifyResetInfo()" class="w-full py-3 mt-4 bg-red-700 hover:bg-red-600 rounded-lg font-bold">Bilgileri Doğrula</button>
       </div>
@@ -4492,7 +4620,7 @@ async function login() {
             return;
         }
         if (!data.approved) {
-            displayMessage("Hesabınız henüz admin tarafından onaylanmamış. Lütfen Kick üzerinden doğrulamayı tamamladığınızdan emin olun ve bekleyin.");
+            displayMessage("Hesabınız henüz admin tarafından onaylanmamış. Lütfen YouTube üzerinden doğrulamayı tamamladığınızdan emin olun ve bekleyin.");
             return;
         }
         
@@ -4537,11 +4665,11 @@ async function register() {
 
     const existingUsernameSnap = await db.ref('users/' + username).once('value');
     if (existingUsernameSnap.exists()) {
-        displayMessage("Bu Kick kullanıcı adı zaten alınmış.");
+        displayMessage("Bu YouTube kullanıcı adı zaten alınmış.");
         return;
     }
 
-    const confirmed = await customConfirm(`<b>${username}</b> kullanıcı adının Kick hesabınızla aynı olduğuna emin misiniz? Onay süreci bu isme göre yapılacaktır.`);
+    const confirmed = await customConfirm(`<b>${username}</b> kullanıcı adının YouTube hesabınızla aynı olduğuna emin misiniz? Onay süreci bu isme göre yapılacaktır.`);
     if (confirmed) {
         const newUser = {
             password: password,
@@ -5194,21 +5322,19 @@ async function executeWeeklyReset() {
     }
 }
 
-// BU FONKSİYONU BULUP TAMAMEN AŞAĞIDAKİYLE DEĞİŞTİRİN
+// MEVCUT showSection FONKSİYONUNU BUL VE BUNUNLA DEĞİŞTİR
+
 function showSection(sectionId) {
-    // Önceki sekme 'kart koleksiyonu' ise ve şimdi başka bir sekmeye geçiliyorsa, "yeni" listesini temizle.
     if (currentActiveSection === 'cardCollection' && sectionId !== 'cardCollection') {
         newlyAcquiredCards.clear();
     }
-
     if (sectionId !== 'store') {
         storeFilter = null;
     }
 
-    const contentIds = ['gameContent', 'storeSection', 'announcementsContent', 'chanceWheelContent', 'clickCatchContent', 'cardCollectionContent', 'monsterBattleContent'];
-    const tabButtonIds = ['gameTabBtn', 'storeTabBtn', 'announcementsTabBtn', 'chanceWheelTabBtn', 'clickCatchTabBtn', 'cardCollectionTabBtn', 'monsterBattleTabBtn'];
+    const contentIds = ['gameContent', 'storeSection', 'announcementsContent', 'chanceWheelContent', 'clickCatchContent', 'cardCollectionContent', 'monsterBattleContent', 'craftingContent'];
+    const tabButtonIds = ['gameTabBtn', 'storeTabBtn', 'announcementsTabBtn', 'chanceWheelTabBtn', 'clickCatchTabBtn', 'cardCollectionTabBtn', 'monsterBattleTabBtn', 'craftingTabBtn'];
 
-    // Tüm içerik alanlarını gizle ve butonların stillerini sıfırla
     contentIds.forEach(id => document.getElementById(id)?.classList.add('hidden'));
     tabButtonIds.forEach(btnId => {
         const btn = document.getElementById(btnId);
@@ -5220,20 +5346,14 @@ function showSection(sectionId) {
 
     hideAllAdminControls();
 
-    // Tıklanan sekmeye ait içeriği göster
     const contentToShow = document.getElementById(`${sectionId}Content`) || document.getElementById(`${sectionId}Section`);
     if(contentToShow) contentToShow.classList.remove('hidden');
 
-    // Tıklanan butonun stilini aktif yap
     const activeBtn = document.getElementById(`${sectionId}TabBtn`);
     if (activeBtn) {
         activeBtn.classList.add('bg-red-700', 'hover:bg-red-600');
         activeBtn.classList.remove('bg-gray-700', 'hover:bg-gray-600');
     }
-
-    // ★★★ SORUNU ÇÖZEN ANA DEĞİŞİKLİK BURADA ★★★
-    // Artık 'else if' yerine bağımsız bir 'if' kullanıyoruz.
-    // Hangi sekmeye tıklandığını kontrol edip ilgili fonksiyonları çağırıyoruz.
 
     if (sectionId === 'game' && isAdmin) {
         document.getElementById('boxSettingsButton').classList.remove('hidden');
@@ -5279,9 +5399,7 @@ function showSection(sectionId) {
     } 
     
     if (sectionId === 'cardCollection') {
-        // Bu sekmeye her girildiğinde albümü yeniden yükle. Bu sayede "YENİ" rozetleri görünür.
         loadCollectionAlbum(); 
-        
         if (isAdmin) {
             document.getElementById('collectionAdminBtn').classList.remove('hidden');
             loadMarketSettingsForAdmin();
@@ -5295,8 +5413,15 @@ function showSection(sectionId) {
             document.getElementById('monsterBattleAdminToggles')?.classList.remove('hidden');
         }
     }
+
+    // YENİ EKLENEN KISIM
+    if (sectionId === 'crafting') {
+        loadCraftingRecipes(); // Üretim tariflerini yükle
+        if (isAdmin) {
+            document.getElementById('craftingAdminBtn').classList.remove('hidden');
+        }
+    }
     
-    // Son olarak, mevcut aktif sekmeyi güncelle
     currentActiveSection = sectionId;
 }
   
@@ -7392,13 +7517,13 @@ function getActivityIcon(type, details = {}) {
     let bgColor = 'bg-gray-500';
 
     switch (type) {
+        case 'craftItem': // YENİ EKLENEN SATIR
+            icon = '🛠️';
+            bgColor = 'bg-orange-500';
+            break;
         case 'collectionCompleted':
             icon = '🃏';
             bgColor = 'bg-purple-600';
-            break;
-        case 'wildcardConvertedToBoxRights':
-            icon = '🃏'; 
-            bgColor = 'bg-purple-600'; 
             break;
         case 'useRegenPotion':
             icon = '🧪';
@@ -7534,7 +7659,6 @@ function getActivityIcon(type, details = {}) {
     `;
 }
       
-// YENİ VE GÜNCEL KODU KOPYALA ▼
 function renderActivityFeed(activities) {
     const activityFeedList = document.getElementById('activityFeedList');
     activityFeedList.innerHTML = '';
@@ -7572,6 +7696,12 @@ function renderActivityFeed(activities) {
             const userHtml = `<b class="text-yellow-300 cursor-pointer hover:underline" onclick="openPublicUserDetailModal('${activity.username}')">${activity.username}</b>`;
 
             switch (activity.type) {
+                // YENİ EKLENEN CASE BLOĞU BAŞLANGICI
+                case 'craftItem':
+                    message = `${userHtml}, atölyede <b class="text-green-400">${details.itemName}</b> üretti. <span class="text-gray-400">(Mevcut Puan: ${formatNumber(details.newBalance)})</span>`;
+                    break;
+                // YENİ EKLENEN CASE BLOĞU SONU
+                
                 case 'buyItem':
                     const isKP = (details.itemCost || '').toString().includes('KP');
                     const costText = isKP ? details.itemCost : `${formatNumber(details.itemCost)} Puan`;
@@ -10791,34 +10921,43 @@ function closeSpectatorModal() {
     spectatorViewingResult = false;
 }
     
-// ...VE YERİNE BU YENİ VERSİYONU YAPIŞTİR
+// BU FONKSİYONU BULUP TAMAMEN AŞAĞIDAKİYLE DEĞİŞTİRİN
+
 function renderWheel() {
     const wheelElement = document.getElementById('wheel');
     if (!wheelElement) { return; }
     
     wheelElement.innerHTML = ''; 
 
+    // --- YENİ EKLENEN KOD BAŞLANGICI: RENK PALETİ ---
+    // Her dilime atanacak birbirinden farklı renklerin listesi
+    const wheelColors = [
+        "#E74C3C", "#3498DB", "#2ECC71", "#F1C40F", "#9B59B6", "#1ABC9C", 
+        "#E67E22", "#34495E", "#F39C12", "#16A085", "#C0392B", "#2980B9",
+        "#27AE60", "#D35400", "#8E44AD", "#2C3E50"
+    ];
+    // --- YENİ EKLENEN KOD SONU ---
+
     const segments = wheelSegments;
     const segmentCount = segments.length;
     if (segmentCount === 0) return;
 
-    // --- MANUEL AYAR NOKTAN BURASI ---
-    // Bu sayıyı değiştirerek tüm simgelerin yönünü ayarla.
-    // Pozitif sayı = Saat yönünde kaydırır.
-    // Negatif sayı = Saat yönünün tersine kaydırır.
-    // 0 = Tam ortaya alır.
-    const angleOffset = 193; 
-    // ------------------------------------
-
+    const angleOffset = 188; 
+    
     const segmentAngle = 360 / segmentCount;
     let gradientParts = [];
 
     segments.forEach((segment, i) => {
         const startAngle = segmentAngle * i;
         const endAngle = startAngle + segmentAngle;
-        gradientParts.push(`${segment.color || '#cccccc'} ${startAngle}deg ${endAngle}deg`);
 
-        // HESAPLAMA BURADA DEĞİŞTİ: Artık angleOffset'i hesaba katıyor.
+        // --- DEĞİŞEN SATIR BAŞLANGICI ---
+        // Eski kod: gradientParts.push(`${segment.color || '#cccccc'} ${startAngle}deg ${endAngle}deg`);
+        // Yeni kod: Renk paletimizden sırayla renk alıyoruz.
+        const color = wheelColors[i % wheelColors.length];
+        gradientParts.push(`${color} ${startAngle}deg ${endAngle}deg`);
+        // --- DEĞİŞEN SATIR SONU ---
+        
         const textAngle = startAngle + (segmentAngle / 2) + angleOffset;
         
         const textHolder = document.createElement('div');
@@ -10897,7 +11036,6 @@ function renderWheel() {
     ref.on('value', callback);
 }
 
-// spinWheel fonksiyonunu bununla DEĞİŞTİR
 async function spinWheel() {
     // Sadece kullanıcıyı kilitleyen client-side kontrol
     if (isWheelSpinning) return;
@@ -10906,8 +11044,7 @@ async function spinWheel() {
         return;
     }
 
-    const userRef = db.ref('users/'
- + currentUser);
+    const userRef = db.ref('users/' + currentUser);
     const userSnap = await userRef.once('value');
     const userData = userSnap.val();
 
@@ -10930,7 +11067,7 @@ async function spinWheel() {
         }
     }
     
-    // ★★★ KİLİT SİSTEMİ BURADA BAŞLIYOR ★★★
+    // KİLİT SİSTEMİ BURADA BAŞLIYOR
     isWheelSpinning = true;
     spinBtn.disabled = true;
     spinBtn.textContent = 'Dönüyor...';
@@ -10975,7 +11112,7 @@ async function spinWheel() {
             }
 
             let message = '';
-            let updates = {};
+            const updates = { inventory: currentUserData.inventory || {} };
             let shouldLogActivity = true;
             
             const pendingRewardRef = userRef.child('pendingRewards').push();
@@ -10986,75 +11123,102 @@ async function spinWheel() {
             };
             await pendingRewardRef.set(pendingReward);
             
-            switch(winningSegment.type) {
-                case 'points':
-                    message = `Tebrikler, çarktan <b>+${winningSegment.value} Puan</b> kazandın!`;
-                    updates.balance = (currentUserData.balance || 0) + winningSegment.value;
-                    if(updates.balance > (currentUserData.highestBalanceEver || 0)) updates.highestBalanceEver = updates.balance;
-                    updates.kariyerPuani = (currentUserData.kariyerPuani || 0) + winningSegment.value;
-                    break;
-                case 'boxRights':
-                    message = `Tebrikler, çarktan <b>+${winningSegment.value} Kutu Hakkı</b> kazandın!`;
-                    updates.kutuHakki = (currentUserData.kutuHakki || 0) + winningSegment.value;
-                    break;
-                case 'iflasShield':
-                    message = `Tebrikler, çarktan <b>+${winningSegment.value} İflas Kalkanı</b> kazandın!`;
-                    updates.iflasShieldUses = (currentUserData.iflasShieldUses || 0) + winningSegment.value;
-                    break;
-                case 'clickCatchTicket':
-                     message = `Tebrikler, çarktan <b>+${winningSegment.value} Tıkla-Yakala Bileti</b> kazandın!`;
-                    updates.clickCatchTickets = (currentUserData.clickCatchTickets || 0) + winningSegment.value;
-                    break;
-                case 'wheelTicket':
-                     message = `Tebrikler, çarktan <b>+${winningSegment.value} Çark Bileti</b> kazandın!`;
-                     updates.carkBileti = (currentUserData.carkBileti || 0) + winningSegment.value;
-                    break;
-                case 'tempMultiplier':
-                    message = `Tebrikler, çarktan <b>${winningSegment.value}X Çarpan</b> kazandın!`;
-                    updates.activeMultiplier = winningSegment.value;
-                    updates.multiplierSource = 'store';
-                    updates.multiplierRemainingUses = winningSegment.duration;
-                    break;
-                case 'surpriseBox':
-                     const sessionRef = db.ref('surprise_box_session');
-                     await sessionRef.set({ 
-                         active: true, user: currentUser, boxId: 'Çark', 
-                         multiplier: 1, cards: shuffleArray([...cardValues]), 
-                         selection: null, result: null, 
-                         timestamp: firebase.database.ServerValue.TIMESTAMP
-                     });
-                     const snap = await sessionRef.once('value');
-                     const serverTimestamp = snap.val().timestamp;
-                     await sessionRef.update({ expirationTimestamp: serverTimestamp + 60000 });
-                     openCardSelectionModal(currentUser);
-                     message = "Vay canına! Çarktan Sürpriz Kutu çıktı! Şimdi bir kart seç.";
-                     shouldLogActivity = false;
-                     break;
-                case 'wildcard':
-                    message = `HARİKA! Çarktan en nadir ödül olan <b class="text-purple-400">+${winningSegment.value} JOKER KART</b> kazandın!`;
-                    updates.wildcards = (currentUserData.wildcards || 0) + winningSegment.value;
-                    break;
-                case 'card_pack':
-                case 'card_pack_normal':
-                case 'card_pack_gumus':
-                case 'card_pack_altin':
-                case 'card_pack_efsanevi':
-                    const packsToOpen = winningSegment.value || 1;
-                    const packNames = {
-                        'card_pack': `+${packsToOpen} Standart Kart Paketi`,
-                        'card_pack_normal': `+${packsToOpen} Bronz Kart Paketi`,
-                        'card_pack_gumus': `+${packsToOpen} Gümüş Kart Paketi`,
-                        'card_pack_altin': `+${packsToOpen} Altın Kart Paketi`,
-                        'card_pack_efsanevi': `+${packsToOpen} Efsanevi Kart Paketi`
-                    };
-                    const prizeText = packNames[winningSegment.type] || `+${packsToOpen} Kart Paketi`;
-                    message = `Tebrikler! Çarktan <b class="text-yellow-300">${prizeText}</b> kazandın!`;
-                    winningSegment.prizeName = prizeText;
-                    startCardPackOpening(packsToOpen, 'Şans Çarkı', 1, winningSegment.type);
-                    break;
-                case 'pas':
-                    message = "Bu seferlik pas! Bir dahaki sefere daha şanslı olabilirsin.";
-                    break;
+            if (winningSegment.type.endsWith('_potion')) {
+                const statKeyMap = { 
+                    'health_potion': 'hp', 'damage_potion': 'damage', 'defense_potion': 'defense', 
+                    'crit_potion': 'critChance', 'crit_damage_potion': 'critDamage', 
+                    'dodge_potion': 'dodgeChance', 'pierce_potion': 'pierceChance' 
+                };
+                const statKey = statKeyMap[winningSegment.type];
+                
+                if (winningSegment.type === 'health_regen_potion') {
+                    message = `Tebrikler, çarktan <b>+1 Adet %${winningSegment.value} Can Yenileme İksiri</b> kazandın!`;
+                    if (!updates.inventory.health_regen_potion) updates.inventory.health_regen_potion = {};
+                    const currentPotionCount = currentUserData.inventory?.health_regen_potion?.[winningSegment.value] || 0;
+                    updates.inventory.health_regen_potion[winningSegment.value] = currentPotionCount + 1;
+                } else if (statKey) {
+                    const isPercent = ['defense_potion', 'crit_potion', 'crit_damage_potion', 'dodge_potion', 'pierce_potion'].includes(winningSegment.type);
+                    const prefix = isPercent ? '%' : '+';
+                    message = `Tebrikler, kalıcı olarak <b class="text-green-400">${prefix}${winningSegment.value.toFixed(1)} ${typeToName[winningSegment.type]}</b> bonusu kazandın!`;
+                    if (!currentUserData.globalPotionBuffs) updates[`globalPotionBuffs`] = {};
+                    const currentBuff = currentUserData.globalPotionBuffs?.[statKey] || 0;
+                    updates[`globalPotionBuffs/${statKey}`] = currentBuff + winningSegment.value;
+                }
+            } else {
+                switch(winningSegment.type) {
+                    case 'points':
+                        message = `Tebrikler, çarktan <b>+${winningSegment.value} Puan</b> kazandın!`;
+                        updates.balance = (currentUserData.balance || 0) + winningSegment.value;
+                        if(updates.balance > (currentUserData.highestBalanceEver || 0)) updates.highestBalanceEver = updates.balance;
+                        updates.kariyerPuani = (currentUserData.kariyerPuani || 0) + winningSegment.value;
+                        break;
+                    case 'boxRights':
+                        message = `Tebrikler, çarktan <b>+${winningSegment.value} Kutu Hakkı</b> kazandın!`;
+                        updates.kutuHakki = (currentUserData.kutuHakki || 0) + winningSegment.value;
+                        break;
+                    case 'iflasShield':
+                        message = `Tebrikler, çarktan <b>+${winningSegment.value} İflas Kalkanı</b> kazandın!`;
+                        updates.iflasShieldUses = (currentUserData.iflasShieldUses || 0) + winningSegment.value;
+                        break;
+                    case 'clickCatchTicket':
+                         message = `Tebrikler, çarktan <b>+${winningSegment.value} Tıkla-Yakala Bileti</b> kazandın!`;
+                        updates.clickCatchTickets = (currentUserData.clickCatchTickets || 0) + winningSegment.value;
+                        break;
+                    case 'wheelTicket':
+                         message = `Tebrikler, çarktan <b>+${winningSegment.value} Çark Bileti</b> kazandın!`;
+                         updates.carkBileti = (currentUserData.carkBileti || 0) + winningSegment.value;
+                        break;
+                    case 'tempMultiplier':
+                        message = `Tebrikler, çarktan <b>${winningSegment.value}X Çarpan</b> kazandın!`;
+                        updates.activeMultiplier = winningSegment.value;
+                        updates.multiplierSource = 'store';
+                        updates.multiplierRemainingUses = winningSegment.duration;
+                        break;
+                    case 'surpriseBox':
+                         const sessionRef = db.ref('surprise_box_session');
+                         await sessionRef.set({ 
+                             active: true, user: currentUser, boxId: 'Çark', 
+                             multiplier: 1, cards: shuffleArray([...cardValues]), 
+                             selection: null, result: null, 
+                             timestamp: firebase.database.ServerValue.TIMESTAMP
+                         });
+                         const snap = await sessionRef.once('value');
+                         const serverTimestamp = snap.val().timestamp;
+                         await sessionRef.update({ expirationTimestamp: serverTimestamp + 60000 });
+                         openCardSelectionModal(currentUser);
+                         message = "Vay canına! Çarktan Sürpriz Kutu çıktı! Şimdi bir kart seç.";
+                         shouldLogActivity = false;
+                         break;
+                    case 'wildcard':
+                        message = `HARİKA! Çarktan en nadir ödül olan <b class="text-purple-400">+${winningSegment.value} JOKER KART</b> kazandın!`;
+                        updates.wildcards = (currentUserData.wildcards || 0) + winningSegment.value;
+                        break;
+                    case 'card_pack':
+                    case 'card_pack_normal':
+                    case 'card_pack_gumus':
+                    case 'card_pack_altin':
+                    case 'card_pack_efsanevi':
+                        const packsToOpen = winningSegment.value || 1;
+                        const packNames = {
+                            'card_pack': `+${packsToOpen} Standart Kart Paketi`,
+                            'card_pack_normal': `+${packsToOpen} Bronz Kart Paketi`,
+                            'card_pack_gumus': `+${packsToOpen} Gümüş Kart Paketi`,
+                            'card_pack_altin': `+${packsToOpen} Altın Kart Paketi`,
+                            'card_pack_efsanevi': `+${packsToOpen} Efsanevi Kart Paketi`
+                        };
+                        const prizeText = packNames[winningSegment.type] || `+${packsToOpen} Kart Paketi`;
+                        message = `Tebrikler! Çarktan <b class="text-yellow-300">${prizeText}</b> kazandın!`;
+                        winningSegment.prizeName = prizeText;
+                        startCardPackOpening(packsToOpen, 'Şans Çarkı', 1, winningSegment.type);
+                        break;
+                    case 'revival_stone':
+                        message = `Tebrikler, çarktan <b>+${winningSegment.value} Dirilme Taşı</b> kazandın!`;
+                        updates.inventory.revival_stone = (currentUserData.inventory?.revival_stone || 0) + winningSegment.value;
+                        break;
+                    case 'pas':
+                        message = "Bu seferlik pas! Bir dahaki sefere daha şanslı olabilirsin.";
+                        break;
+                }
             }
 
             if(Object.keys(updates).length > 0) await userRef.update(updates);
@@ -11083,8 +11247,6 @@ async function spinWheel() {
                 }
             });
             
-            // ★★★ SORUNU DÜZELTEN DEĞİŞİKLİK BURADA BAŞLIYOR ★★★
-            // "Son Eylemler" paneline kaydedilecek metni burada, ikon yerine metin olacak şekilde oluşturuyoruz.
             let prizeTextForLog;
             if (winningSegment.type === 'tempMultiplier') {
                 prizeTextForLog = `${winningSegment.value}x Çarpan (${winningSegment.duration} kullanım)`;
@@ -11092,14 +11254,18 @@ async function spinWheel() {
                 prizeTextForLog = 'Pas';
             } else if (winningSegment.type === 'surpriseBox') {
                  prizeTextForLog = 'Sürpriz Kutu';
+            } else if (winningSegment.type === 'health_regen_potion') {
+                prizeTextForLog = `+1 Adet %${winningSegment.value} ${typeToName[winningSegment.type]}`;
+            } else if (winningSegment.type.endsWith('_potion')) {
+                const isPercent = ['defense_potion', 'crit_potion', 'crit_damage_potion', 'dodge_potion', 'pierce_potion'].includes(winningSegment.type);
+                const prefix = isPercent ? '%' : '+';
+                prizeTextForLog = `${prefix}${winningSegment.value.toFixed(1)} ${typeToName[winningSegment.type]}`;
             } else {
                 const nameForLog = typeToName[winningSegment.type] || winningSegment.type;
                 prizeTextForLog = `+${winningSegment.value} ${nameForLog}`;
             }
-            // ★★★ DEĞİŞİKLİK BİTİŞ ★★★
 
             const logDetails = {
-                // ★★★ DEĞİŞİKLİK: Artık 'result' alanına her zaman oluşturduğumuz metni yazıyoruz. ★★★
                 result: prizeTextForLog,
                 type: winningSegment.type,
                 value: winningSegment.value !== undefined ? winningSegment.value : null,
@@ -11187,8 +11353,6 @@ function closeLobbySettingsModal() {
     }
   }
     
-// MEVCUT resetClickCatchLeaderboard FONKSİYONUNU SİL VE BUNU YAPIŞTIR
-
 async function resetClickCatchLeaderboard() {
     if (!isAdmin) {
         displayMessage("Bu işlemi yapmaya yetkiniz yok.");
@@ -11210,10 +11374,11 @@ async function resetClickCatchLeaderboard() {
         
         const updates = {};
         
-        // Haftalık skor, bilet ve detaylı istatistik tablolarını sil
         updates['/clickCatchWeeklyScores'] = null;
         updates['/clickCatchWeeklyTickets'] = null;
-        updates['/clickCatchWeeklyStats'] = null; // YENİ EKLENEN VE SORUNU ÇÖZEN SATIR
+        updates['/clickCatchWeeklyStats'] = null;
+        // DEĞİŞİKLİK: Yeni oluşturduğumuz session verisini de siliyoruz.
+        updates['/clickCatchWeeklySessions'] = null;
 
         if (usersData) {
             for (const username in usersData) {
@@ -11455,8 +11620,6 @@ function closeClickCatchStatsModal() {
     document.getElementById('clickCatchStatsModal').style.display = 'none';
 }
 
-// MEVCUT openClickCatchStatsModal FONKSİYONUNU SİLİP BU YENİ VE DOĞRU VERSİYONU YAPIŞTIRIN
-// MEVCUT openClickCatchStatsModal FONKSİYONUNU SİLİP BU YENİ VERSİYONU DA YAPIŞTIRIN
 async function openClickCatchStatsModal(username) {
     const modal = document.getElementById('clickCatchStatsModal');
     const titleEl = document.getElementById('clickCatchStatsTitle');
@@ -11467,45 +11630,78 @@ async function openClickCatchStatsModal(username) {
     modal.style.display = 'flex';
 
     try {
-        const [statsSnap, ticketsSnap, settingsSnap, weeklyScoreSnap] = await Promise.all([
-            db.ref(`clickCatchWeeklyStats/${username}`).once('value'),
+        // DEĞİŞİKLİK: Artık 'clickCatchWeeklyStats' yerine 'clickCatchWeeklySessions' okunuyor.
+        const [sessionsSnap, ticketsSnap, settingsSnap, weeklyScoreSnap] = await Promise.all([
+            db.ref(`clickCatchWeeklySessions/${username}`).once('value'),
             db.ref(`clickCatchWeeklyTickets/${username}`).once('value'),
             db.ref('gameSettings/clickCatchSolo').once('value'),
             db.ref(`clickCatchWeeklyScores/${username}`).once('value')
         ]);
 
-        const stats = statsSnap.val();
+        const sessions = sessionsSnap.val();
         const ticketsUsed = ticketsSnap.val() || 0;
         const settings = settingsSnap.val();
         const finalWeeklyScore = weeklyScoreSnap.val() || 0;
 
-        if (!stats) {
+        if (!sessions) {
             contentEl.innerHTML = '<p class="text-center text-gray-400">Bu kullanıcı için detaylı istatistik bulunamadı.</p>';
             return;
         }
 
+        // YENİ MANTIK: Tüm oyunlardaki verileri toplayıp bir özet oluşturma
+        const summary = {
+            normalCount: 0, goldCount: 0, bombCount: 0, timeCount: 0,
+            totalNormalScore: 0, totalGoldScore: 0, totalBombPenalty: 0, totalTimeBonus: 0,
+            specialItems: {}
+        };
+
+        for (const sessionId in sessions) {
+            const session = sessions[sessionId];
+            const sessionTickets = session.ticketsUsed || 1;
+            const items = session.itemsCaught || {};
+
+            summary.normalCount += items.normal || 0;
+            summary.goldCount += items.gold || 0;
+            summary.bombCount += items.bomb || 0;
+            summary.timeCount += items.time || 0;
+            
+            summary.totalNormalScore += (items.normal || 0) * settings.normalValue * sessionTickets;
+            summary.totalGoldScore += (items.gold || 0) * settings.goldValue * sessionTickets;
+            summary.totalBombPenalty += (items.bomb || 0) * settings.bombValue * sessionTickets;
+            summary.totalTimeBonus += (items.time || 0) * settings.timeValue;
+
+            if (items.special) {
+                const specialType = settings.specialItemType || 'unknown';
+                if (!summary.specialItems[specialType]) {
+                    summary.specialItems[specialType] = { count: 0, totalValue: 0 };
+                }
+                summary.specialItems[specialType].count += items.special;
+                summary.specialItems[specialType].totalValue += items.special * settings.specialValue * sessionTickets;
+            }
+        }
+        
         let html = `<p class="mb-4 text-center">Bu skoru elde ederken toplam (<b class="text-yellow-300">${ticketsUsed} bilet x 🎟️</b>) harcandı.</p>`;
         html += '<div class="space-y-4">';
 
         const scoreItems = [
-            { emoji: '🥮', count: stats.normalCount, value: settings.normalValue, name: 'Puan' },
-            { emoji: '💰', count: stats.goldCount, value: settings.goldValue, name: 'Puan' },
-            { emoji: '💣', count: stats.bombCount, value: settings.bombValue, name: 'Puan' },
-            { emoji: '⏰', count: stats.timeCount, value: settings.timeValue, name: 'Saniye' }
+            { emoji: '🥮', count: summary.normalCount, value: settings.normalValue, total: summary.totalNormalScore, name: 'Skor' },
+            { emoji: '💰', count: summary.goldCount, value: settings.goldValue, total: summary.totalGoldScore, name: 'Skor' },
+            { emoji: '💣', count: summary.bombCount, value: settings.bombValue, total: summary.totalBombPenalty, name: 'Ceza' },
+            { emoji: '⏰', count: summary.timeCount, value: settings.timeValue, total: summary.totalTimeBonus, name: 'Saniye' }
         ];
 
         scoreItems.forEach(item => {
             if (item.count > 0) {
                 const isTime = item.name === 'Saniye';
-                const totalValue = isTime ? (item.count * item.value) : (item.count * item.value * ticketsUsed);
+                const totalValue = item.total;
                 const valueClass = totalValue >= 0 ? 'text-green-400' : 'text-red-400';
                 const valuePrefix = item.value >= 0 ? '+' : '';
 
                 html += `
                     <div class="border-b border-gray-700 pb-3">
                         <p class="text-lg">${item.emoji} ${valuePrefix}${formatNumber(item.value)} ${item.name}</p>
-                        <p class="text-base text-gray-300 pl-8">${item.count}x${isTime ? '' : '🎟️'}</p>
-                        <p class="text-base font-bold ${valueClass} pl-8">(${totalValue >= 0 ? '+' : ''}${formatNumber(totalValue)} ${item.name})</p>
+                        <p class="text-base text-gray-300 pl-8">${item.count} kez yakalandı</p>
+                        <p class="text-base font-bold ${valueClass} pl-8">(${totalValue >= 0 ? '+' : ''}${formatNumber(totalValue)} ${isTime ? item.name : 'Skor'})</p>
                     </div>`;
             }
         });
@@ -11517,12 +11713,15 @@ async function openClickCatchStatsModal(username) {
                 <span class="text-yellow-300">${formatNumber(finalWeeklyScore)}</span>
             </div>`;
 
-        if (stats.specialItems && Object.keys(stats.specialItems).length > 0) {
+        if (Object.keys(summary.specialItems).length > 0) {
             html += '<hr class="border-gray-600 my-3"><p class="font-bold text-teal-300 text-xl mb-2">Yakalanan Özel Hediyeler:</p>';
             
-            for (const type in stats.specialItems) {
-                const count = stats.specialItems[type];
-                const specialSettings = {
+            for (const type in summary.specialItems) {
+                const data = summary.specialItems[type];
+                const count = data.count;
+                const totalValue = data.totalValue;
+
+                 const specialSettings = {
                     'boxRight': { emoji: '📦', value: settings.specialValue },
                     'iflasShield': { emoji: '🛡️', value: settings.specialValue },
                     'wheelTicket': { emoji: '🎫', value: settings.specialValue },
@@ -11544,23 +11743,13 @@ async function openClickCatchStatsModal(username) {
                 }[type] || { emoji: '🎁', value: settings.specialValue };
 
                 const name = typeToName[type] || 'Hediye';
-                let baseText = '';
-                let totalText = '';
-
-                if (type === 'tempMultiplier') {
-                    const totalUses = count * specialSettings.uses * ticketsUsed;
-                    baseText = `+${specialSettings.uses} Kullanım ${specialSettings.value}x Çarpan`;
-                    totalText = `+${totalUses} Kullanım Hakkı`;
-                } else {
-                    const totalValue = count * specialSettings.value * ticketsUsed;
-                    baseText = `+${specialSettings.value} ${name}`;
-                    totalText = `+${formatNumber(totalValue)} ${name}`;
-                }
+                let baseText = `+${specialSettings.value} ${name}`;
+                let totalText = `+${formatNumber(totalValue)} ${name}`;
                 
                 html += `
                     <div class="border-b border-gray-700 pb-3 mt-2">
                         <p class="text-lg">${specialSettings.emoji} ${baseText}</p>
-                        <p class="text-base text-gray-300 pl-8">${count}x🎟️</p>
+                        <p class="text-base text-gray-300 pl-8">${count} kez yakalandı</p>
                         <p class="text-base font-bold text-green-400 pl-8">(${totalText})</p>
                     </div>`;
             }
@@ -12389,7 +12578,6 @@ async function startSoloClickCatchGame() {
     showGameCountdown(_actuallyStartSoloGame);
 }
       
-// MEVCUT handleSoloItemClick FONKSİYONUNU SİL VE BUNU YAPIŞTIR
 async function handleSoloItemClick(event) {
     if (!clickCatchGameActive) return;
     
@@ -12481,7 +12669,6 @@ async function handleSoloItemClick(event) {
     item.remove();
 }
       
-// MEVCUT endSoloClickCatchGame FONKSİYONUNU SİL VE BUNU YAPIŞTIR
 async function endSoloClickCatchGame() {
     clickCatchGameActive = false;
     clearInterval(clickCatchTimerInterval);
@@ -12503,20 +12690,32 @@ async function endSoloClickCatchGame() {
     const user = userSnap.val();
     if (!user) return;
 
-    // --- 1. ADIM: TÜM NİHAİ ÖDÜLLERİ HESAPLA ---
+    // --- YENİ MANTIK BAŞLANGICI: HER OYUNU AYRI KAYDETME ---
+
+    // 1. Bu oyunun verilerini bir obje olarak hazırla
+    const sessionData = {
+        ticketsUsed: ticketsUsedThisRound,
+        baseScore: clickCatchScore,
+        itemsCaught: soloGameItemCounts,
+        timestamp: firebase.database.ServerValue.TIMESTAMP
+    };
+    
+    // 2. Bu oyunun verisini, o kullanıcı için oluşturulan yeni bir listeye ekle
+    await db.ref(`clickCatchWeeklySessions/${currentUser}`).push(sessionData);
+
+    // --- YENİ MANTIK SONU ---
+
     const finalScore = clickCatchScore * ticketsUsedThisRound;
     const finalBoxRights = collectedBoxRights * ticketsUsedThisRound;
     const finalIflasShields = collectedIflasShields * ticketsUsedThisRound;
     const finalWheelTickets = collectedWheelTickets * ticketsUsedThisRound;
     const finalWildcards = collectedWildcards * ticketsUsedThisRound;
 
-    // ★★★ ANA DÜZELTME BURADA: Veritabanına artık biletle çarpılmamış HAM tıklanma sayıları kaydediliyor. ★★★
     const weeklyStatsRef = db.ref(`clickCatchWeeklyStats/${currentUser}`);
     await weeklyStatsRef.transaction(currentStats => {
         if (!currentStats) {
             currentStats = { bombCount: 0, normalCount: 0, goldCount: 0, timeCount: 0, specialItemCount: 0, specialItems: {} };
         }
-        // Artık ticketsUsedThisRound ile çarpmıyoruz!
         currentStats.bombCount = (currentStats.bombCount || 0) + (soloGameItemCounts.bomb || 0);
         currentStats.normalCount = (currentStats.normalCount || 0) + (soloGameItemCounts.normal || 0);
         currentStats.goldCount = (currentStats.goldCount || 0) + (soloGameItemCounts.gold || 0);
@@ -12524,7 +12723,7 @@ async function endSoloClickCatchGame() {
         
         if (soloGameItemCounts.special > 0) {
             const specialItemType = soloGameSettings.specialItemType || ' bilinmiyor';
-            const specialCount = (soloGameItemCounts.special || 0); // Çarpma işlemi kaldırıldı
+            const specialCount = (soloGameItemCounts.special || 0);
             
             if (!currentStats.specialItems) {
                 currentStats.specialItems = {};
@@ -12535,9 +12734,7 @@ async function endSoloClickCatchGame() {
         }
         return currentStats;
     });
-    // ★★★ DÜZELTME SONU ★★★
 
-    // --- 2. ADIM: GÜNCELLEME VE LOGLAMA İÇİN VERİLERİ HAZIRLA ---
     const updates = {};
     const specialItemsWonDetails = [];
     let finalUser = JSON.parse(JSON.stringify(user)); 
@@ -12595,14 +12792,7 @@ async function endSoloClickCatchGame() {
         }
     }
     
-    const aggregatedMultipliers = collectedMultipliers.reduce((acc, multiplier) => {
-        const key = multiplier.value;
-        if (!acc[key]) {
-            acc[key] = { value: key, totalUses: 0 };
-        }
-        acc[key].totalUses += multiplier.uses;
-        return acc;
-    }, {});
+    // ... (Çarpan mantığı aynı kalabilir)
 
     updates[`/users/${currentUser}/kutuHakki`] = finalUser.kutuHakki;
     updates[`/users/${currentUser}/iflasShieldUses`] = finalUser.iflasShieldUses;
@@ -13279,7 +13469,6 @@ async function resetWheelSettingsToDefault() {
     });
 }
 
-// MEVCUT loadWheelHistory FONKSİYONUNU SİL VE BUNU YAPIŞTIR
 function loadWheelHistory() {
     const historyRef = db.ref('wheelHistory').limitToLast(10);
     const listEl = document.getElementById('wheelHistoryList');
@@ -13302,7 +13491,9 @@ function loadWheelHistory() {
 
         const typeToIcon = {
             wildcard: '🃏', card_pack: '🎴', card_pack_normal: '🥉',
-            card_pack_gumus: '🥈', card_pack_altin: '🥇', card_pack_efsanevi: '🏆'
+            card_pack_gumus: '🥈', card_pack_altin: '🥇', card_pack_efsanevi: '🏆',
+            damage_potion: '⚔️', defense_potion: '🛡️', crit_potion: '💥',
+            crit_damage_potion: '🎯', dodge_potion: '💨', pierce_potion: '📌'
         };
 
         history.forEach(item => {
@@ -13341,6 +13532,19 @@ function loadWheelHistory() {
                 icon = typeToIcon[prizeType] || '🃏';
                 const name = typeToName[prizeType] || 'Kart Paketi';
                 prizeText = `+${prizeValue} ${name}`;
+            } else if (prizeType === 'revival_stone') {
+                icon = '💎';
+                prizeText = `+${prizeValue} Dirilme Taşı`;
+            } else if (prizeType.endsWith('_potion')) {
+                icon = typeToIcon[prizeType] || '🧪';
+                const name = typeToName[prizeType] || 'İksir';
+                if(prizeType === 'health_regen_potion'){
+                    prizeText = `+1 Adet %${prizeValue} ${name}`;
+                } else {
+                    const isPercent = ['defense_potion', 'crit_potion', 'crit_damage_potion', 'dodge_potion', 'pierce_potion'].includes(prizeType);
+                    const prefix = isPercent ? '%' : '+';
+                    prizeText = `${prefix}${prizeValue.toFixed(1)} ${name}`;
+                }
             } else if (prizeType === 'pas') {
                 icon = '☠️';
                 prizeText = 'PAS';
@@ -13355,7 +13559,6 @@ function loadWheelHistory() {
             const userData = allUsersCache.find(u => u.username === item.username);
             const avatarUrl = userData?.selectedAvatar?.url || defaultAvatarUrl;
 
-            // ★★★ İSTEĞİNİ YAPAN DEĞİŞİKLİK BURADA ★★★
             listEl.innerHTML += `
                 <div class="p-2 bg-gray-800 rounded-md mb-2 flex items-center gap-3">
                     <img src="${avatarUrl}" alt="${item.username}" 
@@ -13375,7 +13578,6 @@ function loadWheelHistory() {
                     </div>
                 </div>
             `;
-            // ★★★ DEĞİŞİKLİK SONU ★★★
         });
     };
 
@@ -17243,8 +17445,10 @@ let loginStreakRewardsCache = []; // Admin ayarlarını önbellekte tutmak için
 
 // MEVCUT typeToName OBJESİNİ BUL VE GÜNCELLE
 
+// ESKİ KODU SİL VE BUNU YAPIŞTIR
 const typeToName = {
     points: 'Puan',
+    kasaPuani: 'Kasa Puanı',
     boxRights: 'Kutu Hakkı',
     iflasShield: 'İflas Kalkanı',
     wheelTicket: 'Çark Bileti',
@@ -17253,18 +17457,23 @@ const typeToName = {
     wildcard: 'Joker Kart',
     card_pack: 'Standart Kart Paketi',
     card_pack_normal: 'Bronz Kart Paketi',
+    card_gumus: 'Gümüş Kart',
+    card_altin: 'Altın Kart',
+    card_efsanevi: 'Efsanevi Kart',
     card_pack_gumus: 'Gümüş Kart Paketi',
     card_pack_altin: 'Altın Kart Paketi',
     card_pack_efsanevi: 'Efsanevi Kart Paketi',
     health_regen_potion: 'Can Yenileme İksiri',
-    revival_stone: 'Dirilme Taşı', // YENİ EKLENEN SATIR
-    health_potion: 'Can İksiri',
-    defense_potion: 'Savunma İksiri',
-    damage_potion: 'Hasar İksiri',
-    crit_potion: 'Kritik Vuruş İksiri',
-    dodge_potion: 'Sıyrılma İksiri',
-    crit_damage_potion: 'Kritik Hasar İksiri',
-    pierce_potion: 'Delici Vuruş İksiri'
+    revival_stone: 'Dirilme Taşı',
+    health_potion: 'Can Bonusu',
+    damage_potion: 'Hasar Bonusu',
+    defense_potion: 'Savunma Bonusu',
+    crit_potion: 'Kritik Vuruş Bonusu',
+    dodge_potion: 'Sıyrılma Bonusu',
+    crit_damage_potion: 'Kritik Hasar Bonusu',
+    pierce_potion: 'Delici Vuruş Bonusu',
+    card: 'Belirli Kart',
+    card_normal: 'Bronz Kart' // Bu ve altındakiler yeni eklendi
 };
       
 // Giriş Serisi penceresini kapatır (Zamanlayıcıları temizler)
@@ -17392,33 +17601,133 @@ function addRewardToDay(element, rewardData = {}) {
     handleAdminRewardTypeChange(selectElement, rewardData); // Mevcut veriyi de gönder
 }
       
-// handleAdminRewardTypeChange fonksiyonunu bununla değiştir
-function handleAdminRewardTypeChange(selectElement, rewardData = {}) {
+// --- YENİ EKLENECEK EKSİK FONKSİYON: BU KOD SORUNU ÇÖZECEK ---
+
+/**
+ * Admin panellerinde (Üretim, Giriş Serisi vb.) bir ödülün türü değiştiğinde ilgili input alanlarını dinamik olarak oluşturur.
+ * @param {HTMLElement} selectElement - 'change' olayının geldiği <select> elementi.
+ * @param {string} context - 'output' (üretim sonucu) veya 'reward' (normal ödül) gibi bir bağlam.
+ * @param {object} data - Formu doldurmak için kullanılacak mevcut veri (düzenleme modu için).
+ */
+function handleAdminRewardTypeChange(selectElement, context = 'reward', data = {}) {
     const type = selectElement.value;
-    const container = selectElement.closest('.grid').querySelector('.reward-fields-container');
+    // Elementin en yakınındaki .grid veya .reward-entry gibi bir üst elemanı bulup içindeki container'ı seçiyoruz.
+    // Bu, kodun daha esnek olmasını sağlar.
+    const container = selectElement.closest('.grid, .reward-entry').querySelector(`.${context}-fields-container`);
+    if (!container) {
+        console.error("Fields container bulunamadı. HTML yapısını kontrol et.");
+        return;
+    }
+
     let fieldsHtml = '';
     const isPercent = ['defense_potion', 'crit_potion', 'crit_damage_potion', 'dodge_potion', 'pierce_potion', 'health_regen_potion'].includes(type);
-    const valuePlaceholder = isPercent ? 'Değer (örn: 2.5)' : 'Miktar / Adet';
+    const valuePlaceholder = isPercent ? 'Değer (örn: 2.5)' : 'Miktar / Değer';
 
+    // Seçilen türe göre doğru input alanlarını oluştur
     if (type === 'tempMultiplier') {
         fieldsHtml = `
-            <input type="number" class="box-setting-input reward-value" placeholder="Çarpan Değeri (örn: 2)" value="${rewardData.value || ''}">
-            <input type="number" class="box-setting-input reward-uses" placeholder="Kullanım Hakkı" value="${rewardData.uses || ''}">
-            <button onclick="this.parentElement.parentElement.remove()" class="py-1 px-2 bg-red-600 hover:bg-red-500 rounded-md text-xs col-span-2">Sil</button>
+            <input type="number" class="box-setting-input ${context}-value" placeholder="Çarpan Değeri (örn: 2)" value="${data.value || ''}">
+            <input type="number" class="box-setting-input ${context}-uses" placeholder="Kullanım Hakkı" value="${data.uses || ''}">
         `;
     } else if (type === 'avatar') {
         fieldsHtml = `
-            <input type="text" class="box-setting-input reward-avatarName col-span-2" placeholder="Avatarın Adı" value="${rewardData.avatarName || ''}">
-            <input type="text" class="box-setting-input reward-avatarImageUrl col-span-2" placeholder="Avatar Resim URL" value="${rewardData.avatarImageUrl || ''}">
-            <button onclick="this.parentElement.parentElement.remove()" class="py-1 px-2 bg-red-600 hover:bg-red-500 rounded-md text-xs col-span-2">Sil</button>
+            <input type="text" class="box-setting-input ${context}-avatarName col-span-2" placeholder="Avatarın Adı" value="${data.avatarName || ''}">
+            <input type="text" class="box-setting-input ${context}-avatarImageUrl col-span-2" placeholder="Avatar Resim URL" value="${data.avatarImageUrl || ''}">
         `;
     } else {
         fieldsHtml = `
-            <input type="text" class="box-setting-input reward-value col-span-2 sm:col-span-1" placeholder="${valuePlaceholder}" value="${rewardData.value || ''}">
-            <button onclick="this.parentElement.parentElement.remove()" class="py-1 px-2 bg-red-600 hover:bg-red-500 rounded-md text-xs sm:col-span-1">Sil</button>
+            <input type="text" class="box-setting-input ${context}-value col-span-2" placeholder="${valuePlaceholder}" value="${data.value || ''}">
         `;
     }
+    
+    // Eğer bu bir üretim "sonucu" ise, eşyanın genel bilgilerini girmek için ekstra alanlar ekle
+    if (context === 'output') {
+         fieldsHtml += `
+            <input type="text" class="box-setting-input ${context}-name col-span-2" placeholder="Üretilen Eşyanın Adı" value="${data.name || ''}">
+            <input type="text" class="box-setting-input ${context}-imageUrl col-span-2" placeholder="Eşya Resim URL" value="${data.imageUrl || ''}">
+        `;
+    }
+    
+    // Eğer bu normal bir "ödül" satırı ise (malzeme gibi), silme butonu ekle
+    if (context === 'reward') {
+        fieldsHtml += `<button onclick="this.closest('.reward-entry').remove()" class="py-1 px-2 bg-red-600 hover:bg-red-500 rounded-md text-xs sm:col-span-1">Sil</button>`;
+    }
+    
     container.innerHTML = fieldsHtml;
+}
+
+// ESKİ KODU SİL VE BUNU YAPIŞTIR
+async function saveRecipe() {
+    if (!isAdmin) return;
+
+    try {
+        const outputRow = document.querySelector('#recipeCreatorModal .output-row');
+        if (!outputRow) throw new Error("Üretim sonucu bilgileri okunamadı.");
+
+        const outputType = outputRow.querySelector('.output-type').value;
+        const outputData = { type: outputType };
+
+        if (outputType === 'tempMultiplier') {
+            outputData.value = parseInt(outputRow.querySelector('.output-value').value);
+            outputData.uses = parseInt(outputRow.querySelector('.output-uses').value);
+        } else if (outputType === 'avatar') {
+            outputData.avatarName = outputRow.querySelector('.output-avatarName').value.trim();
+            outputData.avatarImageUrl = outputRow.querySelector('.output-avatarImageUrl').value.trim();
+        } else {
+            outputData.value = parseStatValue(outputType, outputRow.querySelector('.output-value').value);
+        }
+        
+        outputData.name = outputRow.querySelector('.output-name').value.trim();
+        outputData.imageUrl = outputRow.querySelector('.output-imageUrl').value.trim();
+
+        if (!outputData.name) {
+            throw new Error("Üretilecek eşyanın bir adı olmalıdır.");
+        }
+
+        const materials = [];
+        const materialRows = document.querySelectorAll('#recipeCreatorModal .material-row');
+        
+        materialRows.forEach(row => {
+            const materialType = row.querySelector('.material-type').value;
+            // Düzeltme: Artık ondalıklı sayıları da doğru alıyoruz
+            const materialAmount = parseStatValue(materialType, row.querySelector('.material-amount').value);
+
+            if (materialType && !isNaN(materialAmount) && materialAmount > 0) {
+                const material = { type: materialType, amount: materialAmount };
+                if (materialType === 'card') {
+                    material.cardId = row.querySelector('.material-cardId').value;
+                    if (!material.cardId) {
+                        throw new Error("Malzeme olarak 'Belirli Koleksiyon Kartı' seçildi ancak hangi kart olduğu belirtilmedi.");
+                    }
+                }
+                materials.push(material);
+            }
+        });
+
+        if (materials.length === 0) {
+            throw new Error("Bir tarif oluşturmak için en az bir adet geçerli malzeme eklemelisiniz.");
+        }
+
+        const finalRecipeData = {
+            output: outputData,
+            materials: materials
+        };
+
+        if (editingRecipeId) {
+            await db.ref(`gameConfig/craftingRecipes/${editingRecipeId}`).set(finalRecipeData);
+            displayMessage("Tarif başarıyla güncellendi.");
+        } else {
+            await db.ref('gameConfig/craftingRecipes').push(finalRecipeData);
+            displayMessage("Yeni tarif başarıyla oluşturuldu.");
+        }
+
+        closeRecipeCreatorModal();
+        openCraftingAdminModal(); 
+
+    } catch (error) {
+        console.error("Tarif kaydedilirken hata:", error);
+        displayMessage("Hata: " + error.message);
+    }
 }
 
 // YENİ JAVASCRIPT KODU (BUNU YAPIŞTIR)
@@ -20316,6 +20625,595 @@ async function loadCodexAndStatsCache() {
         console.log("Avatar önbellekleri başarıyla yüklendi.");
     } catch (error) {
         console.error("Avatar önbellekleri yüklenirken hata oluştu:", error);
+    }
+}
+
+// =====================================================================
+// YENİ ÖZELLİK: ÜRETİM ATÖLYESİ SİSTEMİ
+// =====================================================================
+
+let craftingRecipesCache = []; // Tarifleri önbellekte tutmak için
+let editingRecipeId = null; // Hangi tarifin düzenlendiğini tutar
+
+// --- ESKİSİNİ SİLİP BUNU YAPIŞTIR ---
+async function loadCraftingRecipes() {
+    const container = document.getElementById('craftingRecipesContainer');
+    container.innerHTML = '<p class="text-center col-span-full text-gray-400">Tarifler yükleniyor...</p>';
+
+    const recipesRef = db.ref('gameConfig/craftingRecipes');
+
+    // Önceki dinleyiciyi temizle ki tekrar tekrar eklenmesin
+    if (activeListeners.craftingRecipes) {
+        activeListeners.craftingRecipes.ref.off('value', activeListeners.craftingRecipes.callback);
+    }
+
+    // Yeni dinleyiciyi kur
+    const callback = async (recipesSnap) => {
+        try {
+            craftingRecipesCache = [];
+            if (recipesSnap.exists()) {
+                Object.entries(recipesSnap.val()).forEach(([id, recipe]) => {
+                    craftingRecipesCache.push({ id, ...recipe });
+                });
+            }
+            
+            if (craftingRecipesCache.length === 0) {
+                container.innerHTML = '<p class="text-center col-span-full text-gray-400">Henüz bir üretim tarifi bulunmuyor.</p>';
+                return;
+            }
+
+            const userSnap = await db.ref(`users/${currentUser}`).once('value');
+            const userData = userSnap.val() || {};
+            container.innerHTML = ''; // Temizle
+
+            for (const recipe of craftingRecipesCache) {
+                const canCraft = checkIfUserCanCraft(recipe, userData);
+                const output = recipe.output;
+                const card = document.createElement('div');
+                card.className = `crafting-recipe-card p-4 rounded-lg flex flex-col items-center cursor-pointer ${!canCraft && !isAdmin ? 'cannot-craft' : ''}`;
+                card.onclick = () => openCraftingDetailModal(recipe.id);
+
+                card.innerHTML = `
+                    <img src="${output.imageUrl || 'https://i.hizliresim.com/pntfb6j.png'}" alt="${output.name}" class="w-20 h-20 mb-3 object-contain">
+                    <h4 class="font-bold text-yellow-300 item-name text-center">${output.name}</h4>
+                    <p class="text-sm text-gray-400">Üretmek için tıkla</p>
+                `;
+                container.appendChild(card);
+            }
+
+        } catch (error) {
+            console.error("Üretim tarifleri yüklenirken hata:", error);
+            container.innerHTML = '<p class="text-center col-span-full text-red-500">Tarifler yüklenemedi.</p>';
+        }
+    };
+    
+    // Dinleyiciyi başlat ve referansını kaydet
+    recipesRef.on('value', callback);
+    activeListeners.craftingRecipes = { ref: recipesRef, callback: callback };
+}
+
+/**
+ * Bir kullanıcının belirli bir tarifi üretmek için yeterli malzemesi olup olmadığını kontrol eder.
+ */
+function checkIfUserCanCraft(recipe, userData) {
+    if (!recipe.materials || recipe.materials.length === 0) return false;
+
+    for (const material of recipe.materials) {
+        let userHas = 0;
+        switch(material.type) {
+            case 'points': userHas = userData.balance || 0; break;
+            case 'kasaPuani': userHas = userData.kasaPuani || 0; break;
+            case 'boxRights': userHas = userData.kutuHakki || 0; break;
+            case 'wheelTicket': userHas = userData.carkBileti || 0; break;
+            case 'clickCatchTicket': userHas = userData.clickCatchTickets || 0; break;
+            case 'iflasShield': userHas = userData.iflasShieldUses || 0; break;
+            case 'wildcard': userHas = userData.wildcards || 0; break;
+            case 'card': userHas = userData.cardCollection?.[material.cardId]?.count || 0; break;
+        }
+        if (userHas < material.amount) return false;
+    }
+    return true;
+}
+
+async function openCraftingDetailModal(recipeId) {
+    const modal = document.getElementById('craftingDetailModal');
+    // DEĞİŞİKLİK: Artık doğrudan .modal-content'i hedef alıyoruz.
+    const contentContainer = modal.querySelector('.modal-content'); 
+    
+    contentContainer.innerHTML = '<p class="text-gray-400 p-8 text-center">Tarif detayları yükleniyor...</p>';
+    modal.style.display = 'flex';
+
+    try {
+        const recipe = craftingRecipesCache.find(r => r.id === recipeId);
+        if (!recipe) throw new Error("Tarif bulunamadı.");
+
+        const [userSnap, masterCardsSnap] = await Promise.all([
+            db.ref(`users/${currentUser}`).once('value'),
+            db.ref('gameConfig/cardCollection').once('value')
+        ]);
+        const userData = userSnap.val() || {};
+        const masterCards = masterCardsSnap.val() || {};
+
+        let materialsHtml = '';
+        let allMaterialsMet = true;
+        
+        for (const [index, material] of recipe.materials.entries()) {
+            let userHasAmount = 0;
+            let materialName = typeToName[material.type] || material.type.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+            let isSelectable = false;
+            let optionsHtml = '';
+            let isMet = false;
+
+            const materialTypesWithSelection = ['card_normal', 'card_gumus', 'card_altin', 'card_efsanevi', 'health_regen_potion'];
+
+            if (materialTypesWithSelection.includes(material.type)) {
+                isSelectable = true;
+                const availableItems = [];
+                const rarityMap = { 'card_normal': 'Bronz', 'card_gumus': 'Gümüş', 'card_altin': 'Altın', 'card_efsanevi': 'Efsanevi' };
+                materialName = material.type === 'health_regen_potion' ? 'Can Yenileme İksiri' : `${rarityMap[material.type]} Kart`;
+                
+                if (material.type.startsWith('card_')) {
+                    const rarity = material.type.split('_')[1];
+                    const userCards = userData.cardCollection || {};
+                    for (const cardId in userCards) {
+                        if (userCards[cardId].count > 1 && masterCards[cardId]?.rarity === rarity) {
+                            availableItems.push({ value: cardId, text: masterCards[cardId].cardName });
+                        }
+                    }
+                } else if (material.type === 'health_regen_potion') {
+                    const userPotions = userData.inventory?.health_regen_potion || {};
+                    Object.entries(userPotions).forEach(([percentage, count]) => {
+                        if (count > 0) {
+                            availableItems.push({ value: percentage, text: `%${percentage} İksiri (x${count})` });
+                        }
+                    });
+                }
+                
+                userHasAmount = availableItems.length;
+                if (userHasAmount >= material.amount) {
+                    isMet = true;
+                    optionsHtml = availableItems.map(item => `<option value="${item.value}">${item.text}</option>`).join('');
+                }
+
+            } else {
+                 switch(material.type) {
+                    case 'points': userHasAmount = userData.balance || 0; break;
+                    case 'kasaPuani': userHasAmount = userData.kasaPuani || 0; break;
+                    case 'boxRights': userHasAmount = userData.kutuHakki || 0; break;
+                    case 'wheelTicket': userHasAmount = userData.carkBileti || 0; break;
+                    case 'clickCatchTicket': userHasAmount = userData.clickCatchTickets || 0; break;
+                    case 'iflasShield': userHasAmount = userData.iflasShieldUses || 0; break;
+                    case 'wildcard': userHasAmount = userData.wildcards || 0; break;
+                    case 'card':
+                        userHasAmount = userData.cardCollection?.[material.cardId]?.count || 0;
+                        materialName = masterCards[material.cardId]?.cardName || 'Bilinmeyen Kart';
+                        break;
+                    case 'health_potion': case 'damage_potion': case 'defense_potion': case 'crit_potion': case 'crit_damage_potion': case 'dodge_potion': case 'pierce_potion':
+                        const statKeyMap = { 'health_potion': 'hp', 'damage_potion': 'damage', 'defense_potion': 'defense', 'crit_potion': 'critChance', 'crit_damage_potion': 'critDamage', 'dodge_potion': 'dodgeChance', 'pierce_potion': 'pierceChance' };
+                        userHasAmount = userData.globalPotionBuffs?.[statKeyMap[material.type]] || 0;
+                        break;
+                }
+                isMet = userHasAmount >= material.amount;
+            }
+
+            if (!isMet) allMaterialsMet = false;
+            
+            materialsHtml += `
+                <div class="material-list-item ${isMet ? 'has-enough' : 'not-enough'}">
+                    <div class="material-info">
+                        <p class="material-name">${materialName}</p>
+                        <p class="material-stock">${isSelectable ? `${userHasAmount} çeşit uygun` : `Sende: ${formatNumber(userHasAmount)} / Gerekli: ${formatNumber(material.amount)}`}</p>
+                    </div>
+                    ${isSelectable && isMet ? `
+                        <select class="box-setting-input material-choice" data-material-index="${index}" data-material-type="${material.type}">
+                            <option value="">-- Harcanacak ${material.amount} Adet Seç --</option>
+                            ${optionsHtml}
+                        </select>
+                    ` : ''}
+                </div>
+            `;
+        }
+
+        const output = recipe.output;
+        // DEĞİŞİKLİK: Artık HTML, CSS'in beklediği doğru yapıda (başlık, gövde, buton) oluşturuluyor.
+        contentContainer.innerHTML = `
+            <div class="modal-header">
+                <h3 class="text-2xl font-bold text-yellow-300">${output.name}</h3>
+                <button class="modal-close-button" onclick="closeCraftingDetailModal()">&times;</button>
+            </div>
+            
+            <div class="modal-body scrollable-list">
+                <div class="flex justify-center mb-4">
+                    <img src="${output.imageUrl || 'https://i.hizliresim.com/pntfb6j.png'}" alt="${output.name}" class="w-24 h-24 object-contain">
+                </div>
+                <h4 class="text-lg font-semibold text-orange-300 mb-4 text-center">Gereken Malzemeler</h4>
+                <div class="space-y-3">${materialsHtml}</div>
+            </div>
+
+            <div class="p-6 pt-4 border-t border-gray-700 flex-shrink-0">
+                 <button id="craftItemBtn" onclick="collectAndCraft('${recipe.id}')" 
+                        class="w-full py-3 font-bold rounded-lg ${allMaterialsMet ? 'bg-green-600 hover:bg-green-500 text-white' : 'bg-gray-700 text-gray-400 cursor-not-allowed'}"
+                        ${!allMaterialsMet ? 'disabled' : ''}>
+                    ${allMaterialsMet ? 'ŞİMDİ ÜRET' : 'Yetersiz Malzeme'}
+                </button>
+            </div>
+        `;
+    } catch (error) {
+        console.error("Üretim detayı açılırken hata:", error);
+        contentContainer.innerHTML = `<div class="p-8"><p class="text-red-500 text-center">Bir hata oluştu: ${error.message}</p><button onclick="closeCraftingDetailModal()">Kapat</button></div>`;
+    }
+}
+
+function collectAndCraft(recipeId) {
+    const selections = {};
+    const choiceElements = document.querySelectorAll('.material-choice');
+    let allSelectionsMade = true;
+
+    choiceElements.forEach(select => {
+        const materialIndex = select.dataset.materialIndex;
+        if (select.value) {
+            selections[materialIndex] = select.value;
+        } else {
+            allSelectionsMade = false;
+        }
+    });
+
+    if (!allSelectionsMade) {
+        displayMessage("Lütfen harcamak istediğiniz tüm malzemeleri seçin.");
+        return;
+    }
+
+    craftItem(recipeId, selections);
+}
+
+function closeCraftingDetailModal() {
+    document.getElementById('craftingDetailModal').style.display = 'none';
+}
+
+// --- ESKİSİNİ SİLİP BUNU YAPIŞTIR ---
+async function openCraftingAdminModal() {
+    const listEl = document.getElementById('adminRecipesList');
+    listEl.innerHTML = '<p class="text-gray-400 text-center">Yükleniyor...</p>';
+    document.getElementById('craftingAdminModal').style.display = 'flex';
+    
+    const recipesRef = db.ref('gameConfig/craftingRecipes');
+
+    // Önceki dinleyiciyi temizle
+    if (activeListeners.adminCrafting) {
+        activeListeners.adminCrafting.ref.off('value', activeListeners.adminCrafting.callback);
+    }
+
+    // Yeni dinleyiciyi kur
+    const callback = (recipesSnap) => {
+        craftingRecipesCache = [];
+        if (recipesSnap.exists()) {
+            Object.entries(recipesSnap.val()).forEach(([id, recipe]) => {
+                craftingRecipesCache.push({ id, ...recipe });
+            });
+        }
+
+        if (craftingRecipesCache.length === 0) {
+            listEl.innerHTML = '<p class="text-center text-gray-400">Henüz tarif oluşturulmamış.</p>';
+            return;
+        }
+
+        listEl.innerHTML = '';
+        craftingRecipesCache.forEach(recipe => {
+            listEl.innerHTML += `
+                <div class="flex items-center justify-between p-3 bg-gray-900 rounded-lg">
+                    <div class="flex items-center gap-3">
+                        <img src="${recipe.output.imageUrl || ''}" class="w-10 h-10 object-contain rounded-md">
+                        <span class="font-bold text-white">${recipe.output.name}</span>
+                    </div>
+                    <div>
+                        <button onclick="openRecipeCreatorModal('${recipe.id}')" class="py-1 px-3 bg-blue-600 hover:bg-blue-500 rounded-md text-xs">Düzenle</button>
+                        <button onclick="deleteRecipe('${recipe.id}')" class="py-1 px-3 bg-red-700 hover:bg-red-600 rounded-md text-xs">Sil</button>
+                    </div>
+                </div>
+            `;
+        });
+    };
+
+    recipesRef.on('value', callback);
+    activeListeners.adminCrafting = { ref: recipesRef, callback: callback };
+}
+
+// --- ESKİSİNİ SİLİP BUNU YAPIŞTIR ---
+function closeCraftingAdminModal() {
+    // Admin paneli kapandığında, arka planda boşuna çalışmaması için dinleyiciyi kapatıyoruz.
+    if (activeListeners.adminCrafting) {
+        activeListeners.adminCrafting.ref.off('value', activeListeners.adminCrafting.callback);
+        delete activeListeners.adminCrafting;
+    }
+    document.getElementById('craftingAdminModal').style.display = 'none';
+}
+
+// BU YENİ FONKSİYONLARI EKLE
+
+/**
+ * Adminin bir üretim tarifini kalıcı olarak silmesini sağlar.
+ */
+async function deleteRecipe(recipeId) {
+    if (!isAdmin) return;
+    const confirmed = await customConfirm("Bu üretim tarifini kalıcı olarak silmek istediğinize emin misiniz?");
+    if (confirmed) {
+        try {
+            await db.ref(`gameConfig/craftingRecipes/${recipeId}`).remove();
+            displayMessage("Tarif başarıyla silindi.");
+            // Arayüz anlık olarak güncellenecek çünkü dinleyici (listener) aktif.
+        } catch (error) {
+            console.error("Tarif silinirken hata:", error);
+            displayMessage("Tarif silinirken bir hata meydana geldi.");
+        }
+    }
+}
+
+let isCraftingInProgress = false; // Çift tıklamayı engellemek için
+
+async function craftItem(recipeId, selections) {
+    if (isAdmin) {
+        displayMessage("Adminler üretim yapamaz.");
+        return;
+    }
+    if (isCraftingInProgress) return;
+
+    const craftButton = document.getElementById('craftItemBtn');
+    if (craftButton) {
+        craftButton.disabled = true;
+        craftButton.textContent = 'Üretiliyor...';
+    }
+    
+    isCraftingInProgress = true;
+
+    try {
+        const recipe = craftingRecipesCache.find(r => r.id === recipeId);
+        if (!recipe) throw new Error("Üretim tarifi bulunamadı.");
+
+        const userRef = db.ref(`users/${currentUser}`);
+        let cardPacksToOpen = [];
+
+        const { committed, snapshot } = await userRef.transaction(currentData => {
+            if (!currentData) return;
+
+            // Malzemeleri Düşme Mantığı
+            for (const [index, material] of recipe.materials.entries()) {
+                const amountNeeded = material.amount;
+                
+                if (selections[index]) {
+                    const selectedValue = selections[index];
+                    if (material.type.startsWith('card_')) {
+                        if (!currentData.cardCollection?.[selectedValue] || currentData.cardCollection[selectedValue].count <= 1) return;
+                        currentData.cardCollection[selectedValue].count--;
+                    } else if (material.type === 'health_regen_potion') {
+                        if (!currentData.inventory?.health_regen_potion?.[selectedValue] || currentData.inventory.health_regen_potion[selectedValue] < 1) return;
+                        currentData.inventory.health_regen_potion[selectedValue]--;
+                    }
+                } 
+                else {
+                    switch(material.type) {
+                        case 'points': 
+                            if ((currentData.balance || 0) < amountNeeded) return;
+                            currentData.balance -= amountNeeded;
+                            break;
+                        case 'kasaPuani': 
+                            if ((currentData.kasaPuani || 0) < amountNeeded) return;
+                            currentData.kasaPuani -= amountNeeded;
+                            break;
+                        case 'boxRights': 
+                            if ((currentData.kutuHakki || 0) < amountNeeded) return;
+                            currentData.kutuHakki -= amountNeeded;
+                            break;
+                        case 'wheelTicket': 
+                            if ((currentData.carkBileti || 0) < amountNeeded) return;
+                            currentData.carkBileti -= amountNeeded;
+                            break;
+                        case 'clickCatchTicket': 
+                            if ((currentData.clickCatchTickets || 0) < amountNeeded) return;
+                            currentData.clickCatchTickets -= amountNeeded;
+                            break;
+                        case 'iflasShield': 
+                            if ((currentData.iflasShieldUses || 0) < amountNeeded) return;
+                            currentData.iflasShieldUses -= amountNeeded;
+                            break;
+                        case 'wildcard': 
+                            if ((currentData.wildcards || 0) < amountNeeded) return;
+                            currentData.wildcards -= amountNeeded;
+                            break;
+                        case 'card': 
+                            if (!currentData.cardCollection?.[material.cardId] || currentData.cardCollection[material.cardId].count < amountNeeded) return;
+                            currentData.cardCollection[material.cardId].count -= amountNeeded;
+                            break;
+                        case 'health_potion': case 'damage_potion': case 'defense_potion': case 'crit_potion': case 'crit_damage_potion': case 'dodge_potion': case 'pierce_potion':
+                            const statKeyMap = { 'health_potion': 'hp', 'damage_potion': 'damage', 'defense_potion': 'defense', 'crit_potion': 'critChance', 'crit_damage_potion': 'critDamage', 'dodge_potion': 'dodgeChance', 'pierce_potion': 'pierceChance' };
+                            const statKey = statKeyMap[material.type];
+                            if (!currentData.globalPotionBuffs || (currentData.globalPotionBuffs[statKey] || 0) < amountNeeded) return;
+                            currentData.globalPotionBuffs[statKey] -= amountNeeded;
+                            break;
+                        default: return;
+                    }
+                }
+            }
+
+            const result = applyRewardToUser(currentData, recipe.output);
+            cardPacksToOpen = result.cardPacksToOpen;
+
+            return currentData;
+        });
+
+        if (committed) {
+            const finalUserData = snapshot.val();
+            const outputName = recipe.output.name;
+            displayMessage(`Tebrikler! Başarıyla <b>${outputName}</b> ürettin.`);
+            
+            logActivity('craftItem', currentUser, { 
+                itemName: outputName,
+                newBalance: finalUserData.balance
+            });
+
+            if (cardPacksToOpen.length > 0) {
+                for (const pack of cardPacksToOpen) {
+                    await startCardPackOpening(pack.value || 1, 'Üretim Atölyesi', 1, pack.type);
+                }
+            }
+            closeCraftingDetailModal();
+        } else {
+            throw new Error("Üretim başarısız! Malzemelerin yetersiz veya başka bir işlem yapılıyor.");
+        }
+
+    } catch (error) {
+        displayMessage(error.message);
+    } finally {
+        isCraftingInProgress = false;
+        // Butonun durumu zaten dinleyici tarafından güncelleneceği için burada tekrar aktif etmeye gerek yok.
+    }
+}
+
+/**
+ * Admin için Tarif Ekleme/Düzenleme modalını açar.
+ */
+async function openRecipeCreatorModal(recipeId = null) {
+    editingRecipeId = recipeId;
+    const titleEl = document.getElementById('recipeCreatorTitle');
+    const outputContainer = document.getElementById('recipeOutputContainer');
+    const materialsContainer = document.getElementById('recipeMaterialsContainer');
+    
+    outputContainer.innerHTML = '';
+    materialsContainer.innerHTML = '';
+
+    if (recipeId) {
+        titleEl.textContent = 'Tarifi Düzenle';
+        const recipe = craftingRecipesCache.find(r => r.id === recipeId);
+        addOutputRowToRecipeCreator(recipe.output);
+        recipe.materials.forEach(mat => addMaterialRowToRecipeCreator(mat));
+    } else {
+        titleEl.textContent = 'Yeni Tarif Oluştur';
+        addOutputRowToRecipeCreator();
+        addMaterialRowToRecipeCreator();
+    }
+
+    document.getElementById('recipeCreatorModal').style.display = 'flex';
+}
+
+function closeRecipeCreatorModal() {
+    document.getElementById('recipeCreatorModal').style.display = 'none';
+}
+
+/**
+ * Tarif oluşturma ekranına "Üretilecek Ürün" satırını ekler.
+ */
+function addOutputRowToRecipeCreator(outputData = {}) {
+    const container = document.getElementById('recipeOutputContainer');
+    const row = document.createElement('div');
+    row.className = 'output-row';
+    row.innerHTML = `
+        <select class="box-setting-input output-type" onchange="handleAdminRewardTypeChange(this, 'output')">
+            <option value="points">💰 Puan</option>
+            <option value="boxRights">📦 Kutu Hakkı</option>
+            <option value="wheelTicket">🎫 Çark Bileti</option>
+            <option value="clickCatchTicket">🎟️ T-Y Bileti</option>
+            <option value="iflasShield">🛡️ İflas Kalkanı</option>
+            <option value="tempMultiplier">✖️ Çarpan</option>
+            <option value="avatar">👤 Avatar</option>
+            <option value="wildcard">🃏 Joker Kart</option>
+            <option value="card_pack_normal">🥉 Bronz Kart Paketi</option>
+            <option value="card_pack_gumus">🥈 Gümüş Kart Paketi</option>
+            <option value="card_pack_altin">🥇 Altın Kart Paketi</option>
+            <option value="card_pack_efsanevi">🏆 Efsanevi Kart Paketi</option>
+            <option value="revival_stone">💎 Dirilme Taşı</option>
+            <option value="health_potion">🧪 Can İksiri</option>
+            <option value="damage_potion">⚔️ Hasar İksiri</option>
+            <option value="defense_potion">🛡️ Savunma İksiri</option>
+            <option value="crit_potion">💥 Kritik Vuruş İksiri</option>
+            <option value="crit_damage_potion">🎯 Kritik Hasar İksiri</option>
+            <option value="dodge_potion">💨 Sıyrılma Şansı İksiri</option>
+            <option value="pierce_potion">📌 Delici Şansı İksiri</option>
+        </select>
+        <div class="output-fields-container grid grid-cols-2 gap-2 sm:col-span-2">
+            </div>
+    `;
+    container.appendChild(row);
+    const select = row.querySelector('.output-type');
+    select.value = outputData.type || 'points';
+    handleAdminRewardTypeChange(select, 'output', outputData);
+}
+
+// ESKİ KODU SİL VE BUNU YAPIŞTIR
+async function addMaterialRowToRecipeCreator(materialData = {}) {
+    const container = document.getElementById('recipeMaterialsContainer');
+    const row = document.createElement('div');
+    row.className = 'material-row';
+
+    const masterCardsSnap = await db.ref('gameConfig/cardCollection').orderByChild('order').once('value');
+    let cardOptions = '';
+    if (masterCardsSnap.exists()) {
+        masterCardsSnap.forEach(snap => {
+            const card = snap.val();
+            cardOptions += `<option value="${snap.key}">${card.cardName} (${card.rarity})</option>`;
+        });
+    }
+
+    row.innerHTML = `
+        <select class="box-setting-input material-type" onchange="handleMaterialTypeChange(this)">
+            <option value="points">💰 Puan</option>
+            <option value="kasaPuani">🏦 Kasa Puanı</option>
+            <option value="boxRights">📦 Kutu Hakkı</option>
+            <option value="wheelTicket">🎫 Çark Bileti</option>
+            <option value="clickCatchTicket">🎟️ T-Y Bileti</option>
+            <option value="iflasShield">🛡️ İflas Kalkanı</option>
+            <option value="wildcard">🃏 Joker Kart</option>
+            <option value="card">🎴 Belirli Koleksiyon Kartı</option>
+            <option value="card_normal">🥉 Herhangi bir Bronz Kart</option>
+            <option value="card_gumus">🥈 Herhangi bir Gümüş Kart</option>
+            <option value="card_altin">🥇 Herhangi bir Altın Kart</option>
+            <option value="card_efsanevi">🏆 Herhangi bir Efsanevi Kart</option>
+            <option value="health_regen_potion">🧪 Can Yenileme İksiri</option>
+            <option value="revival_stone">💎 Dirilme Taşı</option>
+            <option value="health_potion">🧪 Can Bonusu</option>
+            <option value="damage_potion">⚔️ Hasar Bonusu</option>
+            <option value="defense_potion">🛡️ Savunma Bonusu</option>
+            <option value="crit_potion">💥 Kritik Vuruş Bonusu</option>
+            <option value="crit_damage_potion">🎯 Kritik Hasar Bonusu</option>
+            <option value="dodge_potion">💨 Sıyrılma Bonusu</option>
+            <option value="pierce_potion">📌 Delici Vuruş Bonusu</option>
+        </select>
+        <select class="box-setting-input material-cardId hidden">${cardOptions}</select>
+        <input type="number" class="box-setting-input material-amount" placeholder="Adet / Miktar">
+        <button onclick="this.parentElement.remove()" class="remove-material-btn py-1 px-2 bg-red-800 hover:bg-red-700 rounded-md text-xs">Sil</button>
+    `;
+    container.appendChild(row);
+
+    if (materialData.type) {
+        const typeSelect = row.querySelector('.material-type');
+        typeSelect.value = materialData.type;
+        handleMaterialTypeChange(typeSelect); 
+
+        if (materialData.type === 'card' && materialData.cardId) {
+            row.querySelector('.material-cardId').value = materialData.cardId;
+        }
+        row.querySelector('.material-amount').value = materialData.amount || '';
+    }
+}
+
+// BU YENİ FONKSİYONU EKLE
+function handleMaterialTypeChange(selectElement) {
+    const row = selectElement.closest('.material-row');
+    const cardIdSelect = row.querySelector('.material-cardId');
+    const amountInput = row.querySelector('.material-amount');
+    const selectedType = selectElement.value;
+
+    // Önce tüm özel alanları gizle
+    cardIdSelect.classList.add('hidden');
+    amountInput.placeholder = 'Adet / Miktar'; // Varsayılan metin
+
+    if (selectedType === 'card') {
+        // "Belirli Kart" seçilirse kart listesini göster
+        cardIdSelect.classList.remove('hidden');
+    } else if (selectedType.endsWith('_potion') && selectedType !== 'health_regen_potion') {
+        // Yüzdelik bonuslar için placeholder'ı güncelle
+        const isPercent = ['defense_potion', 'crit_potion', 'crit_damage_potion', 'dodge_potion', 'pierce_potion'].includes(selectedType);
+        if (isPercent) {
+            amountInput.placeholder = 'Miktar (örn: 2.5)';
+        }
     }
 }
 
