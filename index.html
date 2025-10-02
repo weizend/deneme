@@ -2358,7 +2358,7 @@ body.modal-open .modal-content {
     <div class="bg-gray-800 p-6 rounded-xl shadow-lg border border-red-700 text-center">
         <div class="flex justify-center items-center gap-4 mb-6">
             <h3 class="text-yellow-400 text-3xl font-bold">Üretim Atölyesi</h3>
-            <button id="craftingAdminBtn" onclick="openCraftingAdminModal(true)" class="hidden py-1 px-3 text-sm bg-purple-600 hover:bg-purple-500 rounded-lg">Üretim Yönetim Paneli</button>
+            <button id="craftingAdminBtn" onclick="openCraftingAdminModal()" class="hidden py-1 px-3 text-sm bg-purple-600 hover:bg-purple-500 rounded-lg">Üretim Yönetim Paneli</button>
         </div>
 
         <div id="craftingRecipesContainer" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
@@ -20626,7 +20626,7 @@ async function loadCodexAndStatsCache() {
 let craftingRecipesCache = []; // Tarifleri önbellekte tutmak için
 let editingRecipeId = null; // Hangi tarifin düzenlendiğini tutar
 
-// --- ESKİSİNİ SİLİP BUNU YAPIŞTIR ---
+// MEVCUT loadCraftingRecipes FONKSİYONUNU SİL VE BUNU YAPIŞTIR
 async function loadCraftingRecipes() {
     const container = document.getElementById('craftingRecipesContainer');
     container.innerHTML = '<p class="text-center col-span-full text-gray-400">Tarifler yükleniyor...</p>';
@@ -20641,6 +20641,7 @@ async function loadCraftingRecipes() {
     // Yeni dinleyiciyi kur
     const callback = async (recipesSnap) => {
         try {
+            // 1. Veriyi çek ve önbelleğe al
             craftingRecipesCache = [];
             if (recipesSnap.exists()) {
                 Object.entries(recipesSnap.val()).forEach(([id, recipe]) => {
@@ -20648,28 +20649,38 @@ async function loadCraftingRecipes() {
                 });
             }
             
-            if (craftingRecipesCache.length === 0) {
-                container.innerHTML = '<p class="text-center col-span-full text-gray-400">Henüz bir üretim tarifi bulunmuyor.</p>';
-                return;
-            }
-
+            // 2. Ana üretim sayfasını her zaman render et
             const userSnap = await db.ref(`users/${currentUser}`).once('value');
             const userData = userSnap.val() || {};
             container.innerHTML = ''; // Temizle
 
-            for (const recipe of craftingRecipesCache) {
-                const canCraft = checkIfUserCanCraft(recipe, userData);
-                const output = recipe.output;
-                const card = document.createElement('div');
-                card.className = `crafting-recipe-card p-4 rounded-lg flex flex-col items-center cursor-pointer ${!canCraft && !isAdmin ? 'cannot-craft' : ''}`;
-                card.onclick = () => openCraftingDetailModal(recipe.id);
+            if (craftingRecipesCache.length === 0) {
+                container.innerHTML = '<p class="text-center col-span-full text-gray-400">Henüz bir üretim tarifi bulunmuyor.</p>';
+            } else {
+                for (const recipe of craftingRecipesCache) {
+                    const canCraft = checkIfUserCanCraft(recipe, userData);
+                    const output = recipe.output;
+                    const card = document.createElement('div');
+                    card.className = `p-4 rounded-lg flex flex-col items-center cursor-pointer transition-transform hover:scale-105 bg-gray-900 border border-gray-700`;
+                    // Malzeme yeterli değilse ve admin değilse kartı soluklaştır
+                    if (!canCraft && !isAdmin) {
+                        card.style.filter = 'grayscale(80%)';
+                        card.style.opacity = '0.6';
+                    }
+                    card.onclick = () => openCraftingDetailModal(recipe.id);
 
-                card.innerHTML = `
-                    <img src="${output.imageUrl || 'https://i.hizliresim.com/pntfb6j.png'}" alt="${output.name}" class="w-20 h-20 mb-3 object-contain">
-                    <h4 class="font-bold text-yellow-300 item-name text-center">${output.name}</h4>
-                    <p class="text-sm text-gray-400">Üretmek için tıkla</p>
-                `;
-                container.appendChild(card);
+                    card.innerHTML = `
+                        <img src="${output.imageUrl || 'https://i.hizliresim.com/pntfb6j.png'}" alt="${output.name}" class="w-20 h-20 mb-3 object-contain">
+                        <h4 class="font-bold text-yellow-300 text-center">${output.name}</h4>
+                        <p class="text-sm text-gray-400">Üretmek için tıkla</p>
+                    `;
+                    container.appendChild(card);
+                }
+            }
+
+            // 3. EĞER admin paneli açıksa, onu da bu yeni veriyle render et
+            if (document.getElementById('craftingAdminModal').style.display === 'flex') {
+                renderAdminRecipesList();
             }
 
         } catch (error) {
@@ -20861,69 +20872,46 @@ function closeCraftingDetailModal() {
     document.getElementById('craftingDetailModal').style.display = 'none';
 }
 
-// --- YENİ VE DÜZGÜN ÇALIŞAN FONKSİYONLAR ---
-
-/**
- * Admin için Üretim Yönetim Panelini açar ve tarifleri anlık olarak dinlemeye başlar.
- */
+// MEVCUT openCraftingAdminModal FONKSİYONUNU SİL VE BUNU YAPIŞTIR
 function openCraftingAdminModal() {
     if (!isAdmin) return;
-    const listEl = document.getElementById('adminRecipesList');
-    listEl.innerHTML = '<p class="text-gray-400 text-center">Yükleniyor...</p>';
+    // Paneli görünür yap
     document.getElementById('craftingAdminModal').style.display = 'flex';
-    
-    const recipesRef = db.ref('gameConfig/craftingRecipes');
-
-    // Önceki dinleyiciyi temizle ki tekrar tekrar eklenmesin
-    if (activeListeners.adminCrafting) {
-        activeListeners.adminCrafting.ref.off('value', activeListeners.adminCrafting.callback);
-    }
-
-    // Yeni dinleyiciyi kur
-    const callback = (recipesSnap) => {
-        craftingRecipesCache = [];
-        if (recipesSnap.exists()) {
-            Object.entries(recipesSnap.val()).forEach(([id, recipe]) => {
-                craftingRecipesCache.push({ id, ...recipe });
-            });
-        }
-
-        if (craftingRecipesCache.length === 0) {
-            listEl.innerHTML = '<p class="text-center text-gray-400">Henüz tarif oluşturulmamış.</p>';
-            return;
-        }
-
-        listEl.innerHTML = '';
-        craftingRecipesCache.forEach(recipe => {
-            listEl.innerHTML += `
-                <div class="flex items-center justify-between p-3 bg-gray-900 rounded-lg">
-                    <div class="flex items-center gap-3">
-                        <img src="${recipe.output.imageUrl || ''}" class="w-10 h-10 object-contain rounded-md">
-                        <span class="font-bold text-white">${recipe.output.name}</span>
-                    </div>
-                    <div>
-                        <button onclick="openRecipeCreatorModal('${recipe.id}')" class="py-1 px-3 bg-blue-600 hover:bg-blue-500 rounded-md text-xs">Düzenle</button>
-                        <button onclick="deleteRecipe('${recipe.id}')" class="py-1 px-3 bg-red-700 hover:bg-red-600 rounded-md text-xs">Sil</button>
-                    </div>
-                </div>
-            `;
-        });
-    };
-    
-    // Dinleyiciyi başlat ve referansını kaydet
-    recipesRef.on('value', callback);
-    activeListeners.adminCrafting = { ref: recipesRef, callback: callback };
+    // Listeyi hemen çizmeye ÇALIŞMA. Bırak, merkezi dinleyici veri hazır olunca çizsin.
+    // Bu sayede panel sadece dolu olduğunda görünür ve zamanlama sorunları ortadan kalkar.
+    renderAdminRecipesList(); // Bu satırın kalması, önbellek doluysa anında açılmasını sağlar.
 }
 
-/**
- * Admin Üretim Yönetim Panelini kapatır ve arka plandaki dinleyiciyi durdurur.
- */
-function closeCraftingAdminModal() {
-    // Admin paneli kapandığında, arka planda boşuna çalışmaması için dinleyiciyi kapatıyoruz.
-    if (activeListeners.adminCrafting) {
-        activeListeners.adminCrafting.ref.off('value', activeListeners.adminCrafting.callback);
-        delete activeListeners.adminCrafting;
+// BU YENİ YARDIMCI FONKSİYONU DA EKLE
+function renderAdminRecipesList() {
+    const listEl = document.getElementById('adminRecipesList');
+    if (!listEl) return;
+
+    if (craftingRecipesCache.length === 0) {
+        listEl.innerHTML = '<p class="text-center text-gray-400">Henüz tarif oluşturulmamış.</p>';
+        return;
     }
+
+    listEl.innerHTML = ''; // Listeyi temizle
+    craftingRecipesCache.forEach(recipe => {
+        listEl.innerHTML += `
+            <div class="flex items-center justify-between p-3 bg-gray-900 rounded-lg">
+                <div class="flex items-center gap-3">
+                    <img src="${recipe.output.imageUrl || ''}" class="w-10 h-10 object-contain rounded-md">
+                    <span class="font-bold text-white">${recipe.output.name}</span>
+                </div>
+                <div>
+                    <button onclick="openRecipeCreatorModal('${recipe.id}')" class="py-1 px-3 bg-blue-600 hover:bg-blue-500 rounded-md text-xs">Düzenle</button>
+                    <button onclick="deleteRecipe('${recipe.id}')" class="py-1 px-3 bg-red-700 hover:bg-red-600 rounded-md text-xs">Sil</button>
+                </div>
+            </div>
+        `;
+    });
+}
+
+// MEVCUT closeCraftingAdminModal FONKSİYONUNU SİL VE BUNU YAPIŞTIR
+function closeCraftingAdminModal() {
+    // Artık dinleyiciyi kapatmaya gerek yok, çünkü dinleyici merkezi olarak yönetiliyor.
     document.getElementById('craftingAdminModal').style.display = 'none';
 }
 
