@@ -11,11 +11,6 @@
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
 
 <style>
-    /* --- YENİ EKLENECEK KOD: ÜRETİM ATÖLYESİ TİTREME DÜZELTMESİ --- */
-#craftingRecipesContainer {
-    /* İçerik yüklenirken bile en az 400px yüksekliğinde kalarak titremeyi engeller */
-    min-height: 400px;
-}
 /* --- ESKİ #craftingDetailModal STİLLERİNİ SİLİP BUNU YAPIŞTIR --- */
 
 /* Üretim Detayları Modalı (Yenilendi ve Mobil Uyumlu Hale Getirildi) */
@@ -2363,7 +2358,7 @@ body.modal-open .modal-content {
     <div class="bg-gray-800 p-6 rounded-xl shadow-lg border border-red-700 text-center">
         <div class="flex justify-center items-center gap-4 mb-6">
             <h3 class="text-yellow-400 text-3xl font-bold">Üretim Atölyesi</h3>
-            <button id="craftingAdminBtn" onclick="openCraftingAdminModal()" class="hidden py-1 px-3 text-sm bg-purple-600 hover:bg-purple-500 rounded-lg">Üretim Yönetim Paneli</button>
+            <button id="craftingAdminBtn" onclick="openCraftingAdminModal(true)" class="hidden py-1 px-3 text-sm bg-purple-600 hover:bg-purple-500 rounded-lg">Üretim Yönetim Paneli</button>
         </div>
 
         <div id="craftingRecipesContainer" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
@@ -4395,7 +4390,6 @@ function getSyncedTime() {
   let chatSettings = { slowModeSeconds: 3 }
   // YENİ EKLENECEK DEĞİŞKEN
   let soloGameItemCounts = {}; // Tekli oyunda yakalanan her türden öğenin sayısını tutar
-  let isModalActionInProgress = false; // Modal çakışmalarını önlemek için kilit
   // YENİ: Kullanıcının son mesaj atma zamanını tutar
   let lastMessageTimestamp = 0;
 
@@ -20626,20 +20620,14 @@ async function loadCodexAndStatsCache() {
 }
 
 // =====================================================================
-// ESKİ craft fonksiyonlarını SİLİP, BU YENİ BLOKU YAPIŞTIR
+// YENİ ÖZELLİK: ÜRETİM ATÖLYESİ SİSTEMİ
 // =====================================================================
 
-// --- YENİ VE DÜZELTİLMİŞ ÜRETİM FONKSİYONLARI ---
+let craftingRecipesCache = []; // Tarifleri önbellekte tutmak için
+let editingRecipeId = null; // Hangi tarifin düzenlendiğini tutar
 
-// Global Değişkenler (Eğer yoksa bunları da ekle)
-let craftingRecipesCache = []; 
-let editingRecipeId = null;
-
-/**
- * Üretim tariflerini Firebase'den dinler, önbelleğe alır ve arayüzü günceller.
- * Bu fonksiyon artık hem ana üretim sayfasını hem de admin panelini yönetir.
- */
-function loadCraftingRecipes() {
+// --- ESKİSİNİ SİLİP BUNU YAPIŞTIR ---
+async function loadCraftingRecipes() {
     const container = document.getElementById('craftingRecipesContainer');
     container.innerHTML = '<p class="text-center col-span-full text-gray-400">Tarifler yükleniyor...</p>';
 
@@ -20650,95 +20638,49 @@ function loadCraftingRecipes() {
         activeListeners.craftingRecipes.ref.off('value', activeListeners.craftingRecipes.callback);
     }
 
+    // Yeni dinleyiciyi kur
     const callback = async (recipesSnap) => {
-        // 1. Veriyi çek ve önbelleğe al
-        craftingRecipesCache = [];
-        if (recipesSnap.exists()) {
-            Object.entries(recipesSnap.val()).forEach(([id, recipe]) => {
-                craftingRecipesCache.push({ id, ...recipe });
-            });
-        }
-        
-        // 2. Ana üretim sayfasını her zaman render et
-        await renderMainCraftingPage();
+        try {
+            craftingRecipesCache = [];
+            if (recipesSnap.exists()) {
+                Object.entries(recipesSnap.val()).forEach(([id, recipe]) => {
+                    craftingRecipesCache.push({ id, ...recipe });
+                });
+            }
+            
+            if (craftingRecipesCache.length === 0) {
+                container.innerHTML = '<p class="text-center col-span-full text-gray-400">Henüz bir üretim tarifi bulunmuyor.</p>';
+                return;
+            }
 
-        // 3. EĞER admin paneli açıksa, onu da bu yeni veriyle render et
-        // Bu sayede veri değiştiğinde açık olan admin paneli de anında güncellenir.
-        if (document.getElementById('craftingAdminModal').style.display === 'flex') {
-            renderAdminRecipesList();
+            const userSnap = await db.ref(`users/${currentUser}`).once('value');
+            const userData = userSnap.val() || {};
+            container.innerHTML = ''; // Temizle
+
+            for (const recipe of craftingRecipesCache) {
+                const canCraft = checkIfUserCanCraft(recipe, userData);
+                const output = recipe.output;
+                const card = document.createElement('div');
+                card.className = `crafting-recipe-card p-4 rounded-lg flex flex-col items-center cursor-pointer ${!canCraft && !isAdmin ? 'cannot-craft' : ''}`;
+                card.onclick = () => openCraftingDetailModal(recipe.id);
+
+                card.innerHTML = `
+                    <img src="${output.imageUrl || 'https://i.hizliresim.com/pntfb6j.png'}" alt="${output.name}" class="w-20 h-20 mb-3 object-contain">
+                    <h4 class="font-bold text-yellow-300 item-name text-center">${output.name}</h4>
+                    <p class="text-sm text-gray-400">Üretmek için tıkla</p>
+                `;
+                container.appendChild(card);
+            }
+
+        } catch (error) {
+            console.error("Üretim tarifleri yüklenirken hata:", error);
+            container.innerHTML = '<p class="text-center col-span-full text-red-500">Tarifler yüklenemedi.</p>';
         }
     };
     
     // Dinleyiciyi başlat ve referansını kaydet
     recipesRef.on('value', callback);
     activeListeners.craftingRecipes = { ref: recipesRef, callback: callback };
-}
-
-/**
- * Ana üretim sayfasındaki tarif kartlarını çizer. (Yeni Yardımcı Fonksiyon)
- */
-async function renderMainCraftingPage() {
-    const container = document.getElementById('craftingRecipesContainer');
-    container.innerHTML = ''; // Temizle
-
-    if (craftingRecipesCache.length === 0) {
-        container.innerHTML = '<p class="text-center col-span-full text-gray-400">Henüz bir üretim tarifi bulunmuyor.</p>';
-        return;
-    }
-    
-    // Kullanıcı verisini sadece bir kez çekerek performansı artırıyoruz
-    const userSnap = await db.ref(`users/${currentUser}`).once('value');
-    const userData = userSnap.val() || {};
-
-    for (const recipe of craftingRecipesCache) {
-        const canCraft = checkIfUserCanCraft(recipe, userData);
-        const output = recipe.output;
-        const card = document.createElement('div');
-        card.className = `p-4 rounded-lg flex flex-col items-center cursor-pointer transition-transform hover:scale-105 bg-gray-900 border border-gray-700`;
-        
-        // Malzeme yeterli değilse ve admin değilse kartı soluklaştır
-        if (!canCraft && !isAdmin) {
-            card.style.filter = 'grayscale(80%)';
-            card.style.opacity = '0.6';
-        }
-        card.onclick = () => openCraftingDetailModal(recipe.id);
-
-        card.innerHTML = `
-            <img src="${output.imageUrl || 'https://i.hizliresim.com/pntfb6j.png'}" alt="${output.name}" class="w-20 h-20 mb-3 object-contain">
-            <h4 class="font-bold text-yellow-300 text-center">${output.name}</h4>
-            <p class="text-sm text-gray-400">Üretmek için tıkla</p>
-        `;
-        container.appendChild(card);
-    }
-}
-
-/**
- * Admin panelindeki tarif listesini çizer. (Yeni Yardımcı Fonksiyon)
- */
-function renderAdminRecipesList() {
-    const listEl = document.getElementById('adminRecipesList');
-    if (!listEl) return;
-
-    if (craftingRecipesCache.length === 0) {
-        listEl.innerHTML = '<p class="text-center text-gray-400">Henüz tarif oluşturulmamış.</p>';
-        return;
-    }
-
-    listEl.innerHTML = ''; // Listeyi temizle
-    craftingRecipesCache.forEach(recipe => {
-        listEl.innerHTML += `
-            <div class="flex items-center justify-between p-3 bg-gray-900 rounded-lg">
-                <div class="flex items-center gap-3">
-                    <img src="${recipe.output.imageUrl || ''}" class="w-10 h-10 object-contain rounded-md">
-                    <span class="font-bold text-white">${recipe.output.name}</span>
-                </div>
-                <div>
-                    <button onclick="openRecipeCreatorModal('${recipe.id}')" class="py-1 px-3 bg-blue-600 hover:bg-blue-500 rounded-md text-xs">Düzenle</button>
-                    <button onclick="deleteRecipe('${recipe.id}')" class="py-1 px-3 bg-red-700 hover:bg-red-600 rounded-md text-xs">Sil</button>
-                </div>
-            </div>
-        `;
-    });
 }
 
 /**
@@ -20764,78 +20706,15 @@ function checkIfUserCanCraft(recipe, userData) {
     return true;
 }
 
-function collectAndCraft(recipeId) {
-    const selections = {};
-    const choiceElements = document.querySelectorAll('.material-choice');
-    let allSelectionsMade = true;
-
-    choiceElements.forEach(select => {
-        const materialIndex = select.dataset.materialIndex;
-        if (select.value) {
-            selections[materialIndex] = select.value;
-        } else {
-            allSelectionsMade = false;
-        }
-    });
-
-    if (!allSelectionsMade) {
-        displayMessage("Lütfen harcamak istediğiniz tüm malzemeleri seçin.");
-        return;
-    }
-
-    craftItem(recipeId, selections);
-}
-
-      // =====================================================================
-// KESİN ÇÖZÜM: KİLİT MEKANİZMALI YENİ MODAL FONKSİYONLARI
-// =====================================================================
-
-/**
- * Admin için Üretim Yönetim Paneli'ni açar. (Kilitli ve Güvenli)
- */
-function openCraftingAdminModal() {
-    if (!isAdmin || isModalActionInProgress) return;
-    isModalActionInProgress = true; // KİLİDİ AKTİF ET
-
-    document.getElementById('craftingAdminModal').style.display = 'flex';
-    renderAdminRecipesList();
-
-    // Kilidi kısa bir gecikmeyle kaldırarak tarayıcının işlemi tamamlamasını bekle
-    setTimeout(() => { isModalActionInProgress = false; }, 100);
-}
-
-/**
- * Admin için Üretim Yönetim Paneli'ni kapatır. (Kilitli ve Güvenli)
- */
-function closeCraftingAdminModal() {
-    if (isModalActionInProgress) return;
-    isModalActionInProgress = true; // KİLİDİ AKTİF ET
-
-    document.getElementById('craftingAdminModal').style.display = 'none';
-
-    setTimeout(() => { isModalActionInProgress = false; }, 100);
-}
-
-/**
- * Üretim Detayları (Gerekli Malzemeler) penceresini açar. (Kilitli ve Güvenli)
- * Not: Bu fonksiyonun içeriği uzun olduğu için sadece kilit mekanizmasını ekliyoruz.
- * Kendi kodundaki `openCraftingDetailModal` fonksiyonunun BAŞINA ve SONUNA bu kilitleri ekle.
- */
 async function openCraftingDetailModal(recipeId) {
-    if (isModalActionInProgress) return;
-    isModalActionInProgress = true; // KİLİDİ AKTİF ET
-
     const modal = document.getElementById('craftingDetailModal');
+    // DEĞİŞİKLİK: Artık doğrudan .modal-content'i hedef alıyoruz.
     const contentContainer = modal.querySelector('.modal-content'); 
     
     contentContainer.innerHTML = '<p class="text-gray-400 p-8 text-center">Tarif detayları yükleniyor...</p>';
     modal.style.display = 'flex';
 
     try {
-        // ... FONKSİYONUN GERİ KALAN TÜM İÇERİĞİ BURADA AYNI ŞEKİLDE KALACAK ...
-        // Senin kodundaki bu fonksiyonun mevcut içeriğini buraya yapıştırabilirsin.
-        // Ben aşağıya zaten dosyadaki orijinal halini ekliyorum.
-        
         const recipe = craftingRecipesCache.find(r => r.id === recipeId);
         if (!recipe) throw new Error("Tarif bulunamadı.");
 
@@ -20850,8 +20729,7 @@ async function openCraftingDetailModal(recipeId) {
         let allMaterialsMet = true;
         
         for (const [index, material] of recipe.materials.entries()) {
-            // ... (malzeme listesi oluşturma kodunun tamamı burada) ...
-             let userHasAmount = 0;
+            let userHasAmount = 0;
             let materialName = typeToName[material.type] || material.type.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
             let isSelectable = false;
             let optionsHtml = '';
@@ -20927,11 +20805,11 @@ async function openCraftingDetailModal(recipeId) {
             `;
         }
 
-
         const output = recipe.output;
+        // DEĞİŞİKLİK: Artık HTML, CSS'in beklediği doğru yapıda (başlık, gövde, buton) oluşturuluyor.
         contentContainer.innerHTML = `
             <div class="modal-header">
-                <h3 class="text-2xl font.bold text-yellow-300">${output.name}</h3>
+                <h3 class="text-2xl font-bold text-yellow-300">${output.name}</h3>
                 <button class="modal-close-button" onclick="closeCraftingDetailModal()">&times;</button>
             </div>
             
@@ -20951,26 +20829,102 @@ async function openCraftingDetailModal(recipeId) {
                 </button>
             </div>
         `;
-
     } catch (error) {
         console.error("Üretim detayı açılırken hata:", error);
         contentContainer.innerHTML = `<div class="p-8"><p class="text-red-500 text-center">Bir hata oluştu: ${error.message}</p><button onclick="closeCraftingDetailModal()">Kapat</button></div>`;
-    } finally {
-        // İşlem bitince veya hata alınca KİLİDİ KALDIR
-        setTimeout(() => { isModalActionInProgress = false; }, 100);
     }
 }
 
-/**
- * Üretim Detayları penceresini kapatır. (Kilitli ve Güvenli)
- */
+function collectAndCraft(recipeId) {
+    const selections = {};
+    const choiceElements = document.querySelectorAll('.material-choice');
+    let allSelectionsMade = true;
+
+    choiceElements.forEach(select => {
+        const materialIndex = select.dataset.materialIndex;
+        if (select.value) {
+            selections[materialIndex] = select.value;
+        } else {
+            allSelectionsMade = false;
+        }
+    });
+
+    if (!allSelectionsMade) {
+        displayMessage("Lütfen harcamak istediğiniz tüm malzemeleri seçin.");
+        return;
+    }
+
+    craftItem(recipeId, selections);
+}
+
 function closeCraftingDetailModal() {
-    if (isModalActionInProgress) return;
-    isModalActionInProgress = true; // KİLİDİ AKTİF ET
-
     document.getElementById('craftingDetailModal').style.display = 'none';
+}
 
-    setTimeout(() => { isModalActionInProgress = false; }, 100);
+// --- YENİ VE DÜZGÜN ÇALIŞAN FONKSİYONLAR ---
+
+/**
+ * Admin için Üretim Yönetim Panelini açar ve tarifleri anlık olarak dinlemeye başlar.
+ */
+function openCraftingAdminModal() {
+    if (!isAdmin) return;
+    const listEl = document.getElementById('adminRecipesList');
+    listEl.innerHTML = '<p class="text-gray-400 text-center">Yükleniyor...</p>';
+    document.getElementById('craftingAdminModal').style.display = 'flex';
+    
+    const recipesRef = db.ref('gameConfig/craftingRecipes');
+
+    // Önceki dinleyiciyi temizle ki tekrar tekrar eklenmesin
+    if (activeListeners.adminCrafting) {
+        activeListeners.adminCrafting.ref.off('value', activeListeners.adminCrafting.callback);
+    }
+
+    // Yeni dinleyiciyi kur
+    const callback = (recipesSnap) => {
+        craftingRecipesCache = [];
+        if (recipesSnap.exists()) {
+            Object.entries(recipesSnap.val()).forEach(([id, recipe]) => {
+                craftingRecipesCache.push({ id, ...recipe });
+            });
+        }
+
+        if (craftingRecipesCache.length === 0) {
+            listEl.innerHTML = '<p class="text-center text-gray-400">Henüz tarif oluşturulmamış.</p>';
+            return;
+        }
+
+        listEl.innerHTML = '';
+        craftingRecipesCache.forEach(recipe => {
+            listEl.innerHTML += `
+                <div class="flex items-center justify-between p-3 bg-gray-900 rounded-lg">
+                    <div class="flex items-center gap-3">
+                        <img src="${recipe.output.imageUrl || ''}" class="w-10 h-10 object-contain rounded-md">
+                        <span class="font-bold text-white">${recipe.output.name}</span>
+                    </div>
+                    <div>
+                        <button onclick="openRecipeCreatorModal('${recipe.id}')" class="py-1 px-3 bg-blue-600 hover:bg-blue-500 rounded-md text-xs">Düzenle</button>
+                        <button onclick="deleteRecipe('${recipe.id}')" class="py-1 px-3 bg-red-700 hover:bg-red-600 rounded-md text-xs">Sil</button>
+                    </div>
+                </div>
+            `;
+        });
+    };
+    
+    // Dinleyiciyi başlat ve referansını kaydet
+    recipesRef.on('value', callback);
+    activeListeners.adminCrafting = { ref: recipesRef, callback: callback };
+}
+
+/**
+ * Admin Üretim Yönetim Panelini kapatır ve arka plandaki dinleyiciyi durdurur.
+ */
+function closeCraftingAdminModal() {
+    // Admin paneli kapandığında, arka planda boşuna çalışmaması için dinleyiciyi kapatıyoruz.
+    if (activeListeners.adminCrafting) {
+        activeListeners.adminCrafting.ref.off('value', activeListeners.adminCrafting.callback);
+        delete activeListeners.adminCrafting;
+    }
+    document.getElementById('craftingAdminModal').style.display = 'none';
 }
 
 /**
