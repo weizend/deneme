@@ -4397,6 +4397,7 @@ function getSyncedTime() {
   let craftingRecipesCache = []; // Tarifleri önbellekte tutmak için
   let editingRecipeId = null;    // Hangi tarifin düzenlendiğini tutar
   let isCraftingInProgress = false; // Çift tıklamayı engellemek için
+  let allCardsCache = [];
 
   // YENİ: Kullanıcının son mesaj atma zamanını tutar
   let lastMessageTimestamp = 0;
@@ -5210,7 +5211,8 @@ async function executeWeeklyReset() {
     document.getElementById("gameDiv").style.display = "block";
     
     await loadCodexAndStatsCache(); // Avatarların tıklanabilmesi
-    
+    await loadAllCardsCache();
+      
     document.getElementById('chatToggleBtn').style.display = 'flex';
     
     document.getElementById("currentUser").textContent = currentUser;
@@ -15959,10 +15961,15 @@ async function loadMarketOffers(mode) {
     tradesRef.on('value', callback);
     activeListeners.marketOffers = { ref: tradesRef, event: 'value', callback };
 }
-      
-// --- YENİ FONKSİYON ---
+
+      // --- YENİ EKLENECEK KOD BAŞLANGICI: TAKAS TEKLİFİ OLUŞTURMA FONKSİYONLARI ---
+
+/**
+ * Yeni takas teklifi oluşturma penceresini açar.
+ * @param {string|null} preselectedCardId - Eğer albümden bir karta tıklanarak açıldıysa, o kartın ID'si.
+ */
 async function openCreateOfferModal(preselectedCardId = null) {
-    // ÖNCE KONTROL ET
+    // Önce kullanıcının koleksiyonu tamamlayıp tamamlamadığını kontrol et
     const userSnap = await db.ref(`users/${currentUser}`).once('value');
     const userData = userSnap.val() || {};
     if (userData.completedCollection === true) {
@@ -15970,7 +15977,6 @@ async function openCreateOfferModal(preselectedCardId = null) {
         return; // Fonksiyonu burada durdur, pencere açılmasın.
     }
 
-    // Kontrolden geçerse, eski kodun aynısı devam etsin
     const myCardSelect = document.getElementById('offerMyCardSelect');
     const requestCardSelect = document.getElementById('offerRequestCardSelect');
     myCardSelect.innerHTML = '<option>Yükleniyor...</option>';
@@ -15994,6 +16000,7 @@ async function openCreateOfferModal(preselectedCardId = null) {
     const userCards = userCardsSnap.val() || {};
     const masterCards = masterCardsSnap.val() || {};
 
+    // "Teklif Ettiğim Kart" dropdown'ını doldur
     myCardSelect.innerHTML = '';
     let hasDuplicates = false;
     for (const cardId in userCards) {
@@ -16015,6 +16022,7 @@ async function openCreateOfferModal(preselectedCardId = null) {
         myCardSelect.value = preselectedCardId;
     }
 
+    // "İstediğim Kart" dropdown'ını doldur
     requestCardSelect.innerHTML = '';
     for (const cardId in masterCards) {
         const cardInfo = masterCards[cardId];
@@ -16026,14 +16034,17 @@ async function openCreateOfferModal(preselectedCardId = null) {
     
     document.getElementById('createOfferModal').style.display = 'flex';
 }
-      
-// Yeni teklif oluşturma penceresini kapatır
+
+/**
+ * Yeni teklif oluşturma penceresini kapatır.
+ */
 function closeCreateOfferModal() {
     document.getElementById('createOfferModal').style.display = 'none';
 }
 
-// submitTradeOffer FONKSİYONUNU BULUP BU BLOK İLE DEĞİŞTİRİN
-
+/**
+ * Kullanıcının oluşturduğu takas teklifini veritabanına kaydeder.
+ */
 async function submitTradeOffer() {
     const submitBtn = document.getElementById('submit-trade-offer-btn');
     if (!submitBtn) return;
@@ -16046,12 +16057,10 @@ async function submitTradeOffer() {
         const requestedCardId = document.getElementById('offerRequestCardSelect').value;
 
         if (!offeredCardId) {
-            displayMessage("Teklif etmek için en az bir karttan 2 adet veya daha fazlasına sahip olmalısın.");
-            return;
+            throw new Error("Teklif etmek için en az bir karttan 2 adet veya daha fazlasına sahip olmalısın.");
         }
         if (offeredCardId === requestedCardId) {
-            displayMessage("Bir kartı kendisiyle takas edemezsin.");
-            return;
+            throw new Error("Bir kartı kendisiyle takas edemezsin.");
         }
 
         const feeSnap = await db.ref('gameConfig/marketSettings/tradeFee').once('value');
@@ -16060,26 +16069,19 @@ async function submitTradeOffer() {
         const userSnap = await db.ref(`users/${currentUser}`).once('value');
         const userData = userSnap.val();
 
-        // YENİ EKLENEN KISIM BAŞLANGICI: Koleksiyonu tamamlayanların yeni teklif oluşturmasını engelle
         if (userData.completedCollection === true) {
-            displayMessage("Koleksiyonu tamamladığın için artık yeni takas teklifi oluşturamazsın.");
-            return; // Fonksiyonu burada durdur
+            throw new Error("Koleksiyonu tamamladığın için artık yeni takas teklifi oluşturamazsın.");
         }
-        // YENİ EKLENEN KISIM SONU
 
         if ((userData.balance || 0) < tradeFee) {
-            displayMessage(`Teklif oluşturmak için gereken ${tradeFee} Puan işlem ücretine sahip değilsin.`);
-            return;
+            throw new Error(`Teklif oluşturmak için gereken ${tradeFee} Puan işlem ücretine sahip değilsin.`);
         }
 
-        const userCards = userData.cardCollection || {};
-        const neededCard = !userCards[requestedCardId] || userCards[requestedCardId].count === 0;
-        
+        // Kart sayısını güvenli bir şekilde azaltmak için transaction kullanıyoruz
         const userCardRef = db.ref(`users/${currentUser}/cardCollection/${offeredCardId}`);
-
-        const { committed, snapshot } = await userCardRef.transaction(cardData => {
+        const { committed } = await userCardRef.transaction(cardData => {
             if (!cardData || cardData.count <= 1) {
-                return; 
+                return; // Eğer kart yoksa veya 1'den azsa işlemi iptal et
             }
             cardData.count--;
             return cardData;
@@ -16094,6 +16096,7 @@ async function submitTradeOffer() {
             const activityRef = db.ref('activityFeed').push();
             const activityId = activityRef.key;
             
+            // Aktivite logunu oluştur
             logActivity(
                 'tradeOfferCreated', 
                 currentUser, 
@@ -16106,19 +16109,17 @@ async function submitTradeOffer() {
                 activityId
             );
             
-            const newTradeRef = db.ref(`trades/${activityId}`);
+            // Yeni takas teklifini oluştur
             const newTrade = {
                 offerer: currentUser,
                 offeredCardId: offeredCardId,
                 requestedCardId: requestedCardId,
-                tradeFee: tradeFee, 
                 timestamp: firebase.database.ServerValue.TIMESTAMP,
-                activityId: activityId,
-                offererNeededCard: neededCard 
+                activityId: activityId
             };
             
             const updates = {};
-            updates[`/trades/${newTradeRef.key}`] = newTrade;
+            updates[`/trades/${activityId}`] = newTrade;
             updates[`/users/${currentUser}/balance`] = userData.balance - tradeFee;
             updates[`/users/${currentUser}/totalSpentPoints`] = (userData.totalSpentPoints || 0) + tradeFee;
 
@@ -16126,24 +16127,20 @@ async function submitTradeOffer() {
 
             displayMessage("Takas teklifin başarıyla pazara eklendi!");
             closeCreateOfferModal();
-            switchMarketTab('mine');
-            
-            if (currentActiveSection === 'cardCollection') {
-                loadCollectionAlbum();
-            }
+            switchMarketTab('mine'); // Kullanıcıyı kendi teklifleri sekmesine yönlendir
             
         } else {
-            displayMessage("Hata: Bu karttan takas edebileceğin fazlan kalmamış.");
+            throw new Error("Hata: Bu karttan takas edebileceğin fazlan kalmamış.");
         }
     } catch (error) {
-        console.error("Takas oluşturma hatası:", error);
-        displayMessage("Takas oluşturulurken bir hata oluştu.");
+        displayMessage(error.message);
     } finally {
         submitBtn.disabled = false;
         submitBtn.textContent = 'TEKLİFİ PAZARA KOY';
     }
 }
-
+// --- YENİ EKLENECEK KOD SONU ---
+    
 // cancelTradeOffer FONKSİYONUNU BUL VE BUNUNLA DEĞİŞTİR
 async function cancelTradeOffer(tradeId, asAdmin = false) {
     if (!tradeId) return;
@@ -18049,24 +18046,213 @@ async function claimLoginStreakReward(day) {
     }
 }
 
-// =====================================================================
-// ADIM 1: BU YENİ YARDIMCI FONKSİYONU, SCRIPT BLOĞUNUN UYGUN BİR YERİNE EKLE
-// =====================================================================
+      // --- YENİ EKLENECEK KOD BAŞLANGICI: ÜRETİM YÖNETİM PANELİ FONKSİYONLARI ---
 
 /**
- * Bir kullanıcıya belirtilen ödülü uygular. Bu fonksiyon transaction içinde kullanılmak üzere tasarlanmıştır.
- * @param {object} userData - İşlem yapılacak kullanıcının mevcut verisi (transaction içindeki).
- * @param {object} reward - Uygulanacak ödül nesnesi (type, value, uses vb. içermeli).
- * @returns {object} { cardPacksToOpen: array } - Transaction sonrası işlenmesi gereken kart paketlerini döndürür.
+ * Admin: Yeni tarif ekleme veya mevcut tarifi düzenleme penceresini açar.
  */
-// --- ÜRETİM SİSTEMİ ANA FONKSİYONLARI ---
+async function openRecipeCreatorModal(recipeId = null) {
+    if (!isAdmin) return;
+
+    const modal = document.getElementById('recipeCreatorModal');
+    const title = document.getElementById('recipeCreatorTitle');
+    const outputContainer = document.getElementById('recipeOutputContainer');
+    const materialsContainer = document.getElementById('recipeMaterialsContainer');
+
+    // Formu temizle
+    outputContainer.innerHTML = '';
+    materialsContainer.innerHTML = '';
+    editingRecipeId = null;
+
+    if (recipeId) {
+        // Düzenleme Modu
+        editingRecipeId = recipeId;
+        title.textContent = 'Tarifi Düzenle';
+        const recipe = craftingRecipesCache.find(r => r.id === recipeId);
+        if (recipe) {
+            addOutputRowToRecipeCreator(recipe.output);
+            (recipe.materials || []).forEach(material => addMaterialRowToRecipeCreator(material));
+        }
+    } else {
+        // Yeni Tarif Modu
+        title.textContent = 'Yeni Tarif Oluştur';
+        addOutputRowToRecipeCreator(); // Boş bir sonuç ürün satırı ekle
+        addMaterialRowToRecipeCreator(); // Başlangıç için boş bir malzeme satırı ekle
+    }
+    modal.style.display = 'flex';
+}
 
 /**
- * Üretim tariflerini Firebase'den çeker ve ekranda gösterir.
+ * Admin: Tarif oluşturma/düzenleme penceresini kapatır.
  */
+function closeRecipeCreatorModal() {
+    document.getElementById('recipeCreatorModal').style.display = 'none';
+    editingRecipeId = null;
+}
+
+/**
+ * Tarif oluşturucuya "Sonuç Ürün" satırını ekler.
+ */
+function addOutputRowToRecipeCreator(output = {}) {
+    const container = document.getElementById('recipeOutputContainer');
+    container.innerHTML = getRewardItemHTML('output', output); // Tek bir satır olduğu için innerHTML kullanıyoruz
+    const selectElement = container.querySelector('.reward-type');
+    if (selectElement) handleAdminRewardTypeChange(selectElement, output);
+}
+
+/**
+ * Tarif oluşturucuya yeni bir "Gerekli Malzeme" satırı ekler.
+ */
+function addMaterialRowToRecipeCreator(material = {}) {
+    const container = document.getElementById('recipeMaterialsContainer');
+    const materialRow = document.createElement('div');
+    materialRow.innerHTML = getRewardItemHTML('material', material);
+    container.appendChild(materialRow);
+    const selectElement = materialRow.querySelector('.reward-type');
+    if (selectElement) handleAdminRewardTypeChange(selectElement, material);
+}
+
+/**
+ * Bir butona tıklandığında Malzeme satırı ekler (HTML onclick event'i için).
+ */
+function addMaterialRowToRecipeCreatorFromButton(button) {
+    addMaterialRowToRecipeCreator();
+}
+
+
+/**
+ * Admin: Giriş serisi veya Üretim paneli için bir ödül/malzeme satırının HTML'ini oluşturur.
+ * @param {string} prefix - 'output' veya 'material' gibi, id'leri benzersiz yapmak için kullanılır.
+ * @param {object} data - Varsa, satırı doldurmak için kullanılacak veri.
+ * @returns {string} Oluşturulan HTML satırı.
+ */
+function getRewardItemHTML(prefix, data = {}) {
+    // Kartlar listesini al (sadece kart tipi seçildiğinde kullanılacak)
+    let cardOptions = '';
+    if (data.type === 'card' || prefix === 'material') { // Malzemeler için her zaman hazır olsun
+        cardOptions = allCardsCache.map(card => 
+            `<option value="${card.id}" ${data.cardId === card.id ? 'selected' : ''}>${card.cardName}</option>`
+        ).join('');
+    }
+
+    return `
+        <div class="reward-entry grid grid-cols-1 sm:grid-cols-3 gap-2 p-2 bg-gray-900/50 rounded-md">
+            <select class="box-setting-input reward-type" onchange="handleAdminRewardTypeChange(this)">
+                <option value="points" ${data.type === 'points' ? 'selected' : ''}>💰 Puan</option>
+                <option value="kasaPuani" ${data.type === 'kasaPuani' ? 'selected' : ''}>🏦 Kasa Puanı</option>
+                <option value="boxRights" ${data.type === 'boxRights' ? 'selected' : ''}>📦 Kutu Hakkı</option>
+                <option value="wheelTicket" ${data.type === 'wheelTicket' ? 'selected' : ''}>🎫 Çark Bileti</option>
+                <option value="clickCatchTicket" ${data.type === 'clickCatchTicket' ? 'selected' : ''}>🎟️ T-Y Bileti</option>
+                <option value="iflasShield" ${data.type === 'iflasShield' ? 'selected' : ''}>🛡️ İflas Kalkanı</option>
+                <option value="tempMultiplier" ${data.type === 'tempMultiplier' ? 'selected' : ''}>✖️ Çarpan</option>
+                <option value="avatar" ${data.type === 'avatar' ? 'selected' : ''}>👤 Avatar</option>
+                <option value="wildcard" ${data.type === 'wildcard' ? 'selected' : ''}>🃏 Joker Kart</option>
+                <option value="card_pack" ${data.type === 'card_pack' ? 'selected' : ''}>🎴 Standart Kart Paketi</option>
+                <option value="card_pack_normal" ${data.type === 'card_pack_normal' ? 'selected' : ''}>🥉 Bronz Kart Paketi</option>
+                <option value="card_pack_gumus" ${data.type === 'card_pack_gumus' ? 'selected' : ''}>🥈 Gümüş Kart Paketi</option>
+                <option value="card_pack_altin" ${data.type === 'card_pack_altin' ? 'selected' : ''}>🥇 Altın Kart Paketi</option>
+                <option value="card_pack_efsanevi" ${data.type === 'card_pack_efsanevi' ? 'selected' : ''}>🏆 Efsanevi Kart Paketi</option>
+                <option value="revival_stone" ${data.type === 'revival_stone' ? 'selected' : ''}>💎 Dirilme Taşı</option>
+                <option value="health_potion" ${data.type === 'health_potion' ? 'selected' : ''}>🧪 Can İksiri</option>
+                <option value="damage_potion" ${data.type === 'damage_potion' ? 'selected' : ''}>⚔️ Hasar İksiri</option>
+                <option value="defense_potion" ${data.type === 'defense_potion' ? 'selected' : ''}>🛡️ Savunma İksiri</option>
+                <option value="crit_potion" ${data.type === 'crit_potion' ? 'selected' : ''}>💥 Kritik Vuruş İksiri</option>
+                <option value="crit_damage_potion" ${data.type === 'crit_damage_potion' ? 'selected' : ''}>🎯 Kritik Hasar İksiri</option>
+                <option value="dodge_potion" ${data.type === 'dodge_potion' ? 'selected' : ''}>💨 Sıyrılma Şansı İksiri</option>
+                <option value="pierce_potion" ${data.type === 'pierce_potion' ? 'selected' : ''}>📌 Delici Şansı İksiri</option>
+                <option value="card" ${data.type === 'card' ? 'selected' : ''}>🃏 Belirli Kart</option>
+            </select>
+            <div class="reward-fields-container grid grid-cols-2 gap-2 sm:col-span-2">
+                </div>
+        </div>
+    `;
+}
+
+/**
+ * Admin: Bir tarifi veritabanına kaydeder veya günceller.
+ */
+async function saveRecipe() {
+    if (!isAdmin) return;
+
+    try {
+        // Sonuç ürünü bilgilerini topla
+        const outputRow = document.querySelector('#recipeOutputContainer .reward-entry');
+        if (!outputRow) throw new Error("Sonuç ürün bilgisi bulunamadı.");
+        const output = parseRewardDataFromRow(outputRow);
+        if (!output) throw new Error("Sonuç ürün bilgileri geçersiz.");
+
+        // Gerekli malzemeleri topla
+        const materials = [];
+        const materialRows = document.querySelectorAll('#recipeMaterialsContainer .reward-entry');
+        for (const row of materialRows) {
+            const material = parseRewardDataFromRow(row);
+            if (material) materials.push(material);
+        }
+
+        if (materials.length === 0) {
+            throw new Error("En az bir gerekli malzeme eklemelisiniz.");
+        }
+
+        const recipeData = { output, materials };
+        
+        if (editingRecipeId) {
+            await db.ref(`gameConfig/craftingRecipes/${editingRecipeId}`).update(recipeData);
+            displayMessage("Tarif başarıyla güncellendi.");
+        } else {
+            await db.ref('gameConfig/craftingRecipes').push(recipeData);
+            displayMessage("Yeni tarif başarıyla eklendi.");
+        }
+
+        closeRecipeCreatorModal();
+
+    } catch (error) {
+        displayMessage(`Hata: ${error.message}`);
+    }
+}
+
+/**
+ * Admin: Bir ödül/malzeme satırındaki verileri okuyup bir obje olarak döndürür.
+ */
+function parseRewardDataFromRow(rowElement) {
+    const type = rowElement.querySelector('.reward-type').value;
+    const data = { type };
+
+    if (type === 'tempMultiplier') {
+        data.value = parseInt(rowElement.querySelector('.reward-value').value);
+        data.uses = parseInt(rowElement.querySelector('.reward-uses').value);
+        if (isNaN(data.value) || isNaN(data.uses)) return null;
+    } else if (type === 'avatar') {
+        data.avatarName = rowElement.querySelector('.reward-avatarName').value.trim();
+        data.avatarImageUrl = rowElement.querySelector('.reward-avatarImageUrl').value.trim();
+        if (!data.avatarName || !data.avatarImageUrl) return null;
+    } else if (type === 'card') {
+        data.cardId = rowElement.querySelector('.reward-cardId').value;
+        data.amount = parseInt(rowElement.querySelector('.reward-value').value);
+        if (!data.cardId || isNaN(data.amount)) return null;
+    } else { // Diğer tüm tipler
+        data.value = parseStatValue(type, rowElement.querySelector('.reward-value').value);
+        if (isNaN(data.value)) return null;
+    }
+    
+    // Üretilecek ürünler için bu alanlar da okunmalı
+    data.name = rowElement.querySelector('.reward-name')?.value.trim();
+    data.imageUrl = rowElement.querySelector('.reward-imageUrl')?.value.trim();
+    if(data.name === undefined) delete data.name; // Eğer alan yoksa objeye ekleme
+    if(data.imageUrl === undefined) delete data.imageUrl;
+    
+    // Gerekli Malzeme (material) için 'amount' kullanılır, 'value' değil.
+    if(data.value !== undefined) {
+        data.amount = data.value;
+        delete data.value;
+    }
+    
+    return data;
+}
+
+// --- YENİ EKLENECEK KOD SONU ---
+
 async function loadCraftingRecipes() {
     const container = document.getElementById('craftingRecipesContainer');
-    container.innerHTML = '<p class="text-center col-span-full text-gray-400">Tarifler yükleniyor...</p>';
 
     const recipesRef = db.ref('gameConfig/craftingRecipes');
 
@@ -20802,6 +20988,29 @@ async function loadCodexAndStatsCache() {
         console.log("Avatar önbellekleri başarıyla yüklendi.");
     } catch (error) {
         console.error("Avatar önbellekleri yüklenirken hata oluştu:", error);
+    }
+}
+
+      /**
+ * YENİ: Oyundaki tüm kartların listesini çeker ve önbelleğe alır.
+ * Bu, üretim panelindeki kart seçimi dropdown'ları için gereklidir.
+ */
+async function loadAllCardsCache() {
+    try {
+        const cardsRef = db.ref('gameConfig/cardCollection');
+        const snapshot = await cardsRef.once('value');
+        allCardsCache = []; // Önceki veriyi temizle
+        if (snapshot.exists()) {
+            const cardsData = snapshot.val();
+            for (const cardId in cardsData) {
+                allCardsCache.push({ id: cardId, ...cardsData[cardId] });
+            }
+            // Sıralama, admin panelinde daha iyi bir görünüm sağlar
+            allCardsCache.sort((a, b) => (a.order || 0) - (b.order || 0));
+        }
+        console.log("Tüm kartlar önbelleğe alındı:", allCardsCache.length, "adet.");
+    } catch (error) {
+        console.error("Tüm kartlar önbelleğe alınırken hata oluştu:", error);
     }
 }
 
