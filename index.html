@@ -17609,15 +17609,17 @@ function addRewardToDay(element, rewardData = {}) {
     handleAdminRewardTypeChange(selectElement, rewardData); // Mevcut veriyi de gönder
 }
       
-// MEVCUT handleAdminRewardTypeChange FONKSİYONUNU BUNUNLA DEĞİŞTİR
+// MEVCUT handleAdminRewardTypeChange FONKSİYONUNU SİLİP BUNU YAPIŞTIRIN
 
 function handleAdminRewardTypeChange(selectElement, rewardData = {}) {
     const type = selectElement.value;
-    const container = selectElement.closest('.grid').querySelector('.reward-fields-container');
+    const container = selectElement.closest('.reward-entry').querySelector('.reward-fields-container');
     let fieldsHtml = '';
-    const isPercent = ['defense_potion', 'crit_potion', 'crit_damage_potion', 'dodge_potion', 'pierce_potion', 'health_regen_potion'].includes(type);
+    
+    // Yüzdeli değer alacak iksir türlerini burada tanımlıyoruz
+    const isPercent = ['defense_potion', 'crit_potion', 'crit_damage_potion', 'dodge_potion', 'pierce_potion'].includes(type);
     const valuePlaceholder = isPercent ? 'Değer (örn: 2.5)' : 'Miktar / Adet';
-    const isRarityCard = type === 'card_normal' || type === 'card_gumus' || type === 'card_altin' || type === 'card_efsanevi';
+    const isRarityCard = ['card_normal', 'card_gumus', 'card_altin', 'card_efsanevi'].includes(type);
 
     if (type === 'tempMultiplier') {
         fieldsHtml = `
@@ -17632,6 +17634,7 @@ function handleAdminRewardTypeChange(selectElement, rewardData = {}) {
             <button onclick="this.parentElement.parentElement.remove()" class="py-1 px-2 bg-red-600 hover:bg-red-500 rounded-md text-xs col-span-2">Sil</button>
         `;
     } else if (type === 'card') {
+        // "Belirli Kart" seçildiğinde, hem kart seçme dropdown'ı hem de adet input'u için alan oluşturuyoruz.
         let cardOptions = allCardsCache.map(card => `<option value="${card.id}" ${rewardData.cardId === card.id ? 'selected' : ''}>${card.cardName}</option>`).join('');
         fieldsHtml = `
             <select class="box-setting-input reward-cardId col-span-2 sm:col-span-1">${cardOptions}</select>
@@ -17640,18 +17643,15 @@ function handleAdminRewardTypeChange(selectElement, rewardData = {}) {
                 <button onclick="this.parentElement.parentElement.parentElement.remove()" class="py-1 px-2 bg-red-600 hover:bg-red-500 rounded-md text-xs">Sil</button>
             </div>
         `;
-    } else if (isRarityCard) {
-        // Nadirlik türü kartlar için sadece miktar alanı göster
-        fieldsHtml = `
-            <input type="number" class="box-setting-input reward-value col-span-2 sm:col-span-1" placeholder="Adet" value="${rewardData.amount || '1'}">
-            <button onclick="this.parentElement.parentElement.remove()" class="py-1 px-2 bg-red-600 hover:bg-red-600 rounded-md text-xs sm:col-span-1">Sil</button>
-        `;
     } else {
+        // Geriye kalan tüm diğer türler için (puan, biletler, nadirlik kartları vb.)
+        // sadece bir adet giriş alanı ve silme butonu yeterli.
         fieldsHtml = `
-            <input type="text" class="box-setting-input reward-value col-span-2 sm:col-span-1" placeholder="${valuePlaceholder}" value="${rewardData.value || ''}">
-            <button onclick="this.parentElement.parentElement.remove()" class="py-1 px-2 bg-red-600 hover:bg-red-600 rounded-md text-xs sm:col-span-1">Sil</button>
+            <input type="text" class="box-setting-input reward-value col-span-2 sm:col-span-1" placeholder="${valuePlaceholder}" value="${rewardData.amount || rewardData.value || ''}">
+            <button onclick="this.parentElement.parentElement.remove()" class="py-1 px-2 bg-red-600 hover:bg-red-500 rounded-md text-xs sm:col-span-1">Sil</button>
         `;
     }
+    
     container.innerHTML = fieldsHtml;
 }
       
@@ -18198,6 +18198,7 @@ function addMaterialRowToRecipeCreatorFromButton(button) {
     addMaterialRowToRecipeCreator();
 }
 
+// MEVCUT getRewardItemHTML FONKSİYONUNU SİLİP BUNU YAPIŞTIRIN
 
 /**
  * Admin: Giriş serisi veya Üretim paneli için bir ödül/malzeme satırının HTML'ini oluşturur.
@@ -18205,48 +18206,47 @@ function addMaterialRowToRecipeCreatorFromButton(button) {
  * @param {object} data - Varsa, satırı doldurmak için kullanılacak veri.
  * @returns {string} Oluşturulan HTML satırı.
  */
-// MEVCUT getRewardItemHTML FONKSİYONUNU BUNUNLA DEĞİŞTİR
-
 function getRewardItemHTML(prefix, data = {}) {
+    // Tüm kartların listesini <option> olarak hazırla
     let cardOptions = allCardsCache.map(card => 
         `<option value="${card.id}" ${data.cardId === card.id ? 'selected' : ''}>${card.cardName}</option>`
     ).join('');
 
-    // Sadece "gerekli malzeme" (material) satırlarına özel nadirlik seçenekleri
-    const materialOnlyOptions = `
-        <option value="card_normal" ${data.type === 'card_normal' ? 'selected' : ''}>🃏 Bronz Kart</option>
-        <option value="card_gumus" ${data.type === 'card_gumus' ? 'selected' : ''}>🃏 Gümüş Kart</option>
-        <option value="card_altin" ${data.type === 'card_altin' ? 'selected' : ''}>🃏 Altın Kart</option>
-        <option value="card_efsanevi" ${data.type === 'card_efsanevi' ? 'selected' : ''}>🃏 Efsanevi Kart</option>
+    // Üretilecek ürünler (output) ve gerekli malzemeler (material) için farklı seçenek setleri
+    const outputOptions = `
+        <option value="points" ${data.type === 'points' ? 'selected' : ''}>💰 Puan</option>
+        <option value="kasaPuani" ${data.type === 'kasaPuani' ? 'selected' : ''}>🏦 Kasa Puanı</option>
+        <option value="boxRights" ${data.type === 'boxRights' ? 'selected' : ''}>📦 Kutu Hakkı</option>
+        <option value="wheelTicket" ${data.type === 'wheelTicket' ? 'selected' : ''}>🎫 Çark Bileti</option>
+        <option value="clickCatchTicket" ${data.type === 'clickCatchTicket' ? 'selected' : ''}>🎟️ T-Y Bileti</option>
+        <option value="iflasShield" ${data.type === 'iflasShield' ? 'selected' : ''}>🛡️ İflas Kalkanı</option>
+        <option value="wildcard" ${data.type === 'wildcard' ? 'selected' : ''}>🃏 Joker Kart</option>
+        <option value="revival_stone" ${data.type === 'revival_stone' ? 'selected' : ''}>💎 Dirilme Taşı</option>
+        <option value="avatar" ${data.type === 'avatar' ? 'selected' : ''}>👤 Avatar</option>
+        <option value="card" ${data.type === 'card' ? 'selected' : ''}>🎴 Belirli Koleksiyon Kartı</option>
+        <option value="tempMultiplier" ${data.type === 'tempMultiplier' ? 'selected' : ''}>✖️ Belirli Bir Çarpan</option>
+        <option value="health_regen_potion" ${data.type === 'health_regen_potion' ? 'selected' : ''}>🧪 Can Yenileme İksiri</option>
+        <option value="health_potion" ${data.type === 'health_potion' ? 'selected' : ''}>🧪 Can Bonusu</option>
+        <option value="damage_potion" ${data.type === 'damage_potion' ? 'selected' : ''}>⚔️ Hasar Bonusu</option>
+        <option value="defense_potion" ${data.type === 'defense_potion' ? 'selected' : ''}>🛡️ Savunma Bonusu</option>
+        <option value="crit_potion" ${data.type === 'crit_potion' ? 'selected' : ''}>💥 Kritik Vuruş Bonusu</option>
+        <option value="crit_damage_potion" ${data.type === 'crit_damage_potion' ? 'selected' : ''}>🎯 Kritik Hasar Bonusu</option>
+        <option value="dodge_potion" ${data.type === 'dodge_potion' ? 'selected' : ''}>💨 Sıyrılma Bonusu</option>
+        <option value="pierce_potion" ${data.type === 'pierce_potion' ? 'selected' : ''}>📌 Delici Vuruş Bonusu</option>
+    `;
+    
+    const materialOptions = `
+        ${outputOptions}
+        <option value="card_normal" ${data.type === 'card_normal' ? 'selected' : ''}>🥉 Herhangi bir Bronz Kart</option>
+        <option value="card_gumus" ${data.type === 'card_gumus' ? 'selected' : ''}>🥈 Herhangi bir Gümüş Kart</option>
+        <option value="card_altin" ${data.type === 'card_altin' ? 'selected' : ''}>🥇 Herhangi bir Altın Kart</option>
+        <option value="card_efsanevi" ${data.type === 'card_efsanevi' ? 'selected' : ''}>🏆 Herhangi bir Efsanevi Kart</option>
     `;
 
     return `
         <div class="reward-entry grid grid-cols-1 sm:grid-cols-3 gap-2 p-2 bg-gray-900/50 rounded-md">
             <select class="box-setting-input reward-type" onchange="handleAdminRewardTypeChange(this)">
-                <option value="points" ${data.type === 'points' ? 'selected' : ''}>💰 Puan</option>
-                <option value="kasaPuani" ${data.type === 'kasaPuani' ? 'selected' : ''}>🏦 Kasa Puanı</option>
-                <option value="boxRights" ${data.type === 'boxRights' ? 'selected' : ''}>📦 Kutu Hakkı</option>
-                <option value="wheelTicket" ${data.type === 'wheelTicket' ? 'selected' : ''}>🎫 Çark Bileti</option>
-                <option value="clickCatchTicket" ${data.type === 'clickCatchTicket' ? 'selected' : ''}>🎟️ T-Y Bileti</option>
-                <option value="iflasShield" ${data.type === 'iflasShield' ? 'selected' : ''}>🛡️ İflas Kalkanı</option>
-                <option value="tempMultiplier" ${data.type === 'tempMultiplier' ? 'selected' : ''}>✖️ Çarpan</option>
-                <option value="avatar" ${data.type === 'avatar' ? 'selected' : ''}>👤 Avatar</option>
-                <option value="wildcard" ${data.type === 'wildcard' ? 'selected' : ''}>🃏 Joker Kart</option>
-                <option value="card_pack" ${data.type === 'card_pack' ? 'selected' : ''}>🎴 Standart Kart Paketi</option>
-                <option value="card_pack_normal" ${data.type === 'card_pack_normal' ? 'selected' : ''}>🥉 Bronz Kart Paketi</option>
-                <option value="card_pack_gumus" ${data.type === 'card_pack_gumus' ? 'selected' : ''}>🥈 Gümüş Kart Paketi</option>
-                <option value="card_pack_altin" ${data.type === 'card_pack_altin' ? 'selected' : ''}>🥇 Altın Kart Paketi</option>
-                <option value="card_pack_efsanevi" ${data.type === 'card_pack_efsanevi' ? 'selected' : ''}>🏆 Efsanevi Kart Paketi</option>
-                <option value="revival_stone" ${data.type === 'revival_stone' ? 'selected' : ''}>💎 Dirilme Taşı</option>
-                <option value="health_potion" ${data.type === 'health_potion' ? 'selected' : ''}>🧪 Can İksiri</option>
-                <option value="damage_potion" ${data.type === 'damage_potion' ? 'selected' : ''}>⚔️ Hasar İksiri</option>
-                <option value="defense_potion" ${data.type === 'defense_potion' ? 'selected' : ''}>🛡️ Savunma İksiri</option>
-                <option value="crit_potion" ${data.type === 'crit_potion' ? 'selected' : ''}>💥 Kritik Vuruş İksiri</option>
-                <option value="crit_damage_potion" ${data.type === 'crit_damage_potion' ? 'selected' : ''}>🎯 Kritik Hasar İksiri</option>
-                <option value="dodge_potion" ${data.type === 'dodge_potion' ? 'selected' : ''}>💨 Sıyrılma Şansı İksiri</option>
-                <option value="pierce_potion" ${data.type === 'pierce_potion' ? 'selected' : ''}>📌 Delici Şansı İksiri</option>
-                <option value="card" ${data.type === 'card' ? 'selected' : ''}>🃏 Belirli Kart</option>
-                ${prefix === 'material' ? materialOnlyOptions : ''}
+                ${prefix === 'material' ? materialOptions : outputOptions}
             </select>
             <div class="reward-fields-container grid grid-cols-2 gap-2 sm:col-span-2">
                 </div>
