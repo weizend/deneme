@@ -76,15 +76,44 @@
     background: linear-gradient(145deg, #2c3e50, #1a2530);
     border: 2px solid #4b5563;
     transition: all 0.2s ease-in-out;
+    position: relative; /* BU SATIRI EKLE */
 }
+/* --- YENİ EKLENECEK KOD --- */
+/* Üretim kartı içeriğinin (resim, yazı) karartma efektinin üstünde kalmasını sağlar */
+.crafting-recipe-card > * {
+    position: relative;
+    z-index: 2;
+}
+/* --- KOD SONU --- */
 .crafting-recipe-card:hover {
     transform: translateY(-5px);
     border-color: #fde047;
 }
+/* --- BU KOD BLOĞUNU DEĞİŞTİR --- */
 .crafting-recipe-card.cannot-craft {
-    filter: grayscale(80%);
-    opacity: 0.6;
     cursor: not-allowed;
+    position: relative; /* Karartma efekti için gerekli */
+}
+
+/* --- VE BU İKİ YENİ BLOĞU EKLE --- */
+/* Üretilemeyen kartlar için karartma efekti */
+.crafting-recipe-card.cannot-craft::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.6); /* %60'lık siyah bir katman ekler */
+    border-radius: 0.75rem; /* Kartın köşe yuvarlaklığı ile aynı olmalı */
+    z-index: 1;
+}
+
+/* Kart içeriğinin (resim, yazı) karartma katmanının üstünde kalmasını sağlar */
+.crafting-recipe-card.cannot-craft > * {
+    position: relative;
+    z-index: 2;
+    opacity: 0.85; /* İçeriği yine de biraz soluk göstererek pasif olduğunu belli eder */
 }
 @media (max-width: 768px) { /* Orta boy ve altındaki ekranlar için */
     .admin-codex-item {
