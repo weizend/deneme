@@ -7483,13 +7483,13 @@ function getActivityIcon(type, details = {}) {
     let bgColor = 'bg-gray-500';
 
     switch (type) {
+        case 'craftItem': // YENİ EKLENEN SATIR
+            icon = '🛠️';
+            bgColor = 'bg-orange-500';
+            break;
         case 'collectionCompleted':
             icon = '🃏';
             bgColor = 'bg-purple-600';
-            break;
-        case 'wildcardConvertedToBoxRights':
-            icon = '🃏'; 
-            bgColor = 'bg-purple-600'; 
             break;
         case 'useRegenPotion':
             icon = '🧪';
@@ -7625,7 +7625,6 @@ function getActivityIcon(type, details = {}) {
     `;
 }
       
-// YENİ VE GÜNCEL KODU KOPYALA ▼
 function renderActivityFeed(activities) {
     const activityFeedList = document.getElementById('activityFeedList');
     activityFeedList.innerHTML = '';
@@ -7663,6 +7662,12 @@ function renderActivityFeed(activities) {
             const userHtml = `<b class="text-yellow-300 cursor-pointer hover:underline" onclick="openPublicUserDetailModal('${activity.username}')">${activity.username}</b>`;
 
             switch (activity.type) {
+                // YENİ EKLENEN CASE BLOĞU BAŞLANGICI
+                case 'craftItem':
+                    message = `${userHtml}, atölyede <b class="text-green-400">${details.itemName}</b> üretti. <span class="text-gray-400">(Mevcut Puan: ${formatNumber(details.newBalance)})</span>`;
+                    break;
+                // YENİ EKLENEN CASE BLOĞU SONU
+                
                 case 'buyItem':
                     const isKP = (details.itemCost || '').toString().includes('KP');
                     const costText = isKP ? details.itemCost : `${formatNumber(details.itemCost)} Puan`;
