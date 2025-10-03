@@ -86,7 +86,6 @@
     opacity: 0.6;
     cursor: not-allowed;
 }
-/* --- FİNAL KODU: AVATAR KODEKSİ YÖNETİM PANELİ MOBİL DÜZELTMESİ --- */
 @media (max-width: 768px) { /* Orta boy ve altındaki ekranlar için */
     .admin-codex-item {
         flex-direction: column;   /* Ana kutuyu dikey yap */
@@ -5332,25 +5331,26 @@ async function executeWeeklyReset() {
     }
 }
 
-// --- SEKME VE GÖRÜNÜRLÜK YÖNETİMİ ---
+// MEVCUT showSection VE hideAllAdminControls FONKSİYONLARINI SİLİP BUNLARI YAPIŞTIRIN
 
 /**
  * Farklı oyun bölümleri arasında geçiş yapar ve ilgili içeriği gösterir.
  */
 function showSection(sectionId) {
-    // Projenizdeki tüm içerik div'lerinin ID'lerini bu diziye ekleyin
+    // Önceki sekme 'kart koleksiyonu' ise ve şimdi başka bir sekmeye geçiliyorsa, "yeni" listesini temizle.
+    if (currentActiveSection === 'cardCollection' && sectionId !== 'cardCollection') {
+        newlyAcquiredCards.clear();
+    }
+
+    if (sectionId !== 'store') {
+        storeFilter = null;
+    }
+
     const contentIds = ['gameContent', 'storeSection', 'announcementsContent', 'chanceWheelContent', 'clickCatchContent', 'cardCollectionContent', 'monsterBattleContent', 'craftingContent'];
-    // Projenizdeki tüm sekme butonlarının ID'lerini bu diziye ekleyin
     const tabButtonIds = ['gameTabBtn', 'storeTabBtn', 'announcementsTabBtn', 'chanceWheelTabBtn', 'clickCatchTabBtn', 'cardCollectionTabBtn', 'monsterBattleTabBtn', 'craftingTabBtn'];
 
-    // Önce tüm içerikleri ve admin butonlarını gizle
-    contentIds.forEach(id => {
-        const el = document.getElementById(id);
-        if (el) el.classList.add('hidden');
-    });
-    hideAllAdminControls(); // Tüm admin butonlarını gizleyen yardımcı fonksiyon
-
-    // Tüm sekme butonlarının stillerini sıfırla
+    // Tüm içerik alanlarını gizle ve butonların stillerini sıfırla
+    contentIds.forEach(id => document.getElementById(id)?.classList.add('hidden'));
     tabButtonIds.forEach(btnId => {
         const btn = document.getElementById(btnId);
         if (btn) {
@@ -5359,22 +5359,82 @@ function showSection(sectionId) {
         }
     });
 
-    // İstenen içeriği göster
-    const contentToShow = document.getElementById(`${sectionId}Content`);
-    if (contentToShow) contentToShow.classList.remove('hidden');
+    hideAllAdminControls();
 
-    // Aktif sekme butonunun stilini ayarla
+    // Tıklanan sekmeye ait içeriği göster
+    const contentToShow = document.getElementById(`${sectionId}Content`) || document.getElementById(`${sectionId}Section`);
+    if(contentToShow) contentToShow.classList.remove('hidden');
+
+    // Tıklanan butonun stilini aktif yap
     const activeBtn = document.getElementById(`${sectionId}TabBtn`);
     if (activeBtn) {
         activeBtn.classList.add('bg-red-700', 'hover:bg-red-600');
         activeBtn.classList.remove('bg-gray-700', 'hover:bg-gray-600');
     }
 
-    // --- Üretim Atölyesi'ne özel mantık ---
-    if (sectionId === 'crafting') {
-        loadCraftingRecipes(); // Tarifleri yükle
+    // Hangi sekmeye tıklandığını kontrol edip ilgili fonksiyonları ve admin butonlarını yönet
+    if (sectionId === 'game' && isAdmin) {
+        document.getElementById('boxSettingsButton').classList.remove('hidden');
+    } 
+    
+    if (sectionId === 'store') {
+        loadStoreItems(); 
         if (isAdmin) {
-            // Eğer kullanıcı admin ise, yönetim butonunu göster
+            document.getElementById('adminStoreManagementButtonContainer').classList.remove('hidden');
+            document.getElementById('kasaSettingsBtn').classList.remove('hidden');
+        } else {
+            document.getElementById('storeIndicator').classList.add('hidden');
+            db.ref(`users/${currentUser}/lastSeenStoreTimestamp`).set(latestStoreItemTimestamp);
+        }
+        if (!storeFilter) {
+            switchStoreTab('game');
+        }
+    } 
+    
+    if (sectionId === 'announcements') {
+        if (isAdmin) {
+            document.getElementById('adminAnnouncementControls').classList.remove('hidden');
+        } else {
+            document.getElementById('announcementIndicator').classList.add('hidden');
+            db.ref(`users/${currentUser}/lastSeenAnnouncementTimestamp`).set(latestAnnouncementTimestamp);
+        }
+    } 
+    
+    if (sectionId === 'clickCatch') {
+        if (isAdmin) {
+            document.getElementById('clickCatchAdminButtonsContainer').classList.remove('hidden');
+            loadSoloGameSettings();
+        }
+    } 
+    
+    if (sectionId === 'chanceWheel') {
+        const wheelSettingsBtn = document.getElementById('wheelSettingsButton');
+        if (isAdmin) {
+            wheelSettingsBtn.classList.remove('hidden');
+        } else {
+            wheelSettingsBtn.classList.add('hidden');
+        }
+    } 
+    
+    if (sectionId === 'cardCollection') {
+        loadCollectionAlbum(); 
+        if (isAdmin) {
+            document.getElementById('collectionAdminBtn').classList.remove('hidden');
+            loadMarketSettingsForAdmin();
+            loadPrizeSettingsForAdmin();
+        }
+    } 
+    
+    if (sectionId === 'monsterBattle') {
+        renderMonsterBattleUI();
+        if (isAdmin) {
+            document.getElementById('monsterBattleAdminToggles')?.classList.remove('hidden');
+        }
+    }
+
+    if (sectionId === 'crafting') {
+        loadCraftingRecipes();
+        if (isAdmin) {
             document.getElementById('craftingAdminBtn').classList.remove('hidden');
         }
     }
@@ -5386,8 +5446,7 @@ function showSection(sectionId) {
  * Tüm admin kontrol butonlarını gizleyen yardımcı fonksiyon.
  */
 function hideAllAdminControls() {
-    // Projenizdeki tüm admin butonlarını bu fonksiyona ekleyin
-    const allAdminButtons = document.querySelectorAll('#craftingAdminBtn, #boxSettingsButton, #adminStoreManagementButtonContainer, #adminAnnouncementControls, #clickCatchAdminButtonsContainer, #kasaSettingsBtn, #collectionAdminBtn, #monsterBattleAdminToggles, #wheelSettingsButton');
+    const allAdminButtons = document.querySelectorAll('#boxSettingsButton, #adminStoreManagementButtonContainer, #adminAnnouncementControls, #clickCatchAdminButtonsContainer, #kasaSettingsBtn, #collectionAdminBtn, #monsterBattleAdminToggles, #wheelSettingsButton, #craftingAdminBtn');
     allAdminButtons.forEach(btn => {
         if(btn) btn.classList.add('hidden');
     });
@@ -17391,6 +17450,8 @@ function handleSoloSpecialTypeChange() {
 let loginStreakRewardsCache = []; // Admin ayarlarını önbellekte tutmak için
 
 // Eğer bu obje zaten varsa, eksik olanları ekle. Yoksa, olduğu gibi kopyala.
+// MEVCUT typeToName OBJESİNİ BUNUNLA DEĞİŞTİR
+
 const typeToName = {
     points: 'Puan',
     kasaPuani: 'Kasa Puanı',
@@ -17413,11 +17474,13 @@ const typeToName = {
     dodge_potion: 'Sıyrılma Bonusu',
     crit_damage_potion: 'Kritik Hasar Bonusu',
     pierce_potion: 'Delici Vuruş Bonusu',
-    card: 'Belirli Kart',
+    card: 'Belirli Kart', // Bu zaten vardı, teyit edelim
+    // YENİ EKLENECEK KART TÜRLERİ
     card_normal: 'Bronz Kart',
     card_gumus: 'Gümüş Kart',
     card_altin: 'Altın Kart',
     card_efsanevi: 'Efsanevi Kart',
+    // ---
     health_regen_potion: 'Can Yenileme İksiri'
 };
       
@@ -17546,13 +17609,15 @@ function addRewardToDay(element, rewardData = {}) {
     handleAdminRewardTypeChange(selectElement, rewardData); // Mevcut veriyi de gönder
 }
       
-// handleAdminRewardTypeChange fonksiyonunu bununla değiştir
+// MEVCUT handleAdminRewardTypeChange FONKSİYONUNU BUNUNLA DEĞİŞTİR
+
 function handleAdminRewardTypeChange(selectElement, rewardData = {}) {
     const type = selectElement.value;
     const container = selectElement.closest('.grid').querySelector('.reward-fields-container');
     let fieldsHtml = '';
     const isPercent = ['defense_potion', 'crit_potion', 'crit_damage_potion', 'dodge_potion', 'pierce_potion', 'health_regen_potion'].includes(type);
     const valuePlaceholder = isPercent ? 'Değer (örn: 2.5)' : 'Miktar / Adet';
+    const isRarityCard = type === 'card_normal' || type === 'card_gumus' || type === 'card_altin' || type === 'card_efsanevi';
 
     if (type === 'tempMultiplier') {
         fieldsHtml = `
@@ -17566,15 +17631,30 @@ function handleAdminRewardTypeChange(selectElement, rewardData = {}) {
             <input type="text" class="box-setting-input reward-avatarImageUrl col-span-2" placeholder="Avatar Resim URL" value="${rewardData.avatarImageUrl || ''}">
             <button onclick="this.parentElement.parentElement.remove()" class="py-1 px-2 bg-red-600 hover:bg-red-500 rounded-md text-xs col-span-2">Sil</button>
         `;
+    } else if (type === 'card') {
+        let cardOptions = allCardsCache.map(card => `<option value="${card.id}" ${rewardData.cardId === card.id ? 'selected' : ''}>${card.cardName}</option>`).join('');
+        fieldsHtml = `
+            <select class="box-setting-input reward-cardId col-span-2 sm:col-span-1">${cardOptions}</select>
+            <div class="flex items-center gap-1">
+                <input type="number" class="box-setting-input reward-value" placeholder="Adet" value="${rewardData.amount || ''}">
+                <button onclick="this.parentElement.parentElement.parentElement.remove()" class="py-1 px-2 bg-red-600 hover:bg-red-500 rounded-md text-xs">Sil</button>
+            </div>
+        `;
+    } else if (isRarityCard) {
+        // Nadirlik türü kartlar için sadece miktar alanı göster
+        fieldsHtml = `
+            <input type="number" class="box-setting-input reward-value col-span-2 sm:col-span-1" placeholder="Adet" value="${rewardData.amount || '1'}">
+            <button onclick="this.parentElement.parentElement.remove()" class="py-1 px-2 bg-red-600 hover:bg-red-600 rounded-md text-xs sm:col-span-1">Sil</button>
+        `;
     } else {
         fieldsHtml = `
             <input type="text" class="box-setting-input reward-value col-span-2 sm:col-span-1" placeholder="${valuePlaceholder}" value="${rewardData.value || ''}">
-            <button onclick="this.parentElement.parentElement.remove()" class="py-1 px-2 bg-red-600 hover:bg-red-500 rounded-md text-xs sm:col-span-1">Sil</button>
+            <button onclick="this.parentElement.parentElement.remove()" class="py-1 px-2 bg-red-600 hover:bg-red-600 rounded-md text-xs sm:col-span-1">Sil</button>
         `;
     }
     container.innerHTML = fieldsHtml;
 }
-
+      
 // YENİ JAVASCRIPT KODU (BUNU YAPIŞTIR)
 async function saveLoginStreakRewards(shouldResetProgress = false) {
     if (!isAdmin) return;
@@ -17680,7 +17760,6 @@ async function openLoginStreakModal() {
     document.getElementById('loginStreakModal').style.display = 'flex';
     const container = document.getElementById('loginStreakRewardsContainer');
     const messageEl = document.getElementById('loginStreakMessage'); 
-    container.innerHTML = '<p class="text-center col-span-full text-gray-400">Ödül yolculuğu yükleniyor...</p>';
     
     Object.values(activeStreakTimers).forEach(clearInterval);
     activeStreakTimers = {};
@@ -18126,14 +18205,20 @@ function addMaterialRowToRecipeCreatorFromButton(button) {
  * @param {object} data - Varsa, satırı doldurmak için kullanılacak veri.
  * @returns {string} Oluşturulan HTML satırı.
  */
+// MEVCUT getRewardItemHTML FONKSİYONUNU BUNUNLA DEĞİŞTİR
+
 function getRewardItemHTML(prefix, data = {}) {
-    // Kartlar listesini al (sadece kart tipi seçildiğinde kullanılacak)
-    let cardOptions = '';
-    if (data.type === 'card' || prefix === 'material') { // Malzemeler için her zaman hazır olsun
-        cardOptions = allCardsCache.map(card => 
-            `<option value="${card.id}" ${data.cardId === card.id ? 'selected' : ''}>${card.cardName}</option>`
-        ).join('');
-    }
+    let cardOptions = allCardsCache.map(card => 
+        `<option value="${card.id}" ${data.cardId === card.id ? 'selected' : ''}>${card.cardName}</option>`
+    ).join('');
+
+    // Sadece "gerekli malzeme" (material) satırlarına özel nadirlik seçenekleri
+    const materialOnlyOptions = `
+        <option value="card_normal" ${data.type === 'card_normal' ? 'selected' : ''}>🃏 Bronz Kart</option>
+        <option value="card_gumus" ${data.type === 'card_gumus' ? 'selected' : ''}>🃏 Gümüş Kart</option>
+        <option value="card_altin" ${data.type === 'card_altin' ? 'selected' : ''}>🃏 Altın Kart</option>
+        <option value="card_efsanevi" ${data.type === 'card_efsanevi' ? 'selected' : ''}>🃏 Efsanevi Kart</option>
+    `;
 
     return `
         <div class="reward-entry grid grid-cols-1 sm:grid-cols-3 gap-2 p-2 bg-gray-900/50 rounded-md">
@@ -18161,13 +18246,14 @@ function getRewardItemHTML(prefix, data = {}) {
                 <option value="dodge_potion" ${data.type === 'dodge_potion' ? 'selected' : ''}>💨 Sıyrılma Şansı İksiri</option>
                 <option value="pierce_potion" ${data.type === 'pierce_potion' ? 'selected' : ''}>📌 Delici Şansı İksiri</option>
                 <option value="card" ${data.type === 'card' ? 'selected' : ''}>🃏 Belirli Kart</option>
+                ${prefix === 'material' ? materialOnlyOptions : ''}
             </select>
             <div class="reward-fields-container grid grid-cols-2 gap-2 sm:col-span-2">
                 </div>
         </div>
     `;
 }
-
+      
 /**
  * Admin: Bir tarifi veritabanına kaydeder veya günceller.
  */
@@ -18249,8 +18335,6 @@ function parseRewardDataFromRow(rowElement) {
     return data;
 }
 
-// --- YENİ EKLENECEK KOD SONU ---
-
 async function loadCraftingRecipes() {
     const container = document.getElementById('craftingRecipesContainer');
 
@@ -18328,9 +18412,8 @@ function checkIfUserCanCraft(recipe, userData) {
     return true;
 }
 
-/**
- * Bir tarifin detaylarını gösteren pencereyi açar.
- */
+// MEVCUT openCraftingDetailModal FONKSİYONUNU BUNUNLA DEĞİŞTİR
+
 async function openCraftingDetailModal(recipeId) {
     const modal = document.getElementById('craftingDetailModal');
     const contentContainer = modal.querySelector('.modal-content'); 
@@ -18342,43 +18425,85 @@ async function openCraftingDetailModal(recipeId) {
         const recipe = craftingRecipesCache.find(r => r.id === recipeId);
         if (!recipe) throw new Error("Tarif bulunamadı.");
 
-        const [userSnap, masterCardsSnap] = await Promise.all([
+        const [userSnap, masterCardsSnap, tradesSnap] = await Promise.all([
             db.ref(`users/${currentUser}`).once('value'),
-            db.ref('gameConfig/cardCollection').once('value')
+            db.ref('gameConfig/cardCollection').once('value'),
+            db.ref('trades').once('value')
         ]);
         const userData = userSnap.val() || {};
         const masterCards = masterCardsSnap.val() || {};
-
+        const activeTrades = tradesSnap.val() || {};
+        
+        const userCards = userData.cardCollection || {};
         let materialsHtml = '';
         let allMaterialsMet = true;
         
-        for (const material of (recipe.materials || [])) {
+        // Takasta olan kartların ID'lerini bir sete ekle
+        const cardsInTrade = new Set();
+        Object.values(activeTrades).forEach(trade => {
+            if (trade.offerer === currentUser) {
+                cardsInTrade.add(trade.offeredCardId);
+            }
+        });
+
+        for (const [index, material] of (recipe.materials || []).entries()) {
             let userHasAmount = 0;
             let materialName = typeToName[material.type] || 'Bilinmeyen Malzeme';
             let isMet = false;
+            let materialOptionsHtml = '';
+            
+            const isRarityCard = ['card_normal', 'card_gumus', 'card_altin', 'card_efsanevi'].includes(material.type);
+            const isStandardPack = material.type === 'card_pack';
 
-            switch(material.type) {
-                case 'points': userHasAmount = userData.balance || 0; break;
-                case 'kasaPuani': userHasAmount = userData.kasaPuani || 0; break;
-                case 'boxRights': userHasAmount = userData.kutuHakki || 0; break;
-                case 'wheelTicket': userHasAmount = userData.carkBileti || 0; break;
-                case 'clickCatchTicket': userHasAmount = userData.clickCatchTickets || 0; break;
-                case 'iflasShield': userHasAmount = userData.iflasShieldUses || 0; break;
-                case 'wildcard': userHasAmount = userData.wildcards || 0; break;
-                case 'revival_stone': userHasAmount = userData.inventory?.revival_stone || 0; break;
-                case 'card':
-                    userHasAmount = userData.cardCollection?.[material.cardId]?.count || 0;
-                    materialName = masterCards[material.cardId]?.cardName || 'Bilinmeyen Kart';
-                    break;
+            if (isRarityCard || isStandardPack) {
+                const targetRarity = isStandardPack ? null : material.type.split('_')[1];
+                let eligibleCards = [];
+
+                for (const cardId in userCards) {
+                    if (userCards[cardId].count > 1 && !cardsInTrade.has(cardId)) {
+                        const cardInfo = masterCards[cardId];
+                        if (cardInfo && (!targetRarity || cardInfo.rarity === targetRarity)) {
+                            eligibleCards.push({ id: cardId, name: cardInfo.cardName });
+                        }
+                    }
+                }
+                
+                userHasAmount = eligibleCards.length;
+                isMet = userHasAmount >= material.amount;
+                
+                if (isMet) {
+                    materialOptionsHtml = `<select id="material-select-${index}" class="box-setting-input mt-2">`;
+                    eligibleCards.forEach(card => {
+                        materialOptionsHtml += `<option value="${card.id}">${card.name}</option>`;
+                    });
+                    materialOptionsHtml += `</select>`;
+                }
+            } else {
+                 switch(material.type) {
+                    case 'points': userHasAmount = userData.balance || 0; break;
+                    case 'kasaPuani': userHasAmount = userData.kasaPuani || 0; break;
+                    case 'boxRights': userHasAmount = userData.kutuHakki || 0; break;
+                    case 'wheelTicket': userHasAmount = userData.carkBileti || 0; break;
+                    case 'clickCatchTicket': userHasAmount = userData.clickCatchTickets || 0; break;
+                    case 'iflasShield': userHasAmount = userData.iflasShieldUses || 0; break;
+                    case 'wildcard': userHasAmount = userData.wildcards || 0; break;
+                    case 'revival_stone': userHasAmount = userData.inventory?.revival_stone || 0; break;
+                    case 'card':
+                        userHasAmount = userCards[material.cardId]?.count || 0;
+                        materialName = masterCards[material.cardId]?.cardName || 'Bilinmeyen Kart';
+                        break;
+                }
+                isMet = userHasAmount >= material.amount;
             }
-            isMet = userHasAmount >= material.amount;
+
             if (!isMet) allMaterialsMet = false;
             
             materialsHtml += `
                 <div class="material-list-item ${isMet ? 'has-enough' : 'not-enough'}">
                     <div class="material-info">
-                        <p class="material-name">${materialName}</p>
-                        <p class="material-stock">Sende: ${formatNumber(userHasAmount)} / Gerekli: ${formatNumber(material.amount)}</p>
+                        <p class="material-name">${materialName} (x${material.amount})</p>
+                        <p class="material-stock">Sende: ${formatNumber(userHasAmount)}</p>
+                        ${materialOptionsHtml}
                     </div>
                 </div>
             `;
@@ -18413,16 +18538,12 @@ async function openCraftingDetailModal(recipeId) {
     }
 }
 
-/**
- * Üretim detay penceresini kapatır.
- */
 function closeCraftingDetailModal() {
     document.getElementById('craftingDetailModal').style.display = 'none';
 }
+      
+// MEVCUT craftItem FONKSİYONUNU BUNUNLA DEĞİŞTİR
 
-/**
- * Eşya üretme işlemini gerçekleştirir.
- */
 async function craftItem(recipeId) {
     if (isAdmin || isCraftingInProgress) return;
 
@@ -18441,7 +18562,6 @@ async function craftItem(recipeId) {
         const userSnap = await userRef.once('value');
         const userData = userSnap.val();
 
-        // Üretilecek ürün çarpan ise ve kullanıcının zaten bir çarpanı varsa onay al
         if (recipe.output.type === 'tempMultiplier' && (userData.multiplierSource !== 'none')) {
             const refundedBoxRights = userData.multiplierRemainingUses || (userData.multiplierSource === 'box' ? 1 : 0);
             const confirmed = await customConfirm(
@@ -18450,28 +18570,44 @@ async function craftItem(recipeId) {
             if (!confirmed) throw new Error("Kullanıcı işlemi iptal etti.");
         }
         
+        // Seçilen kartları topla
+        const selectedCardIds = [];
+        recipe.materials.forEach((material, index) => {
+            const isSelectableCard = ['card_normal', 'card_gumus', 'card_altin', 'card_efsanevi', 'card_pack'].includes(material.type);
+            if (isSelectableCard) {
+                const selectEl = document.getElementById(`material-select-${index}`);
+                if (selectEl && selectEl.value) {
+                    selectedCardIds.push(selectEl.value);
+                }
+            }
+        });
+        
         let cardPacksToOpen = [];
         const { committed, snapshot } = await userRef.transaction(currentData => {
-            if (!currentData) return; // Kullanıcı verisi yoksa işlemi iptal et
+            if (!currentData) return;
 
-            // Gerekli malzemeleri kontrol et ve envanterden düş
-            for (const material of recipe.materials) {
+            for (const [index, material] of recipe.materials.entries()) {
                  const dbKeyMap = { points: 'balance', kasaPuani: 'kasaPuani', boxRights: 'kutuHakki', wheelTicket: 'carkBileti', clickCatchTicket: 'clickCatchTickets', iflasShield: 'iflasShieldUses', wildcard: 'wildcards', revival_stone: 'inventory/revival_stone' };
                  const path = dbKeyMap[material.type];
+                 const isRarityCard = ['card_normal', 'card_gumus', 'card_altin', 'card_efsanevi', 'card_pack'].includes(material.type);
+
                  if (path) {
                     const pathParts = path.split('/');
                     let currentValue = (pathParts.length > 1) ? (currentData[pathParts[0]]?.[pathParts[1]] || 0) : (currentData[path] || 0);
-                    if (currentValue < material.amount) return; // Malzeme yetersizse işlemi bitir
+                    if (currentValue < material.amount) return;
                     if (pathParts.length > 1) { currentData[pathParts[0]][pathParts[1]] -= material.amount; } 
                     else { currentData[path] -= material.amount; }
                  } else if (material.type === 'card') {
                     if (!currentData.cardCollection?.[material.cardId] || currentData.cardCollection[material.cardId].count < material.amount) return;
                     currentData.cardCollection[material.cardId].count -= material.amount;
-                 } else { return; } // Bilinmeyen malzeme tipi
+                 } else if (isRarityCard) {
+                    const cardIdToUse = selectedCardIds.shift();
+                    if (!cardIdToUse || !currentData.cardCollection?.[cardIdToUse] || currentData.cardCollection[cardIdToUse].count <= 1) return;
+                    currentData.cardCollection[cardIdToUse].count--;
+                 } else { return; }
             }
 
-            // Eğer üretilecek ürün çarpan ise ve kullanıcının mevcut çarpanı varsa, haklarını iade et
-             if (recipe.output.type === 'tempMultiplier' && (userData.multiplierSource !== 'none')) {
+            if (recipe.output.type === 'tempMultiplier' && (userData.multiplierSource !== 'none')) {
                 const refundedBoxRights = userData.multiplierRemainingUses || (userData.multiplierSource === 'box' ? 1 : 0);
                 currentData.kutuHakki = (currentData.kutuHakki || 0) + refundedBoxRights;
                 currentData.activeMultiplier = 1;
@@ -18479,10 +18615,8 @@ async function craftItem(recipeId) {
                 currentData.multiplierRemainingUses = 0;
             }
 
-            // Üretilen ürünü kullanıcıya ekle
             const result = applyRewardToUser(currentData, recipe.output);
             cardPacksToOpen = result.cardPacksToOpen;
-
             return currentData;
         });
 
@@ -18496,11 +18630,11 @@ async function craftItem(recipeId) {
                 newBalance: finalUserData.balance
             });
 
-            // Eğer üretilen ürün bir kart paketi ise açma ekranını başlat
             for (const pack of cardPacksToOpen) {
                 await startCardPackOpening(pack.value || 1, 'Üretim Atölyesi', 1, pack.type);
             }
             closeCraftingDetailModal();
+            loadCraftingRecipes();
         } else {
             throw new Error("Üretim başarısız! Malzemelerin yetersiz veya başka bir işlem yapılıyor.");
         }
@@ -18516,7 +18650,7 @@ async function craftItem(recipeId) {
         }
     }
 }
-
+      
 /**
  * Belirtilen ödülü kullanıcı verisine uygular. (Transaction içinde kullanılır)
  */
@@ -18566,9 +18700,6 @@ function applyRewardToUser(userData, reward) {
     return { cardPacksToOpen };
 }
 
-/**
- * Admin: Üretim Yönetim Panelini açar ve tarifleri anlık olarak dinler.
- */
 function openCraftingAdminModal() {
     if (!isAdmin) return;
     const listEl = document.getElementById('adminRecipesList');
@@ -18615,9 +18746,6 @@ function openCraftingAdminModal() {
     activeListeners.adminCrafting = { ref: recipesRef, callback: callback };
 }
 
-/**
- * Admin: Üretim Yönetim Panelini kapatır ve dinleyiciyi durdurur.
- */
 function closeCraftingAdminModal() {
     if (activeListeners.adminCrafting) {
         activeListeners.adminCrafting.ref.off('value', activeListeners.adminCrafting.callback);
@@ -18626,9 +18754,6 @@ function closeCraftingAdminModal() {
     document.getElementById('craftingAdminModal').style.display = 'none';
 }
 
-/**
- * Admin: Bir üretim tarifini kalıcı olarak siler.
- */
 async function deleteRecipe(recipeId) {
     if (!isAdmin) return;
     const confirmed = await customConfirm("Bu üretim tarifini kalıcı olarak silmek istediğinize emin misiniz?");
@@ -20991,21 +21116,16 @@ async function loadCodexAndStatsCache() {
     }
 }
 
-      /**
- * YENİ: Oyundaki tüm kartların listesini çeker ve önbelleğe alır.
- * Bu, üretim panelindeki kart seçimi dropdown'ları için gereklidir.
- */
-async function loadAllCardsCache() {
+      async function loadAllCardsCache() {
     try {
         const cardsRef = db.ref('gameConfig/cardCollection');
         const snapshot = await cardsRef.once('value');
-        allCardsCache = []; // Önceki veriyi temizle
+        allCardsCache = [];
         if (snapshot.exists()) {
             const cardsData = snapshot.val();
             for (const cardId in cardsData) {
                 allCardsCache.push({ id: cardId, ...cardsData[cardId] });
             }
-            // Sıralama, admin panelinde daha iyi bir görünüm sağlar
             allCardsCache.sort((a, b) => (a.order || 0) - (b.order || 0));
         }
         console.log("Tüm kartlar önbelleğe alındı:", allCardsCache.length, "adet.");
