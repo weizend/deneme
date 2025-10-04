@@ -11,6 +11,27 @@
 <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
 
 <style>
+    /* --- YENİ EKLENECEK KOD: Sürpriz Kutu Kart Seçim Arka Planı --- */
+#cardSelectionModal {
+    /* HTML'deki Tailwind'in bg-black bg-opacity-70'sini geçersiz kılar */
+    background-color: rgba(17, 24, 39, 0.85); /* Temaya uygun, %85 opaklıkta arkaplan */
+    backdrop-filter: blur(5px); /* Modern bulanıklık efekti */
+}
+
+#cardSelectionModal .modal-content {
+    background-color: transparent; /* İç kutunun kendi arkaplanını kaldırır */
+    border: none;                  /* Kenarlığı kaldırır */
+    box-shadow: none;              /* Gölgeyi kaldırır */
+    padding: 1rem;                 /* İçerik kenarlara yapışmasın diye biraz boşluk bırakır */
+}
+/* --- KOD SONU --- */
+    /* --- YENİ EKLENECEK KOD: Sürpriz Kutu Kart Seçim Arka Planı --- */
+#cardSelectionModal .modal-content {
+    background-color: transparent; /* İç kutunun kendi arkaplanını kaldırır */
+    border: none;                  /* Kenarlığı kaldırır */
+    box-shadow: none;              /* Gölgeyi kaldırır */
+    padding: 1rem;                 /* İçerik kenarlara yapışmasın diye biraz boşluk bırakır */
+}
     /* --- YENİ EKLENECEK KOD: Üretim Paneli Sonuç Ürün Düzenlemesi --- */
 #recipeOutputContainer .reward-fields-container {
     display: flex;       /* Elementleri yan yana dizmek için flexbox kullan */
@@ -18270,21 +18291,24 @@ function getRewardItemHTML(prefix, data = {}) {
     
     const layoutClass = prefix === 'output' ? 'sm:grid-cols-3' : 'sm:grid-cols-2';
     const fieldsColSpan = prefix === 'output' ? 'sm:col-span-2' : 'sm:col-span-1';
+    
+    // *** ANA DEĞİŞİKLİK BURADA: 'output' için grid sınıflarını kaldırıyoruz ***
+    const fieldsContainerClasses = prefix === 'output' 
+        ? `reward-fields-container col-span-2 ${fieldsColSpan}`
+        : `reward-fields-container grid grid-cols-1 sm:grid-cols-2 gap-2 col-span-2 ${fieldsColSpan}`;
 
     return `
         <div class="reward-entry grid grid-cols-1 ${layoutClass} gap-2 p-2 bg-gray-900/50 rounded-md items-center">
             <select class="box-setting-input reward-type col-span-2 sm:col-span-1" onchange="handleAdminRewardTypeChange(this)">
                 ${prefix === 'material' ? materialOptions : outputOptions}
             </select>
-            <div class="reward-fields-container grid grid-cols-1 sm:grid-cols-2 gap-2 col-span-2 ${fieldsColSpan}">
+            <div class="${fieldsContainerClasses}">
             </div>
              ${deleteButton}
         </div>
     `;
 }
-
-// MEVCUT handleAdminRewardTypeChange FONKSİYONUNU SİLİP BUNU YAPIŞTIRIN
-
+      
 function handleAdminRewardTypeChange(selectElement, rewardData = {}) {
     const type = selectElement.value;
     const rewardEntry = selectElement.closest('.reward-entry');
@@ -18295,8 +18319,8 @@ function handleAdminRewardTypeChange(selectElement, rewardData = {}) {
 
     if (isOutput) {
          fieldsHtml += `
-            <input type="text" class="box-setting-input reward-name col-span-2" placeholder="Üretilen Eşyanın Adı" value="${rewardData.name || ''}">
-            <input type="text" class="box-setting-input reward-imageUrl col-span-2" placeholder="Eşya Resim URL" value="${rewardData.imageUrl || ''}">
+            <input type="text" class="box-setting-input reward-name" placeholder="Üretilen Eşyanın Adı" value="${rewardData.name || ''}">
+            <input type="text" class="box-setting-input reward-imageUrl" placeholder="Eşya Resim URL" value="${rewardData.imageUrl || ''}">
         `;
     }
 
@@ -18311,18 +18335,18 @@ function handleAdminRewardTypeChange(selectElement, rewardData = {}) {
         `;
     } else if (type === 'avatar') {
         fieldsHtml += `
-            <input type="text" class="box-setting-input reward-avatarName col-span-2" placeholder="Avatarın Adı" value="${rewardData.avatarName || ''}">
-            <input type="text" class="box-setting-input reward-avatarImageUrl col-span-2" placeholder="Avatar Resim URL" value="${rewardData.avatarImageUrl || ''}">
+            <input type="text" class="box-setting-input reward-avatarName" placeholder="Avatarın Adı" value="${rewardData.avatarName || ''}">
+            <input type="text" class="box-setting-input reward-avatarImageUrl" placeholder="Avatar Resim URL" value="${rewardData.avatarImageUrl || ''}">
         `;
     } else if (type === 'card') {
         let cardOptions = allCardsCache.map(card => `<option value="${card.id}" ${rewardData.cardId === card.id ? 'selected' : ''}>${card.cardName}</option>`).join('');
         fieldsHtml += `
-            <select class="box-setting-input reward-cardId col-span-2">${cardOptions}</select>
-            <input type="number" class="box-setting-input reward-value col-span-2" placeholder="Adet" value="${rewardData.amount || ''}">
+            <select class="box-setting-input reward-cardId">${cardOptions}</select>
+            <input type="number" class="box-setting-input reward-value" placeholder="Adet" value="${rewardData.amount || ''}">
         `;
     } else {
         fieldsHtml += `
-            <input type="text" class="box-setting-input reward-value col-span-2" placeholder="${valuePlaceholder}" value="${rewardData.amount || rewardData.value || ''}">
+            <input type="text" class="box-setting-input reward-value" placeholder="${valuePlaceholder}" value="${rewardData.amount || rewardData.value || ''}">
         `;
     }
     
