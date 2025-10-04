@@ -9396,49 +9396,21 @@ async function deletePurchase(purchaseId) {
                 multiplierHtml = `<p><b>✖️ Aktif Çarpan:</b> </b> [ ${user.activeMultiplier}X - [ </b> 1 ADET (Otomatik) ] </p>`;
             }
 
-            const packs = [
-                { type: 'card_pack', name: 'Standart Kart Paketi', icon: '🎴' },
-                { type: 'card_pack_normal', name: 'Bronz Kart Paketi', icon: '🥉' },
-                { type: 'card_pack_gumus', name: 'Gümüş Kart Paketi', icon: '🥈' },
-                { type: 'card_pack_altin', name: 'Altın Kart Paketi', icon: '🥇' },
-                { type: 'card_pack_efsanevi', name: 'Efsanevi Kart Paketi', icon: '🏆' },
-            ];
-
-            let packsHtml = '';
-            let hasPacks = false;
-            packs.forEach(pack => {
-                const count = user[pack.type] || 0;
-                if (count > 0) {
-                    hasPacks = true;
-                    packsHtml += `
-                        <div class="flex justify-between items-center">
-                            <span>${pack.icon} ${pack.name}: <strong class="text-white">${count}</strong></span>
-                            <button onclick="openMyCardPacks('${pack.type}', '${pack.name}', ${count})" class="py-1 px-3 bg-purple-600 hover:bg-purple-500 rounded-md text-xs font-bold">Tümünü Aç</button>
-                        </div>
-                    `;
-                }
-            });
-
-            if (!hasPacks) {
-                packsHtml = '<p class="text-gray-500 text-sm">Hiç kart paketin yok.</p>';
-            }
-
             detailsEl.innerHTML = `
                 <p class="flex justify-between items-center"><span>📦 Kutu Hakkı:</span> <strong id="inventoryBoxRights" class="text-green-400 text-lg">${user.kutuHakki || 0}</strong></p>
                 <p class="flex justify-between items-center"><span>️🎫 Şans Çarkı Bileti:</span> <strong id="inventoryWheelTickets" class="text-yellow-400 text-lg">${user.carkBileti || 0}</strong></p>
                 <p class="flex justify-between items-center"><span>🎟️ Tıkla-Yakala Bileti:</span> <strong id="inventoryClickCatchTickets" class="text-fuchsia-400 text-lg">${user.clickCatchTickets || 0}</strong></p>
                 <p class="flex justify-between items-center"><span>🛡️ İflas Kalkanı:</span> <strong id="inventoryIflasShields" class="text-blue-400 text-lg">${user.iflasShieldUses || 0}</strong></p>
+                <p class="flex justify-between items-center"><span>💎 Dirilme Taşı:</span> <strong class="text-sky-400 text-lg">${user.inventory?.revival_stone || 0}</strong></p>
+                <p class="flex justify-between items-center"><span>🃏 Joker Kart:</span> <strong class="text-purple-400 text-lg">${user.wildcards || 0}</strong></p>
                 <hr class="border-gray-600 my-2">
                 <div id="inventoryMultiplierDetails">${multiplierHtml}</div>
-                <hr class="border-gray-600 my-2">
-                <h5 class="font-bold text-purple-300 mb-2">Kart Paketleri</h5>
-                <div class="space-y-2">${packsHtml}</div>
             `;
         }
     });
     inventoryModal.style.display = 'flex';
 }
-
+      
       /**
  * Kullanıcının sahip olduğu kart paketlerini açma işlemini başlatır.
  */
@@ -14625,8 +14597,6 @@ function closeWheelLegendModal() {
     document.getElementById('wheelLegendModal').style.display = 'none';
 }
 
-// MEVCUT openWheelLegendModal FONKSİYONUNU SİLİP BUNU YAPIŞTIRIN
-
 function openWheelLegendModal() {
     document.body.classList.add('modal-open');
     const contentDiv = document.getElementById('wheelLegendContent');
@@ -14638,6 +14608,7 @@ function openWheelLegendModal() {
         { icon: '🃏', title: 'JOKER KART', description: 'Çok nadir! Kart koleksiyonundaki herhangi bir eksik kartı tamamlamanı sağlar.' },
         { icon: '✖️', title: '5X ÇARPAN', description: 'Çok nadir! Bir sonraki kutu açılışında kazanacağın puanı veya eşyayı 5\'e katlar.' },
         { icon: '💎', title: 'DİRİLME TAŞI', description: 'Çok nadir! Canavar Savaşı\'nda mağlup olduğunda seni yeniden canlandırır.' },
+        { icon: '🧪', title: 'CAN YENİLEME İKSİRİ', description: 'Nadir! Canavar Savaşı\'nda kullanabileceğin, canının bir yüzdesini anında yenileyen değerli bir iksir kazandırır.' },
         { icon: '🎂', title: '1000 PUAN', description: 'Nadir bulunan, yüksek miktarda bir puan ödülüdür.' },
         { icon: '🥇', title: 'ALTIN KART PAKETİ', description: 'İçinden sadece Altın nadirlikte bir koleksiyon kartı çıkar.' },
         { icon: '🎁', title: '3 KUTU HAKKI', description: 'Değerli bir ödül! Kutu oyununda kullanmak üzere tam 3 adet açma hakkı verir.' },
@@ -18252,7 +18223,7 @@ function getRewardItemHTML(prefix, data = {}) {
         `<option value="${card.id}" ${data.cardId === card.id ? 'selected' : ''}>${card.cardName}</option>`
     ).join('');
 
-    const outputOptions = `
+    const baseOptions = `
         <option value="points" ${data.type === 'points' ? 'selected' : ''}>💰 Puan</option>
         <option value="kasaPuani" ${data.type === 'kasaPuani' ? 'selected' : ''}>🏦 Kasa Puanı</option>
         <option value="boxRights" ${data.type === 'boxRights' ? 'selected' : ''}>📦 Kutu Hakkı</option>
@@ -18272,6 +18243,10 @@ function getRewardItemHTML(prefix, data = {}) {
         <option value="crit_damage_potion" ${data.type === 'crit_damage_potion' ? 'selected' : ''}>🎯 Kritik Hasar Bonusu</option>
         <option value="dodge_potion" ${data.type === 'dodge_potion' ? 'selected' : ''}>💨 Sıyrılma Bonusu</option>
         <option value="pierce_potion" ${data.type === 'pierce_potion' ? 'selected' : ''}>📌 Delici Vuruş Bonusu</option>
+    `;
+
+    const outputOptions = `
+        ${baseOptions}
         <option value="card_pack" ${data.type === 'card_pack' ? 'selected' : ''}>🎴 Standart Kart Paketi</option>
         <option value="card_pack_normal" ${data.type === 'card_pack_normal' ? 'selected' : ''}>🥉 Bronz Kart Paketi</option>
         <option value="card_pack_gumus" ${data.type === 'card_pack_gumus' ? 'selected' : ''}>🥈 Gümüş Kart Paketi</option>
@@ -18280,7 +18255,7 @@ function getRewardItemHTML(prefix, data = {}) {
     `;
     
     const materialOptions = `
-        ${outputOptions}
+        ${baseOptions}
         <option value="card_normal" ${data.type === 'card_normal' ? 'selected' : ''}>🥉 Herhangi bir Bronz Kart</option>
         <option value="card_gumus" ${data.type === 'card_gumus' ? 'selected' : ''}>🥈 Herhangi bir Gümüş Kart</option>
         <option value="card_altin" ${data.type === 'card_altin' ? 'selected' : ''}>🥇 Herhangi bir Altın Kart</option>
@@ -18294,14 +18269,15 @@ function getRewardItemHTML(prefix, data = {}) {
         : '';
     
     const layoutClass = prefix === 'output' ? 'sm:grid-cols-3' : 'sm:grid-cols-2';
+    const fieldsColSpan = prefix === 'output' ? 'sm:col-span-2' : 'sm:col-span-1';
 
     return `
         <div class="reward-entry grid grid-cols-1 ${layoutClass} gap-2 p-2 bg-gray-900/50 rounded-md items-center">
             <select class="box-setting-input reward-type col-span-2 sm:col-span-1" onchange="handleAdminRewardTypeChange(this)">
                 ${prefix === 'material' ? materialOptions : outputOptions}
             </select>
-            <div class="reward-fields-container grid grid-cols-1 sm:grid-cols-2 gap-2 col-span-2 sm:col-span-1">
-                </div>
+            <div class="reward-fields-container grid grid-cols-1 sm:grid-cols-2 gap-2 col-span-2 ${fieldsColSpan}">
+            </div>
              ${deleteButton}
         </div>
     `;
