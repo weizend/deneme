@@ -18517,7 +18517,7 @@ async function openCraftingDetailModal(recipeId) {
             let amountText = '';
 
             if (material.type === 'avatar') {
-                amountText = '(Gereken: Sahip olmak)';
+                amountText = 'AVATARI';
             } 
             // ★★★ YENİ EKLENEN ÇARPAN METNİ DÜZELTMESİ ★★★
             else if (material.type === 'tempMultiplier') {
@@ -18583,7 +18583,7 @@ async function openCraftingDetailModal(recipeId) {
                         userHasAmount = userData.avatars && Object.values(userData.avatars).some(a => a.name === material.avatarName) ? 1 : 0;
                         // ★★★ DEĞİŞİKLİK: Avatar için gereken miktar 1'dir. ★★★
                         material.amount = 1;
-                        avatarNoteHtml = `<p class="text-xs text-cyan-300 -mt-1">(Not: Avatarlar üretimde harcanmaz.)</p>`;
+                        avatarNoteHtml = `<p class="text-xs text-cyan-300 -mt-1">(Not: Avatarlar üretimde kaybolmaz.)</p>`;
                         break;
                     // ★★★ YENİ EKLENEN ÇARPAN KONTROLÜ ★★★
                     case 'tempMultiplier':
