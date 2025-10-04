@@ -2980,16 +2980,9 @@ body.modal-open .modal-content {
   <div class="modal-content bg-gray-800 p-8 rounded-xl shadow-2xl border border-purple-700 w-11/12 max-w-md text-center relative">
       <button class="modal-close-button" onclick="closeInventoryModal()">&times;</button>
       <h4 class="text-yellow-400 text-2xl font-bold mb-6">Envanterin</h4>
-      <div id="inventoryDetails" class="text-left text-gray-300 mb-6 space-y-3 bg-gray-900 p-4 rounded-lg border border-gray-700">
-          <p class="flex justify-between items-center"><span>📦 Kutu Hakkı:</span> <strong id="inventoryBoxRights" class="text-green-400 text-lg">0</strong></p>
-          <p class="flex justify-between items-center"><span>️🎫 Şans Çarkı Bileti:</span> <strong id="inventoryWheelTickets" class="text-yellow-400 text-lg">0</strong></p>
-          <p class="flex justify-between items-center"><span>🎟️ Tıkla-Yakala Bileti:</span> <strong id="inventoryClickCatchTickets" class="text-fuchsia-400 text-lg">0</strong></p>
-          <p class="flex justify-between items-center"><span>🛡️ İflas Kalkanı:</span> <strong id="inventoryIflasShields" class="text-blue-400 text-lg">0</strong></p>
-          <hr class="border-gray-600 my-2">
-          <div id="inventoryMultiplierDetails">
-              <p>✖️ Aktif çarpan yok.</p>
+      
+      <div id="inventoryDetails" class="text-left text-gray-300 mb-6 space-y-3 bg-gray-900 p-4 rounded-lg border border-gray-700 max-h-96 overflow-y-auto scrollable-list">
           </div>
-      </div>
       <div class="flex gap-4 mt-6">
         <button onclick="openAvatarSelectionModal()" class="w-full py-3 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-lg">Avatarlarım</button>
         <button onclick="closeInventoryModal()" class="w-full py-3 bg-red-700 hover:bg-red-600 text-white font-bold rounded-lg">Kapat</button>
@@ -7336,9 +7329,7 @@ function handleRowTypeChange(selectElement) {
     }
 }
 
-// =================================================================================
 // MEVCUT openBox FONKSİYONUNU SİLİP, BU GÜVENLİ VE DÜZELTİLMİŞ VERSİYONU YAPIŞTIR
-// =================================================================================
 async function openBox(index) {
     const lastSurpriseSnap = await db.ref('gameStats/lastSurpriseInfo').once('value');
     const lastSurpriseData = lastSurpriseSnap.val();
@@ -7536,9 +7527,10 @@ async function openBox(index) {
             const itemsGained = (box.value || 1) * finalMultiplier;
             const dbKeys = { wheelTicket: 'carkBileti', clickCatchTicket: 'clickCatchTickets', iflasShield: 'iflasShieldUses', wildcard: 'wildcards' };
             const itemName = typeToName[box.content] || 'Eşya';
+            // --- KART PAKETİ MANTIĞI ESKİ SİSTEME DÖNDÜ ---
             if (box.content.startsWith('card_pack')) {
                 startCardPackOpening(itemsGained, `${box.id} numaralı kutu`, finalMultiplier, box.content);
-                message = `Tebrikler! Kutudan ${itemsGained} adet ${itemName} buldun!`;
+                message = `Tebrikler! Kutudan ${itemsGained} adet ${itemName} buldun! Paketler şimdi açılıyor...`;
             } else if (box.content === 'revival_stone') {
                 if (!tempUserState.inventory) tempUserState.inventory = {};
                 tempUserState.inventory.revival_stone = (tempUserState.inventory.revival_stone || 0) + itemsGained;
@@ -7559,9 +7551,6 @@ async function openBox(index) {
         }
     }
     
-    // !!! SORUNU ÇÖZEN DEĞİŞİKLİK: BU SATIRI SİLİYORUZ !!!
-    // delete updates[`/users/${currentUser}/kutuHakki`]; 
-
     await db.ref().update(updates);
     await db.ref('boxes/' + index).update(boxUpdate);
 
@@ -9394,28 +9383,81 @@ async function deletePurchase(purchaseId) {
   async function clearAllTotalSpentPoints() { if(await customConfirm("Tüm kullanıcıların harcadığı puanları sıfırlamak istediğinize emin misiniz?")) { db.ref('users').once('value').then(snap => { const updates = {}; snap.forEach(c => { if(c.key !== 'weizendtv') updates[`users/${c.key}/totalSpentPoints`] = 0; }); db.ref().update(updates).then(() => displayMessage("Tüm kullanıcıların harcanan puanları sıfırlandı.")) }); } }
   
   function openInventoryModal() {
-      const userRef = db.ref('users/' + currentUser);
-      userRef.once('value').then(snap => {
-          const user = snap.val();
-          if (user) {
-              document.getElementById('inventoryBoxRights').textContent = user.kutuHakki || 0;
-              document.getElementById('inventoryWheelTickets').textContent = user.carkBileti || 0;
-              // YENİ EKLENEN SATIR
-              document.getElementById('inventoryClickCatchTickets').textContent = user.clickCatchTickets || 0;
-              // YENİ EKLENEN SATIR BİTİŞ
-              document.getElementById('inventoryIflasShields').textContent = user.iflasShieldUses || 0;
-              
-              let multiplierHtml = '<p>✖️ Aktif çarpan yok.</p>';
-              if (user.multiplierSource === 'store' && user.multiplierRemainingUses > 0) {
-                  multiplierHtml = `<p><b>✖️ Aktif Çarpan:</b> </b> [ ${user.activeMultiplier}X - ${user.multiplierRemainingUses} ADET ] </p>`;
-              } else if (user.multiplierSource === 'box') {
-                  multiplierHtml = `<p><b>✖️ Aktif Çarpan:</b> </b> [ ${user.activeMultiplier}X - [ </b> 1 ADET (Otomatik) ] </p>`;
-              }
-              document.getElementById('inventoryMultiplierDetails').innerHTML = multiplierHtml;
-          }
-      });
-      inventoryModal.style.display = 'flex';
-  }
+    const userRef = db.ref('users/' + currentUser);
+    userRef.once('value').then(snap => {
+        const user = snap.val();
+        if (user) {
+            const detailsEl = document.getElementById('inventoryDetails');
+            
+            let multiplierHtml = '<p>✖️ Aktif çarpan yok.</p>';
+            if (user.multiplierSource === 'store' && user.multiplierRemainingUses > 0) {
+                multiplierHtml = `<p><b>✖️ Aktif Çarpan:</b> </b> [ ${user.activeMultiplier}X - ${user.multiplierRemainingUses} ADET ] </p>`;
+            } else if (user.multiplierSource === 'box') {
+                multiplierHtml = `<p><b>✖️ Aktif Çarpan:</b> </b> [ ${user.activeMultiplier}X - [ </b> 1 ADET (Otomatik) ] </p>`;
+            }
+
+            const packs = [
+                { type: 'card_pack', name: 'Standart Kart Paketi', icon: '🎴' },
+                { type: 'card_pack_normal', name: 'Bronz Kart Paketi', icon: '🥉' },
+                { type: 'card_pack_gumus', name: 'Gümüş Kart Paketi', icon: '🥈' },
+                { type: 'card_pack_altin', name: 'Altın Kart Paketi', icon: '🥇' },
+                { type: 'card_pack_efsanevi', name: 'Efsanevi Kart Paketi', icon: '🏆' },
+            ];
+
+            let packsHtml = '';
+            let hasPacks = false;
+            packs.forEach(pack => {
+                const count = user[pack.type] || 0;
+                if (count > 0) {
+                    hasPacks = true;
+                    packsHtml += `
+                        <div class="flex justify-between items-center">
+                            <span>${pack.icon} ${pack.name}: <strong class="text-white">${count}</strong></span>
+                            <button onclick="openMyCardPacks('${pack.type}', '${pack.name}', ${count})" class="py-1 px-3 bg-purple-600 hover:bg-purple-500 rounded-md text-xs font-bold">Tümünü Aç</button>
+                        </div>
+                    `;
+                }
+            });
+
+            if (!hasPacks) {
+                packsHtml = '<p class="text-gray-500 text-sm">Hiç kart paketin yok.</p>';
+            }
+
+            detailsEl.innerHTML = `
+                <p class="flex justify-between items-center"><span>📦 Kutu Hakkı:</span> <strong id="inventoryBoxRights" class="text-green-400 text-lg">${user.kutuHakki || 0}</strong></p>
+                <p class="flex justify-between items-center"><span>️🎫 Şans Çarkı Bileti:</span> <strong id="inventoryWheelTickets" class="text-yellow-400 text-lg">${user.carkBileti || 0}</strong></p>
+                <p class="flex justify-between items-center"><span>🎟️ Tıkla-Yakala Bileti:</span> <strong id="inventoryClickCatchTickets" class="text-fuchsia-400 text-lg">${user.clickCatchTickets || 0}</strong></p>
+                <p class="flex justify-between items-center"><span>🛡️ İflas Kalkanı:</span> <strong id="inventoryIflasShields" class="text-blue-400 text-lg">${user.iflasShieldUses || 0}</strong></p>
+                <hr class="border-gray-600 my-2">
+                <div id="inventoryMultiplierDetails">${multiplierHtml}</div>
+                <hr class="border-gray-600 my-2">
+                <h5 class="font-bold text-purple-300 mb-2">Kart Paketleri</h5>
+                <div class="space-y-2">${packsHtml}</div>
+            `;
+        }
+    });
+    inventoryModal.style.display = 'flex';
+}
+
+      /**
+ * Kullanıcının sahip olduğu kart paketlerini açma işlemini başlatır.
+ */
+async function openMyCardPacks(packType, packName, maxCount) {
+    if (maxCount <= 0) return;
+
+    const confirmed = await customConfirm(`Envanterindeki <b>${maxCount} adet ${packName}</b> paketinin tümünü açmak istediğine emin misin?`);
+    if (!confirmed) return;
+
+    // Önce envanter modalını kapat
+    closeInventoryModal();
+
+    // Kullanıcının envanterinden bu paketleri sıfırla
+    await db.ref(`users/${currentUser}/${packType}`).set(0);
+
+    // Paket açma ekranını başlat
+    startCardPackOpening(maxCount, 'Envanter', 1, packType);
+}
+      
   function closeInventoryModal() { inventoryModal.style.display = 'none'; }
   function openBadgeInfoModal() { badgeInfoModal.style.display = 'flex'; }
   function closeBadgeInfoModal() { badgeInfoModal.style.display = 'none'; }
@@ -11259,6 +11301,7 @@ async function spinWheel() {
                         message = `HARİKA! Çarktan en nadir ödül olan <b class="text-purple-400">+${winningSegment.value} JOKER KART</b> kazandın!`;
                         updates.wildcards = (currentUserData.wildcards || 0) + winningSegment.value;
                         break;
+                    // --- KART PAKETİ MANTIĞI ESKİ SİSTEME DÖNDÜ ---
                     case 'card_pack':
                     case 'card_pack_normal':
                     case 'card_pack_gumus':
@@ -11273,10 +11316,11 @@ async function spinWheel() {
                             'card_pack_efsanevi': `+${packsToOpen} Efsanevi Kart Paketi`
                         };
                         const prizeText = packNames[winningSegment.type] || `+${packsToOpen} Kart Paketi`;
-                        message = `Tebrikler! Çarktan <b class="text-yellow-300">${prizeText}</b> kazandın!`;
+                        message = `Tebrikler! Çarktan <b class="text-yellow-300">${prizeText}</b> kazandın! Paketler şimdi açılıyor...`;
                         winningSegment.prizeName = prizeText;
                         startCardPackOpening(packsToOpen, 'Şans Çarkı', 1, winningSegment.type);
                         break;
+                    // --- GÜNCELLEME SONU ---
                     case 'revival_stone':
                         message = `Tebrikler, çarktan <b>+${winningSegment.value} Dirilme Taşı</b> kazandın!`;
                         updates.inventory.revival_stone = (currentUserData.inventory?.revival_stone || 0) + winningSegment.value;
@@ -11361,7 +11405,7 @@ async function spinWheel() {
         }
     }, 5100);
 }
-
+      
 // BU YENİ FONKSİYONU EKLE
 async function processPendingRewards() {
     if (isAdmin) return;
@@ -13785,7 +13829,6 @@ async function editStoreItem(itemId) {
     openAdminStoreModal();
 }
 
-// MEVCUT buyItem FONKSİYONUNU SİL VE BUNUNLA DEĞİŞTİR
 async function buyItem(itemId) {
     if (isAdmin) {
         displayMessage("Adminler alışveriş yapamaz.");
@@ -13976,6 +14019,7 @@ async function buyItem(itemId) {
     if (confirmed) {
         const itemValue = parseInt(item.value) || 0;
 
+        // --- KART PAKETİ MANTIĞI ESKİ SİSTEME DÖNDÜ ---
         if (item.type.startsWith('card_pack')) {
             await userRef.update({ balance: user.balance - item.cost, totalSpentPoints: (user.totalSpentPoints || 0) + item.cost });
             await itemRef.transaction(currentItem => { if (currentItem) { if (currentItem.stock !== undefined && currentItem.stock !== null) { currentItem.stock--; } currentItem.purchaseCount = (currentItem.purchaseCount || 0) + 1; } return currentItem; });
@@ -13983,6 +14027,7 @@ async function buyItem(itemId) {
             startCardPackOpening(itemValue || 1, 'Mağaza', 1, item.type);
             return;
         }
+        // --- GÜNCELLEME SONU ---
         
         logActivity('buyItem', currentUser, { 
             itemName: item.name, 
@@ -14014,10 +14059,7 @@ async function buyItem(itemId) {
             updates.wildcards = (user.wildcards || 0) + itemValue;
             message = `Tebrikler! Mağazadan ${itemValue} adet Joker Kart satın aldın!`;
         } 
-        // --- DEĞİŞTİRİLEN KISIM BAŞLANGICI ---
         else if (item.type === 'avatar') {
-            // Hatalı olan "if (!updates.avatars)" satırı kaldırıldı.
-            // Artık Firebase'in anlayacağı doğru path (yol) formatını kullanıyoruz.
             updates[`avatars/${itemId}`] = {
                 id: itemId,
                 name: item.avatarName,
@@ -14025,7 +14067,6 @@ async function buyItem(itemId) {
             };
             message = `'${item.avatarName}' avatarı koleksiyonuna eklendi!`;
         }
-        // --- DEĞİŞTİRİLEN KISIM SONU ---
 
         let itemUpdates = {};
         if (item.stock !== undefined && item.stock !== null) itemUpdates.stock = item.stock - 1;
@@ -18205,12 +18246,6 @@ function addMaterialRowToRecipeCreatorFromButton(button) {
  * @param {object} data - Varsa, satırı doldurmak için kullanılacak veri.
  * @returns {string} Oluşturulan HTML satırı.
  */
-// MEVCUT getRewardItemHTML FONKSİYONUNU SİLİP BUNU YAPIŞTIRIN
-
-// MEVCUT getRewardItemHTML FONKSİYONUNU SİLİP BUNU YAPIŞTIRIN
-
-// MEVCUT getRewardItemHTML FONKSİYONUNU SİLİP BUNU YAPIŞTIRIN
-
 function getRewardItemHTML(prefix, data = {}) {
     // Tüm kartların listesini <option> olarak hazırla
     let cardOptions = allCardsCache.map(card => 
@@ -18237,6 +18272,11 @@ function getRewardItemHTML(prefix, data = {}) {
         <option value="crit_damage_potion" ${data.type === 'crit_damage_potion' ? 'selected' : ''}>🎯 Kritik Hasar Bonusu</option>
         <option value="dodge_potion" ${data.type === 'dodge_potion' ? 'selected' : ''}>💨 Sıyrılma Bonusu</option>
         <option value="pierce_potion" ${data.type === 'pierce_potion' ? 'selected' : ''}>📌 Delici Vuruş Bonusu</option>
+        <option value="card_pack" ${data.type === 'card_pack' ? 'selected' : ''}>🎴 Standart Kart Paketi</option>
+        <option value="card_pack_normal" ${data.type === 'card_pack_normal' ? 'selected' : ''}>🥉 Bronz Kart Paketi</option>
+        <option value="card_pack_gumus" ${data.type === 'card_pack_gumus' ? 'selected' : ''}>🥈 Gümüş Kart Paketi</option>
+        <option value="card_pack_altin" ${data.type === 'card_pack_altin' ? 'selected' : ''}>🥇 Altın Kart Paketi</option>
+        <option value="card_pack_efsanevi" ${data.type === 'card_pack_efsanevi' ? 'selected' : ''}>🏆 Efsanevi Kart Paketi</option>
     `;
     
     const materialOptions = `
@@ -18253,7 +18293,6 @@ function getRewardItemHTML(prefix, data = {}) {
          </div>` 
         : '';
     
-    // ★★★ DEĞİŞİKLİK BURADA: Eğer bu bir 'output' ise özel bir class ekliyoruz. ★★★
     const layoutClass = prefix === 'output' ? 'sm:grid-cols-3' : 'sm:grid-cols-2';
 
     return `
@@ -18454,7 +18493,6 @@ function checkIfUserCanCraft(recipe, userData) {
 
     for (const material of recipe.materials) {
         let userHas = 0;
-        // Bu kısım, yeni malzeme türleri eklendikçe genişletilebilir.
         switch(material.type) {
             case 'points': userHas = userData.balance || 0; break;
             case 'kasaPuani': userHas = userData.kasaPuani || 0; break;
@@ -18465,13 +18503,13 @@ function checkIfUserCanCraft(recipe, userData) {
             case 'wildcard': userHas = userData.wildcards || 0; break;
             case 'revival_stone': userHas = userData.inventory?.revival_stone || 0; break;
             case 'card': userHas = userData.cardCollection?.[material.cardId]?.count || 0; break;
-            // Diğer malzeme tipleri için kontroller buraya eklenebilir.
+            // --- KART PAKETLERİ BURADAN KALDIRILDI, ÇÜNKÜ ARTIK MALZEME DEĞİLLER ---
         }
         if (userHas < material.amount) return false;
     }
     return true;
 }
-
+      
 // MEVCUT openCraftingDetailModal FONKSİYONUNU BUNUNLA DEĞİŞTİRİN
 
 async function openCraftingDetailModal(recipeId) {
@@ -18648,8 +18686,6 @@ function closeCraftingDetailModal() {
     document.getElementById('craftingDetailModal').style.display = 'none';
 }
       
-// MEVCUT craftItem FONKSİYONUNU BUNUNLA DEĞİŞTİRİN
-
 async function craftItem(recipeId) {
     if (isAdmin || isCraftingInProgress) return;
 
@@ -18701,7 +18737,13 @@ async function craftItem(recipeId) {
             const statKeyMap = { health_potion: 'hp', damage_potion: 'damage', defense_potion: 'defense', crit_potion: 'critChance', crit_damage_potion: 'critDamage', dodge_potion: 'dodgeChance', pierce_potion: 'pierceChance' };
 
             for (const material of recipe.materials) {
-                 const dbKeyMap = { points: 'balance', kasaPuani: 'kasaPuani', boxRights: 'kutuHakki', wheelTicket: 'carkBileti', clickCatchTicket: 'clickCatchTickets', iflasShield: 'iflasShieldUses', wildcard: 'wildcards', revival_stone: 'inventory/revival_stone' };
+                 // --- KART PAKETLERİ BURADAN KALDIRILDI ---
+                 const dbKeyMap = { 
+                     points: 'balance', kasaPuani: 'kasaPuani', boxRights: 'kutuHakki', 
+                     wheelTicket: 'carkBileti', clickCatchTicket: 'clickCatchTickets', 
+                     iflasShield: 'iflasShieldUses', wildcard: 'wildcards', revival_stone: 'inventory/revival_stone'
+                 };
+                 // --- GÜNCELLEME SONU ---
                  const path = dbKeyMap[material.type];
                  const isRarityCard = ['card_normal', 'card_gumus', 'card_altin', 'card_efsanevi'].includes(material.type);
                  const statKey = statKeyMap[material.type];
@@ -18726,31 +18768,25 @@ async function craftItem(recipeId) {
                         currentData.inventory.health_regen_potion[potionPercent]--;
                     }
                  } 
-                 // ★★★ ÇARPANI MALZEME OLARAK KULLANMA HATASINI ÇÖZEN YENİ KOD ★★★
                  else if (material.type === 'tempMultiplier') {
-                    // Kullanıcının aktif çarpanının, tarifte istenenle eşleşip eşleşmediğini kontrol et
                     const matchesValue = currentData.activeMultiplier === material.value;
                     const matchesUses = (currentData.multiplierRemainingUses || 0) >= material.uses;
                     
-                    if (!matchesValue || !matchesUses) return; // Eğer eşleşmiyorsa, işlemi iptal et
+                    if (!matchesValue || !matchesUses) return;
                     
-                    // Eşleşiyorsa, çarpanı harca/sıfırla
                     currentData.activeMultiplier = 1;
                     currentData.multiplierSource = 'none';
                     currentData.multiplierRemainingUses = 0;
                  }
-                 // ★★★ YENİ KOD SONU ★★★
                  else if (statKey) {
                     const currentBonus = currentData.globalPotionBuffs?.[statKey] || 0;
                     if (currentBonus < material.amount) return;
                     currentData.globalPotionBuffs[statKey] -= material.amount;
                  } 
-                 // ★★★ AVATAR KONTROLÜ İÇİN EKLENEN KISIM ★★★
                  else if (material.type === 'avatar') {
                     const hasAvatar = currentData.avatars && Object.values(currentData.avatars).some(a => a.name === material.avatarName);
-                    if (!hasAvatar) return; // Eğer avatara sahip değilse, işlemi iptal et. (Avatar harcanmaz)
+                    if (!hasAvatar) return;
                  }
-                 // ★★★ KONTROL SONU ★★★
                  else { return; }
             }
 
@@ -18801,7 +18837,7 @@ async function craftItem(recipeId) {
  */
 function applyRewardToUser(userData, reward) {
     const cardPacksToOpen = [];
-    const value = reward.amount || 0; 
+    const value = reward.amount || reward.value || 0;
     const uses = reward.uses || 0;
 
     switch (reward.type) {
@@ -18824,12 +18860,9 @@ function applyRewardToUser(userData, reward) {
             userData.avatars[newAvatarId] = { id: newAvatarId, name: reward.avatarName, imageUrl: reward.avatarImageUrl };
             break;
         case 'tempMultiplier':
-            // *** DÜZELTME BURADA ***
-            // Çarpanın 'değerini' reward.value'dan, 'kullanım hakkını' ise reward.uses'dan alıyoruz.
-            // Fonksiyonun başındaki 'value' değişkeni burada kullanılmamalı.
-            userData.activeMultiplier = reward.value || 1; // Hata durumunda 1x olsun
+            userData.activeMultiplier = reward.value || 1;
             userData.multiplierRemainingUses = reward.uses || 0;
-            userData.multiplierSource = 'store'; // Üretilenler mağaza gibi davranır
+            userData.multiplierSource = 'store';
             break;
         case 'card':
             if (!userData.cardCollection) userData.cardCollection = {};
@@ -18838,14 +18871,16 @@ function applyRewardToUser(userData, reward) {
             }
             userData.cardCollection[reward.cardId].count += (reward.amount || 1);
             break;
+        // --- KART PAKETİ MANTIĞI ESKİ SİSTEME DÖNDÜ ---
         case 'card_pack':
         case 'card_pack_normal':
         case 'card_pack_gumus':
         case 'card_pack_altin':
         case 'card_pack_efsanevi':
-            cardPacksToOpen.push(reward);
+            // Artık envantere eklenmiyor, direkt açılacaklar listesine ekleniyor.
+            cardPacksToOpen.push({ type: reward.type, value: value });
             break;
-        // Diğer tüm iksir ve bonus türleri
+        // --- GÜNCELLEME SONU ---
         default:
              const statKeyMap = { 'health_potion': 'hp', 'damage_potion': 'damage', 'defense_potion': 'defense', 'crit_potion': 'critChance', 'crit_damage_potion': 'critDamage', 'dodge_potion': 'dodgeChance', 'pierce_potion': 'pierceChance' };
              const statKey = statKeyMap[reward.type];
@@ -18857,7 +18892,7 @@ function applyRewardToUser(userData, reward) {
     }
     return { cardPacksToOpen };
 }
-
+      
 function openCraftingAdminModal() {
     if (!isAdmin) return;
     const listEl = document.getElementById('adminRecipesList');
