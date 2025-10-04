@@ -18801,8 +18801,6 @@ async function craftItem(recipeId) {
  */
 function applyRewardToUser(userData, reward) {
     const cardPacksToOpen = [];
-    // HATA BURADAYDI: Üretilen eşyanın miktarı 'reward.amount' altında saklanıyor, 'reward.value' değil.
-    // Artık doğru değişken olan 'amount' kullanılıyor ve '|| 0' ile NaN hatası engelleniyor.
     const value = reward.amount || 0; 
     const uses = reward.uses || 0;
 
@@ -18826,9 +18824,11 @@ function applyRewardToUser(userData, reward) {
             userData.avatars[newAvatarId] = { id: newAvatarId, name: reward.avatarName, imageUrl: reward.avatarImageUrl };
             break;
         case 'tempMultiplier':
-            // ★★★ HATA BURADAYDI: 'reward.value' yerine 'value' kullanıyoruz ★★★
-            userData.activeMultiplier = value; 
-            userData.multiplierRemainingUses = uses;
+            // *** DÜZELTME BURADA ***
+            // Çarpanın 'değerini' reward.value'dan, 'kullanım hakkını' ise reward.uses'dan alıyoruz.
+            // Fonksiyonun başındaki 'value' değişkeni burada kullanılmamalı.
+            userData.activeMultiplier = reward.value || 1; // Hata durumunda 1x olsun
+            userData.multiplierRemainingUses = reward.uses || 0;
             userData.multiplierSource = 'store'; // Üretilenler mağaza gibi davranır
             break;
         case 'card':
