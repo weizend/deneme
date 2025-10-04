@@ -14572,6 +14572,8 @@ function closeWheelLegendModal() {
     document.getElementById('wheelLegendModal').style.display = 'none';
 }
 
+// MEVCUT openWheelLegendModal FONKSİYONUNU SİLİP BUNU YAPIŞTIRIN
+
 function openWheelLegendModal() {
     document.body.classList.add('modal-open');
     const contentDiv = document.getElementById('wheelLegendContent');
@@ -14581,7 +14583,8 @@ function openWheelLegendModal() {
         { icon: '🎉', title: 'SÜRPRİZ KUTU', description: 'En nadir ödül! İçinden çok yüksek puanlar çıkan özel bir kart seçme oyunu başlatır.' },
         { icon: '🏆', title: 'EFSANEVİ KART PAKETİ', description: 'Çok nadir! İçinden sadece Efsanevi nadirlikte bir koleksiyon kartı çıkar.' },
         { icon: '🃏', title: 'JOKER KART', description: 'Çok nadir! Kart koleksiyonundaki herhangi bir eksik kartı tamamlamanı sağlar.' },
-        { icon: '✖️', title: '5X ÇARPAN', description: 'Çok nadir! Bir sonraki kutu açılışında kazanacağın puanı veya eşyayı 5\'e katlar.' }, // EKLENEN BLOK
+        { icon: '✖️', title: '5X ÇARPAN', description: 'Çok nadir! Bir sonraki kutu açılışında kazanacağın puanı veya eşyayı 5\'e katlar.' },
+        { icon: '💎', title: 'DİRİLME TAŞI', description: 'Çok nadir! Canavar Savaşı\'nda mağlup olduğunda seni yeniden canlandırır.' },
         { icon: '🎂', title: '1000 PUAN', description: 'Nadir bulunan, yüksek miktarda bir puan ödülüdür.' },
         { icon: '🥇', title: 'ALTIN KART PAKETİ', description: 'İçinden sadece Altın nadirlikte bir koleksiyon kartı çıkar.' },
         { icon: '🎁', title: '3 KUTU HAKKI', description: 'Değerli bir ödül! Kutu oyununda kullanmak üzere tam 3 adet açma hakkı verir.' },
@@ -18255,10 +18258,8 @@ function handleAdminRewardTypeChange(selectElement, rewardData = {}) {
     const container = rewardEntry.querySelector('.reward-fields-container');
     let fieldsHtml = '';
     
-    // YENİLENDİ: Satırın "output" (sonuç ürün) satırı olup olmadığını kontrol et
     const isOutput = selectElement.closest('#recipeOutputContainer');
 
-    // Eğer bu bir üretim "sonucu" ise, eşyanın genel bilgilerini girmek için ekstra alanlar ekle
     if (isOutput) {
          fieldsHtml += `
             <input type="text" class="box-setting-input reward-name col-span-2" placeholder="Üretilen Eşyanın Adı" value="${rewardData.name || ''}">
@@ -18455,7 +18456,7 @@ function checkIfUserCanCraft(recipe, userData) {
     return true;
 }
 
-// MEVCUT openCraftingDetailModal FONKSİYONUNU BUNUNLA DEĞİŞTİR
+// MEVCUT openCraftingDetailModal FONKSİYONUNU BUNUNLA DEĞİŞTİRİN
 
 async function openCraftingDetailModal(recipeId) {
     const modal = document.getElementById('craftingDetailModal');
@@ -18496,13 +18497,14 @@ async function openCraftingDetailModal(recipeId) {
             let materialName = typeToName[material.type] || 'Bilinmeyen Malzeme';
             let isMet = false;
             let materialOptionsHtml = '';
-            
+            // ★★★ YENİ EKLENEN AVATAR NOTU DEĞİŞKENİ ★★★
+            let avatarNoteHtml = ''; 
+
             const isRarityCard = ['card_normal', 'card_gumus', 'card_altin', 'card_efsanevi'].includes(material.type);
 
             if (isRarityCard) {
                 const targetRarity = material.type.split('_')[1];
                 let eligibleCards = [];
-
                 for (const cardId in userCards) {
                     if (userCards[cardId].count > 1 && !cardsInTrade.has(cardId)) {
                         const cardInfo = masterCards[cardId];
@@ -18511,10 +18513,8 @@ async function openCraftingDetailModal(recipeId) {
                         }
                     }
                 }
-                
                 userHasAmount = eligibleCards.length;
                 isMet = userHasAmount >= material.amount;
-                
                 if (isMet) {
                     materialOptionsHtml = `<select id="material-select-${index}" class="box-setting-input mt-2">`;
                     eligibleCards.forEach(card => {
@@ -18522,12 +18522,11 @@ async function openCraftingDetailModal(recipeId) {
                     });
                     materialOptionsHtml += `</select>`;
                 }
-            } else if (material.type === 'health_regen_potion') { // YENİ EKLENDİ
+            } else if (material.type === 'health_regen_potion') {
                 const userPotions = userData.inventory?.health_regen_potion || {};
                 const availablePotions = Object.entries(userPotions).filter(([, count]) => count > 0);
                 userHasAmount = availablePotions.reduce((sum, [, count]) => sum + count, 0);
                 isMet = userHasAmount >= material.amount;
-                
                 if (isMet) {
                     let options = availablePotions.map(([percent, count]) => `<option value="${percent}">%${percent} Can İksiri (Stok: ${count})</option>`).join('');
                     for(let i = 0; i < material.amount; i++) {
@@ -18549,6 +18548,12 @@ async function openCraftingDetailModal(recipeId) {
                         userHasAmount = userCards[material.cardId]?.count || 0;
                         materialName = masterCards[material.cardId]?.cardName || 'Bilinmeyen Kart';
                         break;
+                    // ★★★ YENİ EKLENEN AVATAR KONTROLÜ ★★★
+                    case 'avatar':
+                        materialName = material.avatarName; // Malzeme verisinden avatar adını al
+                        userHasAmount = userData.avatars && Object.values(userData.avatars).some(a => a.name === material.avatarName) ? 1 : 0;
+                        avatarNoteHtml = `<p class="text-xs text-cyan-300 -mt-1">(Not: Avatarlar üretimde harcanmaz.)</p>`;
+                        break;
                     default:
                         if (statKey) {
                             userHasAmount = userData.globalPotionBuffs?.[statKey] || 0;
@@ -18566,6 +18571,7 @@ async function openCraftingDetailModal(recipeId) {
                 <div class="material-list-item ${isMet ? 'has-enough' : 'not-enough'}">
                     <div class="material-info">
                         <p class="material-name">${materialName} ${amountText}</p>
+                        ${avatarNoteHtml}
                         <p class="material-stock">Sende: ${percentPotions.includes(material.type) ? '%' + userHasAmount.toFixed(1) : formatNumber(userHasAmount)}</p>
                         ${materialOptionsHtml}
                     </div>
@@ -18736,24 +18742,31 @@ async function craftItem(recipeId) {
     }
 }
       
+// MEVCUT applyRewardToUser FONKSİYONUNU SİLİP BUNU YAPIŞTIRIN
+
 /**
  * Belirtilen ödülü kullanıcı verisine uygular. (Transaction içinde kullanılır)
  */
 function applyRewardToUser(userData, reward) {
     const cardPacksToOpen = [];
+    // HATA BURADAYDI: Üretilen eşyanın miktarı 'reward.amount' altında saklanıyor, 'reward.value' değil.
+    // Artık doğru değişken olan 'amount' kullanılıyor ve '|| 0' ile NaN hatası engelleniyor.
+    const value = reward.amount || 0; 
+    const uses = reward.uses || 0;
+
     switch (reward.type) {
         case 'points':
-            userData.balance = (userData.balance || 0) + reward.value;
-            userData.kariyerPuani = (userData.kariyerPuani || 0) + reward.value;
+            userData.balance = (userData.balance || 0) + value;
+            userData.kariyerPuani = (userData.kariyerPuani || 0) + value;
             break;
-        case 'boxRights': userData.kutuHakki = (userData.kutuHakki || 0) + reward.value; break;
-        case 'wheelTicket': userData.carkBileti = (userData.carkBileti || 0) + reward.value; break;
-        case 'clickCatchTicket': userData.clickCatchTickets = (userData.clickCatchTickets || 0) + reward.value; break;
-        case 'iflasShield': userData.iflasShieldUses = (userData.iflasShieldUses || 0) + reward.value; break;
-        case 'wildcard': userData.wildcards = (userData.wildcards || 0) + reward.value; break;
+        case 'boxRights': userData.kutuHakki = (userData.kutuHakki || 0) + value; break;
+        case 'wheelTicket': userData.carkBileti = (userData.carkBileti || 0) + value; break;
+        case 'clickCatchTicket': userData.clickCatchTickets = (userData.clickCatchTickets || 0) + value; break;
+        case 'iflasShield': userData.iflasShieldUses = (userData.iflasShieldUses || 0) + value; break;
+        case 'wildcard': userData.wildcards = (userData.wildcards || 0) + value; break;
         case 'revival_stone':
             if (!userData.inventory) userData.inventory = {};
-            userData.inventory.revival_stone = (userData.inventory.revival_stone || 0) + reward.value;
+            userData.inventory.revival_stone = (userData.inventory.revival_stone || 0) + value;
             break;
         case 'avatar':
             const newAvatarId = firebase.database().ref().push().key;
@@ -18761,9 +18774,16 @@ function applyRewardToUser(userData, reward) {
             userData.avatars[newAvatarId] = { id: newAvatarId, name: reward.avatarName, imageUrl: reward.avatarImageUrl };
             break;
         case 'tempMultiplier':
-            userData.activeMultiplier = reward.value;
-            userData.multiplierRemainingUses = reward.uses;
+            userData.activeMultiplier = reward.value; // Çarpanın değeri hala 'value' olarak saklanıyor
+            userData.multiplierRemainingUses = uses;
             userData.multiplierSource = 'store'; // Üretilenler mağaza gibi davranır
+            break;
+        case 'card':
+            if (!userData.cardCollection) userData.cardCollection = {};
+            if (!userData.cardCollection[reward.cardId]) {
+                userData.cardCollection[reward.cardId] = { count: 0 };
+            }
+            userData.cardCollection[reward.cardId].count += (reward.amount || 1);
             break;
         case 'card_pack':
         case 'card_pack_normal':
@@ -18778,7 +18798,7 @@ function applyRewardToUser(userData, reward) {
              const statKey = statKeyMap[reward.type];
              if (statKey) {
                 if (!userData.globalPotionBuffs) userData.globalPotionBuffs = {};
-                userData.globalPotionBuffs[statKey] = (userData.globalPotionBuffs[statKey] || 0) + reward.value;
+                userData.globalPotionBuffs[statKey] = (userData.globalPotionBuffs[statKey] || 0) + value;
              }
              break;
     }
