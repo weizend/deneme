@@ -3013,12 +3013,12 @@ body.modal-open .modal-content {
                 <h4 id="publicUserName" class="text-yellow-300 text-3xl font-bold"></h4>
             </div>
         </div>
-        
-        <div id="publicUserChampionships" class="hidden w-full max-w-lg mx-auto bg-yellow-900/50 border-2 border-yellow-500 text-yellow-200 p-4 rounded-xl mt-4 space-y-2 text-center shadow-lg">
-        </div>
     </div>
 
     <div class="flex-grow overflow-y-auto scrollable-list p-6 pt-2">
+        <div id="publicUserChampionships" class="hidden w-full max-w-lg mx-auto bg-yellow-900/50 border-2 border-yellow-500 text-yellow-200 p-4 rounded-xl mb-4 space-y-2 text-center shadow-lg">
+        </div>
+
         <div id="publicUserBlockedInfo" class="hidden bg-red-900/50 border border-red-500 text-red-300 p-3 rounded-lg mb-4">
             Bu kullanıcı engellidir. Kalan süre: <span id="publicUserBlockedCountdown" class="font-bold"></span>
         </div>
@@ -11709,6 +11709,28 @@ async function openClickCatchStatsModal(username) {
             return;
         }
 
+        // ★★★ DEĞİŞİKLİK BURADA BAŞLIYOR: İKONLARI VE İSİMLERİ DİNAMİK YAPIYORUZ ★★★
+        const iconMap = {
+            boxRight: '📦',
+            iflasShield: '🛡️',
+            wheelTicket: '🎫',
+            tempMultiplier: '✖️',
+            wildcard: '🃏',
+            card_pack: '🎴',
+            card_pack_normal: '🥉',
+            card_pack_gumus: '🥈',
+            card_pack_altin: '🥇',
+            card_pack_efsanevi: '🏆',
+            revival_stone: '💎',
+            health_potion: '🧪',
+            defense_potion: '🛡️',
+            damage_potion: '⚔️',
+            crit_potion: '💥',
+            crit_damage_potion: '🎯',
+            dodge_potion: '💨',
+            pierce_potion: '📌'
+        };
+
         let html = `<p class="mb-4 text-center">Bu skoru elde ederken toplam (<b class="text-yellow-300">${ticketsUsed} bilet x 🎟️</b>) harcandı.</p>`;
         html += '<div class="space-y-4">';
 
@@ -11732,9 +11754,13 @@ async function openClickCatchStatsModal(username) {
                 const count = stats.special[type];
                 const itemName = typeToName[type] || 'Özel Eşya';
                 const itemValue = settings.specialValue || 1;
-                html += `<p class="text-lg"> 🎁 +${itemValue} ${itemName}: <b class="text-white">${count}</b> adet kazanıldı.</p>`;
+                const itemIcon = iconMap[type] || '🎁'; // İkonu haritadan al
+                
+                // Görünen metni isteğine göre güncelliyoruz
+                html += `<p class="text-lg"> ${itemIcon} +${itemValue} ${itemName}: <b class="text-white">${count}</b> adet kazanıldı.</p>`;
             }
         }
+        // ★★★ DEĞİŞİKLİK BURADA BİTİYOR ★★★
         
         html += `<hr class="border-gray-600 my-2">`;
         html += `
@@ -15519,8 +15545,7 @@ async function handleDuplicateCardClick(cardId) {
     }
 }
 
-// JOKER KART KULLANMA FONKSİYONU
-
+// useWildcard FONKSİYONUNUN GÜNCELLENMİŞ HALİ
 async function useWildcard(cardIdToGet, cardNameToGet) {
     if (isAdmin) return;
 
@@ -15555,6 +15580,10 @@ async function useWildcard(cardIdToGet, cardNameToGet) {
     });
 
     displayMessage(`Tebrikler! Joker Kart kullanarak '${cardNameToGet}' kartını koleksiyonuna ekledin!`);
+    
+    // ★★★ DEĞİŞİKLİK BURADA: Albüm tamamlama kontrolünü ekliyoruz ★★★
+    await checkAndGrantPrize(currentUser);
+
     loadCollectionAlbum(); // Değişikliği anında görmek için albümü yenile
 }
 
