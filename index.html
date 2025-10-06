@@ -18888,17 +18888,13 @@ function applyRewardToUser(userData, reward) {
         if (capCheck.canAdd && capCheck.amount > 0) {
             if (!userData.globalPotionBuffs) userData.globalPotionBuffs = {};
             userData.globalPotionBuffs[statKey] = (userData.globalPotionBuffs[statKey] || 0) + capCheck.amount;
-            // Orijinal ödül (kısmen veya tamamen) uygulandı.
         } else {
-            // Kullanıcı limitte, ödülü +1 Kutu Hakkı'na dönüştür.
             userData.kutuHakki = (userData.kutuHakki || 0) + 1;
-            // Çağıran fonksiyona bir dönüşüm olduğunu bildir.
             return { cardPacksToOpen, convertedToBoxRight: true, originalReward: reward };
         }
     } 
     // --- LİMİT KONTROL MANTIĞI SONU ---
     else {
-        // İksir olmayan diğer ödüller için orijinal mantık devam ediyor.
         switch (reward.type) {
             case 'points':
                 userData.balance = (userData.balance || 0) + value;
@@ -18940,10 +18936,9 @@ function applyRewardToUser(userData, reward) {
             case 'health_regen_potion':
                 if (!userData.inventory) userData.inventory = {};
                 if (!userData.inventory.health_regen_potion) userData.inventory.health_regen_potion = {};
-                const percentage = reward.value;
-                const amountToAdd = reward.amount || 1;
-                const currentPotions = userData.inventory.health_regen_potion[percentage] || 0;
-                userData.inventory.health_regen_potion[percentage] = currentPotions + amountToAdd;
+                const percentage = value; // 'value' değişkeni yüzdeyi doğru bir şekilde alır.
+                const currentCount = userData.inventory.health_regen_potion[percentage] || 0;
+                userData.inventory.health_regen_potion[percentage] = currentCount + 1; // Miktarı 1 artırır.
                 break;
         }
     }
@@ -21860,28 +21855,29 @@ function generateRewardFields(answerInput, lettersData = null) {
 
     for (let i = 0; i < answer.length; i++) {
         const letter = answer[i];
-        // Eğer mevcut veri varsa o veriyi kullan, yoksa boş obje kullan
         const rewardData = lettersData ? lettersData[i]?.reward : {};
         
-        const fieldHtml = `
-            <div class="flex items-center gap-2">
-                <span class="font-bold text-yellow-300 w-8 text-center text-lg">${letter}</span>
-                ${getRewardItemHTML(`reward_${i}`, rewardData)}
-            </div>
+        // Önce her satır için bir ana taşıyıcı element oluşturuyoruz
+        const wrapperDiv = document.createElement('div');
+        wrapperDiv.className = 'flex items-center gap-2';
+
+        // Satırın içeriğini HTML olarak bu elemente ekliyoruz
+        wrapperDiv.innerHTML = `
+            <span class="font-bold text-yellow-300 w-8 text-center text-lg">${letter}</span>
+            ${getRewardItemHTML(`reward_${i}`, rewardData)}
         `;
-        container.innerHTML += fieldHtml;
         
-        // ★★★ HATAYI ÇÖZEN ANAHTAR KOD ★★★
-        // Her satır oluşturulduktan sonra, o satırın içindeki select elementini bulup
-        // türüne göre doğru input'ları göstermesi için fonksiyonu tetikliyoruz.
-        const newRow = container.querySelector('.reward-entry:last-child');
+        // Tamamlanmış satırı ana konteynere ekliyoruz
+        container.appendChild(wrapperDiv);
+
+        // Şimdi, YALNIZCA YENİ EKLEDİĞİMİZ SATIRIN içindeki elementleri bularak
+        // doğru input'ların görünmesini sağlayan fonksiyonu çağırıyoruz.
+        const newRow = wrapperDiv.querySelector('.reward-entry');
         if (newRow) {
             handleAdminRewardTypeChange(newRow.querySelector('.reward-type'), rewardData);
         }
     }
 }
-
-// MEVCUT saveWordGameSettings FONKSİYONUNU SİL VE BUNUNLA DEĞİŞTİR
 
 async function saveWordGameSettings(shouldResetProgress = false) {
     if (!isAdmin) return;
@@ -21928,7 +21924,7 @@ async function saveWordGameSettings(shouldResetProgress = false) {
                 }
                 
                 let isSolved = false;
-                // ★★★ İLERLEMEYİ KORUMA MANTIĞI ★★★
+                // İLERLEMEYİ KORUMA MANTIĞI
                 // Eğer ilerlemeyi sıfırlamıyorsak, eski veriyi kontrol et
                 if (!shouldResetProgress && oldGameData && oldGameData.questions) {
                     const oldQuestion = oldGameData.questions.find(q => q.answer === answer);
