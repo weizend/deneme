@@ -18880,7 +18880,7 @@ function applyRewardToUser(userData, reward) {
     };
     const statKey = statKeyMap[reward.type];
 
-    // --- LİMİT KONTROL MANTIĞI ---
+    // ★★★ DEĞİŞİKLİK BURADA: Kalıcı stat veren iksirlerin mantığı eklendi ★★★
     if (statKey) {
         const amountToAdd = reward.amount || reward.value || 0;
         const capCheck = checkPotionCap(userData, reward.type, amountToAdd);
@@ -18889,12 +18889,13 @@ function applyRewardToUser(userData, reward) {
             if (!userData.globalPotionBuffs) userData.globalPotionBuffs = {};
             userData.globalPotionBuffs[statKey] = (userData.globalPotionBuffs[statKey] || 0) + capCheck.amount;
         } else {
+            // Eğer iksir bonus limiti doluysa, telafi olarak +1 Kutu Hakkı ver.
             userData.kutuHakki = (userData.kutuHakki || 0) + 1;
             return { cardPacksToOpen, convertedToBoxRight: true, originalReward: reward };
         }
     } 
-    // --- LİMİT KONTROL MANTIĞI SONU ---
     else {
+        // Mevcut diğer ödül mantıkları
         switch (reward.type) {
             case 'points':
                 userData.balance = (userData.balance || 0) + value;
@@ -18936,9 +18937,9 @@ function applyRewardToUser(userData, reward) {
             case 'health_regen_potion':
                 if (!userData.inventory) userData.inventory = {};
                 if (!userData.inventory.health_regen_potion) userData.inventory.health_regen_potion = {};
-                const percentage = value; // 'value' değişkeni yüzdeyi doğru bir şekilde alır.
+                const percentage = value;
                 const currentCount = userData.inventory.health_regen_potion[percentage] || 0;
-                userData.inventory.health_regen_potion[percentage] = currentCount + 1; // Miktarı 1 artırır.
+                userData.inventory.health_regen_potion[percentage] = currentCount + 1;
                 break;
         }
     }
@@ -21882,18 +21883,19 @@ function generateRewardFields(answerInput, lettersData = null) {
 async function saveWordGameSettings(shouldResetProgress = false) {
     if (!isAdmin) return;
     
+    // 1. ADIM: Butona göre doğru onay mesajını göster.
     let confirmationMessage = '';
     if (shouldResetProgress) {
         confirmationMessage = "Bu işlem mevcut bulmacayı tamamen silip yenisini oluşturacak ve liderlik tablosunu sıfırlayacaktır. Emin misiniz?";
     } else {
-        confirmationMessage = "Mevcut kelime oyunu ayarlarını bu şekilde güncellemek istediğinize emin misiniz? (Kullanıcıların doğru bildiği harfler korunacak)";
+        confirmationMessage = "Mevcut kelime oyunu ayarlarını bu şekilde güncellemek istediğinize emin misiniz? <br><br><small class='text-yellow-300'>Bu işlem oyuncuların mevcut serilerini SIFIRLAMAZ, sadece ödülleri günceller.</small>";
     }
     
     const confirmed = await customConfirm(confirmationMessage);
     if (!confirmed) return;
 
     try {
-        // Önce mevcut oyun verisini çek (ilerlemeyi korumak için)
+        // 2. ADIM: İlerlemeyi korumak için mevcut oyun verisini çek.
         const oldGameSnap = await db.ref('wordGame').once('value');
         const oldGameData = oldGameSnap.val();
 
@@ -21901,7 +21903,7 @@ async function saveWordGameSettings(shouldResetProgress = false) {
         const questionBlocks = document.querySelectorAll('#questionBlocksContainer > div');
         let hasError = false;
 
-        for (const block of questionBlocks) {
+        for (const [qIndex, block] of questionBlocks.entries()) {
             if (hasError) continue;
             const questionText = block.querySelector('.question-text').value.trim();
             const answer = block.querySelector('.answer-text').value.trim().toUpperCase();
@@ -21923,25 +21925,25 @@ async function saveWordGameSettings(shouldResetProgress = false) {
                     throw new Error(`'${questionText}' sorusundaki '${char}' harfinin ödülü geçersiz.`);
                 }
                 
-                let isSolved = false;
-                // İLERLEMEYİ KORUMA MANTIĞI
-                // Eğer ilerlemeyi sıfırlamıyorsak, eski veriyi kontrol et
-                if (!shouldResetProgress && oldGameData && oldGameData.questions) {
-                    const oldQuestion = oldGameData.questions.find(q => q.answer === answer);
-                    if (oldQuestion && oldQuestion.letters[i] && oldQuestion.letters[i].solved) {
-                        // Eğer eski sorunun cevabı aynıysa ve bu harf çözülmüşse, çözülmüş olarak işaretle
-                        isSolved = true;
-                    }
-                }
-                
-                letters.push({
+                let letterState = {
                     char: char,
                     reward: reward,
-                    solved: isSolved,
-                    // Eğer harf zaten çözülmüşse, çözenin bilgisini de koru
-                    solver: isSolved ? oldGameData.questions.find(q => q.answer === answer).letters[i].solver : null,
-                    solvedAt: isSolved ? oldGameData.questions.find(q => q.answer === answer).letters[i].solvedAt : null
-                });
+                    solved: false,
+                    solver: null,
+                    solvedAt: null
+                };
+
+                // 3. ADIM: İlerlemeyi koruma mantığı
+                if (!shouldResetProgress && oldGameData && oldGameData.questions && oldGameData.questions[qIndex]) {
+                    const oldQuestion = oldGameData.questions[qIndex];
+                    // Sadece cevap metni hala aynıysa ilerlemeyi koru
+                    if (oldQuestion.answer === answer && oldQuestion.letters[i] && oldQuestion.letters[i].solved) {
+                        letterState.solved = true;
+                        letterState.solver = oldQuestion.letters[i].solver;
+                        letterState.solvedAt = oldQuestion.letters[i].solvedAt;
+                    }
+                }
+                letters.push(letterState);
             }
             questions.push({ text: questionText, answer: answer, letters: letters });
         }
@@ -21954,72 +21956,15 @@ async function saveWordGameSettings(shouldResetProgress = false) {
         };
         updates['/wordGame/questions'] = questions;
 
+        // 4. ADIM: Sadece sıfırlama istenirse liderlik tablosunu temizle.
         if (shouldResetProgress) {
-            updates['/wordGame/leaderboard'] = null; // Lider tablosunu sıfırla
+            updates['/wordGame/leaderboard'] = null; 
             displayMessage("Kelime Oyunu başarıyla sıfırlandı ve yeni ayarlarla başlatıldı!");
         } else {
-            // Lider tablosuna dokunma, sadece soru ve ayarları güncelle
             displayMessage("Kelime Oyunu ayarları başarıyla güncellendi. Oyuncuların ilerlemesi korundu.");
         }
 
         await db.ref().update(updates);
-        closeWordGameAdminModal();
-
-    } catch (error) {
-        displayMessage(`Hata: ${error.message}`);
-    }
-}
-
-async function saveWordGameSettings() {
-    if (!isAdmin) return;
-    const confirmed = await customConfirm("Bu işlem mevcut bulmacayı tamamen silip yenisini oluşturacak ve liderlik tablosunu sıfırlayacaktır. Emin misiniz?");
-    if (!confirmed) return;
-
-    try {
-        const questions = [];
-        const questionBlocks = document.querySelectorAll('#questionBlocksContainer > div');
-
-        for (const block of questionBlocks) {
-            const questionText = block.querySelector('.question-text').value.trim();
-            const answer = block.querySelector('.answer-text').value.trim().toUpperCase();
-            
-            if (!questionText || !answer) continue;
-
-            const letters = [];
-            const rewardRows = block.querySelectorAll('.letter-rewards-container .reward-entry');
-            if (rewardRows.length !== answer.length) {
-                throw new Error(`'${questionText}' sorusunun cevabındaki harf sayısı ile ödül sayısı eşleşmiyor!`);
-            }
-
-            for (let i = 0; i < answer.length; i++) {
-                const char = answer[i];
-                const reward = parseRewardDataFromRow(rewardRows[i]);
-                if (!reward) {
-                    throw new Error(`'${questionText}' sorusundaki '${char}' harfinin ödülü geçersiz.`);
-                }
-                letters.push({
-                    char: char,
-                    reward: reward,
-                    solved: false
-                });
-            }
-            questions.push({
-                text: questionText,
-                answer: answer,
-                letters: letters,
-            });
-        }
-        
-        const gameData = {
-            settings: {
-                cooldown: parseInt(document.getElementById('cooldownInput').value) || 60,
-            },
-            questions: questions,
-            leaderboard: null
-        };
-
-        await db.ref('wordGame').set(gameData);
-        displayMessage("Kelime Oyunu başarıyla oluşturuldu ve başlatıldı!");
         closeWordGameAdminModal();
 
     } catch (error) {
@@ -22038,13 +21983,31 @@ async function resetWordGame() {
 }
 
 function getRewardIcon(type) {
+    // ★★★ DEĞİŞİKLİK BURADA: Eksik olan tüm ikonlar eklendi ★★★
     const iconMap = {
-        points: '💰', boxRights: '📦', wheelTicket: '🎫', clickCatchTicket: '🎟️',
-        iflasShield: '🛡️', tempMultiplier: '✖️', wildcard: '🃏',
-        card_pack: '🎴', card_pack_normal: '🥉', card_pack_gumus: '🥈',
-        card_pack_altin: '🥇', card_pack_efsanevi: '🏆'
+        points: '💰',
+        boxRights: '📦',
+        wheelTicket: '🎫',
+        clickCatchTicket: '🎟️',
+        iflasShield: '🛡️',
+        tempMultiplier: '✖️',
+        wildcard: '🃏',
+        card_pack: '🎴',
+        card_pack_normal: '🥉',
+        card_pack_gumus: '🥈',
+        card_pack_altin: '🥇',
+        card_pack_efsanevi: '🏆',
+        revival_stone: '💎',
+        health_potion: '🧪',
+        damage_potion: '⚔️',
+        defense_potion: '🛡️',
+        crit_potion: '💥',
+        crit_damage_potion: '🎯',
+        dodge_potion: '💨',
+        pierce_potion: '📌',
+        health_regen_potion: '🧪'
     };
-    return iconMap[type] || '🎁';
+    return iconMap[type] || '🎁'; // Eşleşme bulunamazsa varsayılan olarak hediye paketi göster
 }
 </script>
 </body>
