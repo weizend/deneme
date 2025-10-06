@@ -16722,42 +16722,70 @@ async function revealCard(cardElement) {
     }
 }
 
-// MEVCUT 3 FONKSİYONU (saveGrandPrize, loadPrizeSettingsForAdmin, loadGrandPrizeDisplay) SİLİP, BU 3 YENİSİNİ YAPIŞTIR
+// MEVCUT saveGrandPrize FONKSİYONUNU SİL VE YERİNE BUNU YAPIŞTIR
 
 async function saveGrandPrize() {
     if (!isAdmin) return;
-    
-    const prizeData = {
-        first: {
-            points: parseInt(document.getElementById('prizePoints_first').value) || 0,
-            boxRights: parseInt(document.getElementById('prizeBoxRights_first').value) || 0,
-            iflasShields: parseInt(document.getElementById('prizeIflasShields_first').value) || 0,
-            wheelTickets: parseInt(document.getElementById('prizeWheelTickets_first').value) || 0,
-            clickCatchTickets: parseInt(document.getElementById('prizeClickCatchTickets_first').value) || 0,
-            avatarName: document.getElementById('prizeAvatarName_first').value.trim() || '',
-            avatarImageUrl: document.getElementById('prizeAvatarImageUrl_first').value.trim() || '',
-        },
-        others: {
-            points: parseInt(document.getElementById('prizePoints_others').value) || 0,
-            boxRights: parseInt(document.getElementById('prizeBoxRights_others').value) || 0,
-            iflasShields: parseInt(document.getElementById('prizeIflasShields_others').value) || 0,
-            wheelTickets: parseInt(document.getElementById('prizeWheelTickets_others').value) || 0,
-            clickCatchTickets: parseInt(document.getElementById('prizeClickCatchTickets_others').value) || 0,
-            avatarName: document.getElementById('prizeAvatarName_others').value.trim() || '',
-            avatarImageUrl: document.getElementById('prizeAvatarImageUrl_others').value.trim() || '',
-        }
-    };
-    
-    // Özel ürünleri kontrol et
-    if (document.getElementById('prizeSpecial_first_type').value === 'special') {
-        prizeData.first.special = document.getElementById('prizeSpecial_first_name').value.trim() || 'Özel Ödül';
-    }
-    if (document.getElementById('prizeSpecial_others_type').value === 'special') {
-        prizeData.others.special = document.getElementById('prizeSpecial_others_name').value.trim() || 'Özel Ödül';
-    }
 
+    // Her ödül katmanı için verileri işleyen yardımcı bir fonksiyon
+    const processPrizeTier = (tierPrefix) => {
+        const prizeTier = {}; // Boş bir obje ile başlıyoruz
+
+        // Sayısal değerleri işle
+        const numericFields = {
+            points: 'prizePoints',
+            boxRights: 'prizeBoxRights',
+            iflasShields: 'prizeIflasShields',
+            wheelTickets: 'prizeWheelTickets',
+            clickCatchTickets: 'prizeClickCatchTickets'
+        };
+
+        for (const key in numericFields) {
+            const elementId = `${numericFields[key]}_${tierPrefix}`;
+            const value = parseInt(document.getElementById(elementId).value);
+            // Sadece geçerli ve 0'dan büyük bir sayı ise objeye ekle
+            if (!isNaN(value) && value > 0) {
+                prizeTier[key] = value;
+            }
+        }
+
+        // Yazısal değerleri (Avatar) işle
+        const avatarName = document.getElementById(`prizeAvatarName_${tierPrefix}`).value.trim();
+        const avatarImageUrl = document.getElementById(`prizeAvatarImageUrl_${tierPrefix}`).value.trim();
+        // Sadece hem isim hem de URL doluysa objeye ekle
+        if (avatarName && avatarImageUrl) {
+            prizeTier.avatarName = avatarName;
+            prizeTier.avatarImageUrl = avatarImageUrl;
+        }
+
+        // Özel ödülü işle
+        if (document.getElementById(`prizeSpecial_${tierPrefix}_type`).value === 'special') {
+            const specialName = document.getElementById(`prizeSpecial_${tierPrefix}_name`).value.trim();
+            // Sadece özel ürün adı doluysa objeye ekle
+            if (specialName) {
+                prizeTier.special = specialName;
+            }
+        }
+        
+        return prizeTier;
+    };
+
+    // 'İlk' ve 'Diğer' kazananlar için ödülleri ayrı ayrı işle
+    const firstPrize = processPrizeTier('first');
+    const othersPrize = processPrizeTier('others');
+
+    // Son veritabanı objesini oluştur
+    const prizeData = {
+        first: firstPrize,
+        others: othersPrize
+    };
+
+    // Veritabanına kaydet
     await db.ref('gameConfig/collectionGrandPrize').set(prizeData);
+    
     displayMessage("Büyük Ödüller başarıyla kaydedildi!");
+    
+    // Arayüzü yeni verilerle güncelle
     loadGrandPrizeDisplay();
 }
 
