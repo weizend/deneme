@@ -2281,6 +2281,26 @@ body.modal-open .modal-content {
 
             <div class="lg:col-span-1 bg-gray-900/50 p-4 rounded-lg">
                 <h4 class="text-xl font-bold text-yellow-300 mb-3 border-b border-gray-600 pb-2">En Çok Çözenler 🧠</h4>
+             <div id="wordGameStatsContainer" class="hidden w-full max-w-2xl mx-auto my-6 bg-gray-900/50 p-4 rounded-xl shadow-lg border-2 border-cyan-500 text-center space-y-3">
+    <div class="grid grid-cols-3 gap-2 text-center">
+        <div>
+            <p class="text-sm text-gray-400">Toplam Soru</p>
+            <p id="totalQuestionsStat" class="text-xl font-bold text-white">0</p>
+        </div>
+        <div>
+            <p class="text-sm text-gray-400">Çözülen Soru</p>
+            <p id="solvedQuestionsStat" class="text-xl font-bold text-green-400">0</p>
+        </div>
+        <div>
+            <p class="text-sm text-gray-400">Kalan Soru</p>
+            <p id="remainingQuestionsStat" class="text-xl font-bold text-red-400">0</p>
+        </div>
+    </div>
+    <div class="border-t border-gray-700 pt-3">
+        <p class="text-base text-cyan-300">🏆 Şampiyon Ödülü:</p>
+        <p id="wordGameChampionPrize" class="text-lg font-bold text-white">Henüz belirlenmedi</p>
+    </div>
+</div>
                 <div id="wordGameLeaderboard" class="space-y-2 max-h-96 overflow-y-auto scrollable-list pr-2">
                     </div>
             </div>
@@ -19105,42 +19125,35 @@ function applyRewardToUser(userData, reward) {
     return { cardPacksToOpen, convertedToBoxRight: false };
 }
 
+// MEVCUT loadCraftingRecipes FONKSİYONUNU SİLİP, BUNU YAPIŞTIRIN
 async function loadCraftingRecipes() {
     const container = document.getElementById('craftingRecipesContainer');
     const searchTerm = document.getElementById('craftingSearchInput').value.toLowerCase();
 
-    // Filtreleme mantığını arama çubuğuna göre basitleştiriyoruz
     const filteredRecipes = craftingRecipesCache.filter(recipe => 
         recipe.output.name.toLowerCase().includes(searchTerm)
     );
 
     if (filteredRecipes.length === 0) {
-        if (searchTerm) {
-            container.innerHTML = '<p class="text-center col-span-full text-gray-400">Aramanızla eşleşen tarif bulunamadı.</p>';
-        } else {
-            container.innerHTML = '<p class="text-center col-span-full text-gray-400">Henüz bir üretim tarifi oluşturulmadı.</p>';
-        }
+        container.innerHTML = searchTerm 
+            ? '<p class="text-center col-span-full text-gray-400">Aramanızla eşleşen tarif bulunamadı.</p>' 
+            : '<p class="text-center col-span-full text-gray-400">Henüz bir üretim tarifi oluşturulmadı.</p>';
         return;
     }
 
-    container.innerHTML = '';
+    container.innerHTML = ''; // Önce temizle
 
     const userData = allUsersCache.find(u => u.username === currentUser) || {};
 
-    // Filtrelenmiş her tarif için kart oluştur
-    filteredRecipes.forEach((recipe, index) => {
-        // Kullanıcının bu tarifi üretip üretemeyeceğini KONTROL EDİYORUZ ama GİZLEMİYORUZ
-        const canCraft = checkIfUserCanCraft(recipe, userData);
+    // Her tarif için asenkron olarak "üretebilirlik" kontrolü yap
+    for (const [index, recipe] of filteredRecipes.entries()) {
+        const canCraft = await checkIfUserCanCraft(recipe, userData); // await ile kontrolün bitmesini bekle
         const output = recipe.output;
         const card = document.createElement('div');
 
-        // Admin veya üretebilen kullanıcılar için kart tıklanabilir olacak
         const isClickable = isAdmin || canCraft;
         
-        // DEĞİŞİKLİK BURADA: Artık her koşulda kart tıklanabilir, sadece görünüşü değişecek
         card.className = `p-4 rounded-lg flex flex-col items-center cursor-pointer crafting-recipe-card ${!canCraft && !isAdmin ? 'cannot-craft' : ''}`;
-        
-        // Herkesin tarif detayını görebilmesi için onclick olayını her zaman ekliyoruz
         card.onclick = () => openCraftingDetailModal(recipe.id);
 
         let adminControlsHtml = '';
@@ -19168,10 +19181,10 @@ async function loadCraftingRecipes() {
             ${adminControlsHtml}
             <img src="${output.imageUrl || 'https://i.hizliresim.com/pntfb6j.png'}" alt="${output.name}" class="w-20 h-20 mb-3 object-contain">
             <h4 class="font-bold text-yellow-300 text-center">${output.name}</h4>
-            <p class="text-sm text-gray-400 mt-2">${canCraft ? 'Detaylar için tıkla' : 'Yetersiz Malzeme'}</p>
+            <p class="text-sm text-gray-400 mt-2">${isClickable ? 'Detaylar için tıkla' : 'Yetersiz Malzeme'}</p>
         `;
         container.appendChild(card);
-    });
+    }
 }
 
 function openCardSelectionForCrafting(buttonElement, eligibleCards, requiredAmount, materialName) {
@@ -21656,12 +21669,7 @@ function showQuestion(questionIndex) {
     db.ref(`wordGame/questions/${questionIndex}/isRevealed`).set(true);
 }
 
-   // ÖNCEKİ ADIMDA EKLEDİĞİN TÜM KELİME OYUNU FONKSİYONLARINI SİLİP BUNLARIN HEPSİNİ YAPIŞTIR
-
-// =======================================================
-// YENİ GÜNCELLENMİŞ KELİME OYUNU SİSTEMİ (SORU-CEVAP)
-// =======================================================
-
+ // MEVCUT listenForWordGameData FONKSİYONUNU SİLİP BUNU YAPIŞTIRIN
 function listenForWordGameData() {
     if (activeWordGameListener) {
         activeWordGameListener.ref.off('value', activeWordGameListener.callback);
@@ -21673,9 +21681,11 @@ function listenForWordGameData() {
         if (gameData && gameData.questions) {
             renderQuestions(gameData.questions);
             renderWordGameLeaderboard(gameData.leaderboard);
+            renderWordGameStatsAndPrize(gameData); // YENİ EKLENEN SATIR
         } else {
             document.getElementById('questionsContainer').innerHTML = '<p class="text-center text-gray-400 p-4">Adminin yeni bir bulmaca başlatması bekleniyor.</p>';
             document.getElementById('wordGameLeaderboard').innerHTML = '';
+            document.getElementById('wordGameStatsContainer').classList.add('hidden'); // YENİ EKLENEN SATIR
         }
     };
     activeWordGameListener = { ref, callback };
@@ -22419,6 +22429,35 @@ function openWordGameInfoModal() {
 function closeWordGameInfoModal() {
     document.getElementById('wordGameInfoModal').style.display = 'none';
 }
+
+   // YENİ EKLENECEK FONKSİYON: Kelime oyunu istatistiklerini ve ödülünü ekrana yazar.
+function renderWordGameStatsAndPrize(gameData) {
+    const container = document.getElementById('wordGameStatsContainer');
+    if (!gameData || !gameData.questions || gameData.questions.length === 0) {
+        container.classList.add('hidden');
+        return;
+    }
+
+    const questions = gameData.questions;
+    const totalQuestions = questions.length;
+    const solvedQuestions = questions.filter(q => (q.letters || []).every(l => l.solved)).length;
+    const remainingQuestions = totalQuestions - solvedQuestions;
+
+    document.getElementById('totalQuestionsStat').textContent = totalQuestions;
+    document.getElementById('solvedQuestionsStat').textContent = solvedQuestions;
+    document.getElementById('remainingQuestionsStat').textContent = remainingQuestions;
+
+    const prize = gameData.settings?.championPrize;
+    const prizeEl = document.getElementById('wordGameChampionPrize');
+    if (prize) {
+        prizeEl.textContent = formatRewardText(prize.type, prize.amount || prize.value, prize.uses);
+    } else {
+        prizeEl.textContent = 'Henüz belirlenmedi';
+    }
+
+    container.classList.remove('hidden');
+}
+   
 // YENİ EKLENECEK FONKSİYONLAR SONU
 </script>
 </body>
