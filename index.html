@@ -5939,6 +5939,7 @@ function resetGlobalState() {
     document.getElementById('storeCurrentUserKasaBalance').textContent = '0';
 }
 
+// MEVCUT logout FONKSİYONUNU SİL VE BUNUNLA DEĞİŞTİR
 async function logout() {
     const confirmed = await customConfirm("Çıkış yapmak istediğinize emin misiniz?");
     if (!confirmed) return;
@@ -5948,18 +5949,7 @@ async function logout() {
     detachAllListeners();
     resetGlobalState();
     
-    // ▼▼▼ YENİ EKLENEN KISIM BAŞLANGICI ▼▼▼
-    // Kelime oyunu zamanlayıcısını ve değişkenlerini sıfırla
-    if (wordGameCooldownInterval) {
-        clearInterval(wordGameCooldownInterval);
-    }
-    wordGameCooldownEnd = 0;
-    const cooldownInfoEl = document.getElementById('wordGameCooldownInfo');
-    if (cooldownInfoEl) {
-        cooldownInfoEl.classList.add('hidden');
-    }
-    // ▲▲▲ YENİ EKLENEN KISIM SONU ▲▲▲
-    
+    // --- GÜNCELLEME BURADA ---
     document.getElementById('chatToggleBtn').style.display = 'none';
     document.getElementById('chatPanel').classList.remove('open');
     
