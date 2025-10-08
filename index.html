@@ -1959,10 +1959,6 @@ body.modal-open .modal-content {
           <div class="flex justify-center md:justify-end gap-x-4 gap-y-1 flex-wrap mb-2">
               <p class="text-lg text-white">Tamamlanan: <span id="collectionProgress" class="font-bold text-green-400">0/0</span></p>
               <div id="wildcardIndicator" class="text-lg text-purple-400 hidden items-center gap-2">
-    <span>Joker Kart: <span id="wildcardCount" class="font-bold text-white">0</span> 🃏</span>
-    <button id="convertWildcardBtn" onclick="convertWildcard()" class="hidden py-1 px-3 bg-green-600 hover:bg-green-500 rounded-lg text-xs font-bold">Dönüştür</button>
-</div>
-              <div id="wildcardIndicator" class="text-lg text-purple-400 hidden items-center gap-2">
                   <span>Joker Kart: <span id="wildcardCount" class="font-bold text-white">0</span> 🃏</span>
                   <button id="convertWildcardBtn" onclick="convertWildcard()" class="hidden py-1 px-3 bg-green-600 hover:bg-green-500 rounded-lg text-xs font-bold">Dönüştür</button>
               </div>
@@ -5213,74 +5209,84 @@ async function checkAndProceedLogin(username, userData) {
     afterLogin();
 }
 
- /// MEVCUT "DOMContentLoaded" KOD BLOĞUNU KOMPLE SİLİP BUNUNLA DEĞİŞTİR
-
-document.addEventListener('DOMContentLoaded', () => {
+ document.addEventListener('DOMContentLoaded', () => {
     const loginContainer = document.getElementById("loginContainer");
     const gameDiv = document.getElementById("gameDiv");
     const maintenanceOverlay = document.getElementById("maintenanceOverlay");
+    const maintenanceReasonText = document.getElementById("maintenanceReasonText");
 
-    let isFirebaseUserChecked = false;
-    let isMaintenanceChecked = false;
-    let isMaintenanceMode = false;
-    let loggedInFirebaseUser = null;
+    // --- 1. Dinamik Ayarlar İçin Özel Dinleyiciler ---
 
-    // 1. Bakım modunu dinle
+    // Bu dinleyici, SADECE bakım modu değiştiğinde çalışır ve arayüzü anında günceller.
     db.ref('gameConfig/isMaintenanceMode').on('value', snap => {
-        isMaintenanceMode = snap.val() === true;
-        isMaintenanceChecked = true;
-        checkInitialLoad();
-    });
+        const isMaintenanceOn = snap.val() === true;
+        const currentUser = auth.currentUser;
+        const isAdminLoggedIn = currentUser && currentUser.email.startsWith('weizendtv');
 
-    // 2. Kullanıcı giriş durumunu dinle
-    auth.onAuthStateChanged(user => {
-        loggedInFirebaseUser = user;
-        isFirebaseUserChecked = true;
-        checkInitialLoad();
-    });
-
-    // 3. İki bilgi de geldikten sonra siteyi yükle
-    function checkInitialLoad() {
-        if (!isFirebaseUserChecked || !isMaintenanceChecked) {
-            return; // Henüz her iki bilgiyi de almadıysak bekle
-        }
-
-        const isAdminLoggedIn = loggedInFirebaseUser && loggedInFirebaseUser.email.startsWith('weizendtv');
-        const savedUser = localStorage.getItem('weizendOyunUser');
-
-        // Bakım modu aktifse VE giriş yapan admin değilse, bakım ekranını göster
-        if (isMaintenanceMode && !isAdminLoggedIn) {
-            loginContainer.style.display = "none";
-            gameDiv.style.display = "none";
-            maintenanceOverlay.style.display = "flex";
-            detachAllListeners(); // Herkes için dinleyicileri kapat
-            return;
-        }
-        
-        // Bakım modu kapalıysa veya admin giriş yaptıysa, normal işlemlere devam et
-        maintenanceOverlay.style.display = "none";
-
-        if (isAdminLoggedIn) {
-            currentUser = "WeizendTv";
-            isAdmin = true;
-            afterLogin();
-        } else if (savedUser) {
-            db.ref('users/' + savedUser).once('value').then(snap => {
-                if (snap.exists()) {
-                    checkAndProceedLogin(savedUser, snap.val());
-                } else {
-                    localStorage.removeItem('weizendOyunUser');
-                    loginContainer.style.display = "block";
-                    gameDiv.style.display = "none";
-                }
+        if (isMaintenanceOn && !isAdminLoggedIn) {
+            db.ref('gameConfig/maintenanceReason').once('value', reasonSnap => {
+                maintenanceReasonText.textContent = reasonSnap.val() || "Oyun dünyasında bazı güncellemeler yapıyoruz...";
+                loginContainer.style.display = "none";
+                gameDiv.style.display = "none";
+                maintenanceOverlay.style.display = "flex";
+                detachAllListeners(); // Tüm oyun dinleyicilerini durdur
             });
         } else {
-            loginContainer.style.display = "block";
-            gameDiv.style.display = "none";
-            switchAuthTab('login');
-            detachAllListeners();
+            maintenanceOverlay.style.display = "none";
         }
-    }
+    });
+
+    // Bu dinleyici, SADECE sezon numarası değiştiğinde başlığı günceller.
+    db.ref('gameConfig/seasonNumber').on('value', snap => {
+        const seasonNumber = snap.val() || 3;
+        currentSeasonNumber = seasonNumber; // Global değişkeni de güncelle
+        document.getElementById('seasonTitle').textContent = `WEİZEND OYUN DÜNYASI ${seasonNumber}. SEZON`;
+    });
+
+
+    // --- 2. Sayfa İlk Yüklendiğinde Sadece BİR KEZ Çalışacak Ana Mantık ---
+
+    auth.onAuthStateChanged(user => {
+        // Bu kod, kullanıcı giriş yaptığında, çıkış yaptığında veya sayfa yenilendiğinde bir kez tetiklenir.
+        db.ref('gameConfig').once('value', configSnap => { // "once" kullanarak veriyi sadece bir kez alırız.
+            const gameConfig = configSnap.val() || {};
+            const isMaintenanceOn = gameConfig.isMaintenanceMode === true;
+            const isAdminLoggedIn = user && user.email.startsWith('weizendtv');
+            const savedUser = localStorage.getItem('weizendOyunUser');
+
+            // Bakım modu kontrolü
+            if (isMaintenanceOn && !isAdminLoggedIn) {
+                maintenanceReasonText.textContent = gameConfig.maintenanceReason || "Oyun dünyasında bazı güncellemeler yapıyoruz...";
+                loginContainer.style.display = "none";
+                gameDiv.style.display = "none";
+                maintenanceOverlay.style.display = "flex";
+                return; // Bakım modundaysa başka işlem yapma
+            }
+
+            maintenanceOverlay.style.display = "none";
+
+            // Kullanıcı giriş durumuna göre arayüzü ayarla
+            if (isAdminLoggedIn) {
+                currentUser = "WeizendTv";
+                isAdmin = true;
+                afterLogin();
+            } else if (savedUser) {
+                db.ref('users/' + savedUser).once('value').then(snap => {
+                    if (snap.exists()) {
+                        checkAndProceedLogin(savedUser, snap.val());
+                    } else {
+                        localStorage.removeItem('weizendOyunUser');
+                        loginContainer.style.display = "block";
+                        gameDiv.style.display = "none";
+                    }
+                });
+            } else {
+                loginContainer.style.display = "block";
+                gameDiv.style.display = "none";
+                switchAuthTab('login');
+            }
+        });
+    });
 });
 
 // Adminin bakım modunu açıp kapatacağı fonksiyon
