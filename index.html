@@ -1788,7 +1788,7 @@ body.modal-open .modal-content {
 
   <header class="w-full max-w-4xl bg-gradient-to-r from-red-700 to-black text-white text-3xl font-extrabold tracking-wider py-4 rounded-xl shadow-xl mb-8 text-center relative">
   <span id="seasonTitle">WEİZEND OYUN DÜNYASI</span>
-   
+  
     <div id="seasonCountdownContainer" class="text-base font-normal mt-2 text-yellow-300 hidden flex justify-center items-center gap-2">
     <span>Sezonun Bitmesine: <span id="seasonCountdown" class="font-bold text-white tracking-wider"></span></span>
     <button onclick="openSeasonInfoModal()" class="text-blue-400 hover:text-blue-300 transition-colors" title="Aylık Sezon Sıfırlaması Hakkında Bilgi">
@@ -2737,7 +2737,6 @@ body.modal-open .modal-content {
     <button onclick="clearPurchaseHistory()" class="flex-1 py-2 px-3 bg-pink-800 hover:bg-pink-700 text-white font-bold rounded-lg text-sm">Satın Alma Geçmişini Sil</button>
   </div>
 </div>
-      </div>
       
       <div class="bg-gray-800/80 p-6 rounded-xl border border-gray-700 flex flex-col">
         <h4 class="text-yellow-200 text-xl font-semibold mb-4 border-b border-gray-600 pb-2 flex-shrink-0">Kullanıcı Yönetimi</h4>
@@ -4199,6 +4198,7 @@ body.modal-open .modal-content {
     <h2 class="text-4xl font-bold text-red-500 mb-4">SİTE BAKIMDA</h2>
     <p id="maintenanceReasonText" class="text-xl max-w-2xl mx-auto">Oyun dünyasında bazı güncellemeler yapıyoruz. Lütfen daha sonra tekrar deneyin.</p>
 </div>
+
 <div id="loginStreakModal" class="modal-overlay fixed inset-0 bg-black bg-opacity-70 flex justify-center items-center z-50 hidden">
   <div class="modal-content bg-gray-800 rounded-xl shadow-2xl border border-teal-500 w-11/12 max-w-4xl text-center relative max-h-[90vh] flex flex-col">
       <button class="modal-close-button absolute top-2 right-4 text-white text-4xl z-20" onclick="closeLoginStreakModal()">&times;</button>
@@ -4630,7 +4630,7 @@ body.modal-open .modal-content {
     </div>
   </div>
 </div>
- <div id="maintenanceSettingsModal" class="modal-overlay fixed inset-0 bg-black bg-opacity-70 flex justify-center items-center z-[10001] hidden">
+<div id="maintenanceSettingsModal" class="modal-overlay fixed inset-0 bg-black bg-opacity-70 flex justify-center items-center z-[10001] hidden">
   <div class="modal-content bg-gray-800 p-8 rounded-xl shadow-2xl border border-yellow-500 w-11/12 max-w-lg text-center relative">
     <button class="modal-close-button" onclick="closeMaintenanceSettingsModal()">&times;</button>
     <h4 class="text-yellow-400 text-2xl font-bold mb-6">Bakım Modu Ayarları</h4>
@@ -4766,7 +4766,7 @@ function getSyncedTime() {
   let currentUser = null;
   let collectedWildcards = 0;
   let collectedPotions = [];
-  let activeStreakTimers = {};
+      let activeStreakTimers = {};
   let allUsersCache = [];
   let isAdmin = false;
   let boxes = [];
@@ -4792,7 +4792,8 @@ function getSyncedTime() {
   let activeWordGameListener = null;
   let wordGameCooldownEnd = 0;
   let wordGameCooldownInterval = null;
-  let currentSeasonNumber = 3; // Varsayılan sezon numarası
+  let currentSeasonNumber = 3;
+
   // YENİ: Kullanıcının son mesaj atma zamanını tutar
   let lastMessageTimestamp = 0;
 
@@ -5212,23 +5213,22 @@ async function checkAndProceedLogin(username, userData) {
     afterLogin();
 }
 
- // MEVCUT "DOMContentLoaded" KOD BLOĞUNU KOMPLE SİLİP BUNUNLA DEĞİŞTİR
+ /// MEVCUT "DOMContentLoaded" KOD BLOĞUNU KOMPLE SİLİP BUNUNLA DEĞİŞTİR
 
 document.addEventListener('DOMContentLoaded', () => {
     const loginContainer = document.getElementById("loginContainer");
     const gameDiv = document.getElementById("gameDiv");
     const maintenanceOverlay = document.getElementById("maintenanceOverlay");
-    const maintenanceReasonText = document.getElementById("maintenanceReasonText");
 
     let isFirebaseUserChecked = false;
-    let isGameConfigChecked = false;
-    let gameConfig = {};
+    let isMaintenanceChecked = false;
+    let isMaintenanceMode = false;
     let loggedInFirebaseUser = null;
 
-    // 1. Oyunun genel ayarlarını (bakım modu, sezon numarası vs.) dinle
-    db.ref('gameConfig').on('value', snap => {
-        gameConfig = snap.val() || {};
-        isGameConfigChecked = true;
+    // 1. Bakım modunu dinle
+    db.ref('gameConfig/isMaintenanceMode').on('value', snap => {
+        isMaintenanceMode = snap.val() === true;
+        isMaintenanceChecked = true;
         checkInitialLoad();
     });
 
@@ -5241,16 +5241,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // 3. İki bilgi de geldikten sonra siteyi yükle
     function checkInitialLoad() {
-        if (!isFirebaseUserChecked || !isGameConfigChecked) {
+        if (!isFirebaseUserChecked || !isMaintenanceChecked) {
             return; // Henüz her iki bilgiyi de almadıysak bekle
         }
-
-        const isMaintenanceMode = gameConfig.isMaintenanceMode === true;
-        const maintenanceReason = gameConfig.maintenanceReason || "Oyun dünyasında bazı güncellemeler yapıyoruz. Lütfen daha sonra tekrar deneyin.";
-        const seasonNumber = gameConfig.seasonNumber || 3;
-        currentSeasonNumber = seasonNumber; // Global değişkeni güncelle
-        document.getElementById('seasonTitle').textContent = `WEİZEND OYUN DÜNYASI ${seasonNumber}. SEZON`;
-
 
         const isAdminLoggedIn = loggedInFirebaseUser && loggedInFirebaseUser.email.startsWith('weizendtv');
         const savedUser = localStorage.getItem('weizendOyunUser');
@@ -5259,12 +5252,11 @@ document.addEventListener('DOMContentLoaded', () => {
         if (isMaintenanceMode && !isAdminLoggedIn) {
             loginContainer.style.display = "none";
             gameDiv.style.display = "none";
-            maintenanceReasonText.textContent = maintenanceReason;
             maintenanceOverlay.style.display = "flex";
             detachAllListeners(); // Herkes için dinleyicileri kapat
             return;
         }
-
+        
         // Bakım modu kapalıysa veya admin giriş yaptıysa, normal işlemlere devam et
         maintenanceOverlay.style.display = "none";
 
@@ -5291,70 +5283,28 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 });
 
-   // BU 4 YENİ FONKSİYONU ESKİ toggleMaintenanceMode FONKSİYONUNUN YERİNE EKLE
-
-// Bakım ayarları modalını açar
-async function openMaintenanceSettingsModal() {
+// Adminin bakım modunu açıp kapatacağı fonksiyon
+async function toggleMaintenanceMode() {
     if (!isAdmin) return;
-    const reasonSnap = await db.ref('gameConfig/maintenanceReason').once('value');
-    const isModeActiveSnap = await db.ref('gameConfig/isMaintenanceMode').once('value');
-
-    const reason = reasonSnap.val() || '';
-    const isModeActive = isModeActiveSnap.val() === true;
-
-    document.getElementById('maintenanceReasonInput').value = reason;
-    const toggleBtn = document.getElementById('maintenanceToggleButton');
-
-    if (isModeActive) {
-        toggleBtn.textContent = 'Bakımı Bitir';
-        toggleBtn.classList.remove('bg-yellow-700', 'hover:bg-yellow-600');
-        toggleBtn.classList.add('bg-green-700', 'hover:bg-green-700');
-    } else {
-        toggleBtn.textContent = 'Bakımı Başlat';
-        toggleBtn.classList.remove('bg-green-700', 'hover:bg-green-700');
-        toggleBtn.classList.add('bg-yellow-700', 'hover:bg-yellow-600');
-    }
-
-    document.getElementById('maintenanceSettingsModal').style.display = 'flex';
-}
-
-// Bakım ayarları modalını kapatır
-function closeMaintenanceSettingsModal() {
-    document.getElementById('maintenanceSettingsModal').style.display = 'none';
-}
-
-// Sadece bakım mesajını kaydeder
-async function saveMaintenanceReason() {
-    if (!isAdmin) return;
-    const reason = document.getElementById('maintenanceReasonInput').value.trim();
-    await db.ref('gameConfig/maintenanceReason').set(reason);
-    displayMessage("Bakım modu mesajı başarıyla kaydedildi.");
-}
-
-// Bakım modunu başlatır veya durdurur
-async function startOrStopMaintenance() {
-    if (!isAdmin) return;
-
-    const reason = document.getElementById('maintenanceReasonInput').value.trim();
-    const isModeActiveSnap = await db.ref('gameConfig/isMaintenanceMode').once('value');
-    const isCurrentlyActive = isModeActiveSnap.val() === true;
-
+    const ref = db.ref('gameConfig/isMaintenanceMode');
+    const snap = await ref.once('value');
+    const isCurrentlyActive = snap.val() === true;
+    
     const newState = !isCurrentlyActive;
-
-    const updates = {};
-    updates['/gameConfig/isMaintenanceMode'] = newState;
-    if (reason) {
-        updates['/gameConfig/maintenanceReason'] = reason;
-    }
-
-    await db.ref().update(updates);
-
+    await ref.set(newState);
+    
+    const btn = document.getElementById('maintenanceModeBtn');
     if (newState) {
+        btn.textContent = 'Bakımı Bitir';
+        btn.classList.remove('bg-yellow-700', 'hover:bg-yellow-600');
+        btn.classList.add('bg-green-700', 'hover:bg-green-600');
         displayMessage("Bakım modu BAŞLATILDI. Adminler hariç kimse siteye giremez.");
     } else {
+        btn.textContent = 'Bakımı Başlat';
+        btn.classList.remove('bg-green-700', 'hover:bg-green-600');
+        btn.classList.add('bg-yellow-700', 'hover:bg-yellow-600');
         displayMessage("Bakım modu BİTTİ. Site tüm kullanıcılara açıldı.");
     }
-    closeMaintenanceSettingsModal();
 }
 
 async function saveWeeklyResetSettings() {
@@ -5749,8 +5699,72 @@ async function afterLogin() {
     listenForChatMessages();
 }
 
-   
-   
+// BU 4 YENİ FONKSİYONU ESKİ toggleMaintenanceMode FONKSİYONUNUN YERİNE EKLE
+
+// Bakım ayarları modalını açar
+async function openMaintenanceSettingsModal() {
+    if (!isAdmin) return;
+    const reasonSnap = await db.ref('gameConfig/maintenanceReason').once('value');
+    const isModeActiveSnap = await db.ref('gameConfig/isMaintenanceMode').once('value');
+
+    const reason = reasonSnap.val() || '';
+    const isModeActive = isModeActiveSnap.val() === true;
+
+    document.getElementById('maintenanceReasonInput').value = reason;
+    const toggleBtn = document.getElementById('maintenanceToggleButton');
+
+    if (isModeActive) {
+        toggleBtn.textContent = 'Bakımı Bitir';
+        toggleBtn.classList.remove('bg-yellow-700', 'hover:bg-yellow-600');
+        toggleBtn.classList.add('bg-green-700', 'hover:bg-green-700');
+    } else {
+        toggleBtn.textContent = 'Bakımı Başlat';
+        toggleBtn.classList.remove('bg-green-700', 'hover:bg-green-700');
+        toggleBtn.classList.add('bg-yellow-700', 'hover:bg-yellow-600');
+    }
+
+    document.getElementById('maintenanceSettingsModal').style.display = 'flex';
+}
+
+// Bakım ayarları modalını kapatır
+function closeMaintenanceSettingsModal() {
+    document.getElementById('maintenanceSettingsModal').style.display = 'none';
+}
+
+// Sadece bakım mesajını kaydeder
+async function saveMaintenanceReason() {
+    if (!isAdmin) return;
+    const reason = document.getElementById('maintenanceReasonInput').value.trim();
+    await db.ref('gameConfig/maintenanceReason').set(reason);
+    displayMessage("Bakım modu mesajı başarıyla kaydedildi.");
+}
+
+// Bakım modunu başlatır veya durdurur
+async function startOrStopMaintenance() {
+    if (!isAdmin) return;
+
+    const reason = document.getElementById('maintenanceReasonInput').value.trim();
+    const isModeActiveSnap = await db.ref('gameConfig/isMaintenanceMode').once('value');
+    const isCurrentlyActive = isModeActiveSnap.val() === true;
+
+    const newState = !isCurrentlyActive;
+
+    const updates = {};
+    updates['/gameConfig/isMaintenanceMode'] = newState;
+    if (reason) {
+        updates['/gameConfig/maintenanceReason'] = reason;
+    }
+
+    await db.ref().update(updates);
+
+    if (newState) {
+        displayMessage("Bakım modu BAŞLATILDI. Adminler hariç kimse siteye giremez.");
+    } else {
+        displayMessage("Bakım modu BİTTİ. Site tüm kullanıcılara açıldı.");
+    }
+    closeMaintenanceSettingsModal();
+}
+
 // 2. loadAllCraftingRecipes ADINDA YEPYENİ BİR FONKSİYON EKLE
 function loadAllCraftingRecipes() {
     const recipesRef = db.ref('gameConfig/craftingRecipes');
@@ -15616,6 +15630,65 @@ async function executeSeasonReset(isManual = false) {
     if (isManual) closeSeasonManagementModal();
 }
 
+// BU 3 YENİ FONKSİYONU SCRIPT'İN SONUNA EKLE
+
+function listenForSeasonEndNotification() {
+    if (isAdmin) return;
+    const ref = db.ref(`users/${currentUser}/persistentNotifications`);
+
+    const callback = (snap) => {
+        const notifId = snap.key;
+        const notification = snap.val();
+
+        if (notification && notification.type === 'seasonEnd') {
+            showSeasonEndNotificationModal(notification);
+            snap.ref.remove();
+        }
+    };
+
+    if (activeListeners.seasonEndNotif) {
+        activeListeners.seasonEndNotif.ref.off('child_added', activeListeners.seasonEndNotif.callback);
+    }
+    activeListeners.seasonEndNotif = { ref, event: 'child_added', callback };
+    ref.on('child_added', callback);
+}
+
+function showSeasonEndNotificationModal(notificationData) {
+    const titleEl = document.getElementById('seasonEndTitle');
+    const messageEl = document.getElementById('seasonEndMessage');
+
+    titleEl.innerHTML = notificationData.title;
+
+    const { puanLeader, rozetLeader, giftPackage } = notificationData;
+
+    let giftHtml = '<h4>Yeni Sezon Hediye Paketin:</h4><ul class="list-disc list-inside text-left">';
+    let hasGifts = false;
+    if (giftPackage.kutuHakki > 0) { giftHtml += `<li>🎁 +${giftPackage.kutuHakki} Kutu Hakkı</li>`; hasGifts = true; }
+    if (giftPackage.carkBileti > 0) { giftHtml += `<li>🎡 +${giftPackage.carkBileti} Çark Bileti</li>`; hasGifts = true; }
+    if (giftPackage.clickCatchTickets > 0) { giftHtml += `<li>🎯 +${giftPackage.clickCatchTickets} T-Y Bileti</li>`; hasGifts = true; }
+    if (giftPackage.iflasShieldUses > 0) { giftHtml += `<li>🛡️ +${giftPackage.iflasShieldUses} İflas Kalkanı</li>`; hasGifts = true; }
+    if (!hasGifts) { giftHtml += '<li>Bu sezon hediye paketi tanımlanmamış.</li>'; }
+    giftHtml += '</ul>';
+
+    messageEl.innerHTML = `
+        <p class="mb-4">Yeni sezon başladı! İşte geçen sezonun şampiyonları ve senin için yeni sezon hediyelerin:</p>
+        <div class="p-3 bg-gray-900 rounded-lg text-left mb-4">
+            <p>🏆 Kariyer Puanı Şampiyonu: <b class="text-yellow-300">${puanLeader}</b></p>
+            <p>👑 Liderler Sıralaması Şampiyonu: <b class="text-yellow-300">${rozetLeader}</b></p>
+        </div>
+        <div class="p-3 bg-gray-900 rounded-lg text-green-300">
+            ${giftHtml}
+        </div>
+        <p class="mt-4 text-sm text-gray-400">Tüm puanların, envanterin ve kartların sıfırlandı. Yeni sezonda bol şans!</p>
+    `;
+
+    document.getElementById('seasonEndNotificationModal').style.display = 'flex';
+}
+
+function markSeasonEndNotificationAsSeen() {
+    document.getElementById('seasonEndNotificationModal').style.display = 'none';
+}
+
 async function stopSeasonCountdown() {
     if (!isAdmin) return; // Sadece adminin kullanabildiğinden emin ol.
 
@@ -22599,65 +22672,6 @@ function renderWordGameStatsAndPrize(gameData) {
     }
 
     container.classList.remove('hidden');
-}
-
-   // BU 3 YENİ FONKSİYONU SCRIPT'İN SONUNA EKLE
-
-function listenForSeasonEndNotification() {
-    if (isAdmin) return;
-    const ref = db.ref(`users/${currentUser}/persistentNotifications`);
-
-    const callback = (snap) => {
-        const notifId = snap.key;
-        const notification = snap.val();
-
-        if (notification && notification.type === 'seasonEnd') {
-            showSeasonEndNotificationModal(notification);
-            snap.ref.remove();
-        }
-    };
-
-    if (activeListeners.seasonEndNotif) {
-        activeListeners.seasonEndNotif.ref.off('child_added', activeListeners.seasonEndNotif.callback);
-    }
-    activeListeners.seasonEndNotif = { ref, event: 'child_added', callback };
-    ref.on('child_added', callback);
-}
-
-function showSeasonEndNotificationModal(notificationData) {
-    const titleEl = document.getElementById('seasonEndTitle');
-    const messageEl = document.getElementById('seasonEndMessage');
-
-    titleEl.innerHTML = notificationData.title;
-
-    const { puanLeader, rozetLeader, giftPackage } = notificationData;
-
-    let giftHtml = '<h4>Yeni Sezon Hediye Paketin:</h4><ul class="list-disc list-inside text-left">';
-    let hasGifts = false;
-    if (giftPackage.kutuHakki > 0) { giftHtml += `<li>🎁 +${giftPackage.kutuHakki} Kutu Hakkı</li>`; hasGifts = true; }
-    if (giftPackage.carkBileti > 0) { giftHtml += `<li>🎡 +${giftPackage.carkBileti} Çark Bileti</li>`; hasGifts = true; }
-    if (giftPackage.clickCatchTickets > 0) { giftHtml += `<li>🎯 +${giftPackage.clickCatchTickets} T-Y Bileti</li>`; hasGifts = true; }
-    if (giftPackage.iflasShieldUses > 0) { giftHtml += `<li>🛡️ +${giftPackage.iflasShieldUses} İflas Kalkanı</li>`; hasGifts = true; }
-    if (!hasGifts) { giftHtml += '<li>Bu sezon hediye paketi tanımlanmamış.</li>'; }
-    giftHtml += '</ul>';
-
-    messageEl.innerHTML = `
-        <p class="mb-4">Yeni sezon başladı! İşte geçen sezonun şampiyonları ve senin için yeni sezon hediyelerin:</p>
-        <div class="p-3 bg-gray-900 rounded-lg text-left mb-4">
-            <p>🏆 Kariyer Puanı Şampiyonu: <b class="text-yellow-300">${puanLeader}</b></p>
-            <p>👑 Liderler Sıralaması Şampiyonu: <b class="text-yellow-300">${rozetLeader}</b></p>
-        </div>
-        <div class="p-3 bg-gray-900 rounded-lg text-green-300">
-            ${giftHtml}
-        </div>
-        <p class="mt-4 text-sm text-gray-400">Tüm puanların, envanterin ve kartların sıfırlandı. Yeni sezonda bol şans!</p>
-    `;
-
-    document.getElementById('seasonEndNotificationModal').style.display = 'flex';
-}
-
-function markSeasonEndNotificationAsSeen() {
-    document.getElementById('seasonEndNotificationModal').style.display = 'none';
 }
    
 // YENİ EKLENECEK FONKSİYONLAR SONU
