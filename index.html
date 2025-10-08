@@ -1859,29 +1859,31 @@ body.modal-open .modal-content {
 
     <div class="flex-shrink-0 overflow-x-auto">
         <div class="flex border-b border-gray-700">
-            <button onclick="switchActivityTab('etkinlikler')" class="activity-tab-btn relative flex-shrink-0 py-3 px-4 text-sm font-bold border-b-2">Etkinlikler</button>
-            <button onclick="switchActivityTab('kutu')" class="activity-tab-btn relative flex-shrink-0 py-3 px-4 text-sm font-bold border-b-2">Kutu Oyunu</button>
-            <button onclick="switchActivityTab('canavar')" class="activity-tab-btn relative flex-shrink-0 py-3 px-4 text-sm font-bold border-b-2">Canavar</button>
-            <button onclick="switchActivityTab('kelime')" class="activity-tab-btn relative flex-shrink-0 py-3 px-4 text-sm font-bold border-b-2">Kelime</button>
-            <button onclick="switchActivityTab('cark')" class="activity-tab-btn relative flex-shrink-0 py-3 px-4 text-sm font-bold border-b-2">Şans Çarkı</button>
-            <button onclick="switchActivityTab('yakala')" class="activity-tab-btn relative flex-shrink-0 py-3 px-4 text-sm font-bold border-b-2">Tıkla-Yakala</button>
-            <button onclick="switchActivityTab('kart')" class="activity-tab-btn relative flex-shrink-0 py-3 px-4 text-sm font-bold border-b-2">Kartlar</button>
-            <button onclick="switchActivityTab('atolye')" class="activity-tab-btn relative flex-shrink-0 py-3 px-4 text-sm font-bold border-b-2">Atölye</button>
-            <button onclick="switchActivityTab('magaza')" class="activity-tab-btn relative flex-shrink-0 py-3 px-4 text-sm font-bold border-b-2">Mağaza</button>
-        </div>
+    <button onclick="switchActivityTab('etkinlikler')" class="activity-tab-btn relative flex-shrink-0 py-3 px-4 text-sm font-bold border-b-2">Etkinlikler</button>
+    <button onclick="switchActivityTab('odul')" class="activity-tab-btn relative flex-shrink-0 py-3 px-4 text-sm font-bold border-b-2">Günlük Ödüller</button>
+    <button onclick="switchActivityTab('kutu')" class="activity-tab-btn relative flex-shrink-0 py-3 px-4 text-sm font-bold border-b-2">Kutu Oyunu</button>
+    <button onclick="switchActivityTab('cark')" class="activity-tab-btn relative flex-shrink-0 py-3 px-4 text-sm font-bold border-b-2">Şans Çarkı</button>
+    <button onclick="switchActivityTab('yakala')" class="activity-tab-btn relative flex-shrink-0 py-3 px-4 text-sm font-bold border-b-2">Tıkla-Yakala</button>
+    <button onclick="switchActivityTab('canavar')" class="activity-tab-btn relative flex-shrink-0 py-3 px-4 text-sm font-bold border-b-2">Canavar Savaşı</button>
+    <button onclick="switchActivityTab('kelime')" class="activity-tab-btn relative flex-shrink-0 py-3 px-4 text-sm font-bold border-b-2">Kelime Oyunu</button>
+    <button onclick="switchActivityTab('kart')" class="activity-tab-btn relative flex-shrink-0 py-3 px-4 text-sm font-bold border-b-2">Kart Koleksiyonu</button>
+    <button onclick="switchActivityTab('atolye')" class="activity-tab-btn relative flex-shrink-0 py-3 px-4 text-sm font-bold border-b-2">Üretim Atölyesi</button>
+    <button onclick="switchActivityTab('magaza')" class="activity-tab-btn relative flex-shrink-0 py-3 px-4 text-sm font-bold border-b-2">Puan Alışverişi</button>
+</div>
     </div>
 
     <div class="flex-grow overflow-y-auto relative">
-        <div id="activityFeedTab-etkinlikler" class="activity-tab-content p-4 space-y-4"></div>
-        <div id="activityFeedTab-kutu" class="activity-tab-content p-4 space-y-3 hidden"></div>
-        <div id="activityFeedTab-canavar" class="activity-tab-content p-4 space-y-3 hidden"></div>
-        <div id="activityFeedTab-kelime" class="activity-tab-content p-4 space-y-3 hidden"></div>
-        <div id="activityFeedTab-cark" class="activity-tab-content p-4 space-y-3 hidden"></div>
-        <div id="activityFeedTab-yakala" class="activity-tab-content p-4 space-y-3 hidden"></div>
-        <div id="activityFeedTab-kart" class="activity-tab-content p-4 space-y-3 hidden"></div>
-        <div id="activityFeedTab-atolye" class="activity-tab-content p-4 space-y-3 hidden"></div>
-        <div id="activityFeedTab-magaza" class="activity-tab-content p-4 space-y-3 hidden"></div>
-    </div>
+    <div id="activityFeedTab-etkinlikler" class="activity-tab-content p-4 space-y-4"></div>
+    <div id="activityFeedTab-odul" class="activity-tab-content p-4 space-y-3 hidden"></div>
+    <div id="activityFeedTab-kutu" class="activity-tab-content p-4 space-y-3 hidden"></div>
+    <div id="activityFeedTab-canavar" class="activity-tab-content p-4 space-y-3 hidden"></div>
+    <div id="activityFeedTab-kelime" class="activity-tab-content p-4 space-y-3 hidden"></div>
+    <div id="activityFeedTab-cark" class="activity-tab-content p-4 space-y-3 hidden"></div>
+    <div id="activityFeedTab-yakala" class="activity-tab-content p-4 space-y-3 hidden"></div>
+    <div id="activityFeedTab-kart" class="activity-tab-content p-4 space-y-3 hidden"></div>
+    <div id="activityFeedTab-atolye" class="activity-tab-content p-4 space-y-3 hidden"></div>
+    <div id="activityFeedTab-magaza" class="activity-tab-content p-4 space-y-3 hidden"></div>
+</div>
 </div>
 
 <div id="loginContainer" class="bg-gray-800 p-8 rounded-xl shadow-lg border border-red-700 w-full max-w-md">
@@ -8681,7 +8683,31 @@ async function buyItem(itemId) {
             });
             displayMessage(`'${item.name}' alım talebiniz başarıyla oluşturuldu. Admin onayı bekleniyor.`);
         } else {
-            displayMessage(`'${item.name}' başarıyla satın alındı!`);
+            // ★★★ DEĞİŞİKLİK BURADA BAŞLIYOR ★★★
+            // Mağaza adını belirleme
+            const monsterStoreItemTypes = [
+                'revival_stone', 'health_potion', 'damage_potion', 'defense_potion',
+                'crit_potion', 'crit_damage_potion', 'dodge_potion', 'pierce_potion',
+                'health_regen_potion'
+            ];
+            let storeName = 'Oyun Mağazası';
+            if (item.type === 'avatar') {
+                storeName = 'Avatar Mağazası';
+            } else if (monsterStoreItemTypes.includes(item.type)) {
+                storeName = 'Canavar Mağazası';
+            }
+
+            // Gerekli bilgileri hazırla
+            const costUnit = 'Puan';
+            const formattedCost = formatNumber(totalCost);
+            const itemNameWithQuantity = `${quantity > 1 ? quantity + 'x ' : ''}${item.name}`;
+            const remainingBalance = finalUserData.balance;
+            const formattedRemainingBalance = formatNumber(remainingBalance || 0);
+
+            // Yeni ve detaylı mesajı oluştur
+            const successMessage = `${currentUser}, ${formattedCost} ${costUnit} harcayarak ${storeName}'ndan ${itemNameWithQuantity} satın aldı. (Kalan: ${formattedRemainingBalance} ${costUnit})`;
+            displayMessage(successMessage);
+            // ★★★ DEĞİŞİKLİK BURADA BİTİYOR ★★★
         }
         
         for (const pack of cardPacksToOpen) {
@@ -13833,11 +13859,14 @@ async function clearWeeklyWinnerDisplay() {
     }
 }
 
-// ESKİ initActivityFeed VE renderActivityFeed FONKSİYONLARINI SİLİP, BU 4 YENİ FONKSİYONU YAPIŞTIR
-
 function initActivityFeed() {
     const activityBellContainer = document.getElementById('activityBellContainer');
     activityBellContainer.classList.remove('hidden');
+
+    // Admin ise "Tümünü Temizle" butonunu görünür yap
+    if (isAdmin) {
+        document.getElementById('clearAllActivitiesBtn').classList.remove('hidden');
+    }
 
     const activityRef = db.ref('activityFeed').orderByChild('timestamp').limitToLast(100);
 
@@ -13861,9 +13890,8 @@ function initActivityFeed() {
     listenForEventsTab();
 }
 
-// renderAllActivityTabs FONKSİYONUNU BUL VE BUNUNLA DEĞİŞTİR
 async function renderAllActivityTabs(activities) {
-    const categories = ['kutu', 'canavar', 'kelime', 'cark', 'yakala', 'kart', 'atolye', 'magaza']; // YENİ EKLENDİ
+    const categories = ['odul', 'kutu', 'canavar', 'kelime', 'cark', 'yakala', 'kart', 'atolye', 'magaza'];
     const userStatusSnap = await db.ref(`users/${currentUser}/lastCheckedFeedTimestamp`).once('value');
     const lastCheckedTimestamps = userStatusSnap.val() || {};
     let totalUnreadCount = 0;
@@ -13872,14 +13900,22 @@ async function renderAllActivityTabs(activities) {
         const container = document.getElementById(`activityFeedTab-${category}`);
         const tabBtn = document.querySelector(`.activity-tab-btn[onclick="switchActivityTab('${category}')"]`);
         
+        // Bu kategoriye ait eylemleri filtrele
         const categoryActivities = activities.filter(act => act.category === category);
         
+        // Eylemleri HTML'e çevir ve container'a yerleştir
         container.innerHTML = categoryActivities.length > 0 
             ? categoryActivities.map(act => getActivityHtml(act)).join('')
             : '<p class="text-center text-gray-400 p-4">Bu kategoride henüz bir eylem yok.</p>';
 
+        // Bu kategorideki en son eylemi bul (zaten sıralı olduğu için ilk eleman)
+        const latestActivityInCategory = categoryActivities[0];
+        
+        // Bu kategori için en son ne zaman bakılmış?
         const lastChecked = lastCheckedTimestamps[category] || 0;
-        const unreadInCategory = categoryActivities.some(act => act.timestamp > lastChecked);
+
+        // Eğer en son eylem, kullanıcının son bakışından daha yeniyse, okunmamış demektir.
+        const unreadInCategory = latestActivityInCategory && latestActivityInCategory.timestamp > lastChecked;
 
         if (unreadInCategory) {
             totalUnreadCount++;
@@ -13890,11 +13926,12 @@ async function renderAllActivityTabs(activities) {
                     dot.className = 'notification-dot';
                     tabBtn.appendChild(dot);
                 }
-                dot.style.display = 'block';
+                dot.style.display = 'block'; // Noktayı göster
             }
         }
     }
 
+    // Ana bildirim sayacını güncelle
     const mainCounter = document.getElementById('activityCounter');
     if (totalUnreadCount > 0) {
         mainCounter.textContent = totalUnreadCount > 9 ? '9+' : totalUnreadCount;
@@ -13904,44 +13941,62 @@ async function renderAllActivityTabs(activities) {
     }
 }
 
-// getActivityHtml FONKSİYONUNU BUL VE BUNUNLA DEĞİŞTİR
 function getActivityHtml(activity) {
     const details = activity.details || {};
-    let message = `Bilinmeyen Eylem: ${activity.type}`; // Hata durumunda gösterilecek varsayılan mesaj
+    let message = `Bilinmeyen Eylem: ${activity.type}`;
     const timeAgo = formatTimeAgo(activity.timestamp);
     const userHtml = `<b class="text-yellow-300 cursor-pointer hover:underline" onclick="openPublicUserDetailModal('${activity.username}')">${activity.username}</b>`;
 
     switch (activity.type) {
+        // KUTU OYUNU
         case 'openBox':
             message = `${userHtml}, <b>${details.boxId}</b> numaralı kutudan <span class="text-green-300 font-bold">+${formatNumber(details.points)} Puan</span> kazandı.`;
+            break;
+        case 'surpriseBox':
+            const sourceText = details.boxId === 'Çark' ? 'Şans Çarkı\'ndan' : `<b>${details.boxId}</b> numaralı kutudan`;
+            message = `${userHtml}, ${sourceText} Sürpriz Kutu buldu ve <span class="text-green-300 font-bold">+${formatNumber(details.points)} Puan</span> kazandı.`;
             break;
         case 'iflas':
             message = details.shieldUsed 
                 ? `${userHtml}, <b>${details.boxId}</b> numaralı kutudan bomba buldu ama kalkanı onu korudu.` 
                 : `${userHtml}, <b>${details.boxId}</b> numaralı kutudan bomba buldu ve <span class="text-red-400 font-bold">-${formatNumber(details.lostPoints)} Puan</span> kaybetti.`;
             break;
+        case 'multiplierFound':
+            message = `${userHtml}, <b>${details.boxId}</b> numaralı kutudan <span class="text-purple-300 font-bold">${details.value}x Çarpan</span> buldu.`;
+            break;
         case 'newItemFound':
             const itemName = typeToName[details.itemType] || 'Eşya';
             message = `${userHtml}, <b>${details.boxId}</b> numaralı kutudan <span class="text-cyan-300 font-bold">${details.itemName.split(' ')[0]} ${itemName}</span> buldu.`;
             break;
+
+        // CANAVAR SAVAŞI
         case 'monsterAttack':
              message = `${userHtml}, <b class="text-red-400">${details.monsterName}</b>'a saldırdı ve <b class="text-white">${formatNumber(details.damageDealt)} hasar</b> verdi.`;
             break;
         case 'monsterDefeated':
             message = `<b class="text-red-400">${details.monsterName}</b> yok edildi! En çok hasarı veren ${userHtml} (<b class="text-white">${formatNumber(details.totalDamage)} Hasar</b>) <b class="text-green-400">${details.prize}</b> ödülünü kazandı.`;
             break;
+        case 'useRegenPotion':
+            message = `${userHtml}, <b class="text-cyan-300">%${details.percentage} Can Yenileme İksiri</b> kullanarak <b class="text-green-300">${details.healed} can</b> yeniledi.`;
+            break;
+            
+        // KELİME OYUNU
         case 'wordGameGuess':
             message = `${userHtml}, kelime oyununda bir harf bilerek <b class="text-green-400">${details.rewardText}</b> kazandı.`;
             break;
         case 'wordGameChampion':
             message = `${userHtml}, kelime oyununu <b class="text-white">${details.score} harf</b> ile tamamlayarak şampiyon oldu ve <b class="text-green-400">${details.prize}</b> kazandı!`;
             break;
-        case 'cardPackOpened':
-            message = `${userHtml}, açtığı paketten <b class="text-purple-300">'${details.cardName}'</b> kartını kazandı.`;
+        case 'wordGameWrongGuess':
+            message = `${userHtml}, kelime oyununda yanlış harf girdi ve <b class="text-orange-400">${formatDurationFromSeconds(details.cooldown)}</b> beklemeye başladı.`;
             break;
+
+        // ŞANS ÇARKI
         case 'spinWheel':
             message = `${userHtml}, çarkı çevirerek <span class="text-pink-300 font-bold">${details.result}</span> kazandı.`;
             break;
+
+        // TIKLA-YAKALA
         case 'clickCatchSolo':
             message = `${userHtml}, Tıkla-Yakala'da <span class="text-green-300 font-bold">${formatNumber(details.finalScore)} Skor</span> topladı.`;
             break;
@@ -13951,8 +14006,21 @@ function getActivityHtml(activity) {
         case 'clickCatchLobby':
              message = `${userHtml}, lobi oyununu kazanarak <span class="text-yellow-300 font-bold">+${formatNumber(details.prize)} Puan</span> ödül aldı!`;
             break;
+        case 'lobbyJoined':
+            message = `${userHtml}, Tıkla-Yakala lobisine <span class="text-red-400">-${formatNumber(details.cost)} Puan</span> ile katıldı.`;
+            break;
+            
+        // ÜRETİM ATÖLYESİ
         case 'craftItem':
              message = `${userHtml}, atölyede <b class="text-green-400">${details.itemName}</b> üretti.`;
+            break;
+
+        // KART SİSTEMİ
+        case 'cardPackOpened':
+            message = `${userHtml}, açtığı paketten <b class="text-purple-300">'${details.cardName}'</b> kartını kazandı.`;
+            break;
+        case 'wildcardConvertedToBoxRights':
+            message = `${userHtml}, 1 Joker Kart'ı <b class="text-cyan-300 font-bold">+${details.boxRights} Kutu Hakkı</b>'na dönüştürdü.`;
             break;
         case 'tradeOfferCreated':
              message = `${userHtml}, pazara yeni bir takas teklifi koydu: <b class="text-cyan-300">${details.offeredCardName}</b> ↔ <b class="text-pink-300">${details.requestedCardName}</b>.`;
@@ -13960,14 +14028,49 @@ function getActivityHtml(activity) {
         case 'tradeOfferAccepted':
              message = `${userHtml}, <b>${details.offerer}</b>'in <b class="text-cyan-300">'${details.offeredCardName}'</b> kartı teklifini kabul etti.`;
             break;
+        case 'collectionCompleted':
+            message = `${userHtml}, koleksiyonu tamamlayan <b class="text-amber-400">${details.rank}. KİŞİ</b> oldu. Tebrikler!`;
+            break;
+            
+        // MAĞAZA
         case 'buyItem':
+            // ★★★ İSTEDİĞİN GÜNCELLEME BURADA ★★★
+            const monsterStoreItemTypes = [
+                'revival_stone', 'health_potion', 'damage_potion', 'defense_potion',
+                'crit_potion', 'crit_damage_potion', 'dodge_potion', 'pierce_potion',
+                'health_regen_potion'
+            ];
+            let storeName = 'Oyun Mağazası';
+            if (details.itemType === 'avatar') {
+                storeName = 'Avatar Mağazası';
+            } else if (monsterStoreItemTypes.includes(details.itemType)) {
+                storeName = 'Canavar Mağazası';
+            } else if (details.itemCost.toString().includes('KP')) {
+                storeName = 'Özel Ürün Mağazası';
+            }
+
             const costText = `${formatNumber(details.itemCost)} ${details.itemCost.toString().includes('KP') ? 'KP' : 'Puan'}`;
-            message = `${userHtml}, mağazadan <b class="text-red-500">-${costText}</b> harcayarak <b class="text-green-400">${details.itemName}</b> satın aldı.`;
+            message = `${userHtml}, ${storeName}'ndan <b class="text-red-500">-${costText}</b> harcayarak <b class="text-green-400">${details.itemName}</b> satın aldı.`;
             break;
         case 'kasaTransfer':
             message = `${userHtml}, kasasına <b class="text-purple-300">${formatNumber(details.amount)} Puan</b> aktardı.`;
             break;
+            
+        // GÜNLÜK ÖDÜL & GİRİŞ SERİSİ
+        case 'dailyReward':
+            const rewardText = formatRewardText(details.rewardType, details.rewardValue, details.rewardUses);
+            message = `${userHtml}, günlük ödül olarak <span class="text-teal-300 font-bold">${rewardText}</span> aldı.`;
+            break;
+        case 'loginStreakClaim':
+            message = `${userHtml}, giriş serisinde <b class="text-teal-300 font-bold">${details.day}. gün</b> <b class="text-white">'${details.packageName}'</b> ödülünü aldı.`;
+            break;
     }
+
+    // Admin için silme butonu
+    const deleteButtonHtml = isAdmin ? `
+        <button onclick="deleteActivity('${activity.id}')" class="p-1 rounded-full text-gray-500 hover:text-red-500 hover:bg-white/10 transition-colors" title="Bu Eylemi Sil">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1-1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" /></svg>
+        </button>` : '';
 
     return `
         <div class="bg-gray-800/70 p-3 rounded-xl flex items-center gap-4 border border-transparent hover:border-gray-700">
@@ -13976,6 +14079,9 @@ function getActivityHtml(activity) {
                 <p class="text-gray-200 text-sm leading-relaxed">${message}</p>
                 <div class="flex justify-between items-center mt-1">
                     <span class="text-xs text-gray-500">${timeAgo}</span>
+                    <div class="flex items-center">
+                        ${deleteButtonHtml}
+                    </div>
                 </div>
             </div>
         </div>`;
@@ -14089,7 +14195,7 @@ function listenForEventsTab() {
              html += `
                 <div class="event-card ongoing">
                     <h5 class="font-bold text-white mb-2">Kart Koleksiyonu Etkinliği Başladı!</h5>
-                    <p class="text-sm text-gray-300">Büyük Ödül: <b class="text-green-400">${prizeText}</b></p>
+                    <p class="text-sm text-gray-300">Albümü İlk Tamamlayan Ödülü: <b class="text-green-400">${prizeText}</b></p>
                     <p class="text-sm text-gray-300 mt-2">${leaderText}</p>
                     <p class="text-xs text-lime-400 font-bold mt-1">Sezon Devam Ediyor</p>
                 </div>`;
@@ -14145,36 +14251,44 @@ function logActivity(type, username, details = {}, category = null, activityId =
  * @param {string} type - Aktivitenin türü (örn: 'openBox', 'spinWheel').
  * @returns {string} Sekme kategorisi ('kutu', 'cark', vb.).
  */
-// getCategoryForActivity FONKSİYONUNU BUL VE BUNUNLA DEĞİŞTİR
 function getCategoryForActivity(type) {
     const categories = {
+        // Günlük Ödül ve Giriş Serisi
+        'dailyReward': 'odul',
+        'loginStreakClaim': 'odul',
+        
+        // Kutu Oyunu
         'openBox': 'kutu', 'iflas': 'kutu', 'multiplierFound': 'kutu',
         'surpriseBox': 'kutu', 'multiplierUpgraded': 'kutu', 'multiplierStacked': 'kutu',
         'multiplierConvertedToBoxRights': 'kutu', 'multiplierCombined': 'kutu',
         'newItemFound': 'kutu',
 
+        // Canavar Savaşı
         'monsterAttack': 'canavar', 'monsterDefeated': 'canavar', 'useRegenPotion': 'canavar',
 
+        // Kelime Oyunu
         'wordGameGuess': 'kelime', 'wordGameWrongGuess': 'kelime', 'wordGameChampion': 'kelime',
 
+        // Şans Çarkı
         'spinWheel': 'cark',
 
+        // Tıkla-Yakala
         'clickCatchSolo': 'yakala', 'clickCatchLobby': 'yakala', 'lobbyJoined': 'yakala',
         'weeklyChampion': 'yakala',
 
+        // Üretim Atölyesi
         'craftItem': 'atolye',
 
+        // Kart Sistemi
         'cardPackOpened': 'kart', 'wildcardConvertedToBoxRights': 'kart',
         'tradeOfferCreated': 'kart', 'tradeOfferAccepted': 'kart', 'collectionCompleted': 'kart',
 
+        // Mağaza
         'buyItem': 'magaza', 'kasaTransfer': 'magaza'
     };
-    return categories[type] || 'kutu';
+    return categories[type] || 'kutu'; // Eşleşme bulunamazsa varsayılan olarak 'kutu'ya gönder
 }
 
-/**
- * Yeni sekmeli Son Eylemler panelinde sekmeler arası geçişi sağlar.
- */
 function switchActivityTab(category) {
     // Tüm sekme butonlarından 'active' sınıfını kaldır
     document.querySelectorAll('.activity-tab-btn').forEach(btn => {
@@ -14199,16 +14313,14 @@ function switchActivityTab(category) {
     db.ref(`users/${currentUser}/lastCheckedFeedTimestamp/${category}`).set(getSyncedTime());
 }
 
-// ...VE YERİNE BU YENİ VERSİYONU YAPIŞTIR
 function openActivityFeed() {
-    const activityFeedPanel = document.getElementById('activityFeedPanel'); // EKLENEN SATIR
-    const activityCounter = document.getElementById('activityCounter');   // EKLENEN SATIR
+    const activityFeedPanel = document.getElementById('activityFeedPanel');
+    const activityCounter = document.getElementById('activityCounter');
     activityFeedPanel.classList.remove('hidden');
     setTimeout(() => {
         activityFeedPanel.classList.remove('translate-x-full');
     }, 10);
     activityCounter.classList.add('hidden');
-    db.ref(`users/${currentUser}/lastCheckedFeedTimestamp`).set(Date.now());
 }
 
 function closeActivityFeed() {
